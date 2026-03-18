@@ -21,6 +21,7 @@ from app.services.analysis.emotional import run_emotional_analysis
 from app.services.analysis.compliance import run_compliance_analysis
 from app.services.analysis.production import run_production_analysis
 from app.services.analysis.materials import run_materials_analysis
+from app.services.analysis.structural import run_structural_analysis
 from app.services.dxf.parser import parse_dxf
 from sqlalchemy.orm import selectinload
 from app.models.models import ZoneMaterial
@@ -36,6 +37,7 @@ ANALYSIS_MODULES = {
     "compliance": run_compliance_analysis,
     "production": run_production_analysis,
     "materials": run_materials_analysis,
+    "structural": run_structural_analysis,
 }
 
 

@@ -6,6 +6,8 @@ from app.services.analysis.structural import (
     analyze_heavy_zone_placement,
     analyze_load_concentration,
     BOAT_CLASS_DEFAULTS,
+    run_structural_analysis,
+    SEVERITY_ORDER,
 )
 
 
@@ -205,3 +207,92 @@ def test_load_no_zones():
     config = _default_config()
     score, warnings, metrics = analyze_load_concentration([], config)
     assert score == 50.0
+
+
+# ---------------------------------------------------------------------------
+# Integration
+# ---------------------------------------------------------------------------
+
+
+def test_full_structural_analysis():
+    """Complete layout -> valid result structure with all 4 sub-scores."""
+    zones = [
+        make_zone("cockpit", "cockpit", polygon=[[0, 0], [3800, 0], [3800, 2500], [0, 2500]]),
+        make_zone("salon", "salon", polygon=[[0, 2500], [3800, 2500], [3800, 5500], [0, 5500]]),
+        make_zone("engine", "engine", polygon=[[1800, 0], [3800, 0], [3800, 1500], [1800, 1500]]),
+        make_zone("cabin", "cabin", polygon=[[500, 7500], [3300, 7500], [3300, 10000], [500, 10000]]),
+    ]
+    result = run_structural_analysis(zones, [], "cruising_sail")
+    assert result["module"] == "structural"
+    assert 0 <= result["overall_score"] <= 100
+    assert "fore_aft" in result["sub_scores"]
+    assert "lateral" in result["sub_scores"]
+    assert "heavy_placement" in result["sub_scores"]
+    assert "load_concentration" in result["sub_scores"]
+    assert len(result["sub_scores"]) == 4
+
+
+def test_structural_warnings_sorted():
+    """Warnings sorted: critical -> warning -> info."""
+    zones = [
+        make_zone("engine", "engine", polygon=[[0, 0], [1000, 0], [1000, 500], [0, 500]]),
+        make_zone("cabin", "cabin", polygon=[[0, 0], [10000, 0], [10000, 100], [0, 100]]),
+    ]
+    result = run_structural_analysis(zones, [], "cruising_sail")
+    severities = [w["severity"] for w in result["warnings"]]
+    order = [SEVERITY_ORDER.get(s, 2) for s in severities]
+    assert order == sorted(order)
+
+
+def test_structural_boat_class_difference():
+    """Different boat classes produce different scores."""
+    zones = [
+        make_zone("salon", "salon", polygon=[[3000, 0], [7000, 0], [7000, 3000], [3000, 3000]]),
+        make_zone("engine", "engine", polygon=[[4000, 0], [6000, 0], [6000, 1500], [4000, 1500]]),
+    ]
+    result_sail = run_structural_analysis(zones, [], "small_sail")
+    result_motor = run_structural_analysis(zones, [], "large_motor")
+    # Different ideal ranges -> different scores
+    assert result_sail["overall_score"] != result_motor["overall_score"]
+
+
+def test_structural_config_overrides():
+    """Config overrides applied and stored in config_used."""
+    zones = [make_zone("salon", "salon")]
+    result = run_structural_analysis(zones, [], "cruising_sail",
+                                     config_overrides={"lateral_tolerance_pct": 0.15})
+    assert result["config_used"]["lateral_tolerance_pct"] == 0.15
+
+
+def test_structural_empty_input():
+    """No zones -> short-circuit: score 50, single STRUCTURAL_NO_ZONES warning."""
+    result = run_structural_analysis([], [], "cruising_sail")
+    assert result["overall_score"] == 50.0
+    assert len(result["sub_scores"]) == 4
+    assert all(v == 50.0 for v in result["sub_scores"].values())
+    assert len(result["warnings"]) == 1
+    assert result["warnings"][0]["code"] == "STRUCTURAL_NO_ZONES"
+
+
+def test_structural_unknown_zone_type():
+    """Unknown zone_type uses 50 kg/m² fallback and emits no warning."""
+    zones = [
+        make_zone("custom", "lounge", polygon=[[3000, 0], [7000, 0], [7000, 3000], [3000, 3000]]),
+        make_zone("engine", "engine", polygon=[[4000, 0], [6000, 0], [6000, 1500], [4000, 1500]]),
+    ]
+    result = run_structural_analysis(zones, [], "cruising_sail")
+    assert 0 <= result["overall_score"] <= 100
+    # No warning about unknown zone type
+    assert not any("unbekannt" in w.get("message", "").lower() for w in result["warnings"])
+
+
+def test_structural_critical_severity_thresholds():
+    """Extreme deviation triggers critical severity."""
+    # Engine at bow extreme (X=0), light zone at stern — >10% deviation
+    zones = [
+        make_zone("engine", "engine", polygon=[[0, 0], [3000, 0], [3000, 3000], [0, 3000]]),
+        make_zone("foredeck", "foredeck", polygon=[[9000, 0], [12000, 0], [12000, 3000], [9000, 3000]]),
+    ]
+    result = run_structural_analysis(zones, [], "cruising_sail")
+    critical_warnings = [w for w in result["warnings"] if w["severity"] == "critical"]
+    assert len(critical_warnings) > 0

@@ -522,3 +522,97 @@ def analyze_load_concentration(
         "heaviest_segment": heaviest,
         "cv": round(cv, 4),
     }
+
+
+# ---------------------------------------------------------------------------
+# Orchestrator
+# ---------------------------------------------------------------------------
+
+
+def run_structural_analysis(
+    zones: list[dict],
+    passages: list[dict],
+    boat_class: str,
+    config_overrides: dict | None = None,
+) -> dict:
+    """Orchestrator — runs all structural (weight distribution) sub-analyses.
+
+    Args:
+        zones: Layout zones with polygon, zone_type, name.
+        passages: Unused — accepted for API pattern consistency.
+        boat_class: One of small_sail, cruising_sail, large_motor, superyacht.
+        config_overrides: Optional dict to override config values.
+
+    Returns a standardized result dict matching the AYDI analysis module contract.
+    """
+    if boat_class not in BOAT_CLASS_DEFAULTS:
+        raise ValueError(f"Unknown boat class: {boat_class}")
+
+    config = BOAT_CLASS_DEFAULTS[boat_class].copy()
+    weights = config.pop("weights").copy()
+
+    if config_overrides:
+        config.update(config_overrides)
+
+    # Short-circuit: no zones → score 50 + single info warning
+    if not zones:
+        return {
+            "module": "structural",
+            "overall_score": 50.0,
+            "sub_scores": {k: 50.0 for k in weights},
+            "warnings": [{
+                "code": "STRUCTURAL_NO_ZONES",
+                "severity": "info",
+                "message": "Keine Zonen für Strukturanalyse vorhanden.",
+                "suggestion": "Zonen dem Layout zuweisen.",
+            }],
+            "suggestions": ["Zonen dem Layout zuweisen."],
+            "metrics": {},
+            "config_used": config,
+        }
+
+    sub_scores: dict[str, float] = {}
+    all_warnings: list[dict] = []
+    all_suggestions: list[str] = []
+    all_metrics: dict[str, dict] = {}
+
+    analyses = [
+        ("fore_aft", lambda: analyze_fore_aft_balance(zones, config)),
+        ("lateral", lambda: analyze_lateral_balance(zones, config)),
+        ("heavy_placement", lambda: analyze_heavy_zone_placement(zones, config)),
+        ("load_concentration", lambda: analyze_load_concentration(zones, config)),
+    ]
+
+    for name, fn in analyses:
+        try:
+            score, warnings, metrics = fn()
+            sub_scores[name] = score
+            all_warnings.extend(warnings)
+            all_metrics[name] = metrics
+        except Exception:
+            logger.exception("Error in structural sub-analysis %s", name)
+            sub_scores[name] = 0.0
+            all_warnings.append({
+                "severity": "critical",
+                "message": f"Fehler bei Strukturanalyse: {name}",
+                "suggestion": "Layoutdaten überprüfen.",
+            })
+
+    overall = sum(sub_scores.get(k, 50.0) * w for k, w in weights.items())
+
+    for w in all_warnings:
+        suggestion = w.get("suggestion")
+        if suggestion and suggestion not in all_suggestions:
+            all_suggestions.append(suggestion)
+
+    all_warnings.sort(key=lambda w: SEVERITY_ORDER.get(w.get("severity", "info"), 2))
+
+    return {
+        "module": "structural",
+        "overall_score": round(overall, 1),
+        "sub_scores": {k: round(v, 1) for k, v in sub_scores.items()},
+        "warnings": all_warnings,
+        "suggestions": all_suggestions,
+        "metrics": all_metrics,
+        "config_used": config,
+    }
