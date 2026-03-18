@@ -82,9 +82,6 @@ MERIDIAN_PASSAGES = [
 
 
 async def seed():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
     async with async_session() as session:
         result = await session.execute(select(Project))
         if result.scalars().first():

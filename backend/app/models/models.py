@@ -1,10 +1,14 @@
 # backend/app/models/models.py
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
-from sqlalchemy import DateTime, Enum, Float, ForeignKey, Integer, String, Text, func
-from sqlalchemy.dialects.postgresql import JSON, UUID
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import JSON, Uuid
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
 
 
 class Base(DeclarativeBase):
@@ -14,24 +18,15 @@ class Base(DeclarativeBase):
 class Project(Base):
     __tablename__ = "projects"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
-    boat_class: Mapped[str] = mapped_column(
-        Enum("small_sail", "cruising_sail", "large_motor", "superyacht", name="boat_class_enum"),
-        nullable=False,
-    )
+    boat_class: Mapped[str] = mapped_column(String(20), nullable=False)
     length_m: Mapped[float] = mapped_column(Float, nullable=False)
     beam_m: Mapped[float] = mapped_column(Float, nullable=False)
-    status: Mapped[str] = mapped_column(
-        Enum("draft", "active", "review", "archived", name="project_status_enum"),
-        nullable=False,
-        default="draft",
-    )
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
-    )
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="draft")
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, onupdate=_utcnow)
 
     layouts: Mapped[list["Layout"]] = relationship(back_populates="project", cascade="all, delete-orphan")
     analysis_results: Mapped[list["AnalysisResult"]] = relationship(
@@ -42,7 +37,7 @@ class Project(Base):
 class Layout(Base):
     __tablename__ = "layouts"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     project_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     version: Mapped[str] = mapped_column(String(50), default="v1.0")
@@ -51,10 +46,8 @@ class Layout(Base):
     zones: Mapped[dict | list] = mapped_column(JSON, default=list)
     passages: Mapped[dict | list] = mapped_column(JSON, default=list)
     deck_height_mm: Mapped[int] = mapped_column(Integer, default=2100)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, onupdate=_utcnow)
 
     project: Mapped["Project"] = relationship(back_populates="layouts")
     analysis_results: Mapped[list["AnalysisResult"]] = relationship(
@@ -65,7 +58,7 @@ class Layout(Base):
 class AnalysisResult(Base):
     __tablename__ = "analysis_results"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     project_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
     layout_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("layouts.id", ondelete="CASCADE"), nullable=False)
     module: Mapped[str] = mapped_column(String(50), nullable=False)
@@ -75,7 +68,7 @@ class AnalysisResult(Base):
     suggestions: Mapped[list] = mapped_column(JSON, default=list)
     metrics: Mapped[dict] = mapped_column(JSON, default=dict)
     config_used: Mapped[dict] = mapped_column(JSON, default=dict)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
 
     project: Mapped["Project"] = relationship(back_populates="analysis_results")
     layout: Mapped["Layout"] = relationship(back_populates="analysis_results")
@@ -85,7 +78,7 @@ class AnalysisResult(Base):
 class Zone(Base):
     __tablename__ = "zones"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     layout_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("layouts.id", ondelete="CASCADE"), nullable=False)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     zone_type: Mapped[str] = mapped_column(String(50), nullable=False)
@@ -97,7 +90,7 @@ class Zone(Base):
 class Passage(Base):
     __tablename__ = "passages"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     layout_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("layouts.id", ondelete="CASCADE"), nullable=False)
     from_zone: Mapped[str] = mapped_column(String(100), nullable=False)
     to_zone: Mapped[str] = mapped_column(String(100), nullable=False)
