@@ -25,9 +25,11 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
   const [selectedLayout, setSelectedLayout] = useState<Layout | null>(null)
   const [selectedAnalysis, setSelectedAnalysis] = useState<AnalysisResult | null>(null)
   const [analyzing, setAnalyzing] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    setLoading(true)
     Promise.all([
       getProject(projectId),
       listLayouts(projectId),
@@ -41,6 +43,7 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
         if (a.length > 0) setSelectedAnalysis(a[0])
       })
       .catch((e) => setError(e.message))
+      .finally(() => setLoading(false))
   }, [projectId])
 
   const handleRunAnalysis = async (module: string) => {
@@ -56,6 +59,14 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
     } finally {
       setAnalyzing(false)
     }
+  }
+
+  if (loading) {
+    return <div className="text-navy-400">Lade...</div>
+  }
+
+  if (error && !project) {
+    return <div className="text-red-400">Fehler: {error}</div>
   }
 
   if (!project) {

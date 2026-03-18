@@ -16,7 +16,9 @@ export default function App() {
   }
 
   const handleNavigate = (target: string) => {
-    setView(target as View)
+    if (target === 'dashboard' || target === 'project-detail' || target === 'project-create') {
+      setView(target)
+    }
   }
 
   const handleProjectCreated = (id: string) => {

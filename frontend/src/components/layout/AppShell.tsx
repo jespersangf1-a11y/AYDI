@@ -1,4 +1,4 @@
-import { Anchor, BarChart3, FolderOpen, Plus } from 'lucide-react'
+import { Anchor, BarChart3, Plus } from 'lucide-react'
 
 interface AppShellProps {
   currentView: string
