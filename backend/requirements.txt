@@ -1,0 +1,16 @@
+# backend/requirements.txt
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+sqlalchemy[asyncio]==2.0.36
+asyncpg==0.30.0
+pydantic==2.10.3
+pydantic-settings==2.7.0
+alembic==1.14.0
+ezdxf==0.19.2
+shapely==2.0.6
+numpy==2.2.1
+scipy==1.15.0
+python-multipart==0.0.20
+httpx==0.28.1
+pytest==8.3.4
+pytest-asyncio==0.25.0
