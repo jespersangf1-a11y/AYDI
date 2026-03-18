@@ -1,4 +1,4 @@
-"""Tests for production friendliness analysis module — Tasks 1, 2, 3 & 4."""
+"""Tests for production friendliness analysis module — Tasks 1, 2, 3, 4 & 5."""
 from tests.conftest import make_passage, make_zone
 
 from app.services.analysis.production import (
@@ -7,7 +7,9 @@ from app.services.analysis.production import (
     analyze_service_access,
     analyze_standardization,
     analyze_cable_routing,
+    run_production_analysis,
     BOAT_CLASS_DEFAULTS,
+    SEVERITY_ORDER,
 )
 
 
@@ -326,3 +328,89 @@ def test_cable_routing_no_system_zones():
     score, warnings, metrics = analyze_cable_routing(zones, [], config)
     assert score == 50.0
     assert any(w["severity"] == "info" for w in warnings)
+
+
+# ---------------------------------------------------------------------------
+# Integration
+# ---------------------------------------------------------------------------
+
+
+def test_full_production_analysis():
+    """Complete layout -> valid result structure with all 5 sub-scores."""
+    zones = [
+        make_zone("cockpit", "cockpit"),
+        make_zone("salon", "salon", polygon=[[3000, 0], [7000, 0], [7000, 4000], [3000, 4000]]),
+        make_zone("cabin1", "cabin", polygon=[[0, 0], [2000, 0], [2000, 700], [0, 700]]),
+        make_zone("engine", "engine", polygon=[[7000, 1000], [9000, 1000], [9000, 3000], [7000, 3000]]),
+        make_zone("helm", "helm"),
+        make_zone("head", "head"),
+        make_zone("pantry", "pantry"),
+    ]
+    passages = [
+        make_passage("cockpit", "salon", width_mm=700),
+        make_passage("salon", "cabin1", width_mm=600),
+        make_passage("salon", "engine", width_mm=700),
+        make_passage("salon", "helm", width_mm=600),
+        make_passage("salon", "head", width_mm=600),
+        make_passage("salon", "pantry", width_mm=600),
+    ]
+    result = run_production_analysis(zones, passages, "cruising_sail")
+    assert result["module"] == "production"
+    assert 0 <= result["overall_score"] <= 100
+    assert "assembly_sequence" in result["sub_scores"]
+    assert "form_complexity" in result["sub_scores"]
+    assert "service_access" in result["sub_scores"]
+    assert "standardization" in result["sub_scores"]
+    assert "cable_routing" in result["sub_scores"]
+    assert len(result["sub_scores"]) == 5
+
+
+def test_production_warnings_sorted():
+    """Warnings should be sorted: critical -> warning -> info."""
+    zones = [
+        make_zone("engine", "engine"),
+        make_zone("helm", "helm"),
+    ]
+    result = run_production_analysis(zones, [], "cruising_sail")
+    severities = [w["severity"] for w in result["warnings"]]
+    order = [SEVERITY_ORDER.get(s, 2) for s in severities]
+    assert order == sorted(order)
+
+
+def test_production_boat_class_difference():
+    """Different boat classes produce different scores."""
+    zones = [
+        make_zone("cockpit", "cockpit"),
+        make_zone("salon", "salon"),
+        make_zone("engine", "engine"),
+        make_zone("helm", "helm"),
+        make_zone("head", "head"),
+        make_zone("cabin1", "cabin", polygon=[[0, 0], [2000, 0], [2000, 700], [0, 700]]),
+    ]
+    passages = [
+        make_passage("cockpit", "salon", width_mm=600),
+        make_passage("salon", "engine", width_mm=600),
+        make_passage("salon", "helm", width_mm=600),
+        make_passage("salon", "head", width_mm=600),
+        make_passage("salon", "cabin1", width_mm=600),
+    ]
+    result_small = run_production_analysis(zones, passages, "small_sail")
+    result_super = run_production_analysis(zones, passages, "superyacht")
+    assert result_small["overall_score"] != result_super["overall_score"]
+
+
+def test_production_config_overrides():
+    """Config overrides are applied and stored in config_used."""
+    zones = [make_zone("cockpit", "cockpit"), make_zone("cabin1", "cabin")]
+    passages = [make_passage("cockpit", "cabin1")]
+    result = run_production_analysis(zones, passages, "cruising_sail",
+                                     config_overrides={"min_service_access_mm": 900})
+    assert result["config_used"]["min_service_access_mm"] == 900
+
+
+def test_production_empty_input():
+    """Empty zones and passages -> degraded scores, no crash."""
+    result = run_production_analysis([], [], "cruising_sail")
+    assert 0 <= result["overall_score"] <= 100
+    assert len(result["sub_scores"]) == 5
+    assert len(result["warnings"]) > 0

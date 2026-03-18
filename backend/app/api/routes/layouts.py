@@ -19,6 +19,7 @@ from app.services.analysis.ergonomics import run_ergonomics_analysis
 from app.services.analysis.volume_storage import run_volume_storage_analysis
 from app.services.analysis.emotional import run_emotional_analysis
 from app.services.analysis.compliance import run_compliance_analysis
+from app.services.analysis.production import run_production_analysis
 from app.services.dxf.parser import parse_dxf
 
 logger = logging.getLogger(__name__)
@@ -30,6 +31,7 @@ ANALYSIS_MODULES = {
     "volume_storage": run_volume_storage_analysis,
     "emotional": run_emotional_analysis,
     "compliance": run_compliance_analysis,
+    "production": run_production_analysis,
 }
 
 
