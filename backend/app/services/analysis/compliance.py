@@ -113,6 +113,7 @@ SEVERITY_ORDER = {"critical": 0, "warning": 1, "info": 2}
 
 _SLEEPING_ZONE_TYPES = {"cabin", "crew_quarters"}
 _LIVING_ZONE_TYPES = {"salon", "cabin", "pantry", "crew_quarters", "helm"}
+_HEAVY_ZONE_TYPES = {"engine", "storage"}
 
 
 # ---------------------------------------------------------------------------
@@ -423,6 +424,251 @@ def analyze_fire_safety(
         "engine_zones": len(engine_zones),
         "min_clearance_mm": round(min_dist) if min_dist is not None else None,
         "engine_accessible": engine_accessible,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Sub-analysis: stability impact (ISO 12217)
+# ---------------------------------------------------------------------------
+
+
+def analyze_stability_impact(
+    zones: list[dict],
+    config: dict,
+) -> tuple[float, list[dict], dict]:
+    """Check stability impact by evaluating Y-axis balance of heavy zones (ISO 12217).
+
+    Heavy zones (engine, storage) should be centered on the Y-axis.
+    Significant deviation from the Y-centerline indicates a potential stability risk.
+
+    Returns (score 0-100, warnings, metrics).
+    """
+    warnings: list[dict] = []
+    norm_ref = config.get("norm_versions", {}).get("ISO_12217", "2015")
+
+    heavy_zones = [z for z in zones if z["zone_type"] in _HEAVY_ZONE_TYPES]
+
+    if not heavy_zones:
+        warnings.append({
+            "code": "ISO_12217_NO_HEAVY_ZONES",
+            "severity": "info",
+            "message": "Keine schweren Zonen (Maschine/Stauraum) gefunden — Stabilitätsprüfung nicht vollständig durchführbar.",
+            "suggestion": "Maschinen- und Stauraumzonen zum Layout hinzufügen.",
+            "norm": f"ISO 12217:{norm_ref}",
+        })
+        return 50.0, warnings, {"heavy_zones": 0, "y_deviation_ratio": 0.0}
+
+    # Compute layout Y-center from bounding box of ALL zones
+    all_y: list[float] = []
+    for z in zones:
+        poly = z.get("polygon") or []
+        for pt in poly:
+            if len(pt) >= 2:
+                all_y.append(pt[1])
+
+    if not all_y:
+        return 50.0, warnings, {"heavy_zones": len(heavy_zones), "y_deviation_ratio": 0.0}
+
+    y_min = min(all_y)
+    y_max = max(all_y)
+    half_beam = (y_max - y_min) / 2.0
+
+    if half_beam == 0:
+        return 50.0, warnings, {"heavy_zones": len(heavy_zones), "y_deviation_ratio": 0.0}
+
+    y_center = y_min + half_beam
+
+    # Compute average Y-deviation ratio for heavy zones
+    deviations: list[float] = []
+    for z in heavy_zones:
+        _, cy = _centroid(z.get("polygon") or [])
+        deviation_ratio = abs(cy - y_center) / half_beam
+        deviations.append(deviation_ratio)
+
+    avg_deviation = sum(deviations) / len(deviations)
+
+    if avg_deviation > 0.3:
+        warnings.append({
+            "code": "ISO_12217_STABILITY_IMBALANCE",
+            "severity": "warning",
+            "message": (
+                f"Schwere Zonen (Maschine/Stauraum) sind nicht ausreichend zentriert "
+                f"(Y-Abweichung: {avg_deviation:.1%}, ISO 12217:{norm_ref})."
+            ),
+            "suggestion": "Schwere Zonen näher zur Längsachse des Bootes verschieben.",
+            "norm": f"ISO 12217:{norm_ref}",
+        })
+
+    score = max(0.0, (1.0 - avg_deviation) * 100.0)
+
+    return score, warnings, {
+        "heavy_zones": len(heavy_zones),
+        "y_deviation_ratio": round(avg_deviation, 4),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Sub-analysis: railing requirements (ISO 15085)
+# ---------------------------------------------------------------------------
+
+
+def analyze_railing_requirements(
+    zones: list[dict],
+    config: dict,
+) -> tuple[float, list[dict], dict]:
+    """Check railing compliance for exposed deck zones per ISO 15085.
+
+    Each zone whose zone_type is in required_railing_zones is checked for
+    the `has_railing` property:
+    - True  → compliant
+    - False → critical violation
+    - missing → info (data not available)
+
+    Returns (score 0-100, warnings, metrics).
+    """
+    warnings: list[dict] = []
+    norm_ref = config.get("norm_versions", {}).get("ISO_15085", "2003")
+
+    required_types: list[str] = config.get("required_railing_zones", [])
+    required_zones = [z for z in zones if z["zone_type"] in required_types]
+
+    if not required_zones:
+        return 100.0, warnings, {"zones_checked": 0, "zones_compliant": 0}
+
+    total = len(required_zones)
+    compliant = 0
+    violations = 0
+
+    for z in required_zones:
+        name = z["name"]
+        props = z.get("properties") or {}
+        has_railing = props.get("has_railing")
+
+        if has_railing is True:
+            compliant += 1
+        elif has_railing is False:
+            violations += 1
+            warnings.append({
+                "code": "ISO_15085_RAILING_MISSING",
+                "severity": "critical",
+                "message": (
+                    f"Zone '{name}' hat kein Reling/Sicherungsgeländer "
+                    f"(ISO 15085:{norm_ref})."
+                ),
+                "suggestion": f"Reling/Sicherungsgeländer für Zone '{name}' gemäß ISO 15085 vorsehen.",
+                "norm": f"ISO 15085:{norm_ref}",
+            })
+        else:
+            # has_railing is None or key is missing
+            warnings.append({
+                "code": "ISO_15085_RAILING_DATA_MISSING",
+                "severity": "info",
+                "message": (
+                    f"Zone '{name}': Reling-Eigenschaft nicht angegeben "
+                    f"(ISO 15085:{norm_ref})."
+                ),
+                "suggestion": f"Reling-Status für Zone '{name}' in den Zoneneigenschaften hinterlegen.",
+                "norm": f"ISO 15085:{norm_ref}",
+            })
+
+    if violations > 0:
+        score = max(0.0, (1.0 - violations / total) * 100.0)
+    elif compliant == 0:
+        # Only info warnings (missing data) — uncertain, penalize partially
+        score = 50.0
+    else:
+        score = 100.0
+
+    return score, warnings, {"zones_checked": total, "zones_compliant": compliant}
+
+
+# ---------------------------------------------------------------------------
+# Sub-analysis: electrical access (ISO 10133 / ISO 13297)
+# ---------------------------------------------------------------------------
+
+
+def analyze_electrical_access(
+    zones: list[dict],
+    passages: list[dict],
+    config: dict,
+) -> tuple[float, list[dict], dict]:
+    """Check electrical compartment accessibility and sizing per ISO 10133 / ISO 13297.
+
+    Uses engine zones as proxy for the electrical compartment.
+    Checks:
+    1. Total engine zone area vs min_electrical_area_sqm.
+    2. Engine zone reachable via passages (BFS connectivity > 1 node).
+
+    Returns (score 0-100, warnings, metrics).
+    """
+    warnings: list[dict] = []
+    norm_ref_10133 = config.get("norm_versions", {}).get("ISO_10133", "2012")
+    norm_ref_13297 = config.get("norm_versions", {}).get("ISO_13297", "2014")
+    norm_label = f"ISO 10133:{norm_ref_10133} / ISO 13297:{norm_ref_13297}"
+
+    engine_zones = [z for z in zones if z["zone_type"] == "engine"]
+
+    if not engine_zones:
+        warnings.append({
+            "code": "ISO_10133_NO_ENGINE",
+            "severity": "info",
+            "message": "Kein Maschinenraum im Layout — Elektrische Zugänglichkeitsprüfung nicht durchführbar.",
+            "suggestion": "Maschinenraum-Zone zum Layout hinzufügen.",
+            "norm": norm_label,
+        })
+        return 50.0, warnings, {"engine_area_sqm": 0.0, "accessible": False}
+
+    min_area = config.get("min_electrical_area_sqm", 0.5)
+
+    # --- Area check ---
+    total_area = sum(_polygon_area_sqm(z.get("polygon") or []) for z in engine_zones)
+
+    if total_area < min_area:
+        area_score = (total_area / min_area) * 80.0 if min_area > 0 else 0.0
+        warnings.append({
+            "code": "ISO_10133_ELECTRICAL_AREA_TOO_SMALL",
+            "severity": "warning",
+            "message": (
+                f"Elektrischer Zugangsbereich zu klein "
+                f"({total_area:.2f} m², Minimum: {min_area:.2f} m², {norm_label})."
+            ),
+            "suggestion": f"Maschinenraum-/Elektrozugang auf mindestens {min_area:.2f} m² vergrößern.",
+            "norm": norm_label,
+        })
+    else:
+        area_score = 100.0
+
+    # --- Accessibility check (BFS) ---
+    graph = _build_adjacency(passages)
+    engine_names = {z["name"] for z in engine_zones}
+
+    accessible = False
+    for eng_name in engine_names:
+        reachable = _bfs_reachable(graph, eng_name)
+        if len(reachable) > 1:
+            accessible = True
+            break
+
+    if not accessible:
+        access_score = 0.0
+        warnings.append({
+            "code": "ISO_10133_ELECTRICAL_INACCESSIBLE",
+            "severity": "critical",
+            "message": (
+                f"Maschinenraum/Elektroanlage nicht über Durchgänge erreichbar "
+                f"({norm_label})."
+            ),
+            "suggestion": "Zugang zum Maschinenraum über mindestens einen Durchgang sicherstellen.",
+            "norm": norm_label,
+        })
+    else:
+        access_score = 100.0
+
+    combined_score = area_score * 0.5 + access_score * 0.5
+
+    return combined_score, warnings, {
+        "engine_area_sqm": round(total_area, 2),
+        "accessible": accessible,
     }
 
 

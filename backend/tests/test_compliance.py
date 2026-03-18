@@ -3,6 +3,9 @@ from tests.conftest import make_passage, make_zone
 from app.services.analysis.compliance import (
     analyze_escape_routes,
     analyze_fire_safety,
+    analyze_stability_impact,
+    analyze_railing_requirements,
+    analyze_electrical_access,
     BOAT_CLASS_DEFAULTS,
 )
 
@@ -160,3 +163,144 @@ def test_fire_safety_engine_inaccessible():
     score, warnings, metrics = analyze_fire_safety(zones, passages, config)
     assert any(w["severity"] == "critical" for w in warnings)
     assert metrics["engine_accessible"] is False
+
+
+# ---------------------------------------------------------------------------
+# analyze_stability_impact
+# ---------------------------------------------------------------------------
+
+
+def test_stability_centered():
+    """Engine on centerline -> high score."""
+    zones = [
+        make_zone("engine", "engine", polygon=[[4000, 1000], [6000, 1000], [6000, 3000], [4000, 3000]]),
+        make_zone("salon", "salon", polygon=[[0, 0], [4000, 0], [4000, 4000], [0, 4000]]),
+    ]
+    config = _default_config()
+    score, warnings, metrics = analyze_stability_impact(zones, config)
+    assert score >= 80.0
+    assert metrics["y_deviation_ratio"] < 0.3
+
+
+def test_stability_no_heavy_zones():
+    """No engine/storage -> score 50, info."""
+    zones = [make_zone("salon", "salon")]
+    config = _default_config()
+    score, warnings, metrics = analyze_stability_impact(zones, config)
+    assert score == 50.0
+    assert any(w["severity"] == "info" for w in warnings)
+
+
+def test_stability_off_center():
+    """Engine far from Y-centerline -> warning."""
+    zones = [
+        make_zone("engine", "engine", polygon=[[4000, 0], [6000, 0], [6000, 500], [4000, 500]]),
+        make_zone("salon", "salon", polygon=[[0, 0], [4000, 0], [4000, 4000], [0, 4000]]),
+    ]
+    config = _default_config()
+    # Layout Y range: 0-4000, center = 2000
+    # Engine centroid Y = 250, deviation = |250-2000|/2000 = 0.875
+    score, warnings, metrics = analyze_stability_impact(zones, config)
+    assert score < 50.0
+    assert any(w["severity"] == "warning" for w in warnings)
+    assert metrics["y_deviation_ratio"] > 0.3
+
+
+# ---------------------------------------------------------------------------
+# analyze_railing_requirements
+# ---------------------------------------------------------------------------
+
+
+def test_railing_compliant():
+    """Cockpit with has_railing=True -> score 100."""
+    zones = [
+        make_zone("cockpit", "cockpit", properties={"has_railing": True}),
+        make_zone("foredeck", "foredeck", properties={"has_railing": True}),
+    ]
+    config = _default_config()
+    score, warnings, metrics = analyze_railing_requirements(zones, config)
+    assert score == 100.0
+    assert metrics["zones_compliant"] == 2
+
+
+def test_railing_no_deck_zones():
+    """No exposed deck zones -> score 100."""
+    zones = [make_zone("salon", "salon")]
+    config = _default_config()
+    score, warnings, metrics = analyze_railing_requirements(zones, config)
+    assert score == 100.0
+    assert metrics["zones_checked"] == 0
+
+
+def test_railing_violation():
+    """Cockpit with has_railing=False -> critical."""
+    zones = [
+        make_zone("cockpit", "cockpit", properties={"has_railing": False}),
+    ]
+    config = _default_config()
+    score, warnings, metrics = analyze_railing_requirements(zones, config)
+    assert score < 100.0
+    assert any(w["severity"] == "critical" for w in warnings)
+
+
+def test_railing_no_data():
+    """Cockpit without has_railing property -> info warning, score 50."""
+    zones = [make_zone("cockpit", "cockpit")]
+    config = _default_config()
+    score, warnings, metrics = analyze_railing_requirements(zones, config)
+    assert score == 50.0
+    assert any(w["severity"] == "info" for w in warnings)
+
+
+# ---------------------------------------------------------------------------
+# analyze_electrical_access
+# ---------------------------------------------------------------------------
+
+
+def test_electrical_good():
+    """Engine zone adequate size and accessible -> high score."""
+    zones = [
+        make_zone("engine", "engine", polygon=[[0, 0], [2000, 0], [2000, 2000], [0, 2000]]),
+        make_zone("salon", "salon"),
+    ]
+    passages = [make_passage("engine", "salon")]
+    config = _default_config()
+    score, warnings, metrics = analyze_electrical_access(zones, passages, config)
+    assert score >= 80.0
+    assert metrics["accessible"] is True
+
+
+def test_electrical_no_engine():
+    """No engine zone -> score 50, info."""
+    zones = [make_zone("salon", "salon")]
+    config = _default_config()
+    score, warnings, metrics = analyze_electrical_access(zones, [], config)
+    assert score == 50.0
+    assert any(w["severity"] == "info" for w in warnings)
+
+
+def test_electrical_too_small():
+    """Engine zone below minimum area -> warning."""
+    zones = [
+        make_zone("engine", "engine", polygon=[[0, 0], [500, 0], [500, 500], [0, 500]]),
+        make_zone("salon", "salon"),
+    ]
+    passages = [make_passage("engine", "salon")]
+    config = _default_config()  # min_electrical_area_sqm = 0.5
+    # Engine area = 0.25 sqm < 0.5
+    score, warnings, metrics = analyze_electrical_access(zones, passages, config)
+    assert score < 100.0
+    assert any(w["severity"] == "warning" for w in warnings)
+
+
+def test_electrical_inaccessible():
+    """Engine not connected via passages -> critical."""
+    zones = [
+        make_zone("engine", "engine", polygon=[[0, 0], [2000, 0], [2000, 2000], [0, 2000]]),
+        make_zone("salon", "salon"),
+    ]
+    passages = []
+    config = _default_config()
+    score, warnings, metrics = analyze_electrical_access(zones, passages, config)
+    assert any(w["severity"] == "critical" for w in warnings)
+    assert metrics["accessible"] is False
