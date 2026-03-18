@@ -165,6 +165,12 @@ async def delete_zone_material(
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
+        select(Layout).where(Layout.id == layout_id, Layout.project_id == project_id)
+    )
+    if not result.scalar_one_or_none():
+        raise HTTPException(status_code=404, detail="Layout nicht gefunden")
+
+    result = await db.execute(
         select(ZoneMaterial).where(
             ZoneMaterial.id == zone_material_id,
             ZoneMaterial.layout_id == layout_id,
