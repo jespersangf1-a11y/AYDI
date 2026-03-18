@@ -53,6 +53,9 @@ class Layout(Base):
     analysis_results: Mapped[list["AnalysisResult"]] = relationship(
         back_populates="layout", cascade="all, delete-orphan"
     )
+    zone_materials: Mapped[list["ZoneMaterial"]] = relationship(
+        back_populates="layout", cascade="all, delete-orphan"
+    )
 
 
 class AnalysisResult(Base):
@@ -96,3 +99,39 @@ class Passage(Base):
     to_zone: Mapped[str] = mapped_column(String(100), nullable=False)
     width_mm: Mapped[float] = mapped_column(Float, nullable=False)
     is_primary: Mapped[bool] = mapped_column(default=True)
+
+
+class Material(Base):
+    __tablename__ = "materials"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    category: Mapped[str] = mapped_column(String(50), nullable=False)
+    subcategory: Mapped[str] = mapped_column(String(50), nullable=False)
+    manufacturer: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    properties: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    cost_per_unit: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    cost_unit: Mapped[str] = mapped_column(String(20), nullable=False, default="sqm")
+    lifespan_years: Mapped[float | None] = mapped_column(Float, nullable=True)
+    maintenance_interval_months: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    maintenance_cost_factor: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    known_issues: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    alternatives: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, onupdate=_utcnow)
+
+
+class ZoneMaterial(Base):
+    __tablename__ = "zone_materials"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    layout_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("layouts.id", ondelete="CASCADE"), nullable=False)
+    zone_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    surface_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    material_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("materials.id", ondelete="CASCADE"), nullable=False)
+    area_sqm: Mapped[float] = mapped_column(Float, nullable=False)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
+
+    material: Mapped["Material"] = relationship()
+    layout: Mapped["Layout"] = relationship(back_populates="zone_materials")
