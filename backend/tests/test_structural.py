@@ -2,6 +2,7 @@
 from tests.conftest import make_zone
 from app.services.analysis.structural import (
     analyze_fore_aft_balance,
+    analyze_lateral_balance,
     BOAT_CLASS_DEFAULTS,
 )
 
@@ -62,4 +63,44 @@ def test_fore_aft_no_zones():
     config = _default_config()
     score, warnings, metrics = analyze_fore_aft_balance([], config)
     assert score == 50.0
-    assert any(w["severity"] == "info" for w in warnings)
+    assert any(w["code"] == "STRUCTURAL_NO_ZONES" and w["severity"] == "info" for w in warnings)
+
+
+# ---------------------------------------------------------------------------
+# analyze_lateral_balance
+# ---------------------------------------------------------------------------
+
+
+def test_lateral_centered():
+    """Symmetric layout -> score 100."""
+    zones = [
+        make_zone("salon", "salon", polygon=[[4000, 500], [6000, 500], [6000, 2500], [4000, 2500]]),
+        make_zone("engine", "engine", polygon=[[4000, 500], [6000, 500], [6000, 2500], [4000, 2500]]),
+    ]
+    config = _default_config()  # lateral_tolerance_pct = 0.05
+    score, warnings, metrics = analyze_lateral_balance(zones, config)
+    assert score == 100.0
+    assert abs(metrics["offset_from_center_pct"]) < 0.01
+
+
+def test_lateral_offset():
+    """Asymmetric layout -> warning, lower score."""
+    # Heavy engine on starboard (low Y), light salon on port (high Y)
+    # Y span 0-4000, engine centroid Y=1000, salon centroid Y=3000
+    # Weighted CoG_y ≈ 34%, offset ≈ 16% >> 5% tolerance
+    zones = [
+        make_zone("engine", "engine", polygon=[[4000, 0], [6000, 0], [6000, 2000], [4000, 2000]]),
+        make_zone("salon", "salon", polygon=[[4000, 2000], [6000, 2000], [6000, 4000], [4000, 4000]]),
+    ]
+    config = _default_config()  # lateral_tolerance_pct = 0.05
+    score, warnings, metrics = analyze_lateral_balance(zones, config)
+    assert score < 100.0
+    assert any(w["code"] == "COG_LATERAL_OFFSET" for w in warnings)
+
+
+def test_lateral_no_zones():
+    """No zones -> score 50, info."""
+    config = _default_config()
+    score, warnings, metrics = analyze_lateral_balance([], config)
+    assert score == 50.0
+    assert any(w["code"] == "STRUCTURAL_NO_ZONES" and w["severity"] == "info" for w in warnings)

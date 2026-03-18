@@ -128,8 +128,8 @@ def _polygon_centroid(polygon: list[list[float]]) -> tuple[float, float]:
         cx = sum(p[0] for p in polygon) / n
         cy = sum(p[1] for p in polygon) / n
         return cx, cy
-    cx /= 6.0 * signed_area
-    cy /= 6.0 * signed_area
+    cx /= 6.0 * abs(signed_area)
+    cy /= 6.0 * abs(signed_area)
     return cx, cy
 
 
@@ -212,6 +212,7 @@ def analyze_fore_aft_balance(
             deviation = ideal_range[0] - cog_x_pct
         else:
             deviation = cog_x_pct - ideal_range[1]
+        # 6.67 per percentage point → score reaches 0 at 15 pp deviation
         score = max(0.0, 100.0 - deviation * 100.0 * 6.67)
 
     # Warnings
@@ -242,4 +243,78 @@ def analyze_fore_aft_balance(
         "cog_x_pct": round(cog_x_pct, 4),
         "ideal_range": list(ideal_range),
         "deviation_pct": round(deviation, 4),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Sub-analysis: Lateral balance
+# ---------------------------------------------------------------------------
+
+
+def analyze_lateral_balance(
+    zones: list[dict],
+    config: dict,
+) -> tuple[float, list[dict], dict]:
+    """Evaluate port-starboard weight balance via weighted Y-centroid.
+
+    Returns (score 0-100, warnings, metrics).
+    """
+    warnings: list[dict] = []
+
+    if not zones:
+        warnings.append({
+            "code": "STRUCTURAL_NO_ZONES",
+            "severity": "info",
+            "message": "Keine Zonen für Querverteilungsanalyse vorhanden.",
+            "suggestion": "Zonen dem Layout zuweisen.",
+        })
+        return 50.0, warnings, {"cog_y_pct": 0.5, "offset_from_center_pct": 0.0, "tolerance_pct": 0.0}
+
+    weight_factor = config.get("boat_class_weight_factor", 1.0)
+    tolerance = config.get("lateral_tolerance_pct", 0.05)
+    _, _, min_y, max_y = _get_boat_extents(zones)
+    y_span = max_y - min_y
+
+    if y_span < 1e-6:
+        return 100.0, warnings, {"cog_y_pct": 0.5, "offset_from_center_pct": 0.0, "tolerance_pct": tolerance}
+
+    total_weight = 0.0
+    weighted_y = 0.0
+
+    for z in zones:
+        w = _estimate_zone_weight(z, weight_factor)
+        _, cy = _polygon_centroid(z.get("polygon", []))
+        total_weight += w
+        weighted_y += cy * w
+
+    if total_weight < 1e-6:
+        return 50.0, warnings, {"cog_y_pct": 0.5, "offset_from_center_pct": 0.0, "tolerance_pct": tolerance}
+
+    cog_y = weighted_y / total_weight
+    cog_y_pct = (cog_y - min_y) / y_span
+    offset = abs(cog_y_pct - 0.5)
+
+    if offset <= tolerance:
+        score = 100.0
+    else:
+        excess = offset - tolerance
+        # 10 per percentage point -> score reaches 0 at 10 pp beyond tolerance
+        score = max(0.0, 100.0 - excess * 100.0 * 10.0)
+
+    if offset > tolerance:
+        severity = "critical" if offset > tolerance * 2 else "warning"
+        warnings.append({
+            "code": "COG_LATERAL_OFFSET",
+            "severity": severity,
+            "message": (
+                f"Gewichtsschwerpunkt {offset:.1%} seitlich versetzt — "
+                f"Toleranz: ±{tolerance:.0%} von Mittschiffs."
+            ),
+            "suggestion": "Schwere Ausrüstung symmetrischer verteilen.",
+        })
+
+    return score, warnings, {
+        "cog_y_pct": round(cog_y_pct, 4),
+        "offset_from_center_pct": round(offset, 4),
+        "tolerance_pct": tolerance,
     }
