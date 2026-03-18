@@ -362,6 +362,340 @@ def analyze_form_complexity(
 
 
 # ---------------------------------------------------------------------------
+# Sub-analysis 3: Service Access
+# ---------------------------------------------------------------------------
+
+def analyze_service_access(
+    zones: list[dict],
+    passages: list[dict],
+    config: dict,
+) -> tuple[float, list[dict], dict]:
+    """Check that technical zones remain accessible via adequately wide passages.
+
+    For each technical zone (engine, head): find the widest direct passage
+    connecting to it, compare against config["min_service_access_mm"].
+
+    Per zone:
+    - Widest passage >= minimum  → 100
+    - Passage exists but narrow  → 50  (warning)
+    - No passage at all          → 0   (critical)
+
+    Final score is the average across all technical zones.
+    No technical zones → score 50 + info.
+
+    Returns (score 0-100, warnings, metrics).
+    """
+    warnings: list[dict] = []
+    min_access = config["min_service_access_mm"]
+
+    # Identify technical zones present in the layout
+    tech_zones = [z for z in zones if z.get("zone_type") in _TECHNICAL_ZONE_TYPES]
+
+    if not tech_zones:
+        warnings.append({
+            "code": "SERVICE_NO_TECH_ZONES",
+            "severity": "info",
+            "message": "Keine technischen Zonen definiert — Servicezugänglichkeit kann nicht bewertet werden.",
+            "suggestion": "Technische Zonen (Motor, Sanitär) zum Layout hinzufügen.",
+        })
+        return 50.0, warnings, {"accessible_count": 0, "total_tech_zones": 0}
+
+    # Build a mapping: zone_name → max passage width for direct connections
+    max_width_for: dict[str, float] = {}
+    for p in passages:
+        a, b = p["from_zone"], p["to_zone"]
+        w = p["width_mm"]
+        max_width_for[a] = max(max_width_for.get(a, 0.0), w)
+        max_width_for[b] = max(max_width_for.get(b, 0.0), w)
+
+    zone_scores: list[float] = []
+    accessible_count = 0
+
+    for zone in tech_zones:
+        name = zone["name"]
+        best_width = max_width_for.get(name, None)
+
+        if best_width is None:
+            # No passage at all
+            zone_scores.append(0.0)
+            warnings.append({
+                "code": "SERVICE_INACCESSIBLE",
+                "severity": "critical",
+                "message": (
+                    f"Technische Zone '{name}' hat keinen Durchgang — "
+                    f"Wartungszugang nicht möglich."
+                ),
+                "suggestion": (
+                    f"Durchgang zu Zone '{name}' mit mindestens {min_access} mm Breite hinzufügen."
+                ),
+            })
+        elif best_width < min_access:
+            # Passage exists but too narrow
+            zone_scores.append(50.0)
+            warnings.append({
+                "code": "SERVICE_NARROW",
+                "severity": "warning",
+                "message": (
+                    f"Durchgang zu Zone '{name}': {best_width:.0f} mm unterschreitet "
+                    f"Mindestbreite für Wartungszugang ({min_access} mm)."
+                ),
+                "suggestion": (
+                    f"Durchgang zu Zone '{name}' auf mindestens {min_access} mm verbreitern."
+                ),
+            })
+        else:
+            zone_scores.append(100.0)
+            accessible_count += 1
+
+    score = sum(zone_scores) / len(zone_scores) if zone_scores else 50.0
+    score = max(0.0, min(100.0, score))
+
+    return score, warnings, {
+        "accessible_count": accessible_count,
+        "total_tech_zones": len(tech_zones),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Sub-analysis 4: Standardization
+# ---------------------------------------------------------------------------
+
+def analyze_standardization(
+    zones: list[dict],
+    passages: list[dict],
+    config: dict,
+) -> tuple[float, list[dict], dict]:
+    """Check if passage widths and cabin dimensions match standard module sizes.
+
+    Passage match: any passage width within ±tolerance of any standard door width.
+    Cabin match: polygon minimum bounding-box dimension within ±tolerance of
+    standard berth width.
+
+    Score (if both types present):  60% passage_ratio + 40% cabin_ratio.
+    If only one type present:        100% of that ratio.
+    No passages and no cabins        → score 50 + info.
+
+    Returns (score 0-100, warnings, metrics).
+    """
+    warnings: list[dict] = []
+    std_doors = config["standard_door_widths_mm"]
+    std_berth = config["standard_berth_width_mm"]
+    tolerance = config["standardization_tolerance_mm"]
+
+    cabin_zones = [z for z in zones if z.get("zone_type") == "cabin"]
+    has_passages = len(passages) > 0
+    has_cabins = len(cabin_zones) > 0
+
+    if not has_passages and not has_cabins:
+        warnings.append({
+            "code": "STANDARD_NO_DATA",
+            "severity": "info",
+            "message": "Keine Durchgänge oder Kabinen definiert — Standardisierung kann nicht bewertet werden.",
+            "suggestion": "Durchgänge und Kabinen zum Layout hinzufügen.",
+        })
+        return 50.0, warnings, {
+            "passage_match_ratio": 0.0,
+            "cabin_match_ratio": 0.0,
+            "non_standard_passages": 0,
+            "non_standard_cabins": 0,
+        }
+
+    # --- Passage check ---
+    passage_match_ratio = 0.0
+    non_standard_passages = 0
+    if has_passages:
+        matched = 0
+        for p in passages:
+            w = p["width_mm"]
+            if any(abs(w - std) <= tolerance for std in std_doors):
+                matched += 1
+            else:
+                non_standard_passages += 1
+                warnings.append({
+                    "code": "STANDARD_PASSAGE_NONSTANDARD",
+                    "severity": "warning",
+                    "message": (
+                        f"Durchgang '{p['from_zone']} → {p['to_zone']}': "
+                        f"Breite {w:.0f} mm entspricht keiner Standardmaßbreite "
+                        f"({', '.join(str(d) for d in std_doors)} mm ±{tolerance} mm)."
+                    ),
+                    "suggestion": (
+                        f"Durchgangsbreite auf einen Standardwert anpassen "
+                        f"({', '.join(str(d) for d in std_doors)} mm)."
+                    ),
+                })
+        passage_match_ratio = matched / len(passages)
+
+    # --- Cabin berth check ---
+    cabin_match_ratio = 0.0
+    non_standard_cabins = 0
+    if has_cabins:
+        matched = 0
+        for zone in cabin_zones:
+            polygon = zone.get("polygon", [])
+            min_dim = _polygon_min_dimension(polygon)
+            if abs(min_dim - std_berth) <= tolerance:
+                matched += 1
+            else:
+                non_standard_cabins += 1
+                warnings.append({
+                    "code": "STANDARD_BERTH_NONSTANDARD",
+                    "severity": "warning",
+                    "message": (
+                        f"Kabine '{zone['name']}': Mindestmaß {min_dim:.0f} mm weicht "
+                        f"von Standardkojengröße {std_berth} mm ab (Toleranz ±{tolerance} mm)."
+                    ),
+                    "suggestion": (
+                        f"Kabinenbreite in Zone '{zone['name']}' auf {std_berth} mm anpassen."
+                    ),
+                })
+        cabin_match_ratio = matched / len(cabin_zones)
+
+    # --- Weighted score ---
+    if has_passages and has_cabins:
+        score = 0.60 * (passage_match_ratio * 100.0) + 0.40 * (cabin_match_ratio * 100.0)
+    elif has_passages:
+        score = passage_match_ratio * 100.0
+    else:
+        score = cabin_match_ratio * 100.0
+
+    score = max(0.0, min(100.0, score))
+
+    return score, warnings, {
+        "passage_match_ratio": round(passage_match_ratio, 3),
+        "cabin_match_ratio": round(cabin_match_ratio, 3),
+        "non_standard_passages": non_standard_passages,
+        "non_standard_cabins": non_standard_cabins,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Sub-analysis 5: Cable / Pipe Routing
+# ---------------------------------------------------------------------------
+
+def analyze_cable_routing(
+    zones: list[dict],
+    passages: list[dict],
+    config: dict,
+) -> tuple[float, list[dict], dict]:
+    """Evaluate cable/pipe routing between system zone pairs.
+
+    System connections checked: engine↔helm, engine↔pantry, engine↔head.
+    For each applicable connection (both zone types present in the layout),
+    find a BFS path and count guest zones (salon, cabin) on the intermediate
+    nodes (excluding start and end).
+
+    Per connection:
+    - No guest crossings  → 100
+    - k guest crossings   → max(0, 100 - k * 25)
+    - No path found       → 0  (critical)
+
+    Average across applicable connections.
+    No applicable connections → score 50 + info.
+
+    Returns (score 0-100, warnings, metrics).
+    """
+    warnings: list[dict] = []
+
+    # Build set of zone types that exist in the layout (keyed by type)
+    # We may have multiple zones of the same type; collect all names per type.
+    type_to_names: dict[str, list[str]] = {}
+    for zone in zones:
+        zt = zone.get("zone_type", "")
+        type_to_names.setdefault(zt, []).append(zone["name"])
+
+    # Build zone_name → zone_type mapping for guest check
+    name_to_type: dict[str, str] = {z["name"]: z.get("zone_type", "") for z in zones}
+
+    # Find applicable system connections (both types present)
+    applicable: list[tuple[str, str]] = []
+    for src_type, dst_type in _SYSTEM_CONNECTIONS:
+        if src_type in type_to_names and dst_type in type_to_names:
+            applicable.append((src_type, dst_type))
+
+    if not applicable:
+        warnings.append({
+            "code": "CABLE_NO_SYSTEMS",
+            "severity": "info",
+            "message": "Keine relevanten Systemzonen definiert — Kabelführung kann nicht bewertet werden.",
+            "suggestion": "Motor-, Helm- und Sanitärzonen zum Layout hinzufügen.",
+        })
+        return 50.0, warnings, {"connections_checked": 0, "guest_crossings": 0, "missing_paths": 0}
+
+    graph = _build_adjacency(passages)
+    connection_scores: list[float] = []
+    total_guest_crossings = 0
+    missing_paths = 0
+
+    for src_type, dst_type in applicable:
+        src_names = type_to_names[src_type]
+        dst_names = set(type_to_names[dst_type])
+
+        # Try all source zone names, pick the best result
+        best_score: float | None = None
+        best_crossings = 0
+        best_path: list[str] | None = None
+
+        for src_name in src_names:
+            path = _bfs_path(graph, src_name, dst_names)
+            if path is not None:
+                # Count guest zones on intermediate nodes (exclude first and last)
+                intermediates = path[1:-1]
+                guest_count = sum(
+                    1 for node in intermediates
+                    if name_to_type.get(node, "") in _GUEST_ZONE_TYPES
+                )
+                conn_score = max(0.0, 100.0 - guest_count * 25.0)
+                if best_score is None or conn_score > best_score:
+                    best_score = conn_score
+                    best_crossings = guest_count
+                    best_path = path
+
+        if best_score is None:
+            # No path found for this connection
+            connection_scores.append(0.0)
+            missing_paths += 1
+            warnings.append({
+                "code": "CABLE_PATH_MISSING",
+                "severity": "critical",
+                "message": (
+                    f"Keine Verbindung zwischen '{src_type}' und '{dst_type}' gefunden — "
+                    f"Kabelführung nicht möglich."
+                ),
+                "suggestion": (
+                    f"Durchgang zwischen {src_type.capitalize()}- und "
+                    f"{dst_type.capitalize()}-Zone herstellen."
+                ),
+            })
+        else:
+            connection_scores.append(best_score)
+            total_guest_crossings += best_crossings
+            if best_crossings > 0 and best_path is not None:
+                warnings.append({
+                    "code": "CABLE_GUEST_CROSSING",
+                    "severity": "warning",
+                    "message": (
+                        f"Kabelweg '{src_type}' → '{dst_type}' führt durch "
+                        f"{best_crossings} Gästezone(n) — empfehlenswert ist eine "
+                        f"technische Führung."
+                    ),
+                    "suggestion": (
+                        f"Alternative Kabelführung zwischen '{src_type}' und '{dst_type}' "
+                        f"durch technische Zonen planen."
+                    ),
+                })
+
+    score = sum(connection_scores) / len(connection_scores) if connection_scores else 50.0
+    score = max(0.0, min(100.0, score))
+
+    return score, warnings, {
+        "connections_checked": len(applicable),
+        "guest_crossings": total_guest_crossings,
+        "missing_paths": missing_paths,
+    }
+
+
+# ---------------------------------------------------------------------------
 # Orchestrator
 # ---------------------------------------------------------------------------
 
@@ -399,6 +733,9 @@ def run_production_analysis(
     analyses = [
         ("assembly_sequence", lambda: analyze_assembly_sequence(zones, passages, config)),
         ("form_complexity", lambda: analyze_form_complexity(zones, config)),
+        ("service_access", lambda: analyze_service_access(zones, passages, config)),
+        ("standardization", lambda: analyze_standardization(zones, passages, config)),
+        ("cable_routing", lambda: analyze_cable_routing(zones, passages, config)),
     ]
 
     for name, fn in analyses:
@@ -416,10 +753,6 @@ def run_production_analysis(
                 "message": f"Fehler bei der Analyse: {name}",
                 "suggestion": "Layoutdaten überprüfen.",
             })
-
-    # Remaining sub-analyses not yet implemented — placeholder scores
-    for placeholder in ("service_access", "standardization", "cable_routing"):
-        sub_scores[placeholder] = 50.0
 
     overall = sum(sub_scores.get(k, 0.0) * w for k, w in weights.items())
 

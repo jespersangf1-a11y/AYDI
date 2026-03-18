@@ -1,9 +1,12 @@
-"""Tests for production friendliness analysis module — Tasks 1 & 2."""
+"""Tests for production friendliness analysis module — Tasks 1, 2, 3 & 4."""
 from tests.conftest import make_passage, make_zone
 
 from app.services.analysis.production import (
     analyze_assembly_sequence,
     analyze_form_complexity,
+    analyze_service_access,
+    analyze_standardization,
+    analyze_cable_routing,
     BOAT_CLASS_DEFAULTS,
 )
 
@@ -145,3 +148,181 @@ def test_form_no_zones():
     assert score == 50.0
     assert any(w["severity"] == "info" for w in warnings)
     assert any(w["code"] == "FORM_NO_ZONES" for w in warnings)
+
+
+# ---------------------------------------------------------------------------
+# analyze_service_access
+# ---------------------------------------------------------------------------
+
+
+def test_service_access_good():
+    """Technical zones connected via wide passages -> high score."""
+    zones = [
+        make_zone("engine", "engine"),
+        make_zone("salon", "salon"),
+        make_zone("head", "head"),
+    ]
+    passages = [
+        make_passage("engine", "salon", width_mm=800),
+        make_passage("head", "salon", width_mm=800),
+    ]
+    config = _default_config()  # min_service_access_mm = 600
+    score, warnings, metrics = analyze_service_access(zones, passages, config)
+    assert score >= 80.0
+    assert metrics["accessible_count"] == 2
+
+
+def test_service_access_narrow():
+    """Technical zone connected but narrow passage -> partial score."""
+    zones = [
+        make_zone("engine", "engine"),
+        make_zone("salon", "salon"),
+    ]
+    passages = [make_passage("engine", "salon", width_mm=400)]
+    config = _default_config()  # min_service_access_mm = 600
+    score, warnings, metrics = analyze_service_access(zones, passages, config)
+    assert score == 50.0
+    assert any(w["severity"] == "warning" for w in warnings)
+
+
+def test_service_access_inaccessible():
+    """Technical zone with no passages -> critical, score 0."""
+    zones = [
+        make_zone("engine", "engine"),
+        make_zone("salon", "salon"),
+    ]
+    passages = []
+    config = _default_config()
+    score, warnings, metrics = analyze_service_access(zones, passages, config)
+    assert score == 0.0
+    assert any(w["severity"] == "critical" for w in warnings)
+    assert metrics["accessible_count"] == 0
+
+
+def test_service_access_no_technical():
+    """No technical zones -> score 50, info."""
+    zones = [make_zone("salon", "salon")]
+    config = _default_config()
+    score, warnings, metrics = analyze_service_access(zones, [], config)
+    assert score == 50.0
+    assert any(w["severity"] == "info" for w in warnings)
+
+
+# ---------------------------------------------------------------------------
+# analyze_standardization
+# ---------------------------------------------------------------------------
+
+
+def test_standardization_all_standard():
+    """All passages and cabins match standard sizes -> score 100."""
+    zones = [
+        make_zone("cabin1", "cabin", polygon=[[0, 0], [2000, 0], [2000, 700], [0, 700]]),
+    ]
+    passages = [make_passage("cabin1", "salon", width_mm=600)]
+    config = _default_config()  # standard_door_widths_mm=[600,700], berth=700, tolerance=50
+    score, warnings, metrics = analyze_standardization(zones, passages, config)
+    assert score == 100.0
+    assert metrics["passage_match_ratio"] == 1.0
+
+
+def test_standardization_non_standard_passage():
+    """Passage with non-standard width -> lower score."""
+    zones = [
+        make_zone("cabin1", "cabin", polygon=[[0, 0], [2000, 0], [2000, 700], [0, 700]]),
+    ]
+    passages = [make_passage("cabin1", "salon", width_mm=450)]
+    config = _default_config()
+    score, warnings, metrics = analyze_standardization(zones, passages, config)
+    assert score < 100.0
+    assert any(w["severity"] == "warning" for w in warnings)
+
+
+def test_standardization_non_standard_berth():
+    """Cabin with non-standard berth width -> lower score."""
+    zones = [
+        make_zone("cabin1", "cabin", polygon=[[0, 0], [2000, 0], [2000, 500], [0, 500]]),
+    ]
+    passages = [make_passage("cabin1", "salon", width_mm=600)]
+    config = _default_config()
+    score, warnings, metrics = analyze_standardization(zones, passages, config)
+    assert score < 100.0
+    assert any(w["severity"] == "warning" for w in warnings)
+
+
+def test_standardization_no_data():
+    """No passages and no cabins -> score 50, info."""
+    zones = [make_zone("salon", "salon")]
+    config = _default_config()
+    score, warnings, metrics = analyze_standardization(zones, [], config)
+    assert score == 50.0
+    assert any(w["severity"] == "info" for w in warnings)
+
+
+# ---------------------------------------------------------------------------
+# analyze_cable_routing
+# ---------------------------------------------------------------------------
+
+
+def test_cable_routing_clean():
+    """All system connections route through technical zones -> score 100."""
+    zones = [
+        make_zone("engine", "engine"),
+        make_zone("helm", "helm"),
+        make_zone("pantry", "pantry"),
+        make_zone("head", "head"),
+        make_zone("storage", "storage"),
+    ]
+    passages = [
+        make_passage("engine", "storage"),
+        make_passage("storage", "helm"),
+        make_passage("storage", "pantry"),
+        make_passage("storage", "head"),
+    ]
+    config = _default_config()
+    score, warnings, metrics = analyze_cable_routing(zones, passages, config)
+    assert score == 100.0
+    assert metrics["guest_crossings"] == 0
+
+
+def test_cable_routing_through_guest():
+    """System connection routes through salon -> lower score."""
+    zones = [
+        make_zone("engine", "engine"),
+        make_zone("salon", "salon"),
+        make_zone("helm", "helm"),
+        make_zone("pantry", "pantry"),
+        make_zone("head", "head"),
+    ]
+    passages = [
+        make_passage("engine", "salon"),
+        make_passage("salon", "helm"),
+        make_passage("salon", "pantry"),
+        make_passage("salon", "head"),
+    ]
+    config = _default_config()
+    score, warnings, metrics = analyze_cable_routing(zones, passages, config)
+    assert score < 100.0
+    assert metrics["guest_crossings"] > 0
+    assert any(w["severity"] == "warning" for w in warnings)
+
+
+def test_cable_routing_no_path():
+    """System zones not connected -> critical."""
+    zones = [
+        make_zone("engine", "engine"),
+        make_zone("helm", "helm"),
+    ]
+    passages = []
+    config = _default_config()
+    score, warnings, metrics = analyze_cable_routing(zones, passages, config)
+    assert score < 50.0
+    assert any(w["severity"] == "critical" for w in warnings)
+
+
+def test_cable_routing_no_system_zones():
+    """No system zones -> score 50, info."""
+    zones = [make_zone("salon", "salon")]
+    config = _default_config()
+    score, warnings, metrics = analyze_cable_routing(zones, [], config)
+    assert score == 50.0
+    assert any(w["severity"] == "info" for w in warnings)
