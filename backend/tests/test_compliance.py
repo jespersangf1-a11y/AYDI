@@ -6,7 +6,10 @@ from app.services.analysis.compliance import (
     analyze_stability_impact,
     analyze_railing_requirements,
     analyze_electrical_access,
+    analyze_ce_category,
+    run_compliance_analysis,
     BOAT_CLASS_DEFAULTS,
+    SEVERITY_ORDER,
 )
 
 
@@ -304,3 +307,131 @@ def test_electrical_inaccessible():
     score, warnings, metrics = analyze_electrical_access(zones, passages, config)
     assert any(w["severity"] == "critical" for w in warnings)
     assert metrics["accessible"] is False
+
+
+# ---------------------------------------------------------------------------
+# analyze_ce_category
+# ---------------------------------------------------------------------------
+
+
+def test_ce_category_compliant():
+    """All required zones present for CE category A -> score 100."""
+    zones = [
+        make_zone("cockpit", "cockpit"),
+        make_zone("engine", "engine"),
+        make_zone("helm", "helm"),
+        make_zone("cabin1", "cabin"),
+        make_zone("head", "head"),
+        make_zone("pantry", "pantry"),
+    ]
+    config = _default_config()  # ce_category = "A"
+    score, warnings, metrics = analyze_ce_category(zones, config)
+    assert score == 100.0
+    assert len(metrics["missing_zones"]) == 0
+
+
+def test_ce_category_missing_zones():
+    """Missing required zones -> warnings."""
+    zones = [
+        make_zone("cockpit", "cockpit"),
+        make_zone("helm", "helm"),
+    ]
+    config = _default_config()  # ce_category = "A", requires 6 zone types
+    score, warnings, metrics = analyze_ce_category(zones, config)
+    assert score < 100.0
+    assert len(warnings) > 0
+    assert len(metrics["missing_zones"]) > 0
+
+
+def test_ce_category_d_minimal():
+    """Only helm -> score 100 for CE category D."""
+    zones = [make_zone("helm", "helm")]
+    config = _default_config("small_sail")
+    config["ce_category"] = "D"  # Only needs helm
+    score, warnings, metrics = analyze_ce_category(zones, config)
+    assert score == 100.0
+
+
+# ---------------------------------------------------------------------------
+# Integration
+# ---------------------------------------------------------------------------
+
+
+def test_full_compliance_analysis():
+    """Complete layout -> valid result structure with all 6 sub-scores."""
+    zones = [
+        make_zone("cockpit", "cockpit", properties={"has_railing": True}),
+        make_zone("salon", "salon", polygon=[[3000, 0], [7000, 0], [7000, 4000], [3000, 4000]]),
+        make_zone("cabin1", "cabin", polygon=[[0, 0], [3000, 0], [3000, 2000], [0, 2000]]),
+        make_zone("engine", "engine", polygon=[[7000, 1000], [9000, 1000], [9000, 3000], [7000, 3000]]),
+        make_zone("helm", "helm"),
+        make_zone("head", "head"),
+        make_zone("pantry", "pantry"),
+    ]
+    passages = [
+        make_passage("cockpit", "salon"),
+        make_passage("salon", "cabin1"),
+        make_passage("salon", "engine"),
+        make_passage("salon", "helm"),
+        make_passage("salon", "head"),
+        make_passage("salon", "pantry"),
+    ]
+    result = run_compliance_analysis(zones, passages, "cruising_sail")
+    assert result["module"] == "compliance"
+    assert 0 <= result["overall_score"] <= 100
+    assert "escape_routes" in result["sub_scores"]
+    assert "fire_safety" in result["sub_scores"]
+    assert "stability" in result["sub_scores"]
+    assert "railing" in result["sub_scores"]
+    assert "electrical_access" in result["sub_scores"]
+    assert "ce_category" in result["sub_scores"]
+    assert len(result["sub_scores"]) == 6
+    assert "norm_versions" in result["config_used"]
+
+
+def test_compliance_warnings_sorted():
+    """Warnings should be sorted: critical -> warning -> info."""
+    zones = [
+        make_zone("cabin1", "cabin"),  # No cockpit -> critical escape warning
+        make_zone("engine", "engine", polygon=[[0, 0], [500, 0], [500, 500], [0, 500]]),
+    ]
+    result = run_compliance_analysis(zones, [], "cruising_sail")
+    severities = [w["severity"] for w in result["warnings"]]
+    order = [SEVERITY_ORDER.get(s, 2) for s in severities]
+    assert order == sorted(order)
+
+
+def test_compliance_boat_class_difference():
+    """Different boat classes produce different scores."""
+    zones = [
+        make_zone("cockpit", "cockpit"),
+        make_zone("cabin1", "cabin"),
+        make_zone("engine", "engine"),
+        make_zone("helm", "helm"),
+        make_zone("salon", "salon"),
+    ]
+    passages = [
+        make_passage("cockpit", "salon"),
+        make_passage("salon", "cabin1"),
+        make_passage("salon", "engine"),
+    ]
+    result_small = run_compliance_analysis(zones, passages, "small_sail")
+    result_super = run_compliance_analysis(zones, passages, "superyacht")
+    assert result_small["overall_score"] != result_super["overall_score"]
+
+
+def test_compliance_config_overrides():
+    """Config overrides are applied and stored in config_used."""
+    zones = [make_zone("cockpit", "cockpit"), make_zone("cabin1", "cabin")]
+    passages = [make_passage("cockpit", "cabin1")]
+    result = run_compliance_analysis(zones, passages, "cruising_sail",
+                                     config_overrides={"max_escape_hops": 2})
+    assert result["config_used"]["max_escape_hops"] == 2
+
+
+def test_compliance_empty_input():
+    """Empty zones and passages -> degraded scores, no crash."""
+    result = run_compliance_analysis([], [], "cruising_sail")
+    assert 0 <= result["overall_score"] <= 100
+    assert len(result["sub_scores"]) == 6
+    assert len(result["warnings"]) > 0

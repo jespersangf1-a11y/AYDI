@@ -112,6 +112,22 @@ BOAT_CLASS_DEFAULTS = {
 SEVERITY_ORDER = {"critical": 0, "warning": 1, "info": 2}
 
 _SLEEPING_ZONE_TYPES = {"cabin", "crew_quarters"}
+
+_CE_REQUIRED_ZONES = {
+    "A": {"cockpit", "engine", "helm", "cabin", "head", "pantry"},
+    "B": {"cockpit", "engine", "helm", "cabin", "head"},
+    "C": {"cockpit", "engine", "helm"},
+    "D": {"helm"},
+}
+
+_CE_ZONE_LABELS = {
+    "cockpit": "Cockpit",
+    "engine": "Maschinenraum",
+    "helm": "Steuerstand",
+    "cabin": "Kabine",
+    "head": "WC/Bad",
+    "pantry": "Pantry",
+}
 _LIVING_ZONE_TYPES = {"salon", "cabin", "pantry", "crew_quarters", "helm"}
 _HEAVY_ZONE_TYPES = {"engine", "storage"}
 
@@ -673,6 +689,54 @@ def analyze_electrical_access(
 
 
 # ---------------------------------------------------------------------------
+# Sub-analysis: CE category compliance
+# ---------------------------------------------------------------------------
+
+
+def analyze_ce_category(
+    zones: list[dict],
+    config: dict,
+) -> tuple[float, list[dict], dict]:
+    """Check CE category zone requirements.
+
+    Verifies that all zone types required for the target CE category are present
+    in the layout.
+
+    Returns (score 0-100, warnings, metrics).
+    """
+    warnings: list[dict] = []
+
+    target_category = config.get("ce_category", "A")
+    required = _CE_REQUIRED_ZONES.get(target_category, set())
+
+    present = {z["zone_type"] for z in zones}
+    missing = required - present
+
+    for zone_type in sorted(missing):
+        label = _CE_ZONE_LABELS.get(zone_type, zone_type)
+        warnings.append({
+            "code": "CE_CATEGORY_ZONE_MISSING",
+            "severity": "warning",
+            "message": (
+                f"CE-Kategorie {target_category}: Zone '{label}' fehlt im Layout."
+            ),
+            "suggestion": f"Zone '{label}' zum Layout hinzufügen (CE-Kategorie {target_category}).",
+        })
+
+    if required:
+        present_required = present & required
+        score = (len(present_required) / len(required)) * 100.0
+    else:
+        score = 100.0
+
+    return score, warnings, {
+        "target_category": target_category,
+        "required_zones": sorted(required),
+        "missing_zones": sorted(missing),
+    }
+
+
+# ---------------------------------------------------------------------------
 # Orchestrator
 # ---------------------------------------------------------------------------
 
@@ -704,7 +768,10 @@ def run_compliance_analysis(
     analyses: list[tuple[str, object]] = [
         ("escape_routes", lambda: analyze_escape_routes(zones, passages, config)),
         ("fire_safety", lambda: analyze_fire_safety(zones, passages, config)),
-        # Future sub-analyses: stability, railing, electrical_access, ce_category
+        ("stability", lambda: analyze_stability_impact(zones, config)),
+        ("railing", lambda: analyze_railing_requirements(zones, config)),
+        ("electrical_access", lambda: analyze_electrical_access(zones, passages, config)),
+        ("ce_category", lambda: analyze_ce_category(zones, config)),
     ]
 
     for name, fn in analyses:
@@ -722,11 +789,6 @@ def run_compliance_analysis(
                 "message": f"Fehler bei Compliance-Analyse: {name}",
                 "suggestion": "Layoutdaten überprüfen.",
             })
-
-    # Placeholder scores for not-yet-implemented sub-analyses
-    for key in weights:
-        if key not in sub_scores:
-            sub_scores[key] = 50.0
 
     overall = sum(sub_scores.get(k, 50.0) * w for k, w in weights.items())
 
