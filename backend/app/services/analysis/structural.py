@@ -128,8 +128,8 @@ def _polygon_centroid(polygon: list[list[float]]) -> tuple[float, float]:
         cx = sum(p[0] for p in polygon) / n
         cy = sum(p[1] for p in polygon) / n
         return cx, cy
-    cx /= 6.0 * abs(signed_area)
-    cy /= 6.0 * abs(signed_area)
+    cx /= 6.0 * signed_area
+    cy /= 6.0 * signed_area
     return cx, cy
 
 
@@ -593,6 +593,7 @@ def run_structural_analysis(
             logger.exception("Error in structural sub-analysis %s", name)
             sub_scores[name] = 0.0
             all_warnings.append({
+                "code": "STRUCTURAL_ANALYSIS_ERROR",
                 "severity": "critical",
                 "message": f"Fehler bei Strukturanalyse: {name}",
                 "suggestion": "Layoutdaten überprüfen.",
