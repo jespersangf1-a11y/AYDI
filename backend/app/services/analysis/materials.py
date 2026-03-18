@@ -460,3 +460,86 @@ def analyze_material_weight(
         "zone_weights_kg_sqm": {k: round(v, 1) for k, v in zone_kg_sqm.items()},
         "heaviest_zone": heaviest,
     }
+
+
+# ---------------------------------------------------------------------------
+# Orchestrator
+# ---------------------------------------------------------------------------
+
+
+def run_materials_analysis(
+    zones: list[dict],
+    passages: list[dict],
+    boat_class: str,
+    config_overrides: dict | None = None,
+    materials: list[dict] | None = None,
+) -> dict:
+    """Orchestrator — runs all material & quality sub-analyses.
+
+    Args:
+        zones: Layout zones (unused by this module, kept for API consistency).
+        passages: Layout passages (unused by this module, kept for API consistency).
+        boat_class: One of small_sail, cruising_sail, large_motor, superyacht.
+        config_overrides: Optional dict to override config values.
+        materials: List of zone_material dicts with resolved material data.
+
+    Returns a standardized result dict matching the AYDI analysis module contract.
+    """
+    if boat_class not in BOAT_CLASS_DEFAULTS:
+        raise ValueError(f"Unknown boat class: {boat_class}")
+
+    config = BOAT_CLASS_DEFAULTS[boat_class].copy()
+    weights = config.pop("weights").copy()
+
+    if config_overrides:
+        config.update(config_overrides)
+
+    zone_materials = materials or []
+
+    sub_scores: dict[str, float] = {}
+    all_warnings: list[dict] = []
+    all_suggestions: list[str] = []
+    all_metrics: dict[str, dict] = {}
+
+    analyses = [
+        ("durability", lambda: analyze_material_durability(zone_materials, config)),
+        ("maintenance", lambda: analyze_maintenance_burden(zone_materials, config)),
+        ("known_issues", lambda: analyze_known_issues(zone_materials, config)),
+        ("compatibility", lambda: analyze_material_compatibility(zone_materials, config)),
+        ("weight", lambda: analyze_material_weight(zone_materials, config)),
+    ]
+
+    for name, fn in analyses:
+        try:
+            score, warnings, metrics = fn()
+            sub_scores[name] = score
+            all_warnings.extend(warnings)
+            all_metrics[name] = metrics
+        except Exception:
+            logger.exception("Error in materials sub-analysis %s", name)
+            sub_scores[name] = 0.0
+            all_warnings.append({
+                "code": "ANALYSIS_ERROR",
+                "severity": "critical",
+                "message": f"Fehler bei Materialanalyse: {name}",
+                "suggestion": "Materialzuweisungen überprüfen.",
+            })
+
+    overall = sum(sub_scores.get(k, 50.0) * w for k, w in weights.items())
+
+    for w in all_warnings:
+        suggestion = w.get("suggestion")
+        if suggestion and suggestion not in all_suggestions:
+            all_suggestions.append(suggestion)
+
+    all_warnings.sort(key=lambda w: SEVERITY_ORDER.get(w.get("severity", "info"), 2))
+
+    return {
+        "module": "materials",
+        "overall_score": round(overall, 1),
+        "sub_scores": {k: round(v, 1) for k, v in sub_scores.items()},
+        "warnings": all_warnings,
+        "suggestions": all_suggestions,
+        "metrics": all_metrics,
+        "config_used": config,
+    }

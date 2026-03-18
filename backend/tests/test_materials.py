@@ -248,3 +248,86 @@ def test_weight_no_materials():
     config = _default_config()
     score, warnings, metrics = analyze_material_weight([], config)
     assert score == 50.0
+
+
+from app.services.analysis.materials import run_materials_analysis, SEVERITY_ORDER
+
+
+# ---------------------------------------------------------------------------
+# Integration
+# ---------------------------------------------------------------------------
+
+
+def test_full_materials_analysis():
+    """Complete material assignments -> valid result structure with all 5 sub-scores."""
+    zone_mats = [
+        make_zone_material("salon", "floor", 15.0, make_material(
+            name="Teak", lifespan_years=25, cost_per_unit=250.0,
+            maintenance_cost_factor=0.02, subcategory="wood",
+            properties={"density_kg_m3": 650, "thickness_mm": 20},
+        )),
+        make_zone_material("cabin", "wall", 12.0, make_material(
+            name="Marine-Sperrholz", lifespan_years=20, cost_per_unit=80.0,
+            maintenance_cost_factor=0.01, subcategory="wood",
+            properties={"density_kg_m3": 550, "thickness_mm": 15},
+        )),
+        make_zone_material("head", "floor", 3.0, make_material(
+            name="Keramikfliese", lifespan_years=30, cost_per_unit=120.0,
+            maintenance_cost_factor=0.005, subcategory="composite",
+            properties={"density_kg_m3": 2200, "thickness_mm": 8},
+        )),
+    ]
+    result = run_materials_analysis([], [], "cruising_sail", materials=zone_mats)
+    assert result["module"] == "materials"
+    assert 0 <= result["overall_score"] <= 100
+    assert "durability" in result["sub_scores"]
+    assert "maintenance" in result["sub_scores"]
+    assert "known_issues" in result["sub_scores"]
+    assert "compatibility" in result["sub_scores"]
+    assert "weight" in result["sub_scores"]
+    assert len(result["sub_scores"]) == 5
+
+
+def test_materials_warnings_sorted():
+    """Warnings should be sorted: critical -> warning -> info."""
+    zone_mats = [
+        make_zone_material("salon", "floor", 10.0, make_material(
+            lifespan_years=5,
+            known_issues=[{"issue": "Bruch", "severity": "critical"}],
+        )),
+    ]
+    result = run_materials_analysis([], [], "cruising_sail", materials=zone_mats)
+    severities = [w["severity"] for w in result["warnings"]]
+    order = [SEVERITY_ORDER.get(s, 2) for s in severities]
+    assert order == sorted(order)
+
+
+def test_materials_boat_class_difference():
+    """Different boat classes produce different scores."""
+    zone_mats = [
+        make_zone_material("salon", "floor", 10.0, make_material(
+            lifespan_years=18, cost_per_unit=100.0,
+            maintenance_cost_factor=0.025,
+            properties={"density_kg_m3": 800, "thickness_mm": 25},
+        )),
+    ]
+    result_small = run_materials_analysis([], [], "small_sail", materials=zone_mats)
+    result_super = run_materials_analysis([], [], "superyacht", materials=zone_mats)
+    # small_sail: min_lifespan=15 (compliant), superyacht: min_lifespan=25 (not compliant)
+    assert result_small["overall_score"] != result_super["overall_score"]
+
+
+def test_materials_config_overrides():
+    """Config overrides are applied and stored in config_used."""
+    zone_mats = [make_zone_material()]
+    result = run_materials_analysis([], [], "cruising_sail", materials=zone_mats,
+                                    config_overrides={"min_lifespan_years": 30})
+    assert result["config_used"]["min_lifespan_years"] == 30
+
+
+def test_materials_empty_input():
+    """No material assignments -> degraded scores, no crash."""
+    result = run_materials_analysis([], [], "cruising_sail", materials=[])
+    assert 0 <= result["overall_score"] <= 100
+    assert len(result["sub_scores"]) == 5
+    assert len(result["warnings"]) > 0

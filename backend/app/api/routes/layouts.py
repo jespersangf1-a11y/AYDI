@@ -20,7 +20,10 @@ from app.services.analysis.volume_storage import run_volume_storage_analysis
 from app.services.analysis.emotional import run_emotional_analysis
 from app.services.analysis.compliance import run_compliance_analysis
 from app.services.analysis.production import run_production_analysis
+from app.services.analysis.materials import run_materials_analysis
 from app.services.dxf.parser import parse_dxf
+from sqlalchemy.orm import selectinload
+from app.models.models import ZoneMaterial
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +35,7 @@ ANALYSIS_MODULES = {
     "emotional": run_emotional_analysis,
     "compliance": run_compliance_analysis,
     "production": run_production_analysis,
+    "materials": run_materials_analysis,
 }
 
 
@@ -123,6 +127,39 @@ async def import_dxf(
     return result
 
 
+async def _load_materials_for_analysis(layout_id: UUID, db: AsyncSession) -> list[dict]:
+    """Load zone_material assignments with eagerly-loaded material data."""
+    result = await db.execute(
+        select(ZoneMaterial)
+        .where(ZoneMaterial.layout_id == layout_id)
+        .options(selectinload(ZoneMaterial.material))
+    )
+    zone_mats = result.scalars().all()
+
+    assembled = []
+    for zm in zone_mats:
+        material = zm.material
+        if material:
+            assembled.append({
+                "zone_name": zm.zone_name,
+                "surface_type": zm.surface_type,
+                "area_sqm": zm.area_sqm,
+                "material": {
+                    "name": material.name,
+                    "category": material.category,
+                    "subcategory": material.subcategory,
+                    "cost_per_unit": material.cost_per_unit,
+                    "cost_unit": material.cost_unit,
+                    "lifespan_years": material.lifespan_years,
+                    "maintenance_interval_months": material.maintenance_interval_months,
+                    "maintenance_cost_factor": material.maintenance_cost_factor,
+                    "known_issues": material.known_issues or [],
+                    "properties": material.properties or {},
+                },
+            })
+    return assembled
+
+
 @router.post("/analyze", response_model=AnalysisResponse, status_code=201)
 async def run_analysis(
     project_id: UUID,
@@ -147,8 +184,17 @@ async def run_analysis(
     zones = layout.zones or []
     passages = layout.passages or []
 
+    # Load extra data for modules that need it
+    extra_kwargs: dict = {}
+    if data.module == "materials":
+        extra_kwargs["materials"] = await _load_materials_for_analysis(data.layout_id, db)
+
     analysis_fn = ANALYSIS_MODULES[data.module]
-    analysis_result = analysis_fn(zones, passages, project.boat_class)
+    analysis_result = analysis_fn(
+        zones, passages, project.boat_class,
+        config_overrides=data.config_overrides,
+        **extra_kwargs,
+    )
 
     db_result = AnalysisResult(
         project_id=project_id,
