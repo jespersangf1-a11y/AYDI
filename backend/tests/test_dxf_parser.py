@@ -10,9 +10,9 @@ def _make_test_dxf(layers_and_polys):
         doc.layers.add(layer_name)
         for points in polylines:
             msp.add_lwpolyline(points, dxfattribs={"layer": layer_name}, close=True)
-    stream = io.BytesIO()
+    stream = io.StringIO()
     doc.write(stream)
-    return stream.getvalue()
+    return stream.getvalue().encode("utf-8")
 
 
 def test_parse_basic_zones():
@@ -74,9 +74,9 @@ def test_parse_passage_layer():
     msp.add_lwpolyline([(0, 0), (2000, 0), (2000, 2000), (0, 2000)], dxfattribs={"layer": "CABIN"}, close=True)
     msp.add_lwpolyline([(2000, 0), (5000, 0), (5000, 2000), (2000, 2000)], dxfattribs={"layer": "SALON"}, close=True)
     msp.add_line((2000, 0), (2000, 2000), dxfattribs={"layer": "PASSAGE"})
-    stream = io.BytesIO()
+    stream = io.StringIO()
     doc.write(stream)
-    content = stream.getvalue()
+    content = stream.getvalue().encode("utf-8")
     result = parse_dxf(content)
     assert len(result["zones"]) == 2
 
