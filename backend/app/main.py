@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import layouts, projects
+from app.api.routes import layouts, materials, projects
 from app.core.config import settings
 from app.db.database import engine
 from app.models.models import Base
@@ -43,6 +43,7 @@ app.add_middleware(
 
 app.include_router(projects.router, prefix="/api/v1")
 app.include_router(layouts.router, prefix="/api/v1")
+app.include_router(materials.router, prefix="/api/v1")
 
 
 @app.get("/health")
