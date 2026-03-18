@@ -220,3 +220,243 @@ def analyze_maintenance_burden(
         "total_material_cost_eur": round(total_material_cost, 2),
         "maintenance_ratio": round(ratio, 4),
     }
+
+
+# ---------------------------------------------------------------------------
+# Sub-analysis: Known issues
+# ---------------------------------------------------------------------------
+
+_ISSUE_SEVERITY_PENALTY = {
+    "critical": 35,
+    "high": 20,
+    "medium": 10,
+    "low": 5,
+}
+
+
+def analyze_known_issues(
+    zone_materials: list[dict],
+    config: dict,
+) -> tuple[float, list[dict], dict]:
+    """Cross-reference materials against their known issues database.
+
+    Each material.known_issues is a list of {issue, severity, conditions, source}.
+    Higher severity issues cause larger score penalties.
+
+    Returns (score 0-100, warnings, metrics).
+    """
+    warnings: list[dict] = []
+
+    if not zone_materials:
+        warnings.append({
+            "code": "ISSUES_NO_MATERIALS",
+            "severity": "info",
+            "message": "Keine Materialzuweisungen für Problemanalyse vorhanden.",
+            "suggestion": "Materialien den Zonen zuweisen.",
+        })
+        return 50.0, warnings, {"total_issues": 0, "critical_issues": 0}
+
+    total_penalty = 0.0
+    total_issues = 0
+    critical_issues = 0
+
+    for zm in zone_materials:
+        mat = zm["material"]
+        issues = mat.get("known_issues") or []
+
+        for issue in issues:
+            severity = issue.get("severity", "low")
+            penalty = _ISSUE_SEVERITY_PENALTY.get(severity, 5)
+            total_penalty += penalty
+            total_issues += 1
+
+            if severity in ("critical", "high"):
+                critical_issues += 1
+
+            code = f"KNOWN_ISSUE_{severity.upper()}"
+            warnings.append({
+                "code": code,
+                "severity": "critical" if severity == "critical" else "warning",
+                "message": (
+                    f"Material '{mat.get('name', '?')}' in Zone '{zm['zone_name']}': "
+                    f"bekanntes Problem — {issue.get('issue', '?')} "
+                    f"(Schwere: {severity})."
+                ),
+                "suggestion": (
+                    f"Alternative zu '{mat.get('name', '?')}' prüfen oder "
+                    f"Gegenmaßnahmen planen."
+                ),
+            })
+
+    score = max(0.0, 100.0 - total_penalty)
+
+    return score, warnings, {
+        "total_issues": total_issues,
+        "critical_issues": critical_issues,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Sub-analysis: Material compatibility
+# ---------------------------------------------------------------------------
+
+
+def analyze_material_compatibility(
+    zone_materials: list[dict],
+    config: dict,
+) -> tuple[float, list[dict], dict]:
+    """Check for incompatible material combinations within zones.
+
+    Currently checks: dissimilar metals in the same zone (galvanic corrosion
+    risk in marine environment).
+
+    Returns (score 0-100, warnings, metrics).
+    """
+    warnings: list[dict] = []
+
+    if not zone_materials:
+        warnings.append({
+            "code": "COMPAT_NO_MATERIALS",
+            "severity": "info",
+            "message": "Keine Materialzuweisungen für Kompatibilitätsanalyse vorhanden.",
+            "suggestion": "Materialien den Zonen zuweisen.",
+        })
+        return 50.0, warnings, {"incompatibility_count": 0, "zones_checked": 0}
+
+    # Group by zone_name
+    by_zone: dict[str, list[dict]] = {}
+    for zm in zone_materials:
+        by_zone.setdefault(zm["zone_name"], []).append(zm)
+
+    incompatibility_count = 0
+
+    for zone_name, mats in by_zone.items():
+        # Check dissimilar metals
+        metals = [
+            zm for zm in mats
+            if zm["material"].get("subcategory") == "metal"
+        ]
+        if len(metals) >= 2:
+            metal_types = set()
+            for m in metals:
+                mt = m["material"].get("properties", {}).get("metal_type", "unknown")
+                metal_types.add(mt)
+
+            if len(metal_types) > 1:
+                incompatibility_count += 1
+                types_str = ", ".join(sorted(metal_types))
+                warnings.append({
+                    "code": "MATERIAL_INCOMPATIBLE",
+                    "severity": "warning",
+                    "message": (
+                        f"Zone '{zone_name}': unterschiedliche Metalle ({types_str}) — "
+                        f"Risiko galvanischer Korrosion im Salzwasser."
+                    ),
+                    "suggestion": (
+                        f"Gleiche Metallart verwenden oder galvanische Trennung "
+                        f"in Zone '{zone_name}' vorsehen."
+                    ),
+                })
+
+    score = max(0.0, 100.0 - incompatibility_count * 25.0)
+
+    return score, warnings, {
+        "incompatibility_count": incompatibility_count,
+        "zones_checked": len(by_zone),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Sub-analysis: Material weight
+# ---------------------------------------------------------------------------
+
+
+def analyze_material_weight(
+    zone_materials: list[dict],
+    config: dict,
+) -> tuple[float, list[dict], dict]:
+    """Check if material choices add excessive weight per zone.
+
+    Weight per assignment = density_kg_m3 * (thickness_mm / 1000) * area_sqm.
+    Aggregated per zone, compared against max_zone_weight_kg_sqm.
+
+    Returns (score 0-100, warnings, metrics).
+    """
+    warnings: list[dict] = []
+
+    if not zone_materials:
+        warnings.append({
+            "code": "WEIGHT_NO_MATERIALS",
+            "severity": "info",
+            "message": "Keine Materialzuweisungen für Gewichtsanalyse vorhanden.",
+            "suggestion": "Materialien den Zonen zuweisen.",
+        })
+        return 50.0, warnings, {"zone_weights_kg_sqm": {}, "heaviest_zone": None}
+
+    max_weight = config.get("max_zone_weight_kg_sqm", 30.0)
+
+    # Accumulate weight per zone (kg/sqm average)
+    zone_weight: dict[str, float] = {}
+    zone_area: dict[str, float] = {}
+    missing_data = 0
+
+    for zm in zone_materials:
+        mat = zm["material"]
+        props = mat.get("properties") or {}
+        density = props.get("density_kg_m3")
+        thickness = props.get("thickness_mm")
+        area = zm.get("area_sqm", 0.0)
+
+        if density is None or thickness is None:
+            missing_data += 1
+            continue
+
+        weight_kg = density * (thickness / 1000.0) * area
+        zone_name = zm["zone_name"]
+        zone_weight[zone_name] = zone_weight.get(zone_name, 0.0) + weight_kg
+        zone_area[zone_name] = zone_area.get(zone_name, 0.0) + area
+
+    if not zone_weight:
+        if missing_data > 0:
+            warnings.append({
+                "code": "WEIGHT_NO_DATA",
+                "severity": "info",
+                "message": (
+                    f"{missing_data} Materialzuweisung(en) ohne Dichte-/Dicke-Angaben — "
+                    f"Gewichtsanalyse nicht möglich."
+                ),
+                "suggestion": "Dichte (density_kg_m3) und Dicke (thickness_mm) in Materialeigenschaften ergänzen.",
+            })
+        return 50.0, warnings, {"zone_weights_kg_sqm": {}, "heaviest_zone": None}
+
+    # Compute kg/sqm per zone
+    zone_kg_sqm: dict[str, float] = {}
+    for zn in zone_weight:
+        if zone_area.get(zn, 0) > 0:
+            zone_kg_sqm[zn] = zone_weight[zn] / zone_area[zn]
+
+    heavy_zones = []
+    for zn, kg_sqm in zone_kg_sqm.items():
+        if kg_sqm > max_weight:
+            heavy_zones.append(zn)
+            warnings.append({
+                "code": "MATERIAL_HEAVY",
+                "severity": "warning",
+                "message": (
+                    f"Zone '{zn}': Materialgewicht {kg_sqm:.1f} kg/m² "
+                    f"überschreitet Maximum {max_weight:.0f} kg/m²."
+                ),
+                "suggestion": f"Leichtere Materialien für Zone '{zn}' in Betracht ziehen.",
+            })
+
+    if not heavy_zones:
+        score = 100.0
+    else:
+        score = max(0.0, 100.0 * (1.0 - len(heavy_zones) / len(zone_kg_sqm)))
+
+    heaviest = max(zone_kg_sqm, key=zone_kg_sqm.get) if zone_kg_sqm else None
+
+    return score, warnings, {
+        "zone_weights_kg_sqm": {k: round(v, 1) for k, v in zone_kg_sqm.items()},
+        "heaviest_zone": heaviest,
+    }
