@@ -318,3 +318,207 @@ def analyze_lateral_balance(
         "offset_from_center_pct": round(offset, 4),
         "tolerance_pct": tolerance,
     }
+
+
+# ---------------------------------------------------------------------------
+# Sub-analysis: Heavy zone placement
+# ---------------------------------------------------------------------------
+
+
+def analyze_heavy_zone_placement(
+    zones: list[dict],
+    config: dict,
+) -> tuple[float, list[dict], dict]:
+    """Check if heavy zones are centrally positioned.
+
+    Returns (score 0-100, warnings, metrics).
+    """
+    warnings: list[dict] = []
+
+    if not zones:
+        warnings.append({
+            "code": "STRUCTURAL_NO_ZONES",
+            "severity": "info",
+            "message": "Keine Zonen für Schwerzonen-Analyse vorhanden.",
+            "suggestion": "Zonen dem Layout zuweisen.",
+        })
+        return 50.0, warnings, {
+            "heavy_zones": [], "total_heavy_weight_kg": 0.0, "central_ratio": 0.0,
+        }
+
+    weight_factor = config.get("boat_class_weight_factor", 1.0)
+    central_band = config.get("central_band", (0.20, 0.80))
+    min_x, max_x, _, _ = _get_boat_extents(zones)
+    x_span = max_x - min_x
+
+    heavy_zones = [z for z in zones if z.get("zone_type") in _HEAVY_ZONE_TYPES]
+
+    if not heavy_zones:
+        warnings.append({
+            "code": "STRUCTURAL_NO_HEAVY_ZONES",
+            "severity": "info",
+            "message": "Keine schweren Zonen (Motor, Stauraum) im Layout erkannt.",
+            "suggestion": "Motor- und Stauräume im Layout definieren.",
+        })
+        return 100.0, warnings, {
+            "heavy_zones": [], "total_heavy_weight_kg": 0.0, "central_ratio": 1.0,
+        }
+
+    if x_span < 1e-6:
+        return 100.0, warnings, {
+            "heavy_zones": [], "total_heavy_weight_kg": 0.0, "central_ratio": 1.0,
+        }
+
+    heavy_info = []
+    total_heavy_weight = 0.0
+    central_weight = 0.0
+
+    for z in heavy_zones:
+        w = _estimate_zone_weight(z, weight_factor)
+        cx, _ = _polygon_centroid(z.get("polygon", []))
+        cx_pct = (cx - min_x) / x_span
+        is_central = central_band[0] <= cx_pct <= central_band[1]
+
+        total_heavy_weight += w
+        if is_central:
+            central_weight += w
+        else:
+            severity = "critical" if cx_pct < 0.15 or cx_pct > 0.85 else "warning"
+            warnings.append({
+                "code": "HEAVY_ZONE_OFF_CENTER",
+                "severity": severity,
+                "message": (
+                    f"Schwere Zone '{z.get('name', '?')}' ({z.get('zone_type')}) "
+                    f"bei {cx_pct:.0%} der Bootslänge — "
+                    f"außerhalb des zentralen Bereichs ({central_band[0]:.0%}–{central_band[1]:.0%})."
+                ),
+                "suggestion": f"Zone '{z.get('name', '?')}' weiter zur Mitte verlagern.",
+            })
+
+        heavy_info.append({
+            "name": z.get("name", "?"),
+            "zone_type": z.get("zone_type"),
+            "centroid_x_pct": round(cx_pct, 4),
+            "weight_kg": round(w, 1),
+            "is_central": is_central,
+        })
+
+    central_ratio = central_weight / total_heavy_weight if total_heavy_weight > 0 else 1.0
+
+    # Score: penalty per off-center zone proportional to its weight
+    score = 100.0
+    for hz in heavy_info:
+        if not hz["is_central"]:
+            penalty = (hz["weight_kg"] / total_heavy_weight) * 50.0
+            score -= penalty
+    score = max(0.0, score)
+
+    return score, warnings, {
+        "heavy_zones": heavy_info,
+        "total_heavy_weight_kg": round(total_heavy_weight, 1),
+        "central_ratio": round(central_ratio, 4),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Sub-analysis: Load concentration
+# ---------------------------------------------------------------------------
+
+
+def analyze_load_concentration(
+    zones: list[dict],
+    config: dict,
+) -> tuple[float, list[dict], dict]:
+    """Evaluate weight distribution across three longitudinal segments.
+
+    Returns (score 0-100, warnings, metrics).
+    """
+    warnings: list[dict] = []
+
+    if not zones:
+        warnings.append({
+            "code": "STRUCTURAL_NO_ZONES",
+            "severity": "info",
+            "message": "Keine Zonen für Lastkonzentrationsanalyse vorhanden.",
+            "suggestion": "Zonen dem Layout zuweisen.",
+        })
+        return 50.0, warnings, {
+            "segment_weights": {}, "segment_fractions": {},
+            "heaviest_segment": None, "cv": 0.0,
+        }
+
+    weight_factor = config.get("boat_class_weight_factor", 1.0)
+    warn_threshold = config.get("concentration_warn_threshold", 0.55)
+    min_x, max_x, _, _ = _get_boat_extents(zones)
+    x_span = max_x - min_x
+
+    if x_span < 1e-6:
+        return 50.0, warnings, {
+            "segment_weights": {}, "segment_fractions": {},
+            "heaviest_segment": None, "cv": 0.0,
+        }
+
+    # Divide into 3 equal segments
+    third = x_span / 3.0
+    boundaries = [min_x, min_x + third, min_x + 2 * third, max_x]
+    segment_weights: dict[str, float] = {"bow": 0.0, "middle": 0.0, "stern": 0.0}
+
+    for z in zones:
+        w = _estimate_zone_weight(z, weight_factor)
+        cx, _ = _polygon_centroid(z.get("polygon", []))
+        # Assign to segment by centroid position
+        if cx < boundaries[1]:
+            segment_weights["bow"] += w
+        elif cx < boundaries[2]:
+            segment_weights["middle"] += w
+        else:
+            segment_weights["stern"] += w
+
+    total = sum(segment_weights.values())
+    if total < 1e-6:
+        return 50.0, warnings, {
+            "segment_weights": segment_weights, "segment_fractions": {},
+            "heaviest_segment": None, "cv": 0.0,
+        }
+
+    fractions = {k: v / total for k, v in segment_weights.items()}
+
+    # Coefficient of variation
+    mean_w = total / 3.0
+    variance = sum((v - mean_w) ** 2 for v in segment_weights.values()) / 3.0
+    std_dev = variance ** 0.5
+    cv = std_dev / mean_w if mean_w > 0 else 0.0
+
+    score = max(0.0, 100.0 * (1.0 - cv))
+
+    heaviest = max(fractions, key=fractions.get)
+
+    # Warnings
+    for name, frac in fractions.items():
+        if frac > 0.70:
+            warnings.append({
+                "code": "LOAD_CONCENTRATION_HIGH",
+                "severity": "critical",
+                "message": (
+                    f"Segment '{name}' trägt {frac:.0%} des Gesamtgewichts — "
+                    f"stark ungleichmäßige Verteilung."
+                ),
+                "suggestion": f"Gewicht aus Segment '{name}' umverteilen.",
+            })
+        elif frac > warn_threshold:
+            warnings.append({
+                "code": "LOAD_CONCENTRATION_HIGH",
+                "severity": "warning",
+                "message": (
+                    f"Segment '{name}' trägt {frac:.0%} des Gesamtgewichts — "
+                    f"Richtwert: max. {warn_threshold:.0%}."
+                ),
+                "suggestion": f"Gewicht aus Segment '{name}' gleichmäßiger verteilen.",
+            })
+
+    return score, warnings, {
+        "segment_weights": {k: round(v, 1) for k, v in segment_weights.items()},
+        "segment_fractions": {k: round(v, 4) for k, v in fractions.items()},
+        "heaviest_segment": heaviest,
+        "cv": round(cv, 4),
+    }
