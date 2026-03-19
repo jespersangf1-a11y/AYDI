@@ -209,3 +209,29 @@ def test_construction_knowledge_lookup_hit():
 
 def test_construction_knowledge_lookup_miss():
     assert get_construction_knowledge("titanium", "3d_printed") is None
+
+
+# ---------------------------------------------------------------------------
+# Visual prompt context builder
+# ---------------------------------------------------------------------------
+
+
+def test_visual_context_generation():
+    """build_visual_context produces German text with expected sections."""
+    from app.services.visual.prompt_context import build_visual_context
+    dna = BoatDNA.from_boat_class("cruising_sail")
+    context = build_visual_context(dna)
+    assert "BOOTSPROFIL" in context
+    assert "QUALITÄTSSTANDARDS" in context
+    assert "BEWERTE NACH DIESEN STANDARDS" in context
+    assert len(context) > 100
+
+
+def test_visual_context_unknown_construction():
+    """Unknown construction combo omits construction section gracefully."""
+    from app.services.visual.prompt_context import build_visual_context
+    dna = _make_dna(hull_material="wood_traditional", hull_construction="carvel")
+    context = build_visual_context(dna)
+    assert "BOOTSPROFIL" in context
+    # No crash, just omits construction-specific indicators
+    assert "PRÜFPUNKTE" not in context or "Keine spezifischen" in context
