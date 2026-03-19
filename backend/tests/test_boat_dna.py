@@ -181,3 +181,31 @@ def test_round_trip(boat_class):
     dna = BoatDNA.from_boat_class(boat_class)
     restored = BoatDNA.from_dict(dna.to_dict())
     assert restored.to_dict() == dna.to_dict()
+
+
+# ---------------------------------------------------------------------------
+# Construction knowledge
+# ---------------------------------------------------------------------------
+
+from app.domain.construction import CONSTRUCTION_KNOWLEDGE, get_construction_knowledge
+
+
+def test_construction_knowledge_has_six_entries():
+    assert len(CONSTRUCTION_KNOWLEDGE) == 6
+
+
+def test_construction_knowledge_required_keys():
+    required = {"description", "typical_boats", "strengths", "weaknesses",
+                "quality_indicators_visual", "known_issues"}
+    for key, entry in CONSTRUCTION_KNOWLEDGE.items():
+        assert required.issubset(entry.keys()), f"Missing keys in {key}"
+
+
+def test_construction_knowledge_lookup_hit():
+    entry = get_construction_knowledge("aluminium", "welded")
+    assert entry is not None
+    assert "description" in entry
+
+
+def test_construction_knowledge_lookup_miss():
+    assert get_construction_knowledge("titanium", "3d_printed") is None
