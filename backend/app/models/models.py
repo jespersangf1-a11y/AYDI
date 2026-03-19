@@ -2,7 +2,7 @@
 import uuid
 from datetime import date, datetime, timezone
 
-from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, Index, Integer, String, Text
 from sqlalchemy import JSON, Uuid
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -358,3 +358,58 @@ class ImageUpload(Base):
     metadata_extra: Mapped[dict | None] = mapped_column(JSON, nullable=True)  # EXIF, camera info
 
     project: Mapped["Project | None"] = relationship(back_populates="images")
+
+
+class CommunityReport(Base):
+    """Individual experience report from forum post or owner feedback."""
+    __tablename__ = "community_reports"
+
+    id = mapped_column(Integer, primary_key=True, autoincrement=True)
+    created_at = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at = mapped_column(DateTime, onupdate=datetime.utcnow)
+    source_forum = mapped_column(String(100), nullable=False)
+    source_url = mapped_column(String(500), nullable=True)
+    source_date = mapped_column(Date, nullable=True)
+    boat_manufacturer = mapped_column(String(100), nullable=False)
+    boat_model = mapped_column(String(100), nullable=True)
+    boat_year = mapped_column(Integer, nullable=True)
+    hull_material = mapped_column(String(50), nullable=True)
+    hull_construction = mapped_column(String(50), nullable=True)
+    propulsion = mapped_column(String(20), nullable=True)
+    issues = mapped_column(JSON, nullable=False, default=list)
+    positives = mapped_column(JSON, default=list)
+    reliability = mapped_column(Float, nullable=False)
+    raw_text = mapped_column(Text, nullable=True)
+
+    __table_args__ = (
+        Index("ix_community_reports_manufacturer_model", "boat_manufacturer", "boat_model"),
+        Index("ix_community_reports_hull", "hull_material", "hull_construction"),
+    )
+
+
+class CommunityPattern(Base):
+    """Aggregated pattern derived from ≥3 independent reports."""
+    __tablename__ = "community_patterns"
+
+    id = mapped_column(Integer, primary_key=True, autoincrement=True)
+    created_at = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at = mapped_column(DateTime, onupdate=datetime.utcnow)
+    manufacturer = mapped_column(String(100), nullable=True)
+    boat_model = mapped_column(String(100), nullable=True)
+    issue_category = mapped_column(String(50), nullable=False)
+    zone_type = mapped_column(String(50), nullable=True)
+    description = mapped_column(String(500), nullable=False)
+    report_count = mapped_column(Integer, nullable=False)
+    severity_mode = mapped_column(String(20), nullable=False)
+    typical_onset_years = mapped_column(Float, nullable=True)
+    materials_involved = mapped_column(JSON, nullable=True)
+    construction_methods_involved = mapped_column(JSON, nullable=True)
+    confidence = mapped_column(Float, nullable=False)
+    source_report_ids = mapped_column(JSON, nullable=False)
+    is_positive = mapped_column(Boolean, nullable=False, default=False)
+
+    __table_args__ = (
+        Index("ix_community_patterns_manufacturer_model", "manufacturer", "boat_model"),
+        Index("ix_community_patterns_category", "issue_category"),
+        Index("ix_community_patterns_zone", "zone_type"),
+    )
