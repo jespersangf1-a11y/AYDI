@@ -387,14 +387,19 @@ In `backend/app/services/analysis/orchestrator.py`:
 1. Add `"community"` to `EXECUTION_TIERS[0]` (Tier 1, parallel with ergonomics/volume/emotional/compliance).
 2. Add `community_patterns: list[dict] = field(default_factory=list)` to the `AnalysisContext` dataclass.
 3. Add a `"community"` case to `_build_module_kwargs()` that returns `{"community_patterns": context.community_patterns}`.
-4. Before tier dispatch in `run_full_analysis()`, populate `context.community_patterns` via `CommunityKnowledgeEngine`:
+4. Add `"community"` entry to the orchestrator's `OVERALL_WEIGHTS` dict for all 4 legacy boat classes.
+
+The orchestrator does NOT have DB access — it is a pure orchestration layer. The `context.community_patterns` field must be populated by the **caller** (API route) before calling `run_full_analysis()`:
 
 ```python
-# In run_full_analysis(), before tier dispatch:
+# In the API route that triggers full analysis (e.g., layouts.py):
 engine = CommunityKnowledgeEngine(db)
 patterns = await engine.get_relevant_patterns(dna, manufacturer, model)
 positives = await engine.get_positive_patterns(dna, manufacturer, model)
 context.community_patterns = patterns + positives
+
+# Then call orchestrator as before:
+result = await run_full_analysis(context)
 ```
 
 The existing `_run_single_module()` dispatch mechanism handles the rest — it calls the module runner with `(zones, passages, boat_class, config_overrides, **kwargs)` where kwargs come from `_build_module_kwargs()`.
@@ -560,7 +565,8 @@ After seeding reports, `seed_community_data()` calls `CommunityPatternAggregator
 | `backend/app/models/models.py` | +CommunityReport, +CommunityPattern models (~60 lines) |
 | `backend/app/schemas/schemas.py` | +6 Pydantic schemas (~80 lines) |
 | `backend/app/main.py` | +1 router registration line |
-| `backend/app/services/analysis/orchestrator.py` | +community_patterns to AnalysisContext, +"community" to EXECUTION_TIERS[0], +community case in _build_module_kwargs(), +engine call in run_full_analysis() (~20 lines) |
+| `backend/app/services/analysis/orchestrator.py` | +community_patterns to AnalysisContext, +"community" to EXECUTION_TIERS[0], +community case in _build_module_kwargs(), +community to OVERALL_WEIGHTS (~15 lines) |
+| `backend/app/api/routes/layouts.py` (or equivalent) | +CommunityKnowledgeEngine call to populate context.community_patterns before orchestrator (~8 lines) |
 | `backend/app/services/analysis/score_fusion.py` | +community weight entry (~2 lines) |
 | `backend/app/services/boat_dna_resolver.py` | +_resolve_community(), +community in overall_weights (~40 lines) |
 | `backend/app/db/seed.py` | +seed_community_data() (~150 lines) |
