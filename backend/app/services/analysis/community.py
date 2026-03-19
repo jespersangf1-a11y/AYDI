@@ -107,7 +107,7 @@ def run_community_analysis(
             "code": "COMMUNITY_KNOWN_ISSUE",
             "severity": "critical" if p["severity"] == "critical" else "warning",
             "zone": p.get("zone_type"),
-            "message": f"COMMUNITY: {p['description']} ({p.get('report_count', 0)} Berichte)",
+            "message": f"⚠️ COMMUNITY: {p['description']} ({p.get('report_count', 0)} Berichte)",
             "source": "community",
             "confidence": "documented",
         })
@@ -166,6 +166,5 @@ def run_community_analysis(
             "most_common_category": most_common,
             "earliest_typical_onset_years": earliest_onset,
         },
-        "config_used": config,
         "confidence": "documented",
     }

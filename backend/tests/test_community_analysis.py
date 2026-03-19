@@ -122,7 +122,7 @@ class TestWarningsAndSuggestions:
         w = result["warnings"][0]
         assert w["code"] == "COMMUNITY_KNOWN_ISSUE"
         assert w["severity"] == "critical"
-        assert "COMMUNITY:" in w["message"]
+        assert "⚠️ COMMUNITY:" in w["message"]
         assert "Berichte" in w["message"]
 
     def test_major_pattern_generates_warning(self):
@@ -182,4 +182,3 @@ class TestReturnFormat:
         assert "suggestions" in result
         assert "metrics" in result
         assert result["confidence"] == "documented"
-        assert "config_used" in result
