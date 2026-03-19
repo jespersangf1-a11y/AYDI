@@ -1,4 +1,4 @@
-import { Anchor, BarChart3, Plus } from 'lucide-react'
+import { Anchor, BarChart3, Plus, Zap, Wrench, Package, Camera } from 'lucide-react'
 
 interface AppShellProps {
   currentView: string
@@ -8,8 +8,12 @@ interface AppShellProps {
 
 export default function AppShell({ currentView, onNavigate, children }: AppShellProps) {
   const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
+    { id: 'quick-analysis', label: 'Schnellanalyse', icon: Zap },
+    { id: 'dashboard', label: 'Projekte', icon: BarChart3 },
     { id: 'project-create', label: 'Neues Projekt', icon: Plus },
+    { id: 'materials', label: 'Materialien', icon: Package },
+    { id: 'service-reports', label: 'Serviceberichte', icon: Wrench },
+    { id: 'image-analysis', label: 'Bildanalyse', icon: Camera },
   ]
 
   return (

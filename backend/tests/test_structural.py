@@ -229,7 +229,7 @@ def test_full_structural_analysis():
     assert "lateral" in result["sub_scores"]
     assert "heavy_placement" in result["sub_scores"]
     assert "load_concentration" in result["sub_scores"]
-    assert len(result["sub_scores"]) == 4
+    assert len(result["sub_scores"]) == 6
 
 
 def test_structural_warnings_sorted():
@@ -268,7 +268,7 @@ def test_structural_empty_input():
     """No zones -> short-circuit: score 50, single STRUCTURAL_NO_ZONES warning."""
     result = run_structural_analysis([], [], "cruising_sail")
     assert result["overall_score"] == 50.0
-    assert len(result["sub_scores"]) == 4
+    assert len(result["sub_scores"]) == 6
     assert all(v == 50.0 for v in result["sub_scores"].values())
     assert len(result["warnings"]) == 1
     assert result["warnings"][0]["code"] == "STRUCTURAL_NO_ZONES"

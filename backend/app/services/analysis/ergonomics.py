@@ -4,6 +4,7 @@ Pure function module — no database access. Receives data as parameters,
 returns analysis results as dicts.
 """
 import logging
+import math
 from collections import deque
 
 logger = logging.getLogger(__name__)
@@ -16,12 +17,16 @@ BOAT_CLASS_DEFAULTS = {
         "min_helm_area_sqm": 1.5,
         "min_helm_visibility_deg": 225,
         "crew_guest_separation": False,
+        "heel_angle_deg": 20,
         "weights": {
-            "passage_width": 0.30,
-            "path_efficiency": 0.20,
-            "crew_guest_separation": 0.05,
-            "accessibility": 0.30,
-            "helm_ergonomics": 0.15,
+            "passage_width": 0.23,
+            "path_efficiency": 0.15,
+            "crew_guest_separation": 0.04,
+            "accessibility": 0.22,
+            "helm_ergonomics": 0.11,
+            "heel_impact": 0.10,
+            "morning_circulation": 0.08,
+            "access_complexity": 0.07,
         },
     },
     "cruising_sail": {
@@ -31,12 +36,16 @@ BOAT_CLASS_DEFAULTS = {
         "min_helm_area_sqm": 2.0,
         "min_helm_visibility_deg": 225,
         "crew_guest_separation": False,
+        "heel_angle_deg": 20,
         "weights": {
-            "passage_width": 0.25,
-            "path_efficiency": 0.20,
-            "crew_guest_separation": 0.10,
-            "accessibility": 0.25,
-            "helm_ergonomics": 0.20,
+            "passage_width": 0.19,
+            "path_efficiency": 0.15,
+            "crew_guest_separation": 0.08,
+            "accessibility": 0.19,
+            "helm_ergonomics": 0.14,
+            "heel_impact": 0.10,
+            "morning_circulation": 0.08,
+            "access_complexity": 0.07,
         },
     },
     "large_motor": {
@@ -46,12 +55,16 @@ BOAT_CLASS_DEFAULTS = {
         "min_helm_area_sqm": 3.0,
         "min_helm_visibility_deg": 240,
         "crew_guest_separation": True,
+        "heel_angle_deg": 0,
         "weights": {
-            "passage_width": 0.20,
-            "path_efficiency": 0.20,
-            "crew_guest_separation": 0.25,
-            "accessibility": 0.20,
-            "helm_ergonomics": 0.15,
+            "passage_width": 0.17,
+            "path_efficiency": 0.17,
+            "crew_guest_separation": 0.21,
+            "accessibility": 0.17,
+            "helm_ergonomics": 0.13,
+            "heel_impact": 0.0,
+            "morning_circulation": 0.08,
+            "access_complexity": 0.07,
         },
     },
     "superyacht": {
@@ -61,12 +74,16 @@ BOAT_CLASS_DEFAULTS = {
         "min_helm_area_sqm": 5.0,
         "min_helm_visibility_deg": 270,
         "crew_guest_separation": True,
+        "heel_angle_deg": 0,
         "weights": {
-            "passage_width": 0.15,
-            "path_efficiency": 0.20,
-            "crew_guest_separation": 0.35,
-            "accessibility": 0.15,
-            "helm_ergonomics": 0.15,
+            "passage_width": 0.13,
+            "path_efficiency": 0.17,
+            "crew_guest_separation": 0.30,
+            "accessibility": 0.13,
+            "helm_ergonomics": 0.12,
+            "heel_impact": 0.0,
+            "morning_circulation": 0.08,
+            "access_complexity": 0.07,
         },
     },
 }
@@ -319,7 +336,196 @@ def analyze_helm_ergonomics(zones: list[dict], config: dict) -> tuple[float, lis
     return score, warnings, {"helm_area_sqm": area, "visibility_angle": vis_angle}
 
 
-def run_ergonomics_analysis(zones: list[dict], passages: list[dict], boat_class: str, config_overrides: dict | None = None) -> dict:
+_ACCESS_COMPLEXITY_SCORES = {
+    "direct": 100,
+    "panel_1": 80,
+    "panel_2": 60,
+    "floor_lift": 50,
+    "furniture_move": 30,
+    "major_disassembly": 10,
+}
+
+_TECHNICAL_ZONE_TYPES = {"engine", "head", "storage"}
+
+
+def analyze_heel_impact(passages: list[dict], config: dict) -> tuple[float, list[dict], dict]:
+    """Score passage usability under sailing heel conditions."""
+    heel_angle = config.get("heel_angle_deg", 0)
+    if heel_angle == 0:
+        return 100.0, [], {"heel_angle_deg": 0, "affected_passages": 0}
+
+    if not passages:
+        return 100.0, [], {"heel_angle_deg": heel_angle, "affected_passages": 0}
+
+    critical_width = config["critical_passage_width_mm"]
+    cos_heel = math.cos(math.radians(heel_angle))
+    warnings: list[dict] = []
+    below_critical = 0
+
+    for p in passages:
+        effective_width = p["width_mm"] * cos_heel
+        if effective_width < critical_width:
+            below_critical += 1
+            warnings.append({
+                "severity": "warning",
+                "message": (
+                    f"Durchgang {p['from_zone']}→{p['to_zone']} unter Krängung zu schmal "
+                    f"({effective_width:.0f}mm bei {heel_angle}° Krängung, Minimum: {critical_width:.0f}mm)"
+                ),
+                "suggestion": f"Durchgangsbreite auf mindestens {critical_width / cos_heel:.0f}mm erweitern für sichere Nutzung unter Krängung",
+            })
+
+    total = len(passages)
+    ok_count = total - below_critical
+    score = (ok_count / total) * 100.0
+
+    return score, warnings, {
+        "heel_angle_deg": heel_angle,
+        "affected_passages": below_critical,
+        "total_passages": total,
+    }
+
+
+def _bfs_path(graph: dict[str, set[str]], start: str, targets: set[str]) -> str | None:
+    """BFS to find nearest target zone from start. Returns zone name or None."""
+    if start in targets:
+        return start
+    if start not in graph:
+        return None
+    visited = {start}
+    queue = deque([start])
+    while queue:
+        node = queue.popleft()
+        for neighbor in graph.get(node, set()):
+            if neighbor not in visited:
+                if neighbor in targets:
+                    return neighbor
+                visited.add(neighbor)
+                queue.append(neighbor)
+    return None
+
+
+def _bfs_path_edges(graph: dict[str, set[str]], start: str, end: str) -> list[tuple[str, str]]:
+    """BFS returning the list of edges (passage connections) on the shortest path."""
+    if start == end:
+        return []
+    if start not in graph:
+        return []
+    visited = {start}
+    queue = deque([(start, [])])
+    while queue:
+        node, path = queue.popleft()
+        for neighbor in graph.get(node, set()):
+            if neighbor not in visited:
+                new_path = path + [(node, neighbor)]
+                if neighbor == end:
+                    return new_path
+                visited.add(neighbor)
+                queue.append((neighbor, new_path))
+    return []
+
+
+def analyze_morning_circulation(zones: list[dict], passages: list[dict], config: dict) -> tuple[float, list[dict], dict]:
+    """Score morning routine traffic flow: cabin→head→pantry→cockpit."""
+    warnings: list[dict] = []
+    graph = _build_adjacency(passages)
+
+    cabin_zones = [z["name"] for z in zones if z["zone_type"] == "cabin"]
+    head_zones = {z["name"] for z in zones if z["zone_type"] == "head"}
+    pantry_zones = {z["name"] for z in zones if z["zone_type"] == "pantry"}
+    cockpit_zones = {z["name"] for z in zones if z["zone_type"] == "cockpit"}
+
+    if not cabin_zones:
+        return 100.0, [], {"bottleneck_count": 0, "missing_paths": 0, "morning_cabin_capacity": 0}
+
+    morning_cabin_capacity = config.get("morning_cabin_capacity", len(cabin_zones))
+    total_passages = max(len(passages), 1)
+
+    # Track how many cabin paths use each passage (as edge tuple)
+    passage_usage: dict[tuple[str, str], int] = {}
+    missing_paths = 0
+
+    for cabin in cabin_zones[:morning_cabin_capacity]:
+        # cabin → head → pantry → cockpit
+        route_segments = [
+            (cabin, head_zones),
+            (None, pantry_zones),  # from previous target
+            (None, cockpit_zones),
+        ]
+        current = cabin
+        path_broken = False
+
+        for start_override, target_set in route_segments:
+            start = start_override if start_override is not None else current
+            target = _bfs_path(graph, start, target_set)
+            if target is None:
+                missing_paths += 1
+                path_broken = True
+                break
+            edges = _bfs_path_edges(graph, start, target)
+            for edge in edges:
+                # Normalize edge to be order-independent
+                key = (min(edge[0], edge[1]), max(edge[0], edge[1]))
+                passage_usage[key] = passage_usage.get(key, 0) + 1
+            current = target
+
+        if path_broken:
+            continue
+
+    # Count bottlenecks (passages used by >2 cabin paths)
+    bottleneck_count = sum(1 for count in passage_usage.values() if count > 2)
+
+    for edge, count in passage_usage.items():
+        if count > 2:
+            warnings.append({
+                "severity": "warning",
+                "message": f"Durchgang {edge[0]}↔{edge[1]} ist Engpass im Morgenverkehr ({count} Kabinenwege)",
+                "suggestion": "Alternativen Durchgang oder breiteren Zugang schaffen",
+            })
+
+    score = 100.0 - (bottleneck_count / total_passages * 50) - (missing_paths * 20)
+    score = max(0.0, min(100.0, score))
+
+    return score, warnings, {
+        "bottleneck_count": bottleneck_count,
+        "missing_paths": missing_paths,
+        "morning_cabin_capacity": morning_cabin_capacity,
+        "passage_usage": {f"{k[0]}↔{k[1]}": v for k, v in passage_usage.items()},
+    }
+
+
+def analyze_access_complexity(zones: list[dict], config: dict) -> tuple[float, list[dict], dict]:
+    """Score ease of access to technical zones based on access type."""
+    warnings: list[dict] = []
+
+    technical_zones = [z for z in zones if z["zone_type"] in _TECHNICAL_ZONE_TYPES]
+    if not technical_zones:
+        return 100.0, [], {"technical_zones_evaluated": 0}
+
+    zone_scores = []
+    for z in technical_zones:
+        props = z.get("properties") or {}
+        access_type = props.get("access_type", "direct")
+        access_score = _ACCESS_COMPLEXITY_SCORES.get(access_type, 50)
+        zone_scores.append(access_score)
+
+        if access_score < 50:
+            zone_label = {"engine": "Maschinenraum", "head": "WC/Bad", "storage": "Stauraum"}.get(z["zone_type"], z["name"])
+            warnings.append({
+                "severity": "warning",
+                "message": f"Zugang zu '{z['name']}' ({zone_label}) schwierig: {access_type} (Bewertung: {access_score}/100)",
+                "suggestion": f"Einfacheren Zugang zu '{z['name']}' schaffen (z.B. Inspektionsluken oder abnehmbare Paneele)",
+            })
+
+    score = sum(zone_scores) / len(zone_scores)
+
+    return score, warnings, {
+        "technical_zones_evaluated": len(zone_scores),
+        "avg_access_score": round(score, 1),
+    }
+
+
+def run_ergonomics_analysis(zones: list[dict], passages: list[dict], boat_class: str, config_overrides: dict | None = None, data_source: str = "measured") -> dict:
     if boat_class not in BOAT_CLASS_DEFAULTS:
         raise ValueError(f"Unknown boat class: {boat_class}")
     config = BOAT_CLASS_DEFAULTS[boat_class].copy()
@@ -339,6 +545,9 @@ def run_ergonomics_analysis(zones: list[dict], passages: list[dict], boat_class:
         ("crew_guest_separation", lambda: analyze_crew_guest_separation(zones, passages, config)),
         ("accessibility", lambda: analyze_accessibility(zones, passages, config)),
         ("helm_ergonomics", lambda: analyze_helm_ergonomics(zones, config)),
+        ("heel_impact", lambda: analyze_heel_impact(passages, config)),
+        ("morning_circulation", lambda: analyze_morning_circulation(zones, passages, config)),
+        ("access_complexity", lambda: analyze_access_complexity(zones, config)),
     ]
 
     for name, fn in analyses:
@@ -372,4 +581,6 @@ def run_ergonomics_analysis(zones: list[dict], passages: list[dict], boat_class:
         "suggestions": all_suggestions,
         "metrics": all_metrics,
         "config_used": config,
+        "confidence": data_source,
+        "confidence_note": "Basiert auf geschätzten Werten aus öffentlichen Spezifikationen." if data_source == "estimated" else None,
     }

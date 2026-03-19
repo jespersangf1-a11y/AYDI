@@ -13,48 +13,64 @@ BOAT_CLASS_DEFAULTS = {
         "min_lifespan_years": 15,
         "max_annual_maintenance_pct": 0.03,
         "max_zone_weight_kg_sqm": 25.0,
+        "max_annualized_cost_per_sqm": 50,
         "weights": {
-            "durability": 0.30,
-            "maintenance": 0.25,
-            "known_issues": 0.20,
-            "compatibility": 0.15,
-            "weight": 0.10,
+            "durability": 0.25,
+            "maintenance": 0.21,
+            "known_issues": 0.17,
+            "compatibility": 0.13,
+            "weight": 0.09,
+            "lifecycle_cost": 0.08,
+            "uv_exposure": 0.04,
+            "moisture_risk": 0.03,
         },
     },
     "cruising_sail": {
         "min_lifespan_years": 20,
         "max_annual_maintenance_pct": 0.025,
         "max_zone_weight_kg_sqm": 30.0,
+        "max_annualized_cost_per_sqm": 75,
         "weights": {
-            "durability": 0.25,
-            "maintenance": 0.25,
-            "known_issues": 0.20,
-            "compatibility": 0.15,
-            "weight": 0.15,
+            "durability": 0.21,
+            "maintenance": 0.21,
+            "known_issues": 0.17,
+            "compatibility": 0.13,
+            "weight": 0.13,
+            "lifecycle_cost": 0.08,
+            "uv_exposure": 0.04,
+            "moisture_risk": 0.03,
         },
     },
     "large_motor": {
         "min_lifespan_years": 20,
         "max_annual_maintenance_pct": 0.02,
         "max_zone_weight_kg_sqm": 35.0,
+        "max_annualized_cost_per_sqm": 100,
         "weights": {
-            "durability": 0.20,
-            "maintenance": 0.25,
-            "known_issues": 0.25,
-            "compatibility": 0.15,
-            "weight": 0.15,
+            "durability": 0.17,
+            "maintenance": 0.21,
+            "known_issues": 0.21,
+            "compatibility": 0.13,
+            "weight": 0.13,
+            "lifecycle_cost": 0.08,
+            "uv_exposure": 0.04,
+            "moisture_risk": 0.03,
         },
     },
     "superyacht": {
         "min_lifespan_years": 25,
         "max_annual_maintenance_pct": 0.015,
         "max_zone_weight_kg_sqm": 40.0,
+        "max_annualized_cost_per_sqm": 150,
         "weights": {
-            "durability": 0.20,
-            "maintenance": 0.20,
-            "known_issues": 0.25,
-            "compatibility": 0.20,
-            "weight": 0.15,
+            "durability": 0.17,
+            "maintenance": 0.17,
+            "known_issues": 0.21,
+            "compatibility": 0.17,
+            "weight": 0.13,
+            "lifecycle_cost": 0.08,
+            "uv_exposure": 0.04,
+            "moisture_risk": 0.03,
         },
     },
 }
@@ -463,6 +479,226 @@ def analyze_material_weight(
 
 
 # ---------------------------------------------------------------------------
+# Sub-analysis: Lifecycle cost
+# ---------------------------------------------------------------------------
+
+
+def analyze_lifecycle_cost(
+    zone_materials: list[dict],
+    config: dict,
+) -> tuple[float, list[dict], dict]:
+    """Estimate 20-year total cost of ownership per material.
+
+    Considers purchase cost, annual maintenance, and replacement cycles.
+
+    Returns (score 0-100, warnings, metrics).
+    """
+    warnings: list[dict] = []
+
+    if not zone_materials:
+        warnings.append({
+            "severity": "info",
+            "message": "Keine Materialzuweisungen für Lebenszykluskosten-Analyse vorhanden.",
+            "suggestion": "Materialien den Zonen zuweisen.",
+        })
+        return 50.0, warnings, {
+            "total_lifecycle_cost_eur": 0.0,
+            "annualized_cost_eur": 0.0,
+            "total_area_sqm": 0.0,
+        }
+
+    max_annualized = config.get("max_annualized_cost_per_sqm", 50)
+    lifecycle_costs: list[float] = []
+    total_area = 0.0
+
+    for zm in zone_materials:
+        mat = zm["material"]
+        area = zm.get("area_sqm", 0.0)
+        cost_per_unit = mat.get("cost_per_unit", 0.0)
+        maintenance_factor = mat.get("maintenance_cost_factor", 0.0)
+        lifespan = mat.get("lifespan_years", 20)
+
+        purchase = area * cost_per_unit
+        annual_maintenance = purchase * maintenance_factor
+        replacements = max(0, (20 // lifespan) - 1) if lifespan and lifespan > 0 else 0
+        replacement_cost = replacements * purchase * 0.8
+        lifecycle_total = purchase + (annual_maintenance * 20) + replacement_cost
+
+        lifecycle_costs.append(lifecycle_total)
+        total_area += area
+
+    total_lifecycle = sum(lifecycle_costs)
+    annualized = total_lifecycle / 20.0
+
+    # Check for outliers: any single material > 3× average
+    if lifecycle_costs:
+        avg_cost = total_lifecycle / len(lifecycle_costs)
+        for i, zm in enumerate(zone_materials):
+            if avg_cost > 0 and lifecycle_costs[i] > 3.0 * avg_cost:
+                mat = zm["material"]
+                warnings.append({
+                    "severity": "warning",
+                    "message": (
+                        f"Material '{mat.get('name', '?')}' in Zone '{zm['zone_name']}': "
+                        f"Lebenszykluskosten ({lifecycle_costs[i]:.0f} EUR) überschreiten "
+                        f"das 3-fache des Durchschnitts ({avg_cost:.0f} EUR)."
+                    ),
+                    "suggestion": (
+                        f"Günstigere Alternative zu '{mat.get('name', '?')}' prüfen oder "
+                        f"Material mit längerer Lebensdauer wählen."
+                    ),
+                })
+
+    # Score based on annualized cost per sqm
+    if total_area > 0:
+        annualized_per_sqm = annualized / total_area
+        if annualized_per_sqm <= max_annualized:
+            score = 100.0
+        else:
+            score = max(0.0, (max_annualized / annualized_per_sqm) * 100.0)
+    else:
+        score = 50.0
+
+    return score, warnings, {
+        "total_lifecycle_cost_eur": round(total_lifecycle, 2),
+        "annualized_cost_eur": round(annualized, 2),
+        "total_area_sqm": round(total_area, 2),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Sub-analysis: UV exposure risk
+# ---------------------------------------------------------------------------
+
+_HIGH_UV_ZONE_TYPES = {"cockpit", "flybridge", "foredeck", "swim_platform"}
+
+
+def analyze_uv_exposure(
+    zone_materials: list[dict],
+    config: dict,
+) -> tuple[float, list[dict], dict]:
+    """Flag materials in high-UV zones without UV resistance.
+
+    Returns (score 0-100, warnings, metrics).
+    """
+    warnings: list[dict] = []
+
+    if not zone_materials:
+        warnings.append({
+            "severity": "info",
+            "message": "Keine Materialzuweisungen für UV-Analyse vorhanden.",
+            "suggestion": "Materialien den Zonen zuweisen.",
+        })
+        return 50.0, warnings, {"uv_zones_checked": 0, "non_uv_resistant_count": 0}
+
+    non_uv_resistant_count = 0
+    uv_zones_checked = 0
+
+    for zm in zone_materials:
+        zone_type = zm.get("zone_type")
+        if zone_type is None:
+            continue
+
+        if zone_type not in _HIGH_UV_ZONE_TYPES:
+            continue
+
+        uv_zones_checked += 1
+        mat = zm["material"]
+        mat_props = mat.get("properties") or {}
+        uv_resistant = mat_props.get("uv_resistant", True)
+
+        if not uv_resistant:
+            non_uv_resistant_count += 1
+            warnings.append({
+                "severity": "warning",
+                "message": (
+                    f"Material '{mat.get('name', '?')}' in Zone '{zm['zone_name']}' "
+                    f"(Typ: {zone_type}): nicht UV-beständig in sonnenexponiertem Bereich."
+                ),
+                "suggestion": (
+                    f"UV-beständiges Material für Zone '{zm['zone_name']}' wählen oder "
+                    f"UV-Schutzbehandlung vorsehen."
+                ),
+            })
+
+    score = max(0.0, min(100.0, 100.0 - non_uv_resistant_count * 20))
+
+    return score, warnings, {
+        "uv_zones_checked": uv_zones_checked,
+        "non_uv_resistant_count": non_uv_resistant_count,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Sub-analysis: Moisture risk
+# ---------------------------------------------------------------------------
+
+_HIGH_MOISTURE_ZONE_TYPES = {"head", "pantry", "engine", "storage"}
+_WOOD_SUBCATEGORIES = {"wood", "plywood", "veneer"}
+
+
+def analyze_moisture_risk(
+    zone_materials: list[dict],
+    config: dict,
+) -> tuple[float, list[dict], dict]:
+    """Flag wood-based materials in high-moisture zones without moisture sealing.
+
+    Returns (score 0-100, warnings, metrics).
+    """
+    warnings: list[dict] = []
+
+    if not zone_materials:
+        warnings.append({
+            "severity": "info",
+            "message": "Keine Materialzuweisungen für Feuchtigkeitsrisiko-Analyse vorhanden.",
+            "suggestion": "Materialien den Zonen zuweisen.",
+        })
+        return 50.0, warnings, {"moisture_zones_checked": 0, "unsealed_count": 0}
+
+    unsealed_count = 0
+    moisture_zones_checked = 0
+
+    for zm in zone_materials:
+        zone_type = zm.get("zone_type")
+        if zone_type is None:
+            continue
+
+        if zone_type not in _HIGH_MOISTURE_ZONE_TYPES:
+            continue
+
+        mat = zm["material"]
+        subcategory = mat.get("subcategory")
+        if subcategory not in _WOOD_SUBCATEGORIES:
+            continue
+
+        moisture_zones_checked += 1
+        mat_props = mat.get("properties") or {}
+        moisture_sealed = mat_props.get("moisture_sealed", False)
+
+        if not moisture_sealed:
+            unsealed_count += 1
+            warnings.append({
+                "severity": "warning",
+                "message": (
+                    f"Material '{mat.get('name', '?')}' ({subcategory}) in Zone "
+                    f"'{zm['zone_name']}' (Typ: {zone_type}): Holzwerkstoff ohne "
+                    f"Feuchtigkeitsversiegelung in feuchtem Bereich."
+                ),
+                "suggestion": (
+                    f"Feuchtigkeitsversiegelung für '{mat.get('name', '?')}' in Zone "
+                    f"'{zm['zone_name']}' vorsehen oder feuchtigkeitsresistentes Material wählen."
+                ),
+            })
+
+    score = max(0.0, min(100.0, 100.0 - unsealed_count * 15))
+
+    return score, warnings, {
+        "moisture_zones_checked": moisture_zones_checked,
+        "unsealed_count": unsealed_count,
+    }
+
+
+# ---------------------------------------------------------------------------
 # Orchestrator
 # ---------------------------------------------------------------------------
 
@@ -473,6 +709,7 @@ def run_materials_analysis(
     boat_class: str,
     config_overrides: dict | None = None,
     materials: list[dict] | None = None,
+    data_source: str = "measured",
 ) -> dict:
     """Orchestrator — runs all material & quality sub-analyses.
 
@@ -507,6 +744,9 @@ def run_materials_analysis(
         ("known_issues", lambda: analyze_known_issues(zone_materials, config)),
         ("compatibility", lambda: analyze_material_compatibility(zone_materials, config)),
         ("weight", lambda: analyze_material_weight(zone_materials, config)),
+        ("lifecycle_cost", lambda: analyze_lifecycle_cost(zone_materials, config)),
+        ("uv_exposure", lambda: analyze_uv_exposure(zone_materials, config)),
+        ("moisture_risk", lambda: analyze_moisture_risk(zone_materials, config)),
     ]
 
     for name, fn in analyses:
@@ -542,4 +782,6 @@ def run_materials_analysis(
         "suggestions": all_suggestions,
         "metrics": all_metrics,
         "config_used": config,
+        "confidence": data_source,
+        "confidence_note": "Basiert auf geschätzten Werten aus öffentlichen Spezifikationen." if data_source == "estimated" else None,
     }

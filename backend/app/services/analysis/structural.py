@@ -6,6 +6,7 @@ Pure function module — no database access.
 All user-facing strings are in German.
 """
 import logging
+import math
 
 logger = logging.getLogger(__name__)
 
@@ -16,11 +17,14 @@ BOAT_CLASS_DEFAULTS = {
         "central_band": (0.20, 0.80),
         "concentration_warn_threshold": 0.55,
         "boat_class_weight_factor": 0.7,
+        "max_trim_deg": 2.0,
         "weights": {
-            "fore_aft": 0.35,
-            "lateral": 0.25,
-            "heavy_placement": 0.20,
-            "load_concentration": 0.20,
+            "fore_aft": 0.30,
+            "lateral": 0.21,
+            "heavy_placement": 0.17,
+            "load_concentration": 0.17,
+            "loading_conditions": 0.10,
+            "trim": 0.05,
         },
     },
     "cruising_sail": {
@@ -29,11 +33,14 @@ BOAT_CLASS_DEFAULTS = {
         "central_band": (0.20, 0.80),
         "concentration_warn_threshold": 0.55,
         "boat_class_weight_factor": 1.0,
+        "max_trim_deg": 2.0,
         "weights": {
-            "fore_aft": 0.30,
-            "lateral": 0.25,
-            "heavy_placement": 0.25,
-            "load_concentration": 0.20,
+            "fore_aft": 0.26,
+            "lateral": 0.21,
+            "heavy_placement": 0.21,
+            "load_concentration": 0.17,
+            "loading_conditions": 0.10,
+            "trim": 0.05,
         },
     },
     "large_motor": {
@@ -42,11 +49,14 @@ BOAT_CLASS_DEFAULTS = {
         "central_band": (0.20, 0.80),
         "concentration_warn_threshold": 0.55,
         "boat_class_weight_factor": 1.3,
+        "max_trim_deg": 1.0,
         "weights": {
-            "fore_aft": 0.25,
-            "lateral": 0.25,
-            "heavy_placement": 0.30,
-            "load_concentration": 0.20,
+            "fore_aft": 0.21,
+            "lateral": 0.21,
+            "heavy_placement": 0.26,
+            "load_concentration": 0.17,
+            "loading_conditions": 0.10,
+            "trim": 0.05,
         },
     },
     "superyacht": {
@@ -55,11 +65,14 @@ BOAT_CLASS_DEFAULTS = {
         "central_band": (0.20, 0.80),
         "concentration_warn_threshold": 0.55,
         "boat_class_weight_factor": 1.6,
+        "max_trim_deg": 1.0,
         "weights": {
-            "fore_aft": 0.25,
-            "lateral": 0.25,
-            "heavy_placement": 0.30,
-            "load_concentration": 0.20,
+            "fore_aft": 0.21,
+            "lateral": 0.21,
+            "heavy_placement": 0.26,
+            "load_concentration": 0.17,
+            "loading_conditions": 0.10,
+            "trim": 0.05,
         },
     },
 }
@@ -525,6 +538,192 @@ def analyze_load_concentration(
 
 
 # ---------------------------------------------------------------------------
+# Sub-analysis: Loading conditions
+# ---------------------------------------------------------------------------
+
+LOADING_CONDITIONS = {
+    "light_ship": {"fuel_pct": 0, "water_pct": 0, "stores_pct": 0},
+    "full_departure": {"fuel_pct": 100, "water_pct": 100, "stores_pct": 100},
+    "arrival": {"fuel_pct": 10, "water_pct": 10, "stores_pct": 50},
+    "worst_case": {"fuel_pct": 50, "water_pct": 30, "stores_pct": 30},
+}
+
+
+def analyze_loading_conditions(
+    zones: list[dict],
+    config: dict,
+) -> tuple[float, list[dict], dict]:
+    """Compute CG position under different loading conditions.
+
+    Returns (score 0-100, warnings, metrics).
+    """
+    warnings: list[dict] = []
+
+    if not zones:
+        warnings.append({
+            "code": "STRUCTURAL_NO_ZONES",
+            "severity": "info",
+            "message": "Keine Zonen für Beladungszustandsanalyse vorhanden.",
+            "suggestion": "Zonen dem Layout zuweisen.",
+        })
+        return 50.0, warnings, {"conditions": {}}
+
+    weight_factor = config.get("boat_class_weight_factor", 1.0)
+    ideal_range = config.get("ideal_cog_x_range", (0.44, 0.54))
+    min_x, max_x, _, _ = _get_boat_extents(zones)
+    x_span = max_x - min_x
+
+    if x_span < 1e-6:
+        return 50.0, warnings, {"conditions": {}}
+
+    condition_results: dict[str, float] = {}
+    in_range_count = 0
+
+    for cond_name, cond in LOADING_CONDITIONS.items():
+        fuel_pct = cond["fuel_pct"]
+        water_pct = cond["water_pct"]
+        stores_pct = cond["stores_pct"]
+
+        total_weight = 0.0
+        weighted_x = 0.0
+
+        for z in zones:
+            base_weight = _estimate_zone_weight(z, weight_factor)
+            zone_type = z.get("zone_type", "")
+
+            if zone_type == "engine":
+                adjusted_weight = base_weight * (fuel_pct / 100.0)
+            elif zone_type == "storage":
+                adjusted_weight = base_weight * (stores_pct / 100.0)
+            elif zone_type in ("head", "pantry"):
+                adjusted_weight = base_weight * (water_pct / 100.0)
+            else:
+                adjusted_weight = base_weight
+
+            cx, _ = _polygon_centroid(z.get("polygon", []))
+            total_weight += adjusted_weight
+            weighted_x += cx * adjusted_weight
+
+        if total_weight < 1e-6:
+            condition_results[cond_name] = 0.5
+            continue
+
+        cog_x = weighted_x / total_weight
+        cog_x_pct = (cog_x - min_x) / x_span
+        condition_results[cond_name] = round(cog_x_pct, 4)
+
+        if ideal_range[0] <= cog_x_pct <= ideal_range[1]:
+            in_range_count += 1
+        else:
+            if cog_x_pct < ideal_range[0]:
+                direction = "zu weit vorne"
+            else:
+                direction = "zu weit achtern"
+            warnings.append({
+                "code": "LOADING_COG_OUT_OF_RANGE",
+                "severity": "warning",
+                "message": (
+                    f"Beladungszustand '{cond_name}': Schwerpunkt bei "
+                    f"{cog_x_pct:.0%} — {direction} "
+                    f"(Ideal: {ideal_range[0]:.0%}–{ideal_range[1]:.0%})."
+                ),
+                "suggestion": (
+                    f"Gewichtsverteilung für Beladungszustand '{cond_name}' optimieren."
+                ),
+            })
+
+    total_conditions = len(LOADING_CONDITIONS)
+    score = (in_range_count / total_conditions) * 100.0 if total_conditions > 0 else 50.0
+
+    return score, warnings, {"conditions": condition_results}
+
+
+# ---------------------------------------------------------------------------
+# Sub-analysis: Trim
+# ---------------------------------------------------------------------------
+
+
+def analyze_trim(
+    zones: list[dict],
+    config: dict,
+) -> tuple[float, list[dict], dict]:
+    """Estimate longitudinal trim angle from weight distribution.
+
+    Returns (score 0-100, warnings, metrics).
+    """
+    warnings: list[dict] = []
+
+    if not zones:
+        warnings.append({
+            "code": "STRUCTURAL_NO_ZONES",
+            "severity": "info",
+            "message": "Keine Zonen für Trimmanalyse vorhanden.",
+            "suggestion": "Zonen dem Layout zuweisen.",
+        })
+        return 50.0, warnings, {"trim_deg": 0.0, "cog_x_pct": 0.0, "ideal_midpoint_pct": 0.0}
+
+    weight_factor = config.get("boat_class_weight_factor", 1.0)
+    ideal_range = config.get("ideal_cog_x_range", (0.44, 0.54))
+    max_trim_deg = config.get("max_trim_deg", 2.0)
+    min_x, max_x, _, _ = _get_boat_extents(zones)
+    x_span = max_x - min_x
+
+    if x_span < 1e-6:
+        return 50.0, warnings, {"trim_deg": 0.0, "cog_x_pct": 0.5, "ideal_midpoint_pct": 0.5}
+
+    total_weight = 0.0
+    weighted_x = 0.0
+
+    for z in zones:
+        w = _estimate_zone_weight(z, weight_factor)
+        cx, _ = _polygon_centroid(z.get("polygon", []))
+        total_weight += w
+        weighted_x += cx * w
+
+    if total_weight < 1e-6:
+        return 50.0, warnings, {"trim_deg": 0.0, "cog_x_pct": 0.5, "ideal_midpoint_pct": 0.5}
+
+    cog_x = weighted_x / total_weight
+    cog_x_pct = (cog_x - min_x) / x_span
+
+    # Ideal midpoint in mm
+    ideal_midpoint_pct = (ideal_range[0] + ideal_range[1]) / 2.0
+    ideal_midpoint_x = min_x + x_span * ideal_midpoint_pct
+    trim_offset_mm = cog_x - ideal_midpoint_x
+    boat_length_mm = x_span
+
+    correction_factor = 2.0
+    trim_deg = math.degrees(math.atan2(trim_offset_mm, boat_length_mm)) * correction_factor
+
+    # Score
+    abs_trim = abs(trim_deg)
+    if abs_trim <= max_trim_deg:
+        score = 100.0
+    elif abs_trim >= max_trim_deg * 2.0:
+        score = 0.0
+    else:
+        score = 100.0 * (1.0 - (abs_trim - max_trim_deg) / max_trim_deg)
+
+    if abs_trim > max_trim_deg:
+        direction = "buglastig" if trim_deg > 0 else "hecklastig"
+        warnings.append({
+            "code": "TRIM_EXCESSIVE",
+            "severity": "warning",
+            "message": (
+                f"Geschätzter Trimm {abs_trim:.1f}° ({direction}) — "
+                f"Maximalwert: {max_trim_deg:.1f}°."
+            ),
+            "suggestion": "Gewichtsverteilung anpassen, um den Trimm zu reduzieren.",
+        })
+
+    return score, warnings, {
+        "trim_deg": round(trim_deg, 2),
+        "cog_x_pct": round(cog_x_pct, 4),
+        "ideal_midpoint_pct": round(ideal_midpoint_pct, 4),
+    }
+
+
+# ---------------------------------------------------------------------------
 # Orchestrator
 # ---------------------------------------------------------------------------
 
@@ -534,6 +733,7 @@ def run_structural_analysis(
     passages: list[dict],
     boat_class: str,
     config_overrides: dict | None = None,
+    data_source: str = "measured",
 ) -> dict:
     """Orchestrator — runs all structural (weight distribution) sub-analyses.
 
@@ -569,6 +769,8 @@ def run_structural_analysis(
             "suggestions": ["Zonen dem Layout zuweisen."],
             "metrics": {},
             "config_used": config,
+            "confidence": data_source,
+            "confidence_note": "Basiert auf geschätzten Werten aus öffentlichen Spezifikationen." if data_source == "estimated" else None,
         }
 
     sub_scores: dict[str, float] = {}
@@ -581,6 +783,8 @@ def run_structural_analysis(
         ("lateral", lambda: analyze_lateral_balance(zones, config)),
         ("heavy_placement", lambda: analyze_heavy_zone_placement(zones, config)),
         ("load_concentration", lambda: analyze_load_concentration(zones, config)),
+        ("loading_conditions", lambda: analyze_loading_conditions(zones, config)),
+        ("trim", lambda: analyze_trim(zones, config)),
     ]
 
     for name, fn in analyses:
@@ -616,4 +820,6 @@ def run_structural_analysis(
         "suggestions": all_suggestions,
         "metrics": all_metrics,
         "config_used": config,
+        "confidence": data_source,
+        "confidence_note": "Basiert auf geschätzten Werten aus öffentlichen Spezifikationen." if data_source == "estimated" else None,
     }

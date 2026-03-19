@@ -285,7 +285,7 @@ def test_full_materials_analysis():
     assert "known_issues" in result["sub_scores"]
     assert "compatibility" in result["sub_scores"]
     assert "weight" in result["sub_scores"]
-    assert len(result["sub_scores"]) == 5
+    assert len(result["sub_scores"]) == 8
 
 
 def test_materials_warnings_sorted():
@@ -329,5 +329,5 @@ def test_materials_empty_input():
     """No material assignments -> degraded scores, no crash."""
     result = run_materials_analysis([], [], "cruising_sail", materials=[])
     assert 0 <= result["overall_score"] <= 100
-    assert len(result["sub_scores"]) == 5
+    assert len(result["sub_scores"]) == 8
     assert len(result["warnings"]) > 0

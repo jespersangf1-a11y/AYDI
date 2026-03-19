@@ -9,47 +9,71 @@ logger = logging.getLogger(__name__)
 
 BOAT_CLASS_DEFAULTS = {
     "small_sail": {
+        "target_utilization": 0.70,
+        "min_utilization": 0.50,
+        "target_storage_ratio": 0.18,
         "min_storage_ratio": 0.15,
-        "ideal_storage_ratio": 0.22,
         "min_storage_zones": 2,
         "max_distribution_imbalance": 0.6,
+        "max_furniture_ratio": 0.55,
+        "min_furniture_ratio": 0.20,
         "weights": {
-            "storage_ratio": 0.40,
-            "storage_distribution": 0.30,
-            "storage_accessibility": 0.30,
+            "utilization": 0.30,
+            "storage_ratio": 0.25,
+            "storage_accessibility": 0.20,
+            "storage_distribution": 0.15,
+            "furniture_ratio": 0.10,
         },
     },
     "cruising_sail": {
+        "target_utilization": 0.72,
+        "min_utilization": 0.50,
+        "target_storage_ratio": 0.15,
         "min_storage_ratio": 0.12,
-        "ideal_storage_ratio": 0.18,
         "min_storage_zones": 3,
         "max_distribution_imbalance": 0.5,
+        "max_furniture_ratio": 0.50,
+        "min_furniture_ratio": 0.22,
         "weights": {
-            "storage_ratio": 0.35,
-            "storage_distribution": 0.35,
-            "storage_accessibility": 0.30,
+            "utilization": 0.25,
+            "storage_ratio": 0.25,
+            "storage_accessibility": 0.20,
+            "storage_distribution": 0.15,
+            "furniture_ratio": 0.15,
         },
     },
     "large_motor": {
+        "target_utilization": 0.70,
+        "min_utilization": 0.45,
+        "target_storage_ratio": 0.12,
         "min_storage_ratio": 0.10,
-        "ideal_storage_ratio": 0.15,
         "min_storage_zones": 4,
         "max_distribution_imbalance": 0.4,
+        "max_furniture_ratio": 0.50,
+        "min_furniture_ratio": 0.25,
         "weights": {
-            "storage_ratio": 0.30,
-            "storage_distribution": 0.40,
-            "storage_accessibility": 0.30,
+            "utilization": 0.20,
+            "storage_ratio": 0.20,
+            "storage_accessibility": 0.25,
+            "storage_distribution": 0.15,
+            "furniture_ratio": 0.20,
         },
     },
     "superyacht": {
+        "target_utilization": 0.65,
+        "min_utilization": 0.40,
+        "target_storage_ratio": 0.10,
         "min_storage_ratio": 0.08,
-        "ideal_storage_ratio": 0.12,
         "min_storage_zones": 6,
         "max_distribution_imbalance": 0.3,
+        "max_furniture_ratio": 0.45,
+        "min_furniture_ratio": 0.25,
         "weights": {
-            "storage_ratio": 0.30,
-            "storage_distribution": 0.40,
-            "storage_accessibility": 0.30,
+            "utilization": 0.15,
+            "storage_ratio": 0.15,
+            "storage_accessibility": 0.25,
+            "storage_distribution": 0.20,
+            "furniture_ratio": 0.25,
         },
     },
 }
@@ -57,7 +81,7 @@ BOAT_CLASS_DEFAULTS = {
 SEVERITY_ORDER = {"critical": 0, "warning": 1, "info": 2}
 
 
-def _polygon_area_sqmm(polygon):
+def _polygon_area_sqmm(polygon: list[list[float]]) -> float:
     n = len(polygon)
     if n < 3:
         return 0.0
@@ -69,7 +93,7 @@ def _polygon_area_sqmm(polygon):
     return abs(area) / 2.0
 
 
-def _centroid(polygon):
+def _centroid(polygon: list[list[float]]) -> tuple[float, float]:
     n = len(polygon)
     if n == 0:
         return (0.0, 0.0)
@@ -78,8 +102,8 @@ def _centroid(polygon):
     return (cx, cy)
 
 
-def _build_adjacency(passages):
-    graph = {}
+def _build_adjacency(passages: list[dict]) -> dict[str, set[str]]:
+    graph: dict[str, set[str]] = {}
     for p in passages:
         a, b = p["from_zone"], p["to_zone"]
         graph.setdefault(a, set()).add(b)
@@ -87,7 +111,7 @@ def _build_adjacency(passages):
     return graph
 
 
-def _bfs_reachable(graph, start):
+def _bfs_reachable(graph: dict[str, set[str]], start: str) -> set[str]:
     if start not in graph:
         return {start}
     visited = {start}
@@ -101,7 +125,136 @@ def _bfs_reachable(graph, start):
     return visited
 
 
-def analyze_storage_ratio(zones, config):
+def analyze_volume_utilization(zones: list[dict], config: dict) -> tuple[float, list[dict], dict]:
+    """Score how efficiently the hull footprint is used by defined zones.
+
+    Area-based approximation — true volumetric analysis would require hull geometry data.
+    """
+    warnings: list[dict] = []
+
+    if not zones:
+        warnings.append({
+            "severity": "info",
+            "message": "Keine Zonen definiert — Volumennutzung kann nicht bewertet werden",
+            "suggestion": "Zonen zum Layout hinzufügen",
+        })
+        return 50.0, warnings, {"utilization_ratio": 0.0, "zone_area_sqmm": 0.0, "bbox_area_sqmm": 0.0}
+
+    all_points = [p for z in zones for p in z["polygon"]]
+    if not all_points:
+        warnings.append({
+            "severity": "info",
+            "message": "Keine Polygondaten vorhanden — Volumennutzung kann nicht bewertet werden",
+            "suggestion": "Zonenpolygone überprüfen",
+        })
+        return 50.0, warnings, {"utilization_ratio": 0.0, "zone_area_sqmm": 0.0, "bbox_area_sqmm": 0.0}
+
+    min_x = min(p[0] for p in all_points)
+    max_x = max(p[0] for p in all_points)
+    min_y = min(p[1] for p in all_points)
+    max_y = max(p[1] for p in all_points)
+
+    bbox_area = (max_x - min_x) * (max_y - min_y)
+    if bbox_area == 0:
+        warnings.append({
+            "severity": "info",
+            "message": "Zonenfläche nicht berechenbar (degenerierte Geometrie)",
+            "suggestion": "Zonenpolygone überprüfen",
+        })
+        return 50.0, warnings, {"utilization_ratio": 0.0, "zone_area_sqmm": 0.0, "bbox_area_sqmm": 0.0}
+
+    zone_area = sum(_polygon_area_sqmm(z["polygon"]) for z in zones)
+    ratio = zone_area / bbox_area
+
+    target = config["target_utilization"]
+    minimum = config["min_utilization"]
+
+    if ratio >= target:
+        score = 100.0
+    elif ratio >= minimum:
+        score = 50.0 + (ratio - minimum) / (target - minimum) * 50.0
+        warnings.append({
+            "severity": "info",
+            "message": f"Flächennutzung unter Zielwert ({ratio:.0%}, Ziel: {target:.0%})",
+            "suggestion": f"Flächennutzung auf {target:.0%} erhöhen",
+        })
+    else:
+        score = (ratio / minimum) * 50.0 if minimum > 0 else 0.0
+        warnings.append({
+            "severity": "warning",
+            "message": f"Flächennutzung gering ({ratio:.0%}, Ziel: {target:.0%})",
+            "suggestion": f"Flächennutzung auf mindestens {minimum:.0%} erhöhen",
+        })
+
+    return score, warnings, {
+        "utilization_ratio": round(ratio, 4),
+        "zone_area_sqmm": zone_area,
+        "bbox_area_sqmm": bbox_area,
+    }
+
+
+# Zone types excluded from furniture evaluation (no furniture expected)
+_FURNITURE_EXCLUDED_TYPES = {"engine", "storage", "swim_platform", "tender_garage", "foredeck"}
+
+
+def analyze_furniture_ratio(zones: list[dict], config: dict) -> tuple[float, list[dict], dict]:
+    """Score furniture density per zone using properties.furniture_area_pct."""
+    warnings: list[dict] = []
+    max_ratio = config["max_furniture_ratio"]
+    min_ratio = config["min_furniture_ratio"]
+
+    evaluable = []
+    for z in zones:
+        if z["zone_type"] in _FURNITURE_EXCLUDED_TYPES:
+            continue
+        props = z.get("properties") or {}
+        if "furniture_area_pct" in props:
+            evaluable.append(z)
+
+    if not evaluable:
+        warnings.append({
+            "severity": "info",
+            "message": "Keine Möblierungsdaten vorhanden — Bewertung nicht möglich",
+            "suggestion": "furniture_area_pct in Zone-Eigenschaften angeben (0.0–1.0)",
+        })
+        return 50.0, warnings, {"zones_evaluated": 0, "cramped": 0, "sparse": 0}
+
+    zone_scores = []
+    cramped = 0
+    sparse = 0
+
+    for z in evaluable:
+        pct = z["properties"]["furniture_area_pct"]
+        if pct > max_ratio:
+            cramped += 1
+            excess = pct - max_ratio
+            zone_score = max(0.0, 100.0 - (excess / max_ratio) * 100.0)
+            zone_label = z["name"]
+            warnings.append({
+                "severity": "warning",
+                "message": f"Zone '{zone_label}' übermöbliert ({pct:.0%}, max: {max_ratio:.0%})",
+                "suggestion": f"Möblierung in '{zone_label}' reduzieren",
+            })
+        elif pct < min_ratio:
+            sparse += 1
+            zone_score = max(0.0, (pct / min_ratio) * 80.0)
+            zone_label = z["name"]
+            warnings.append({
+                "severity": "info",
+                "message": f"Zone '{zone_label}' spärlich möbliert ({pct:.0%}, min: {min_ratio:.0%})",
+                "suggestion": f"Möblierung in '{zone_label}' erhöhen oder Zonengröße reduzieren",
+            })
+        else:
+            zone_score = 100.0
+
+        zone_scores.append(zone_score)
+
+    score = sum(zone_scores) / len(zone_scores)
+    return score, warnings, {"zones_evaluated": len(evaluable), "cramped": cramped, "sparse": sparse}
+
+
+def analyze_storage_ratio(zones: list[dict], config: dict) -> tuple[float, list[dict], dict]:
+    """Score ratio of storage area to total layout area."""
     storage_zones = [z for z in zones if z["zone_type"] == "storage"]
     warnings = []
 
@@ -120,7 +273,7 @@ def analyze_storage_ratio(zones, config):
         return 0.0, warnings, {"storage_ratio": 0.0, "storage_area_sqmm": 0, "total_area_sqmm": 0}
 
     ratio = storage_area / total_area
-    ideal = config["ideal_storage_ratio"]
+    ideal = config["target_storage_ratio"]
     minimum = config["min_storage_ratio"]
 
     if ratio >= ideal:
@@ -138,7 +291,8 @@ def analyze_storage_ratio(zones, config):
     return score, warnings, {"storage_ratio": round(ratio, 4), "storage_area_sqmm": storage_area, "total_area_sqmm": total_area}
 
 
-def analyze_storage_distribution(zones, config):
+def analyze_storage_distribution(zones: list[dict], config: dict) -> tuple[float, list[dict], dict]:
+    """Score how evenly storage zones are distributed across the layout."""
     storage_zones = [z for z in zones if z["zone_type"] == "storage"]
     warnings = []
 
@@ -192,7 +346,8 @@ def analyze_storage_distribution(zones, config):
     return score, warnings, {"imbalance": round(imbalance, 4), "storage_count": len(storage_zones)}
 
 
-def analyze_storage_accessibility(zones, passages, config):
+def analyze_storage_accessibility(zones: list[dict], passages: list[dict], config: dict) -> tuple[float, list[dict], dict]:
+    """Score whether storage zones are reachable via passage graph."""
     storage_zones = [z for z in zones if z["zone_type"] == "storage"]
     warnings = []
 
@@ -224,7 +379,7 @@ def analyze_storage_accessibility(zones, passages, config):
     return score, warnings, {"accessible": accessible, "total_storage": total}
 
 
-def run_volume_storage_analysis(zones, passages, boat_class, config_overrides=None):
+def run_volume_storage_analysis(zones: list[dict], passages: list[dict], boat_class: str, config_overrides: dict | None = None, data_source: str = "measured") -> dict:
     if boat_class not in BOAT_CLASS_DEFAULTS:
         raise ValueError(f"Unknown boat class: {boat_class}")
     config = BOAT_CLASS_DEFAULTS[boat_class].copy()
@@ -239,9 +394,11 @@ def run_volume_storage_analysis(zones, passages, boat_class, config_overrides=No
     all_metrics = {}
 
     analyses = [
+        ("utilization", lambda: analyze_volume_utilization(zones, config)),
         ("storage_ratio", lambda: analyze_storage_ratio(zones, config)),
         ("storage_distribution", lambda: analyze_storage_distribution(zones, config)),
         ("storage_accessibility", lambda: analyze_storage_accessibility(zones, passages, config)),
+        ("furniture_ratio", lambda: analyze_furniture_ratio(zones, config)),
     ]
 
     for name, fn in analyses:
@@ -275,4 +432,6 @@ def run_volume_storage_analysis(zones, passages, boat_class, config_overrides=No
         "suggestions": all_suggestions,
         "metrics": all_metrics,
         "config_used": config,
+        "confidence": data_source,
+        "confidence_note": "Basiert auf geschätzten Werten aus öffentlichen Spezifikationen." if data_source == "estimated" else None,
     }

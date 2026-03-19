@@ -19,20 +19,28 @@ BOAT_CLASS_DEFAULTS = {
         "min_electrical_area_sqm": 0.3,
         "required_railing_zones": ["foredeck", "cockpit"],
         "ce_category": "C",
+        "cockpit_depth_mm": 300,
+        "companionway_sill_mm": 150,
         "norm_versions": {
             "ISO_9094": "2015",
             "ISO_12217": "2015",
             "ISO_15085": "2003",
             "ISO_10133": "2012",
             "ISO_13297": "2014",
+            "ISO_12216": "2002",
+            "ISO_11812": "2001",
         },
         "weights": {
-            "escape_routes": 0.30,
-            "fire_safety": 0.20,
-            "stability": 0.15,
-            "railing": 0.10,
-            "electrical_access": 0.10,
-            "ce_category": 0.15,
+            "escape_routes": 0.24,
+            "fire_safety": 0.16,
+            "stability": 0.12,
+            "railing": 0.08,
+            "electrical_access": 0.08,
+            "ce_category": 0.12,
+            "escape_hatch": 0.05,
+            "cockpit_drain": 0.05,
+            "companionway_sill": 0.05,
+            "ventilation": 0.05,
         },
     },
     "cruising_sail": {
@@ -43,20 +51,28 @@ BOAT_CLASS_DEFAULTS = {
         "min_electrical_area_sqm": 0.5,
         "required_railing_zones": ["foredeck", "cockpit"],
         "ce_category": "A",
+        "cockpit_depth_mm": 300,
+        "companionway_sill_mm": 300,
         "norm_versions": {
             "ISO_9094": "2015",
             "ISO_12217": "2015",
             "ISO_15085": "2003",
             "ISO_10133": "2012",
             "ISO_13297": "2014",
+            "ISO_12216": "2002",
+            "ISO_11812": "2001",
         },
         "weights": {
-            "escape_routes": 0.25,
-            "fire_safety": 0.20,
-            "stability": 0.20,
-            "railing": 0.10,
-            "electrical_access": 0.10,
-            "ce_category": 0.15,
+            "escape_routes": 0.20,
+            "fire_safety": 0.16,
+            "stability": 0.16,
+            "railing": 0.08,
+            "electrical_access": 0.08,
+            "ce_category": 0.12,
+            "escape_hatch": 0.05,
+            "cockpit_drain": 0.05,
+            "companionway_sill": 0.05,
+            "ventilation": 0.05,
         },
     },
     "large_motor": {
@@ -67,20 +83,28 @@ BOAT_CLASS_DEFAULTS = {
         "min_electrical_area_sqm": 0.8,
         "required_railing_zones": ["foredeck", "cockpit", "flybridge", "swim_platform"],
         "ce_category": "A",
+        "cockpit_depth_mm": 300,
+        "companionway_sill_mm": 300,
         "norm_versions": {
             "ISO_9094": "2015",
             "ISO_12217": "2015",
             "ISO_15085": "2003",
             "ISO_10133": "2012",
             "ISO_13297": "2014",
+            "ISO_12216": "2002",
+            "ISO_11812": "2001",
         },
         "weights": {
-            "escape_routes": 0.25,
-            "fire_safety": 0.25,
-            "stability": 0.10,
-            "railing": 0.15,
-            "electrical_access": 0.10,
-            "ce_category": 0.15,
+            "escape_routes": 0.20,
+            "fire_safety": 0.20,
+            "stability": 0.08,
+            "railing": 0.12,
+            "electrical_access": 0.08,
+            "ce_category": 0.12,
+            "escape_hatch": 0.05,
+            "cockpit_drain": 0.05,
+            "companionway_sill": 0.05,
+            "ventilation": 0.05,
         },
     },
     "superyacht": {
@@ -91,20 +115,28 @@ BOAT_CLASS_DEFAULTS = {
         "min_electrical_area_sqm": 1.5,
         "required_railing_zones": ["foredeck", "cockpit", "flybridge", "swim_platform"],
         "ce_category": "A",
+        "cockpit_depth_mm": 300,
+        "companionway_sill_mm": 300,
         "norm_versions": {
             "ISO_9094": "2015",
             "ISO_12217": "2015",
             "ISO_15085": "2003",
             "ISO_10133": "2012",
             "ISO_13297": "2014",
+            "ISO_12216": "2002",
+            "ISO_11812": "2001",
         },
         "weights": {
-            "escape_routes": 0.20,
-            "fire_safety": 0.25,
-            "stability": 0.10,
-            "railing": 0.20,
-            "electrical_access": 0.10,
-            "ce_category": 0.15,
+            "escape_routes": 0.16,
+            "fire_safety": 0.20,
+            "stability": 0.08,
+            "railing": 0.16,
+            "electrical_access": 0.08,
+            "ce_category": 0.12,
+            "escape_hatch": 0.05,
+            "cockpit_drain": 0.05,
+            "companionway_sill": 0.05,
+            "ventilation": 0.05,
         },
     },
 }
@@ -737,6 +769,352 @@ def analyze_ce_category(
 
 
 # ---------------------------------------------------------------------------
+# Sub-analysis: escape hatch dimensions (ISO 12216)
+# ---------------------------------------------------------------------------
+
+
+_ESCAPE_HATCH_MIN_WIDTH_MM = 400
+_ESCAPE_HATCH_MIN_HEIGHT_MM = 520
+
+
+def analyze_escape_hatch_dimensions(
+    zones: list[dict],
+    config: dict,
+) -> tuple[float, list[dict], dict]:
+    """Check emergency escape hatch dimensions per ISO 12216.
+
+    Cabins and crew quarters must have hatches of at least 400 mm × 520 mm.
+
+    Returns (score 0-100, warnings, metrics).
+    """
+    warnings: list[dict] = []
+    norm_ref = config.get("norm_versions", {}).get("ISO_12216", "2002")
+
+    cabin_zones = [z for z in zones if z["zone_type"] in _SLEEPING_ZONE_TYPES]
+
+    if not cabin_zones:
+        return 100.0, warnings, {"cabins_checked": 0, "cabins_compliant": 0}
+
+    total = 0
+    compliant = 0
+    has_data = False
+
+    for z in cabin_zones:
+        props = z.get("properties") or {}
+        hatch_w = props.get("hatch_width_mm")
+        hatch_h = props.get("hatch_height_mm")
+
+        if hatch_w is None or hatch_h is None:
+            continue
+
+        has_data = True
+        total += 1
+
+        if hatch_w >= _ESCAPE_HATCH_MIN_WIDTH_MM and hatch_h >= _ESCAPE_HATCH_MIN_HEIGHT_MM:
+            compliant += 1
+        else:
+            warnings.append({
+                "code": "ISO_12216_HATCH_TOO_SMALL",
+                "severity": "warning",
+                "message": (
+                    f"Notluke in Zone '{z['name']}' zu klein "
+                    f"({hatch_w:.0f} × {hatch_h:.0f} mm, "
+                    f"Minimum: {_ESCAPE_HATCH_MIN_WIDTH_MM} × {_ESCAPE_HATCH_MIN_HEIGHT_MM} mm, "
+                    f"ISO 12216:{norm_ref})."
+                ),
+                "suggestion": (
+                    f"Notluke in Zone '{z['name']}' auf mindestens "
+                    f"{_ESCAPE_HATCH_MIN_WIDTH_MM} × {_ESCAPE_HATCH_MIN_HEIGHT_MM} mm vergrößern."
+                ),
+            })
+
+    if not has_data:
+        warnings.append({
+            "code": "ISO_12216_NO_HATCH_DATA",
+            "severity": "info",
+            "message": "Keine Lukenmaße vorhanden.",
+            "suggestion": "Lukenmaße (hatch_width_mm, hatch_height_mm) in den Zoneneigenschaften hinterlegen.",
+        })
+        return 50.0, warnings, {"cabins_checked": 0, "cabins_compliant": 0}
+
+    score = (compliant / total) * 100.0 if total > 0 else 50.0
+
+    return score, warnings, {
+        "cabins_checked": total,
+        "cabins_compliant": compliant,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Sub-analysis: cockpit drain capacity (ISO 11812)
+# ---------------------------------------------------------------------------
+
+
+def analyze_cockpit_drain_capacity(
+    zones: list[dict],
+    config: dict,
+) -> tuple[float, list[dict], dict]:
+    """Check cockpit drain capacity per ISO 11812.
+
+    Cockpit drains must handle cockpit volume × 2 in liters per second.
+
+    Returns (score 0-100, warnings, metrics).
+    """
+    warnings: list[dict] = []
+    norm_ref = config.get("norm_versions", {}).get("ISO_11812", "2001")
+
+    cockpit_zones = [z for z in zones if z["zone_type"] == "cockpit"]
+
+    if not cockpit_zones:
+        return 100.0, warnings, {"cockpits_checked": 0, "cockpits_compliant": 0}
+
+    default_depth_mm = config.get("cockpit_depth_mm", 300)
+    total = 0
+    compliant = 0
+    has_data = False
+
+    for z in cockpit_zones:
+        props = z.get("properties") or {}
+        area_sqm = _polygon_area_sqm(z.get("polygon") or [])
+        if area_sqm <= 0:
+            continue
+
+        depth_mm = props.get("cockpit_depth_mm", default_depth_mm)
+        cockpit_volume_liters = area_sqm * depth_mm / 1000.0 * 1000.0
+        required_drain_capacity = cockpit_volume_liters * 2.0
+
+        drain_capacity = props.get("drain_capacity_lps")
+        if drain_capacity is None:
+            continue
+
+        has_data = True
+        total += 1
+
+        if drain_capacity >= required_drain_capacity:
+            compliant += 1
+        else:
+            ratio = drain_capacity / required_drain_capacity if required_drain_capacity > 0 else 0.0
+            warnings.append({
+                "code": "ISO_11812_DRAIN_INSUFFICIENT",
+                "severity": "warning",
+                "message": (
+                    f"Cockpit '{z['name']}': Abflusskapazität {drain_capacity:.1f} l/s "
+                    f"unzureichend (benötigt: {required_drain_capacity:.1f} l/s, "
+                    f"ISO 11812:{norm_ref})."
+                ),
+                "suggestion": (
+                    f"Abflusskapazität für Cockpit '{z['name']}' auf mindestens "
+                    f"{required_drain_capacity:.1f} l/s erhöhen."
+                ),
+            })
+
+    if not has_data:
+        warnings.append({
+            "code": "ISO_11812_NO_DRAIN_DATA",
+            "severity": "info",
+            "message": "Keine Abflussdaten vorhanden.",
+            "suggestion": "Abflusskapazität (drain_capacity_lps) in den Cockpit-Zoneneigenschaften hinterlegen.",
+        })
+        return 50.0, warnings, {"cockpits_checked": 0, "cockpits_compliant": 0}
+
+    if total > 0:
+        score = (compliant / total) * 100.0
+    else:
+        score = 50.0
+
+    return score, warnings, {
+        "cockpits_checked": total,
+        "cockpits_compliant": compliant,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Sub-analysis: companionway sill height (CE category)
+# ---------------------------------------------------------------------------
+
+
+_CE_SILL_HEIGHT_MM = {
+    "A": 300,
+    "B": 250,
+    "C": 150,
+    "D": 0,
+}
+
+_INTERIOR_ZONE_TYPES = {"salon", "cabin", "pantry"}
+
+
+def analyze_companionway_sill(
+    zones: list[dict],
+    passages: list[dict],
+    config: dict,
+) -> tuple[float, list[dict], dict]:
+    """Check companionway sill heights based on CE category.
+
+    Sill heights at cockpit-to-interior passages must meet CE category minimums.
+
+    Returns (score 0-100, warnings, metrics).
+    """
+    warnings: list[dict] = []
+
+    ce_category = config.get("ce_category", "A")
+    min_sill = config.get("companionway_sill_mm", _CE_SILL_HEIGHT_MM.get(ce_category, 300))
+
+    if min_sill <= 0:
+        return 100.0, warnings, {"sills_checked": 0, "sills_compliant": 0}
+
+    zone_type_map = {z["name"]: z["zone_type"] for z in zones}
+    cockpit_names = {z["name"] for z in zones if z["zone_type"] == "cockpit"}
+    interior_names = {z["name"] for z in zones if z["zone_type"] in _INTERIOR_ZONE_TYPES}
+
+    # Find passages from cockpit to interior zones
+    companionway_passages = []
+    for p in passages:
+        from_z, to_z = p["from_zone"], p["to_zone"]
+        if (from_z in cockpit_names and to_z in interior_names) or \
+           (to_z in cockpit_names and from_z in interior_names):
+            companionway_passages.append(p)
+
+    if not companionway_passages:
+        return 100.0, warnings, {"sills_checked": 0, "sills_compliant": 0}
+
+    total = 0
+    compliant = 0
+    has_data = False
+
+    for p in companionway_passages:
+        props = p.get("properties") or {}
+        sill_height = props.get("sill_height_mm")
+
+        if sill_height is None:
+            continue
+
+        has_data = True
+        total += 1
+
+        if sill_height >= min_sill:
+            compliant += 1
+        else:
+            warnings.append({
+                "code": "CE_COMPANIONWAY_SILL_LOW",
+                "severity": "warning",
+                "message": (
+                    f"Niedergang '{p['from_zone']} → {p['to_zone']}': "
+                    f"Süllhöhe {sill_height:.0f} mm unter Minimum {min_sill:.0f} mm "
+                    f"(CE-Kategorie {ce_category})."
+                ),
+                "suggestion": (
+                    f"Süllhöhe des Niedergangs '{p['from_zone']} → {p['to_zone']}' "
+                    f"auf mindestens {min_sill:.0f} mm erhöhen."
+                ),
+            })
+
+    if not has_data:
+        warnings.append({
+            "code": "CE_NO_SILL_DATA",
+            "severity": "info",
+            "message": "Keine Süllhöhen-Daten vorhanden.",
+            "suggestion": "Süllhöhen (sill_height_mm) in den Durchgangseigenschaften hinterlegen.",
+        })
+        return 50.0, warnings, {"sills_checked": 0, "sills_compliant": 0}
+
+    score = (compliant / total) * 100.0 if total > 0 else 50.0
+
+    return score, warnings, {
+        "sills_checked": total,
+        "sills_compliant": compliant,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Sub-analysis: ventilation requirements
+# ---------------------------------------------------------------------------
+
+
+def analyze_ventilation(
+    zones: list[dict],
+    config: dict,
+) -> tuple[float, list[dict], dict]:
+    """Check engine room and battery compartment ventilation requirements.
+
+    Engine rooms need ventilation area proportional to engine power.
+    Battery compartments need minimum 0.02 m² ventilation.
+
+    Returns (score 0-100, warnings, metrics).
+    """
+    warnings: list[dict] = []
+
+    engine_zones = [z for z in zones if z["zone_type"] == "engine"]
+    battery_zones = [z for z in zones if (z.get("properties") or {}).get("has_battery", False)]
+
+    zones_to_check = []
+
+    for z in engine_zones:
+        props = z.get("properties") or {}
+        engine_kw = props.get("engine_kw", 50)
+        required = max(0.05, engine_kw * 0.0003)
+        zones_to_check.append((z, required, "Maschinenraum"))
+
+    for z in battery_zones:
+        if z["zone_type"] != "engine":  # avoid double-checking engine zones with batteries
+            zones_to_check.append((z, 0.02, "Batterieraum"))
+        else:
+            # Engine zone with battery — already checked above, but add battery requirement
+            for i, (existing_z, req, label) in enumerate(zones_to_check):
+                if existing_z["name"] == z["name"]:
+                    zones_to_check[i] = (existing_z, max(req, 0.02), label)
+                    break
+
+    if not zones_to_check:
+        return 100.0, warnings, {"zones_checked": 0, "zones_compliant": 0}
+
+    total = 0
+    compliant = 0
+    has_data = False
+
+    for z, required_area, label in zones_to_check:
+        props = z.get("properties") or {}
+        vent_area = props.get("ventilation_area_sqm")
+
+        if vent_area is None:
+            continue
+
+        has_data = True
+        total += 1
+
+        if vent_area >= required_area:
+            compliant += 1
+        else:
+            warnings.append({
+                "code": "VENTILATION_INSUFFICIENT",
+                "severity": "warning",
+                "message": (
+                    f"{label} '{z['name']}': Belüftungsfläche {vent_area:.3f} m² "
+                    f"unter Minimum {required_area:.3f} m²."
+                ),
+                "suggestion": (
+                    f"Belüftungsfläche für '{z['name']}' auf mindestens "
+                    f"{required_area:.3f} m² erhöhen."
+                ),
+            })
+
+    if not has_data:
+        warnings.append({
+            "code": "VENTILATION_NO_DATA",
+            "severity": "info",
+            "message": "Keine Belüftungsdaten vorhanden.",
+            "suggestion": "Belüftungsfläche (ventilation_area_sqm) in den Zoneneigenschaften hinterlegen.",
+        })
+        return 50.0, warnings, {"zones_checked": 0, "zones_compliant": 0}
+
+    score = (compliant / total) * 100.0 if total > 0 else 50.0
+
+    return score, warnings, {
+        "zones_checked": total,
+        "zones_compliant": compliant,
+    }
+
+
+# ---------------------------------------------------------------------------
 # Orchestrator
 # ---------------------------------------------------------------------------
 
@@ -746,6 +1124,7 @@ def run_compliance_analysis(
     passages: list[dict],
     boat_class: str,
     config_overrides: dict | None = None,
+    data_source: str = "measured",
 ) -> dict:
     """Orchestrator — runs all compliance sub-analyses.
 
@@ -772,6 +1151,10 @@ def run_compliance_analysis(
         ("railing", lambda: analyze_railing_requirements(zones, config)),
         ("electrical_access", lambda: analyze_electrical_access(zones, passages, config)),
         ("ce_category", lambda: analyze_ce_category(zones, config)),
+        ("escape_hatch", lambda: analyze_escape_hatch_dimensions(zones, config)),
+        ("cockpit_drain", lambda: analyze_cockpit_drain_capacity(zones, config)),
+        ("companionway_sill", lambda: analyze_companionway_sill(zones, passages, config)),
+        ("ventilation", lambda: analyze_ventilation(zones, config)),
     ]
 
     for name, fn in analyses:
@@ -807,4 +1190,6 @@ def run_compliance_analysis(
         "suggestions": all_suggestions,
         "metrics": all_metrics,
         "config_used": config,
+        "confidence": data_source,
+        "confidence_note": "Basiert auf geschätzten Werten aus öffentlichen Spezifikationen." if data_source == "estimated" else None,
     }

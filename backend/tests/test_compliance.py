@@ -385,7 +385,7 @@ def test_full_compliance_analysis():
     assert "railing" in result["sub_scores"]
     assert "electrical_access" in result["sub_scores"]
     assert "ce_category" in result["sub_scores"]
-    assert len(result["sub_scores"]) == 6
+    assert len(result["sub_scores"]) == 10
     assert "norm_versions" in result["config_used"]
 
 
@@ -433,5 +433,5 @@ def test_compliance_empty_input():
     """Empty zones and passages -> degraded scores, no crash."""
     result = run_compliance_analysis([], [], "cruising_sail")
     assert 0 <= result["overall_score"] <= 100
-    assert len(result["sub_scores"]) == 6
+    assert len(result["sub_scores"]) == 10
     assert len(result["warnings"]) > 0

@@ -362,7 +362,7 @@ def test_full_production_analysis():
     assert "service_access" in result["sub_scores"]
     assert "standardization" in result["sub_scores"]
     assert "cable_routing" in result["sub_scores"]
-    assert len(result["sub_scores"]) == 5
+    assert len(result["sub_scores"]) == 7
 
 
 def test_production_warnings_sorted():
@@ -412,5 +412,5 @@ def test_production_empty_input():
     """Empty zones and passages -> degraded scores, no crash."""
     result = run_production_analysis([], [], "cruising_sail")
     assert 0 <= result["overall_score"] <= 100
-    assert len(result["sub_scores"]) == 5
+    assert len(result["sub_scores"]) == 7
     assert len(result["warnings"]) > 0

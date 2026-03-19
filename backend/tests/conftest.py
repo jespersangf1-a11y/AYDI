@@ -79,3 +79,103 @@ def make_zone_material(
         "area_sqm": area_sqm,
         "material": material,
     }
+
+
+def make_cost_item(
+    category: str = "material",
+    subcategory: str | None = None,
+    quantity: float = 1.0,
+    unit: str = "piece",
+    unit_cost_eur: float = 100.0,
+    total_cost_eur: float | None = None,
+    zone_name: str | None = None,
+    source: str = "estimate",
+) -> dict:
+    """Create a cost item dict for use in cost analysis tests.
+
+    Args:
+        category: Cost category — material, labor, equipment, or overhead.
+        subcategory: Optional subcategory label (e.g. "GFK-Laminat").
+        quantity: Amount of units.
+        unit: Unit of measure (e.g. "piece", "sqm", "hour").
+        unit_cost_eur: Cost per unit in euros.
+        total_cost_eur: Total cost in euros. Defaults to quantity * unit_cost_eur.
+        zone_name: Optional associated zone name.
+        source: Data source quality — "quote", "contract", "budget", or "estimate".
+
+    Returns:
+        Dict representing a single cost item.
+    """
+    if total_cost_eur is None:
+        total_cost_eur = quantity * unit_cost_eur
+    item: dict = {
+        "category": category,
+        "quantity": quantity,
+        "unit": unit,
+        "unit_cost_eur": unit_cost_eur,
+        "total_cost_eur": total_cost_eur,
+        "source": source,
+    }
+    if subcategory is not None:
+        item["subcategory"] = subcategory
+    if zone_name is not None:
+        item["zone_name"] = zone_name
+    return item
+
+
+def make_competitor(
+    key_metrics: dict | None = None,
+    length_m: float = 12.0,
+    price_range_eur: dict | None = None,
+) -> dict:
+    """Build a competitor dict with sensible defaults for a cruising_sail segment.
+
+    Args:
+        key_metrics: Dict of numeric metric values keyed by metric name.
+        length_m: Overall boat length in metres.
+        price_range_eur: Dict with "min" and "max" keys in EUR.
+
+    Returns:
+        Dict representing a single competitor model.
+    """
+    if key_metrics is None:
+        key_metrics = {
+            "cockpit_area_sqm": 8.0,
+            "salon_area_sqm": 14.0,
+            "cabin_count": 2,
+            "head_count": 1,
+            "berth_count": 4,
+            "storage_volume_l": 600.0,
+            "deck_height_mm": 1950.0,
+        }
+    if price_range_eur is None:
+        price_range_eur = {"min": 180_000.0, "max": 220_000.0}
+    return {
+        "key_metrics": key_metrics,
+        "length_m": length_m,
+        "price_range_eur": price_range_eur,
+    }
+
+
+def make_service_report(
+    report_type: str = "maintenance",
+    category: str = "interior",
+    zone_type: str = "cabin",
+    severity: str = "medium",
+    description: str = "Test issue",
+    boat_age_months: int = 24,
+    materials_involved: list[str] | None = None,
+    cost_eur: float | None = None,
+) -> dict:
+    report: dict = {
+        "report_type": report_type,
+        "category": category,
+        "zone_type": zone_type,
+        "severity": severity,
+        "description": description,
+        "boat_age_months": boat_age_months,
+        "materials_involved": materials_involved or [],
+    }
+    if cost_eur is not None:
+        report["cost_eur"] = cost_eur
+    return report

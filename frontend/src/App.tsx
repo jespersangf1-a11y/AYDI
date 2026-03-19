@@ -3,11 +3,22 @@ import AppShell from './components/layout/AppShell'
 import Dashboard from './components/dashboard/Dashboard'
 import ProjectDetail from './components/dashboard/ProjectDetail'
 import ProjectCreate from './components/dashboard/ProjectCreate'
+import QuickAnalysis from './components/quick/QuickAnalysis'
+import MaterialBrowser from './components/materials/MaterialBrowser'
+import ServiceReportList from './components/service/ServiceReportList'
+import ImageUpload from './components/images/ImageUpload'
 
-type View = 'dashboard' | 'project-detail' | 'project-create'
+type View =
+  | 'quick-analysis'
+  | 'dashboard'
+  | 'project-detail'
+  | 'project-create'
+  | 'materials'
+  | 'service-reports'
+  | 'image-analysis'
 
 export default function App() {
-  const [view, setView] = useState<View>('dashboard')
+  const [view, setView] = useState<View>('quick-analysis')
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null)
 
   const handleSelectProject = (id: string) => {
@@ -16,8 +27,17 @@ export default function App() {
   }
 
   const handleNavigate = (target: string) => {
-    if (target === 'dashboard' || target === 'project-detail' || target === 'project-create') {
-      setView(target)
+    const validViews: View[] = [
+      'quick-analysis',
+      'dashboard',
+      'project-detail',
+      'project-create',
+      'materials',
+      'service-reports',
+      'image-analysis',
+    ]
+    if (validViews.includes(target as View)) {
+      setView(target as View)
     }
   }
 
@@ -28,6 +48,7 @@ export default function App() {
 
   return (
     <AppShell currentView={view} onNavigate={handleNavigate}>
+      {view === 'quick-analysis' && <QuickAnalysis />}
       {view === 'dashboard' && <Dashboard onSelectProject={handleSelectProject} />}
       {view === 'project-detail' && selectedProjectId && (
         <ProjectDetail projectId={selectedProjectId} onBack={() => setView('dashboard')} />
@@ -35,6 +56,9 @@ export default function App() {
       {view === 'project-create' && (
         <ProjectCreate onCreated={handleProjectCreated} onCancel={() => setView('dashboard')} />
       )}
+      {view === 'materials' && <MaterialBrowser />}
+      {view === 'service-reports' && <ServiceReportList />}
+      {view === 'image-analysis' && <ImageUpload boatClass="cruising_sail" />}
     </AppShell>
   )
 }

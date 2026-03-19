@@ -18,12 +18,15 @@ BOAT_CLASS_DEFAULTS = {
         "standard_door_widths_mm": [600],
         "standard_berth_width_mm": 700,
         "standardization_tolerance_mm": 50,
+        "target_flat_panel_ratio": 0.70,
         "weights": {
-            "assembly_sequence": 0.15,
-            "form_complexity": 0.30,
-            "service_access": 0.20,
-            "standardization": 0.25,
-            "cable_routing": 0.10,
+            "assembly_sequence": 0.13,
+            "form_complexity": 0.25,
+            "service_access": 0.17,
+            "standardization": 0.21,
+            "cable_routing": 0.09,
+            "mold_complexity": 0.08,
+            "flat_panel_ratio": 0.07,
         },
     },
     "cruising_sail": {
@@ -32,12 +35,15 @@ BOAT_CLASS_DEFAULTS = {
         "standard_door_widths_mm": [600, 700],
         "standard_berth_width_mm": 700,
         "standardization_tolerance_mm": 50,
+        "target_flat_panel_ratio": 0.60,
         "weights": {
-            "assembly_sequence": 0.20,
-            "form_complexity": 0.25,
-            "service_access": 0.20,
-            "standardization": 0.20,
-            "cable_routing": 0.15,
+            "assembly_sequence": 0.17,
+            "form_complexity": 0.21,
+            "service_access": 0.17,
+            "standardization": 0.17,
+            "cable_routing": 0.13,
+            "mold_complexity": 0.08,
+            "flat_panel_ratio": 0.07,
         },
     },
     "large_motor": {
@@ -46,12 +52,15 @@ BOAT_CLASS_DEFAULTS = {
         "standard_door_widths_mm": [600, 700, 800],
         "standard_berth_width_mm": 800,
         "standardization_tolerance_mm": 50,
+        "target_flat_panel_ratio": 0.50,
         "weights": {
-            "assembly_sequence": 0.25,
-            "form_complexity": 0.15,
-            "service_access": 0.25,
-            "standardization": 0.15,
-            "cable_routing": 0.20,
+            "assembly_sequence": 0.21,
+            "form_complexity": 0.13,
+            "service_access": 0.21,
+            "standardization": 0.13,
+            "cable_routing": 0.17,
+            "mold_complexity": 0.08,
+            "flat_panel_ratio": 0.07,
         },
     },
     "superyacht": {
@@ -60,12 +69,15 @@ BOAT_CLASS_DEFAULTS = {
         "standard_door_widths_mm": [700, 800, 900],
         "standard_berth_width_mm": 900,
         "standardization_tolerance_mm": 75,
+        "target_flat_panel_ratio": 0.40,
         "weights": {
-            "assembly_sequence": 0.25,
-            "form_complexity": 0.10,
-            "service_access": 0.25,
-            "standardization": 0.10,
-            "cable_routing": 0.30,
+            "assembly_sequence": 0.21,
+            "form_complexity": 0.09,
+            "service_access": 0.21,
+            "standardization": 0.09,
+            "cable_routing": 0.25,
+            "mold_complexity": 0.08,
+            "flat_panel_ratio": 0.07,
         },
     },
 }
@@ -696,6 +708,158 @@ def analyze_cable_routing(
 
 
 # ---------------------------------------------------------------------------
+# Sub-analysis 6: Mold Complexity
+# ---------------------------------------------------------------------------
+
+def analyze_mold_complexity(
+    zones: list[dict],
+    config: dict,
+) -> tuple[float, list[dict], dict]:
+    """Score GFK/FRP mold difficulty from layout geometry.
+
+    Considers hull curvature variation (reflex angles), deck level changes,
+    and window cutout count.
+
+    Returns (score 0-100, warnings, metrics).
+    """
+    warnings: list[dict] = []
+
+    if not zones:
+        warnings.append({
+            "code": "MOLD_NO_ZONES",
+            "severity": "info",
+            "message": "Keine Zonen definiert — Formkomplexität kann nicht bewertet werden.",
+            "suggestion": "Zonen zum Layout hinzufügen.",
+        })
+        return 50.0, warnings, {
+            "hull_curvature_penalty": 0.0,
+            "deck_level_penalty": 0.0,
+            "window_penalty": 0.0,
+            "zones_with_reflex": 0,
+            "distinct_heights": 0,
+            "total_windows": 0,
+        }
+
+    # Hull curvature: count zones with >2 reflex angles
+    zones_with_reflex = 0
+    for zone in zones:
+        polygon = zone.get("polygon", [])
+        angles = _vertex_angles(polygon)
+        reflex_count = sum(1 for _, is_reflex in angles if is_reflex)
+        if reflex_count > 2:
+            zones_with_reflex += 1
+
+    total_zones = len(zones)
+    hull_penalty = (zones_with_reflex / total_zones) * 30.0 if total_zones > 0 else 0.0
+
+    # Deck level changes: count distinct height_mm values
+    heights = set()
+    for zone in zones:
+        h = zone.get("height_mm")
+        if h is not None:
+            heights.add(h)
+    distinct_heights = len(heights)
+    deck_penalty = max(0.0, (distinct_heights - 1) * 10.0)
+
+    # Window count
+    total_windows = sum(
+        zone.get("properties", {}).get("window_count", 0)
+        for zone in zones
+    )
+    window_penalty = min(30.0, total_windows * 3.0)
+
+    score = max(0.0, min(100.0, 100.0 - hull_penalty - deck_penalty - window_penalty))
+
+    if score < 60.0:
+        warnings.append({
+            "code": "MOLD_HIGH_COMPLEXITY",
+            "severity": "warning",
+            "message": (
+                f"Hohe Formkomplexität (Score: {score:.0f}) — "
+                f"erschwert GFK-Formenbau erheblich."
+            ),
+            "suggestion": (
+                "Geometrie vereinfachen: Reflexwinkel reduzieren, "
+                "Deckshöhen vereinheitlichen oder Fensteranzahl verringern."
+            ),
+        })
+
+    return score, warnings, {
+        "hull_curvature_penalty": round(hull_penalty, 1),
+        "deck_level_penalty": round(deck_penalty, 1),
+        "window_penalty": round(window_penalty, 1),
+        "zones_with_reflex": zones_with_reflex,
+        "distinct_heights": distinct_heights,
+        "total_windows": total_windows,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Sub-analysis 7: Flat Panel Ratio
+# ---------------------------------------------------------------------------
+
+def analyze_flat_panel_ratio(
+    zones: list[dict],
+    config: dict,
+) -> tuple[float, list[dict], dict]:
+    """Evaluate what percentage of zones can be built from flat panels.
+
+    A zone is flat-friendly if all its vertex angles are between 85 and 95 degrees.
+
+    Returns (score 0-100, warnings, metrics).
+    """
+    warnings: list[dict] = []
+
+    if not zones:
+        warnings.append({
+            "code": "FLAT_PANEL_NO_ZONES",
+            "severity": "info",
+            "message": "Keine Zonen definiert — Flachpaneel-Analyse kann nicht durchgeführt werden.",
+            "suggestion": "Zonen zum Layout hinzufügen.",
+        })
+        return 50.0, warnings, {"flat_count": 0, "total_zones": 0, "flat_ratio": 0.0}
+
+    target = config.get("target_flat_panel_ratio", 0.60)
+    flat_count = 0
+
+    for zone in zones:
+        polygon = zone.get("polygon", [])
+        angles = _vertex_angles(polygon)
+        if not angles:
+            continue
+        all_right = all(85.0 <= angle_deg <= 95.0 for angle_deg, _ in angles)
+        if all_right:
+            flat_count += 1
+
+    total_zones = len(zones)
+    flat_ratio = flat_count / total_zones if total_zones > 0 else 0.0
+
+    score = min(100.0, (flat_ratio / target) * 100.0) if target > 0 else 100.0
+    score = max(0.0, score)
+
+    if flat_ratio < target:
+        warnings.append({
+            "code": "FLAT_PANEL_RATIO_LOW",
+            "severity": "warning",
+            "message": (
+                f"Flachpaneel-Anteil {flat_ratio:.0%} liegt unter dem Zielwert "
+                f"von {target:.0%} — erhöht Fertigungskosten."
+            ),
+            "suggestion": (
+                "Zonengrundrisse mit rechten Winkeln (85°–95°) gestalten, "
+                "um Flachpaneel-Fertigung zu ermöglichen."
+            ),
+        })
+
+    return score, warnings, {
+        "flat_count": flat_count,
+        "total_zones": total_zones,
+        "flat_ratio": round(flat_ratio, 4),
+        "target_ratio": target,
+    }
+
+
+# ---------------------------------------------------------------------------
 # Orchestrator
 # ---------------------------------------------------------------------------
 
@@ -704,6 +868,7 @@ def run_production_analysis(
     passages: list[dict],
     boat_class: str,
     config_overrides: dict | None = None,
+    data_source: str = "measured",
 ) -> dict:
     """Run all production friendliness sub-analyses and return combined result.
 
@@ -736,6 +901,8 @@ def run_production_analysis(
         ("service_access", lambda: analyze_service_access(zones, passages, config)),
         ("standardization", lambda: analyze_standardization(zones, passages, config)),
         ("cable_routing", lambda: analyze_cable_routing(zones, passages, config)),
+        ("mold_complexity", lambda: analyze_mold_complexity(zones, config)),
+        ("flat_panel_ratio", lambda: analyze_flat_panel_ratio(zones, config)),
     ]
 
     for name, fn in analyses:
@@ -771,4 +938,6 @@ def run_production_analysis(
         "suggestions": all_suggestions,
         "metrics": all_metrics,
         "config_used": config,
+        "confidence": data_source,
+        "confidence_note": "Basiert auf geschätzten Werten aus öffentlichen Spezifikationen." if data_source == "estimated" else None,
     }

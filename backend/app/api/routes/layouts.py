@@ -12,6 +12,7 @@ from app.schemas.schemas import (
     AnalysisRequest,
     AnalysisResponse,
     DxfImportResponse,
+    FullAnalysisRequest,
     LayoutCreate,
     LayoutResponse,
 )
@@ -22,9 +23,13 @@ from app.services.analysis.compliance import run_compliance_analysis
 from app.services.analysis.production import run_production_analysis
 from app.services.analysis.materials import run_materials_analysis
 from app.services.analysis.structural import run_structural_analysis
+from app.services.analysis.cost import run_cost_analysis
+from app.services.analysis.service_patterns import run_service_patterns_analysis
+from app.services.analysis.brand_dna import run_brand_dna_analysis
+from app.services.analysis.market import run_market_analysis
 from app.services.dxf.parser import parse_dxf
 from sqlalchemy.orm import selectinload
-from app.models.models import ZoneMaterial
+from app.models.models import CostItem, ServiceReport, ZoneMaterial, BrandReferenceModel
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +43,10 @@ ANALYSIS_MODULES = {
     "production": run_production_analysis,
     "materials": run_materials_analysis,
     "structural": run_structural_analysis,
+    "cost": run_cost_analysis,
+    "service_patterns": run_service_patterns_analysis,
+    "brand_dna": run_brand_dna_analysis,
+    "market": run_market_analysis,
 }
 
 
@@ -162,6 +171,112 @@ async def _load_materials_for_analysis(layout_id: UUID, db: AsyncSession) -> lis
     return assembled
 
 
+async def _load_cost_items(layout_id: UUID, db: AsyncSession) -> list[dict]:
+    """Load cost items for a layout."""
+    result = await db.execute(
+        select(CostItem).where(CostItem.layout_id == layout_id)
+    )
+    items = result.scalars().all()
+    return [
+        {
+            "category": item.category,
+            "subcategory": item.subcategory,
+            "description": item.description,
+            "quantity": item.quantity,
+            "unit": item.unit,
+            "unit_cost_eur": item.unit_cost_eur,
+            "total_cost_eur": item.total_cost_eur,
+            "zone_name": item.zone_name,
+            "source": item.source,
+        }
+        for item in items
+    ]
+
+
+async def _load_service_reports(project_id: UUID, db: AsyncSession) -> list[dict]:
+    """Load service reports for a project (or its boat class)."""
+    result = await db.execute(
+        select(ServiceReport).where(ServiceReport.project_id == project_id)
+    )
+    reports = result.scalars().all()
+    return [
+        {
+            "report_type": r.report_type,
+            "category": r.category,
+            "zone_type": r.zone_type,
+            "description": r.description,
+            "severity": r.severity,
+            "boat_age_months": r.boat_age_months,
+            "materials_involved": r.materials_involved or [],
+            "cost_eur": r.cost_eur,
+        }
+        for r in reports
+    ]
+
+
+async def _load_brand_references(boat_class: str, db: AsyncSession) -> list[dict]:
+    """Load brand reference models for the same boat class."""
+    result = await db.execute(
+        select(BrandReferenceModel).where(BrandReferenceModel.boat_class == boat_class)
+    )
+    refs = result.scalars().all()
+    return [
+        {
+            "features": ref.features or {},
+            "materials": (ref.features or {}).get("material_palette", []),
+            "style_tags": (ref.features or {}).get("interior_style_tags", []),
+        }
+        for ref in refs
+    ]
+
+
+async def _load_competitors(boat_class: str, length_m: float, db: AsyncSession) -> list[dict]:
+    """Load competitor models for the same boat class within ±15% length."""
+    from app.models.models import CompetitorModel
+
+    result = await db.execute(
+        select(CompetitorModel).where(CompetitorModel.boat_class == boat_class)
+    )
+    all_competitors = result.scalars().all()
+    tolerance = 0.15
+    filtered = [
+        c for c in all_competitors
+        if c.length_m is None or abs(c.length_m - length_m) / length_m <= tolerance
+    ]
+    return [
+        {
+            "key_metrics": c.key_metrics or {},
+            "length_m": c.length_m,
+            "price_range_eur": c.price_range_eur,
+        }
+        for c in filtered
+    ]
+
+
+async def _load_structural_items(layout_id: UUID, db: AsyncSession) -> list[dict]:
+    """Load structural items for a layout."""
+    from app.models.models import StructuralItem
+
+    result = await db.execute(
+        select(StructuralItem).where(StructuralItem.layout_id == layout_id)
+    )
+    items = result.scalars().all()
+    return [
+        {
+            "name": item.name,
+            "item_type": item.item_type,
+            "zone_name": item.zone_name,
+            "weight_kg": item.weight_kg,
+            "position_x_mm": item.position_x_mm,
+            "position_y_mm": item.position_y_mm,
+            "position_z_mm": item.position_z_mm,
+            "dimensions": item.dimensions,
+            "properties": item.properties,
+        }
+        for item in items
+    ]
+
+
 @router.post("/analyze", response_model=AnalysisResponse, status_code=201)
 async def run_analysis(
     project_id: UUID,
@@ -190,6 +305,16 @@ async def run_analysis(
     extra_kwargs: dict = {}
     if data.module == "materials":
         extra_kwargs["materials"] = await _load_materials_for_analysis(data.layout_id, db)
+    elif data.module == "cost":
+        extra_kwargs["cost_items"] = await _load_cost_items(data.layout_id, db)
+        extra_kwargs["boat_length_m"] = project.length_m
+    elif data.module == "service_patterns":
+        extra_kwargs["service_reports"] = await _load_service_reports(project_id, db)
+    elif data.module == "brand_dna":
+        extra_kwargs["brand_references"] = await _load_brand_references(project.boat_class, db)
+    elif data.module == "market":
+        extra_kwargs["competitors"] = await _load_competitors(project.boat_class, project.length_m, db)
+        extra_kwargs["boat_length_m"] = project.length_m
 
     analysis_fn = ANALYSIS_MODULES[data.module]
     analysis_result = analysis_fn(
@@ -228,3 +353,71 @@ async def list_analyses(
     query = query.order_by(AnalysisResult.created_at.desc())
     result = await db.execute(query)
     return result.scalars().all()
+
+
+@router.post("/full-analysis", status_code=201)
+async def run_full_analysis_endpoint(
+    project_id: UUID,
+    data: FullAnalysisRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """Run all applicable analysis modules on a layout."""
+    from app.services.analysis.orchestrator import run_full_analysis, AnalysisContext
+
+    project = await _get_project(project_id, db)
+
+    result = await db.execute(
+        select(Layout).where(
+            Layout.id == data.layout_id, Layout.project_id == project_id
+        )
+    )
+    layout = result.scalar_one_or_none()
+    if not layout:
+        raise HTTPException(status_code=404, detail="Layout nicht gefunden")
+
+    # Load all supporting data in parallel-ish fashion
+    zone_materials = await _load_materials_for_analysis(data.layout_id, db)
+    structural_items = await _load_structural_items(data.layout_id, db)
+    cost_items = await _load_cost_items(data.layout_id, db)
+    service_reports = await _load_service_reports(project_id, db)
+    brand_refs = await _load_brand_references(project.boat_class, db)
+    competitors = await _load_competitors(
+        project.boat_class, project.length_m, db
+    )
+
+    context = AnalysisContext(
+        zones=layout.zones or [],
+        passages=layout.passages or [],
+        boat_class=project.boat_class,
+        length_m=project.length_m,
+        beam_m=project.beam_m,
+        deck_height_mm=layout.deck_height_mm or 2100,
+        config_overrides=data.config_overrides,
+        zone_materials=zone_materials,
+        structural_items=structural_items,
+        cost_items=cost_items,
+        service_reports=service_reports,
+        brand_references=brand_refs,
+        competitors=competitors,
+    )
+
+    analysis_result = await run_full_analysis(context)
+
+    # Store individual module results in DB
+    for module_name, module_result in analysis_result["modules"].items():
+        db_result = AnalysisResult(
+            project_id=project_id,
+            layout_id=data.layout_id,
+            module=module_name,
+            overall_score=module_result.get("overall_score", 0),
+            sub_scores=module_result.get("sub_scores", {}),
+            warnings=module_result.get("warnings", []),
+            suggestions=module_result.get("suggestions", []),
+            metrics=module_result.get("metrics", {}),
+            config_used=module_result.get("config_used", {}),
+        )
+        db.add(db_result)
+
+    await db.commit()
+
+    return analysis_result

@@ -1,4 +1,4 @@
-# Module 7: Structural Analysis (Weight Distribution) — Design Spec
+# Structural Analysis (Weight Distribution) — Design Spec
 
 ## Overview
 
@@ -74,9 +74,13 @@ Cx = (1 / 6A) × Σ (xi + xi+1)(xi·yi+1 − xi+1·yi)
 Cy = (1 / 6A) × Σ (yi + yi+1)(xi·yi+1 − xi+1·yi)
 ```
 
+Where `A` is the **signed** area from the shoelace formula. CLAUDE.md states polygons are counter-clockwise (positive signed area), so `abs(A)` is safe. The implementation should use `abs(A)` defensively.
+
 Weighted center of gravity: `CoG = Σ(centroid_i × weight_i) / Σ(weight_i)`
 
 Normalized to boat dimensions: CoG_x as percentage of max X span (0% = bow, 100% = stern), CoG_y as percentage of max Y span (0% = starboard, 100% = port).
+
+**Unknown zone types:** If a zone's `zone_type` is not in `ZONE_WEIGHT_KG_PER_SQM`, use a default fallback of 50 kg/m² and emit no warning (future zone types should not block analysis).
 
 ## Sub-Analyses
 
@@ -240,6 +244,44 @@ BOAT_CLASS_DEFAULTS = {
     },
 }
 ```
+
+## Orchestrator
+
+```python
+def run_structural_analysis(
+    zones: list[dict],
+    passages: list[dict],  # unused — accepted for API pattern consistency
+    boat_class: str,
+    config_overrides: dict | None = None,
+) -> dict:
+```
+
+**`passages` is unused** by this module. All sub-analyses operate on zones only. The parameter exists for consistent API signature across all modules.
+
+**Flow:**
+1. Look up `BOAT_CLASS_DEFAULTS[boat_class]`, copy config, pop `weights`
+2. Apply `config_overrides` if provided
+3. If no zones: return overall score 50.0 with `STRUCTURAL_NO_ZONES` info warning
+4. Run each sub-analysis in try/except (on error: score 0 + critical warning)
+5. Compute weighted overall score from sub-scores using weights
+6. Deduplicate suggestions, sort warnings by severity (critical → warning → info)
+
+**Return dict (identical to all other modules):**
+```python
+{
+    "module": "structural",
+    "overall_score": round(weighted_sum, 1),  # 0-100
+    "sub_scores": {"fore_aft": float, "lateral": float, "heavy_placement": float, "load_concentration": float},
+    "warnings": [...],  # sorted by severity
+    "suggestions": [...],  # deduplicated
+    "metrics": {"fore_aft": {...}, "lateral": {...}, "heavy_placement": {...}, "load_concentration": {...}},
+    "config_used": config,  # weights popped, overrides applied
+}
+```
+
+**`config_used` note:** `weights` is popped before storing (consistent with other modules). `ZONE_WEIGHT_KG_PER_SQM` is a module-level constant and not stored in `config_used`. The `boat_class_weight_factor` IS stored since it varies per boat class.
+
+**Empty input:** Each sub-analysis independently returns score 50.0 + info warning when no zones are provided. The orchestrator also short-circuits at the top level.
 
 ## Warning Codes Summary
 
