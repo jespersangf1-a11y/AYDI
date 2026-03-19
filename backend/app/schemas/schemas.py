@@ -1,5 +1,5 @@
 # backend/app/schemas/schemas.py
-from datetime import datetime
+from datetime import date, datetime
 from enum import Enum
 from uuid import UUID
 
@@ -180,3 +180,80 @@ class CadImportResponse(BaseModel):
 class ErrorResponse(BaseModel):
     detail: str
     errors: list[str] | None = None
+
+
+# Community Intelligence schemas
+class CommunityIssue(BaseModel):
+    category: str
+    zone_type: str
+    description: str
+    severity: str
+    boat_age_months: int | None = None
+
+
+class CommunityPositive(BaseModel):
+    category: str
+    zone_type: str
+    description: str
+
+
+class CommunityReportCreate(BaseModel):
+    source_forum: str
+    source_url: str | None = None
+    source_date: date | None = None
+    boat_manufacturer: str
+    boat_model: str | None = None
+    boat_year: int | None = None
+    hull_material: str | None = None
+    hull_construction: str | None = None
+    propulsion: str | None = None
+    issues: list[CommunityIssue] = []
+    positives: list[CommunityPositive] = []
+    reliability: float
+    raw_text: str | None = None
+
+
+class CommunityReportResponse(BaseModel):
+    id: int
+    created_at: datetime
+    updated_at: datetime | None = None
+    source_forum: str
+    source_url: str | None = None
+    source_date: date | None = None
+    boat_manufacturer: str
+    boat_model: str | None = None
+    boat_year: int | None = None
+    hull_material: str | None = None
+    hull_construction: str | None = None
+    propulsion: str | None = None
+    issues: list[dict] = []
+    positives: list[dict] = []
+    reliability: float
+    raw_text: str | None = None
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CommunityPatternResponse(BaseModel):
+    id: int
+    created_at: datetime
+    manufacturer: str | None = None
+    boat_model: str | None = None
+    issue_category: str
+    zone_type: str | None = None
+    description: str
+    report_count: int
+    severity_mode: str
+    typical_onset_years: float | None = None
+    materials_involved: list[str] | None = None
+    construction_methods_involved: list[str] | None = None
+    confidence: float
+    source_report_ids: list[int]
+    is_positive: bool
+    model_config = ConfigDict(from_attributes=True)
+
+
+class AggregationResultResponse(BaseModel):
+    patterns_created: int
+    reports_processed: int
+    reports_skipped: int
+    groups_below_threshold: int

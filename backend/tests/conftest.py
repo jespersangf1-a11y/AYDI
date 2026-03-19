@@ -179,3 +179,75 @@ def make_service_report(
     if cost_eur is not None:
         report["cost_eur"] = cost_eur
     return report
+
+
+def make_community_report(
+    source_forum="boote-forum.de",
+    boat_manufacturer="Bavaria",
+    boat_model="38 Cruiser",
+    boat_year=2018,
+    hull_material="grp_solid",
+    hull_construction="hand_layup",
+    propulsion="sail",
+    issues=None,
+    positives=None,
+    reliability=0.8,
+    source_url=None,
+    source_date=None,
+    raw_text=None,
+):
+    if issues is None:
+        issues = [{
+            "category": "material_degradation",
+            "zone_type": "hull",
+            "description": "Osmoseblasen am Unterwasserschiff nach 6 Jahren",
+            "severity": "major",
+            "boat_age_months": 72,
+        }]
+    return {
+        "source_forum": source_forum,
+        "source_url": source_url,
+        "source_date": source_date,
+        "boat_manufacturer": boat_manufacturer,
+        "boat_model": boat_model,
+        "boat_year": boat_year,
+        "hull_material": hull_material,
+        "hull_construction": hull_construction,
+        "propulsion": propulsion,
+        "issues": issues,
+        "positives": positives or [],
+        "reliability": reliability,
+        "raw_text": raw_text,
+    }
+
+
+def make_community_pattern(
+    manufacturer="Bavaria",
+    boat_model="38 Cruiser",
+    issue_category="material_degradation",
+    zone_type="hull",
+    description="Osmoseblasen am Unterwasserschiff",
+    report_count=5,
+    severity_mode="major",
+    typical_onset_years=6.0,
+    materials_involved=None,
+    construction_methods_involved=None,
+    confidence=0.7,
+    source_report_ids=None,
+    is_positive=False,
+):
+    return {
+        "manufacturer": manufacturer,
+        "boat_model": boat_model,
+        "issue_category": issue_category,
+        "zone_type": zone_type,
+        "description": description,
+        "report_count": report_count,
+        "severity_mode": severity_mode,
+        "typical_onset_years": typical_onset_years,
+        "materials_involved": materials_involved or ["grp_solid"],
+        "construction_methods_involved": construction_methods_involved or ["hand_layup"],
+        "confidence": confidence,
+        "source_report_ids": source_report_ids or [1, 2, 3, 4, 5],
+        "is_positive": is_positive,
+    }
