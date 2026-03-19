@@ -117,7 +117,7 @@ Aggregated pattern derived from ≥3 independent reports.
 | `created_at` | DateTime | default=utcnow | |
 | `updated_at` | DateTime | onupdate=utcnow | |
 | `manufacturer` | String(100) | nullable | null = cross-manufacturer pattern |
-| `model` | String(100) | nullable | null = manufacturer-wide pattern |
+| `boat_model` | String(100) | nullable | null = manufacturer-wide pattern |
 | `issue_category` | String(50) | NOT NULL | Same categories as report issues |
 | `zone_type` | String(50) | nullable | Same zones as report issues |
 | `description` | String(500) | NOT NULL | German, concise |
@@ -129,7 +129,6 @@ Aggregated pattern derived from ≥3 independent reports.
 | `confidence` | Float | NOT NULL, 0.0–1.0 | Statistical confidence |
 | `source_report_ids` | JSON | NOT NULL | List of report IDs backing this pattern |
 | `is_positive` | Boolean | NOT NULL, default=False | True for positive patterns |
-| `manufacturer_response` | JSON | nullable | Reserved for Phase 2 |
 
 **Indexes:**
 - `(manufacturer, model)`
@@ -281,12 +280,16 @@ BOAT_CLASS_DEFAULTS = {
 }
 
 def run_community_analysis(
-    community_patterns: list[dict],
     zones: list[dict],
+    passages: list[dict],
     boat_class: str = "cruising_sail",
     config_overrides: dict | None = None,
+    *,
+    community_patterns: list[dict] | None = None,
 ) -> dict:
 ```
+
+Follows the standard module signature `(zones, passages, boat_class, config_overrides, **kwargs)`. Community patterns are received via the `community_patterns` keyword argument, consistent with how other modules receive optional data (e.g., `service_reports` in service_patterns, `competitors` in market).
 
 ### Skip Logic
 
@@ -324,7 +327,7 @@ Each pattern with `severity ∈ {"critical", "major"}` and `confidence ≥ min_c
     "zone": pattern["zone_type"],
     "message": f"⚠️ COMMUNITY: {pattern['description']} ({pattern['report_count']} Berichte)",
     "source": "community",
-    "confidence": "community",
+    "confidence": "documented",
 }
 ```
 
@@ -345,11 +348,11 @@ For each warning, a suggestion is generated:
 
 ### Confidence Level
 
-New confidence level: `"community"` — sits between `documented` and `benchmark` in the hierarchy. All community findings carry this confidence.
+Community findings use the existing `"documented"` confidence level. This is semantically correct — community patterns are derived from documented owner experiences, similar to how service reports use `"documented"`. No new confidence level is needed.
 
 ### Return Dict
 
-Standard module return format:
+Standard module return format, matching the contract of all existing modules:
 ```python
 {
     "module": "community",
@@ -369,7 +372,7 @@ Standard module return format:
         "most_common_category": str,
         "earliest_typical_onset_years": float | None,
     },
-    "confidence": "community",
+    "confidence": "documented",
 }
 ```
 
@@ -381,26 +384,20 @@ Standard module return format:
 
 In `backend/app/services/analysis/orchestrator.py`:
 
-1. Before Tier 1 dispatch, call `CommunityKnowledgeEngine.get_relevant_patterns()` and `get_positive_patterns()`.
-2. Add `community` module to Tier 1 (parallel, no dependencies).
-3. Pass combined patterns as `community_patterns` parameter.
+1. Add `"community"` to `EXECUTION_TIERS[0]` (Tier 1, parallel with ergonomics/volume/emotional/compliance).
+2. Add `community_patterns: list[dict] = field(default_factory=list)` to the `AnalysisContext` dataclass.
+3. Add a `"community"` case to `_build_module_kwargs()` that returns `{"community_patterns": context.community_patterns}`.
+4. Before tier dispatch in `run_full_analysis()`, populate `context.community_patterns` via `CommunityKnowledgeEngine`:
 
 ```python
-# In run_full_analysis():
+# In run_full_analysis(), before tier dispatch:
 engine = CommunityKnowledgeEngine(db)
-community_patterns = await engine.get_relevant_patterns(dna, manufacturer, model)
-community_positives = await engine.get_positive_patterns(dna, manufacturer, model)
-all_community = community_patterns + community_positives
-
-# Tier 1 becomes:
-tier1 = await asyncio.gather(
-    run_module("ergonomics", context),
-    run_module("volume", context),
-    run_module("emotional", context),
-    run_module("compliance", context),
-    run_module("community", context, community_patterns=all_community),
-)
+patterns = await engine.get_relevant_patterns(dna, manufacturer, model)
+positives = await engine.get_positive_patterns(dna, manufacturer, model)
+context.community_patterns = patterns + positives
 ```
+
+The existing `_run_single_module()` dispatch mechanism handles the rest — it calls the module runner with `(zones, passages, boat_class, config_overrides, **kwargs)` where kwargs come from `_build_module_kwargs()`.
 
 ### BoatDNA Resolver Changes
 
@@ -498,7 +495,7 @@ class CommunityPatternResponse(BaseModel):
     id: int
     created_at: datetime
     manufacturer: str | None = None
-    model: str | None = None
+    boat_model: str | None = None
     issue_category: str
     zone_type: str | None = None
     description: str
@@ -563,7 +560,7 @@ After seeding reports, `seed_community_data()` calls `CommunityPatternAggregator
 | `backend/app/models/models.py` | +CommunityReport, +CommunityPattern models (~60 lines) |
 | `backend/app/schemas/schemas.py` | +6 Pydantic schemas (~80 lines) |
 | `backend/app/main.py` | +1 router registration line |
-| `backend/app/services/analysis/orchestrator.py` | +community module dispatch in Tier 1 (~15 lines) |
+| `backend/app/services/analysis/orchestrator.py` | +community_patterns to AnalysisContext, +"community" to EXECUTION_TIERS[0], +community case in _build_module_kwargs(), +engine call in run_full_analysis() (~20 lines) |
 | `backend/app/services/analysis/score_fusion.py` | +community weight entry (~2 lines) |
 | `backend/app/services/boat_dna_resolver.py` | +_resolve_community(), +community in overall_weights (~40 lines) |
 | `backend/app/db/seed.py` | +seed_community_data() (~150 lines) |
