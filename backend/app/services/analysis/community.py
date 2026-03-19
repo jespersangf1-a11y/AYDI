@@ -45,8 +45,8 @@ ZONE_LABELS = {
 
 
 def run_community_analysis(
-    zones: list[dict],
-    passages: list[dict],
+    zones: list[dict],  # noqa: ARG001 — standard module interface
+    passages: list[dict],  # noqa: ARG001 — standard module interface
     boat_class: str = "cruising_sail",
     config_overrides: dict | None = None,
     *,
@@ -107,7 +107,7 @@ def run_community_analysis(
             "code": "COMMUNITY_KNOWN_ISSUE",
             "severity": "critical" if p["severity"] == "critical" else "warning",
             "zone": p.get("zone_type"),
-            "message": f"⚠️ COMMUNITY: {p['description']} ({p.get('report_count', 0)} Berichte)",
+            "message": f"⚠️ COMMUNITY: {p.get('description', '')} ({p.get('report_count', 0)} Berichte)",
             "source": "community",
             "confidence": "documented",
         })
@@ -123,7 +123,7 @@ def run_community_analysis(
             "code": "COMMUNITY_CHECK_RECOMMENDATION",
             "zone": p.get("zone_type"),
             "message": f"Prüfen Sie {zone_label} besonders sorgfältig — bekanntes Problem bei vergleichbaren Booten{onset_text}.",
-            "priority": "high" if p["severity"] == "critical" else "medium",
+            "priority": "high" if p.get("severity") == "critical" else "medium",
             "source": "community",
         })
 
@@ -142,13 +142,13 @@ def run_community_analysis(
             "known_issues": {
                 "score": round(known_issues_score, 1),
                 "label": "Bekannte Probleme",
-                "details": [{"description": p["description"], "severity": p.get("severity"),
+                "details": [{"description": p.get("description", ""), "severity": p.get("severity"),
                              "relevance": p.get("relevance"), "report_count": p.get("report_count")} for p in negative],
             },
             "positive_reputation": {
                 "score": round(positive_reputation_score, 1),
                 "label": "Positive Erfahrungen",
-                "details": [{"description": p["description"], "relevance": p.get("relevance"),
+                "details": [{"description": p.get("description", ""), "relevance": p.get("relevance"),
                              "report_count": p.get("report_count")} for p in positive],
             },
             "data_coverage": {
