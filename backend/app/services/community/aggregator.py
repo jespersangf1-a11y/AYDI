@@ -163,18 +163,18 @@ def _build_pattern(
     mean_reliability = sum(reliabilities) / len(reliabilities) if reliabilities else 0.5
     confidence = round(min(1.0, report_count / 10) * mean_reliability, 2)
 
-    # Materials and construction from reports
-    materials = list(set(
+    # Materials and construction from reports (sorted for idempotency)
+    materials = sorted(set(
         e["report"].get("hull_material") for e in entries
         if e["report"].get("hull_material")
     ))
-    constructions = list(set(
+    constructions = sorted(set(
         e["report"].get("hull_construction") for e in entries
         if e["report"].get("hull_construction")
     ))
 
     # Source report indices (placeholder -- real DB version would use IDs)
-    report_indices = list(set(e["report_idx"] for e in entries))
+    report_indices = sorted(set(e["report_idx"] for e in entries))
 
     return {
         "manufacturer": manufacturer,
