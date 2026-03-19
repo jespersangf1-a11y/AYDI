@@ -321,7 +321,7 @@ CONSTRUCTION_KNOWLEDGE = {
     },
     "grp_sandwich_resin_infusion": { ... },
     "aluminium_welded": { ... },
-    "carbon_composite_prepreg": { ... },
+    "carbon_composite_prepreg_autoclave": { ... },
     "wood_epoxy_cold_molded": { ... },
     "steel_welded": { ... },
 }
