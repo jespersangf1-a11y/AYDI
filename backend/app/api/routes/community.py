@@ -87,7 +87,6 @@ async def get_report(report_id: int, db: AsyncSession = Depends(get_db)):
 async def list_patterns(
     manufacturer: str | None = None,
     model: str | None = None,
-    hull_material: str | None = None,
     zone_type: str | None = None,
     is_positive: bool | None = None,
     limit: int = Query(default=50, le=200),
@@ -190,7 +189,6 @@ async def get_relevant_patterns(
     boat_class: str = "cruising_sail",
     hull_material: str | None = None,
     hull_construction: str | None = None,
-    propulsion: str | None = None,
     max_results: int = Query(default=20, le=50),
     db: AsyncSession = Depends(get_db),
 ):

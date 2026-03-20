@@ -365,8 +365,8 @@ class CommunityReport(Base):
     __tablename__ = "community_reports"
 
     id = mapped_column(Integer, primary_key=True, autoincrement=True)
-    created_at = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at = mapped_column(DateTime, onupdate=datetime.utcnow)
+    created_at = mapped_column(DateTime, default=_utcnow)
+    updated_at = mapped_column(DateTime, onupdate=_utcnow)
     source_forum = mapped_column(String(100), nullable=False)
     source_url = mapped_column(String(500), nullable=True)
     source_date = mapped_column(Date, nullable=True)
@@ -392,8 +392,8 @@ class CommunityPattern(Base):
     __tablename__ = "community_patterns"
 
     id = mapped_column(Integer, primary_key=True, autoincrement=True)
-    created_at = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at = mapped_column(DateTime, onupdate=datetime.utcnow)
+    created_at = mapped_column(DateTime, default=_utcnow)
+    updated_at = mapped_column(DateTime, onupdate=_utcnow)
     manufacturer = mapped_column(String(100), nullable=True)
     boat_model = mapped_column(String(100), nullable=True)
     issue_category = mapped_column(String(50), nullable=False)
