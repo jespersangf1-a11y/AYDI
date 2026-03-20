@@ -69,7 +69,29 @@
       "Bash(git commit:*)",
       "Bash(git check-ignore:*)",
       "Bash(git worktree:*)",
-      "Bash(PYTHONPATH=backend pytest backend/tests/ -v --tb=short)"
+      "Bash(PYTHONPATH=backend pytest backend/tests/ -v --tb=short)",
+      "Bash(PYTHONPATH=. python -m pytest tests/test_boat_dna.py -v)",
+      "Bash(PYTHONPATH=. python -m pytest tests/test_boat_dna.py -v -k \"from_boat_class or from_public_specs or round_trip\")",
+      "Bash(PYTHONPATH=. python -m pytest tests/ --tb=short)",
+      "Bash(PYTHONPATH=. python -m pytest tests/test_boat_dna_resolver.py -v)",
+      "Bash(PYTHONPATH=. python -m pytest tests/test_boat_dna.py -k construction -v)",
+      "Bash(PYTHONPATH=. python -m pytest tests/ --tb=short -q)",
+      "Bash(PYTHONPATH=. python -m pytest tests/test_boat_dna.py -k visual_context -v)",
+      "Bash(PYTHONPATH=. python -m pytest tests/test_boat_dna_integration.py -v)",
+      "Bash(PYTHONPATH=. pytest tests/test_boat_dna.py tests/test_boat_dna_resolver.py tests/test_boat_dna_integration.py -v)",
+      "Bash(PYTHONPATH=. python -m pytest tests/test_boat_dna.py tests/test_boat_dna_resolver.py tests/test_boat_dna_integration.py -v)",
+      "Bash(PYTHONPATH=. pytest tests/ -v --tb=short)",
+      "Bash(PYTHONPATH=. python -c \"from app.models.models import CommunityReport, CommunityPattern; print\\(''Models OK''\\)\")",
+      "Bash(PYTHONPATH=. python -c \"from app.schemas.schemas import CommunityReportCreate, CommunityPatternResponse, AggregationResultResponse; print\\(''Schemas OK''\\)\")",
+      "Bash(python -m pytest tests/test_community_analysis.py -v)",
+      "Bash(python -m pytest tests/ --tb=short)",
+      "Bash(PYTHONPATH=. pytest tests/test_community_analysis.py -v)",
+      "Bash(PYTHONPATH=. python -m pytest tests/test_community_analysis.py -v)",
+      "Bash(PYTHONPATH=. python -m pytest tests/test_community.py -v)",
+      "Bash(PYTHONPATH=. python -m pytest tests/test_community.py -v -k \"Engine\")",
+      "Bash(PYTHONPATH=. python -c \"from app.main import app; print\\(f''{len\\(app.routes\\)} routes registered''\\)\")",
+      "Bash(PYTHONPATH=. python -m pytest tests/test_community_integration.py -v)",
+      "Bash(PYTHONPATH=. python -m pytest tests/test_orchestrator.py -v --tb=short)"
     ]
   }
 }
