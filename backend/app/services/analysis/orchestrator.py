@@ -25,6 +25,7 @@ class AnalysisContext:
     service_reports: list[dict] = field(default_factory=list)
     brand_references: list[dict] = field(default_factory=list)
     competitors: list[dict] = field(default_factory=list)
+    community_patterns: list[dict] = field(default_factory=list)
     # Results from previous tiers (populated during execution)
     module_results: dict[str, dict] = field(default_factory=dict)
 
@@ -32,7 +33,7 @@ class AnalysisContext:
 # Execution tiers -- modules in same tier can run in parallel
 EXECUTION_TIERS: list[list[str]] = [
     # Tier 1: Independent core modules
-    ["ergonomics", "volume_storage", "emotional", "compliance"],
+    ["ergonomics", "volume_storage", "emotional", "compliance", "community"],
     # Tier 2: Independent but may use optional data
     ["production", "materials", "structural"],
     # Tier 3: Depends on tier 1+2 results
@@ -62,6 +63,7 @@ def _get_module_runners() -> dict:
     from app.services.analysis.service_patterns import run_service_patterns_analysis
     from app.services.analysis.brand_dna import run_brand_dna_analysis
     from app.services.analysis.market import run_market_analysis
+    from app.services.analysis.community import run_community_analysis
 
     return {
         "ergonomics": run_ergonomics_analysis,
@@ -75,6 +77,7 @@ def _get_module_runners() -> dict:
         "service_patterns": run_service_patterns_analysis,
         "brand_dna": run_brand_dna_analysis,
         "market": run_market_analysis,
+        "community": run_community_analysis,
     }
 
 
@@ -165,6 +168,8 @@ def _build_module_kwargs(name: str, context: AnalysisContext) -> dict:
             total = cost_result.get("metrics", {}).get("total_estimated_cost_eur")
             if total is not None:
                 kwargs["estimated_cost"] = total
+    elif name == "community":
+        kwargs["community_patterns"] = context.community_patterns
 
     return kwargs
 
@@ -202,7 +207,7 @@ async def _run_single_module(
 # Module weights for computing overall score per boat class
 OVERALL_WEIGHTS: dict[str, dict[str, float]] = {
     "small_sail": {
-        "ergonomics": 0.20,
+        "ergonomics": 0.15,
         "volume_storage": 0.15,
         "emotional": 0.10,
         "compliance": 0.15,
@@ -210,9 +215,10 @@ OVERALL_WEIGHTS: dict[str, dict[str, float]] = {
         "materials": 0.10,
         "structural": 0.10,
         "cost": 0.10,
+        "community": 0.05,
     },
     "cruising_sail": {
-        "ergonomics": 0.15,
+        "ergonomics": 0.10,
         "volume_storage": 0.15,
         "emotional": 0.15,
         "compliance": 0.10,
@@ -221,11 +227,12 @@ OVERALL_WEIGHTS: dict[str, dict[str, float]] = {
         "structural": 0.10,
         "cost": 0.10,
         "brand_dna": 0.05,
+        "community": 0.05,
     },
     "large_motor": {
         "ergonomics": 0.10,
         "volume_storage": 0.10,
-        "emotional": 0.20,
+        "emotional": 0.15,
         "compliance": 0.10,
         "production": 0.10,
         "materials": 0.15,
@@ -233,11 +240,12 @@ OVERALL_WEIGHTS: dict[str, dict[str, float]] = {
         "cost": 0.05,
         "brand_dna": 0.05,
         "market": 0.05,
+        "community": 0.05,
     },
     "superyacht": {
         "ergonomics": 0.10,
         "volume_storage": 0.05,
-        "emotional": 0.25,
+        "emotional": 0.20,
         "compliance": 0.10,
         "production": 0.10,
         "materials": 0.15,
@@ -245,6 +253,7 @@ OVERALL_WEIGHTS: dict[str, dict[str, float]] = {
         "cost": 0.05,
         "brand_dna": 0.10,
         "market": 0.05,
+        "community": 0.05,
     },
 }
 

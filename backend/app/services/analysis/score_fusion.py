@@ -23,6 +23,7 @@ FUSION_WEIGHTS: dict[str, tuple[float, float]] = {
     "service_patterns": (0.65, 0.35),
     "brand_dna":        (0.35, 0.65),
     "market":           (0.60, 0.40),
+    "community":        (1.00, 0.00),
 }
 
 # Default weights for unknown modules

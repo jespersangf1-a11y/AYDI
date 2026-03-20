@@ -145,7 +145,7 @@ def test_context_creation_with_overrides():
 def test_execution_tiers_has_all_modules():
     """Every known module name must appear in exactly one tier."""
     expected = {
-        "ergonomics", "volume_storage", "emotional", "compliance",
+        "ergonomics", "volume_storage", "emotional", "compliance", "community",
         "production", "materials", "structural",
         "cost",
         "service_patterns", "brand_dna", "market",
@@ -178,7 +178,7 @@ def test_full_analysis_all_modules_run():
     runners = _make_runners()
     result = asyncio.run(run_full_analysis(ctx, module_runners=runners))
 
-    assert result["module_count"] == 11
+    assert result["module_count"] == 12
     assert result["skipped_count"] == 0
     assert result["error_count"] == 0
     assert result["overall_score"] is not None
@@ -337,8 +337,8 @@ def test_compute_overall_normalises_weights():
         "emotional": _mock_result("emotional", 60.0),
     }
     result = _compute_overall_score(results, "cruising_sail")
-    # cruising_sail weights: ergonomics=0.15, emotional=0.15 -> each 50%
-    expected = (80.0 * 0.15 + 60.0 * 0.15) / (0.15 + 0.15)
+    # cruising_sail weights: ergonomics=0.10, emotional=0.15 -> 40%/60%
+    expected = (80.0 * 0.10 + 60.0 * 0.15) / (0.10 + 0.15)
     assert abs(result["score"] - round(expected, 1)) < 0.1
 
 
@@ -429,7 +429,7 @@ def test_full_analysis_empty_zones_graceful():
     runners = _make_runners(default_score=50.0)
     result = asyncio.run(run_full_analysis(ctx, module_runners=runners))
 
-    assert result["module_count"] == 11
+    assert result["module_count"] == 12
     assert result["overall_score"] == 50.0
 
 

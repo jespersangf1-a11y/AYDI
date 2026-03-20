@@ -25,6 +25,7 @@ class BoatDNAResolver:
         from app.services.analysis.brand_dna import BOAT_CLASS_DEFAULTS as BRAND_D
         from app.services.analysis.market import BOAT_CLASS_DEFAULTS as MARKET_D
         from app.services.analysis.service_patterns import BOAT_CLASS_DEFAULTS as SVC_D
+        from app.services.analysis.community import BOAT_CLASS_DEFAULTS as COMM_D
 
         module_sources = {
             "ergonomics": ERGO_D, "compliance": COMP_D,
@@ -33,6 +34,7 @@ class BoatDNAResolver:
             "materials": MAT_D, "volume_storage": VOL_D,
             "brand_dna": BRAND_D, "market": MARKET_D,
             "service_patterns": SVC_D,
+            "community": COMM_D,
         }
         configs: dict[str, dict[str, dict]] = {}
         for boat_class in ("small_sail", "cruising_sail", "large_motor", "superyacht"):
@@ -97,6 +99,11 @@ class BoatDNAResolver:
         if is_luxury or dna.length_m > 15:
             w["market"] = 0.03
 
+        w["community"] = 0.05
+        # Increase for mass production boats
+        if dna.production_type == "mass_production":
+            w["community"] = 0.08
+
         return self._normalize_weights(w)
 
     # ------------------------------------------------------------------
@@ -117,9 +124,29 @@ class BoatDNAResolver:
             "brand_dna": self._resolve_segment_module(dna, "brand_dna"),
             "market": self._resolve_segment_module(dna, "market"),
             "service_patterns": self._resolve_segment_module(dna, "service_patterns"),
+            "community": self._resolve_community(dna),
             "overall_weights": self._resolve_overall_weights(dna),
         }
         return result
+
+    # ------------------------------------------------------------------
+    # Community
+    # ------------------------------------------------------------------
+
+    def _resolve_community(self, dna: BoatDNA) -> dict:
+        """Resolve community module config from BoatDNA."""
+        config = {
+            "max_patterns": 20,
+            "min_confidence": 0.3,
+            "severity_weights": {"critical": 25, "major": 15, "minor": 5, "cosmetic": 2},
+        }
+        if dna.builder_quality_tier == "superyacht":
+            config["max_patterns"] = 25
+            config["min_confidence"] = 0.2
+        if dna.length_m < 10:
+            config["max_patterns"] = 15
+            config["min_confidence"] = 0.4
+        return config
 
     # ------------------------------------------------------------------
     # Segment-module fallback (brand_dna, market, service_patterns)
