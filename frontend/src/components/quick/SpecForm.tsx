@@ -51,9 +51,11 @@ interface FieldProps {
   required?: boolean
   min?: number
   step?: number
+  error?: string
+  validator?: (value: string, otherFields?: Record<string, string>) => string | null
 }
 
-function Field({ label, name, type = 'number', unit, placeholder, value, onChange, required, min, step }: FieldProps) {
+function Field({ label, name, type = 'number', unit, placeholder, value, onChange, required, min, step, error }: FieldProps) {
   return (
     <div>
       <label className="block text-sm text-navy-300 mb-1">
@@ -70,8 +72,11 @@ function Field({ label, name, type = 'number', unit, placeholder, value, onChang
         min={min}
         step={step}
         onChange={(e) => onChange(name, e.target.value)}
-        className="w-full bg-navy-800 border border-navy-600 rounded-lg px-3 py-2 text-white text-sm placeholder-navy-500 focus:outline-none focus:border-ocean-500 transition-colors font-mono"
+        className={`w-full bg-navy-800 border rounded-lg px-3 py-2 text-white text-sm placeholder-navy-500 focus:outline-none transition-colors font-mono ${
+          error ? 'border-red-600 focus:border-red-500' : 'border-navy-600 focus:border-ocean-500'
+        }`}
       />
+      {error && <p className="text-red-400 text-xs mt-1">{error}</p>}
     </div>
   )
 }
@@ -105,12 +110,49 @@ export default function SpecForm({ boatClass, loading, onSubmit, onBack }: SpecF
     storage_volume_l: '',
   })
 
+  const [errors, setErrors] = useState<Record<string, string>>({})
+
+  const validateFields = () => {
+    const newErrors: Record<string, string> = {}
+
+    // Validate length_m
+    if (fields.length_m) {
+      const len = parseFloat(fields.length_m)
+      if (len < 2 || len > 100) {
+        newErrors.length_m = 'Länge muss zwischen 2 und 100 m liegen'
+      }
+    }
+
+    // Validate beam_m
+    if (fields.beam_m && fields.length_m) {
+      const beam = parseFloat(fields.beam_m)
+      const length = parseFloat(fields.length_m)
+      if (beam >= length) {
+        newErrors.beam_m = 'Breite muss kleiner als Länge sein'
+      }
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
   const handleChange = (name: string, value: string) => {
     setFields((prev) => ({ ...prev, [name]: value }))
+    // Clear error for this field when user starts typing
+    if (errors[name]) {
+      setErrors((prev) => {
+        const newErrors = { ...prev }
+        delete newErrors[name]
+        return newErrors
+      })
+    }
   }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    if (!validateFields()) {
+      return
+    }
     const num = (k: string) => (fields[k] !== '' ? parseFloat(fields[k]) : null)
     const int = (k: string) => (fields[k] !== '' ? parseInt(fields[k], 10) : null)
     const bool = (k: string): boolean | null => {
@@ -165,6 +207,7 @@ export default function SpecForm({ boatClass, loading, onSubmit, onBack }: SpecF
           required
           min={3}
           step={0.1}
+          error={errors.length_m}
         />
         <Field
           label="Breite (Bmax)"
@@ -174,6 +217,7 @@ export default function SpecForm({ boatClass, loading, onSubmit, onBack }: SpecF
           value={fields.beam_m}
           onChange={handleChange}
           step={0.1}
+          error={errors.beam_m}
         />
         <Field
           label="Tiefgang"
@@ -397,7 +441,7 @@ export default function SpecForm({ boatClass, loading, onSubmit, onBack }: SpecF
         </button>
         <button
           type="submit"
-          disabled={loading || fields.length_m === ''}
+          disabled={loading || fields.length_m === '' || Object.keys(errors).length > 0}
           className="flex-1 px-5 py-2.5 rounded-lg bg-ocean-600 hover:bg-ocean-500 text-white font-semibold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? 'Analysiere...' : 'Analysieren'}

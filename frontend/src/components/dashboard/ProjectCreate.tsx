@@ -43,12 +43,16 @@ export default function ProjectCreate({ onCreated, onCancel }: ProjectCreateProp
           })
         } else {
           const text = await layoutFile.text()
-          const data = JSON.parse(text) as { zones: ZoneData[]; passages: PassageData[] }
-          await createLayout(project.id, {
-            name: 'Importiert aus JSON',
-            zones: data.zones,
-            passages: data.passages,
-          })
+          try {
+            const data = JSON.parse(text) as { zones: ZoneData[]; passages: PassageData[] }
+            await createLayout(project.id, {
+              name: 'Importiert aus JSON',
+              zones: data.zones,
+              passages: data.passages,
+            })
+          } catch (parseError) {
+            throw new Error('JSON-Datei ist ungültig. Bitte überprüfen Sie das Format.')
+          }
         }
       }
 

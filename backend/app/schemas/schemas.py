@@ -9,7 +9,16 @@ from pydantic import BaseModel, ConfigDict
 class BoatClass(str, Enum):
     small_sail = "small_sail"
     cruising_sail = "cruising_sail"
+    racing_sail = "racing_sail"
+    daysailer = "daysailer"
+    motorsailer = "motorsailer"
+    catamaran_sail = "catamaran_sail"
+    catamaran_motor = "catamaran_motor"
+    small_motor = "small_motor"
     large_motor = "large_motor"
+    sport_cruiser = "sport_cruiser"
+    trawler = "trawler"
+    explorer = "explorer"
     superyacht = "superyacht"
 
 
@@ -39,6 +48,27 @@ class PassageData(BaseModel):
     length_mm: float | None = None
     points: list[list[float]] | None = None
     is_primary: bool = True
+
+
+# Pydantic v2 validation schemas for zones and passages
+class ZoneSchema(BaseModel):
+    name: str
+    zone_type: str
+    area_m2: float | None = None
+    polygon: list | None = None
+    properties: dict | None = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PassageSchema(BaseModel):
+    from_zone: str
+    to_zone: str
+    width_mm: float
+    type: str
+    properties: dict | None = None
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 # Project schemas

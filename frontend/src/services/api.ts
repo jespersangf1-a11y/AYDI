@@ -18,14 +18,29 @@ import type {
 
 const BASE = '/api/v1'
 
+const HTTP_ERROR_MESSAGES: Record<number, string> = {
+  400: 'Ungültige Anfrage',
+  401: 'Authentifizierung erforderlich',
+  403: 'Zugriff verweigert',
+  404: 'Ressource nicht gefunden',
+  409: 'Konflikt mit existierenden Daten',
+  413: 'Datei zu groß',
+  429: 'Zu viele Anfragen. Bitte später versuchen.',
+  500: 'Serverfehler',
+  502: 'Schlechtes Gateway',
+  503: 'Service nicht verfügbar',
+  504: 'Gateway-Timeout',
+}
+
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, {
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     ...options,
   })
   if (!res.ok) {
-    const error = await res.json().catch(() => ({ detail: res.statusText }))
-    throw new Error(error.detail || res.statusText)
+    const error = await res.json().catch(() => ({ detail: undefined }))
+    const userMessage = error.detail || HTTP_ERROR_MESSAGES[res.status] || 'Ein Fehler ist aufgetreten'
+    throw new Error(userMessage)
   }
   if (res.status === 204) return undefined as T
   return res.json()

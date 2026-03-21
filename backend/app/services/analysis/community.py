@@ -22,6 +22,51 @@ BOAT_CLASS_DEFAULTS = {
         "min_confidence": 0.3,
         "severity_weights": {"critical": 25, "major": 15, "minor": 5, "cosmetic": 2},
     },
+    "racing_sail": {
+        "max_patterns": 12,
+        "min_confidence": 0.45,
+        "severity_weights": {"critical": 25, "major": 15, "minor": 5, "cosmetic": 2},
+    },
+    "daysailer": {
+        "max_patterns": 14,
+        "min_confidence": 0.40,
+        "severity_weights": {"critical": 25, "major": 15, "minor": 5, "cosmetic": 2},
+    },
+    "motorsailer": {
+        "max_patterns": 18,
+        "min_confidence": 0.32,
+        "severity_weights": {"critical": 25, "major": 15, "minor": 5, "cosmetic": 2},
+    },
+    "catamaran_sail": {
+        "max_patterns": 18,
+        "min_confidence": 0.32,
+        "severity_weights": {"critical": 25, "major": 15, "minor": 5, "cosmetic": 2},
+    },
+    "catamaran_motor": {
+        "max_patterns": 20,
+        "min_confidence": 0.30,
+        "severity_weights": {"critical": 25, "major": 15, "minor": 5, "cosmetic": 2},
+    },
+    "small_motor": {
+        "max_patterns": 19,
+        "min_confidence": 0.31,
+        "severity_weights": {"critical": 25, "major": 15, "minor": 5, "cosmetic": 2},
+    },
+    "sport_cruiser": {
+        "max_patterns": 20,
+        "min_confidence": 0.29,
+        "severity_weights": {"critical": 25, "major": 15, "minor": 5, "cosmetic": 2},
+    },
+    "trawler": {
+        "max_patterns": 22,
+        "min_confidence": 0.27,
+        "severity_weights": {"critical": 25, "major": 15, "minor": 5, "cosmetic": 2},
+    },
+    "explorer": {
+        "max_patterns": 24,
+        "min_confidence": 0.23,
+        "severity_weights": {"critical": 25, "major": 15, "minor": 5, "cosmetic": 2},
+    },
     "superyacht": {
         "max_patterns": 25,
         "min_confidence": 0.2,

@@ -3,7 +3,7 @@ from enum import Enum
 from uuid import UUID
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class ConfidenceLevel(str, Enum):
@@ -16,11 +16,14 @@ class ConfidenceLevel(str, Enum):
 class PublicSpecs(BaseModel):
     """What someone can enter from a brochure or website."""
     # Required
-    boat_class: str  # small_sail, cruising_sail, large_motor, superyacht
+    # Accepted classes: small_sail, cruising_sail, racing_sail, daysailer, motorsailer,
+    # catamaran_sail, catamaran_motor, small_motor, large_motor, sport_cruiser, trawler,
+    # explorer, superyacht
+    boat_class: str
     length_m: float = Field(..., gt=0, lt=200)
 
     # Optional — each additional field improves analysis quality
-    beam_m: Optional[float] = None
+    beam_m: Optional[float] = Field(None, gt=0, lt=200)
     draft_m: Optional[float] = None
     displacement_kg: Optional[float] = None
     cabin_count: Optional[int] = None
@@ -51,6 +54,15 @@ class PublicSpecs(BaseModel):
 
     deck_height_mm: Optional[float] = None
     storage_volume_l: Optional[float] = None
+
+    @field_validator('beam_m')
+    @classmethod
+    def beam_must_be_less_than_length(cls, beam_m: Optional[float], info) -> Optional[float]:
+        """Validate that beam is less than length when both are provided."""
+        if beam_m is not None and info.data.get('length_m'):
+            if beam_m >= info.data['length_m']:
+                raise ValueError(f'beam_m ({beam_m}m) must be less than length_m ({info.data["length_m"]}m)')
+        return beam_m
 
 
 class QuickModuleResult(BaseModel):

@@ -11,6 +11,8 @@ import os
 import re
 from pathlib import Path
 
+from app.core.config import settings
+
 logger = logging.getLogger(__name__)
 
 MEDIA_TYPE_MAP = {
@@ -40,7 +42,7 @@ class VisualAnalyzer:
     anthropic SDK is not installed.
     """
 
-    MODEL = "claude-sonnet-4-20250514"
+    MODEL = settings.ANTHROPIC_MODEL
     MODEL_DETAILED = "claude-opus-4-20250514"
     MAX_TOKENS = 4096
     MAX_TOKENS_DETAILED = 8192

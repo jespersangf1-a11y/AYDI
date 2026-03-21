@@ -24,7 +24,7 @@ async def list_projects(
     return result.scalars().all()
 
 
-@router.post("/", response_model=ProjectResponse, status_code=201)
+@router.post("", response_model=ProjectResponse, status_code=201)
 async def create_project(
     data: ProjectCreate,
     db: AsyncSession = Depends(get_db),

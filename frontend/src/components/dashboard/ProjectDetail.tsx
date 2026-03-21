@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { ArrowLeft, Play, Ship } from 'lucide-react'
-import { getProject, listLayouts, listAnalyses, runAnalysis } from '../../services/api'
-import type { Project, Layout, AnalysisResult } from '../../types'
+import { ArrowLeft, Play, Ship, Zap, Clock } from 'lucide-react'
+import { getProject, listLayouts, listAnalyses, runAnalysis, runFullAnalysis, getLayoutVersions } from '../../services/api'
+import type { Project, Layout, AnalysisResult, LayoutVersion } from '../../types'
 import { BOAT_CLASS_LABELS, STATUS_LABELS } from '../../types'
 import ScoreGauge from '../analysis/ScoreGauge'
 import SubScoreBars from '../analysis/SubScoreBars'
@@ -25,22 +25,31 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
   const [selectedLayout, setSelectedLayout] = useState<Layout | null>(null)
   const [selectedAnalysis, setSelectedAnalysis] = useState<AnalysisResult | null>(null)
   const [analyzing, setAnalyzing] = useState(false)
+  const [fullAnalyzing, setFullAnalyzing] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [versions, setVersions] = useState<LayoutVersion[]>([])
+  const [showVersions, setShowVersions] = useState(false)
 
   useEffect(() => {
     setLoading(true)
-    Promise.all([
+    Promise.allSettled([
       getProject(projectId),
       listLayouts(projectId),
       listAnalyses(projectId),
     ])
-      .then(([p, l, a]) => {
-        setProject(p)
-        setLayouts(l)
-        setAnalyses(a)
-        if (l.length > 0) setSelectedLayout(l[0])
-        if (a.length > 0) setSelectedAnalysis(a[0])
+      .then((results) => {
+        const project = results[0].status === 'fulfilled' ? results[0].value : null
+        const layouts = results[1].status === 'fulfilled' ? results[1].value : []
+        const analyses = results[2].status === 'fulfilled' ? results[2].value : []
+
+        if (project) setProject(project)
+        else setError('Projekt konnte nicht geladen werden')
+
+        setLayouts(layouts)
+        setAnalyses(analyses)
+        if (layouts.length > 0) setSelectedLayout(layouts[0])
+        if (analyses.length > 0) setSelectedAnalysis(analyses[0])
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false))
@@ -59,6 +68,41 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
     } finally {
       setAnalyzing(false)
     }
+  }
+
+  const handleRunFullAnalysis = async () => {
+    if (!selectedLayout) return
+    setFullAnalyzing(true)
+    setError(null)
+    try {
+      await runFullAnalysis(projectId, selectedLayout.id)
+      // Refresh analyses
+      const refreshedAnalyses = await listAnalyses(projectId)
+      setAnalyses(refreshedAnalyses)
+      if (refreshedAnalyses.length > 0) {
+        setSelectedAnalysis(refreshedAnalyses[0])
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Vollanalyse fehlgeschlagen')
+    } finally {
+      setFullAnalyzing(false)
+    }
+  }
+
+  const handleLoadVersions = async () => {
+    if (!selectedLayout) return
+    try {
+      const v = await getLayoutVersions(projectId, selectedLayout.id)
+      setVersions(v)
+      setShowVersions(true)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Versionsverlauf konnte nicht geladen werden')
+    }
+  }
+
+  const handleSelectVersion = (_version: LayoutVersion) => {
+    // In a real implementation, this would load the layout data from the version
+    setShowVersions(false)
   }
 
   if (loading) {
@@ -106,17 +150,17 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
             <div className="bg-navy-900 border border-navy-700 rounded-xl p-4">
               <h3 className="font-heading font-semibold text-white mb-3">Layouts</h3>
               <div className="flex gap-2 flex-wrap">
-                {layouts.map((l) => (
+                {layouts.map((layout) => (
                   <button
-                    key={l.id}
-                    onClick={() => setSelectedLayout(l)}
+                    key={layout.id}
+                    onClick={() => setSelectedLayout(layout)}
                     className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                      selectedLayout?.id === l.id
+                      selectedLayout?.id === layout.id
                         ? 'bg-ocean-600 text-white'
                         : 'bg-navy-800 text-navy-300 hover:bg-navy-700'
                     }`}
                   >
-                    {l.name} ({l.version})
+                    {layout.name} ({layout.version})
                   </button>
                 ))}
               </div>
@@ -137,10 +181,37 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
 
         {/* Right: Analysis */}
         <div className="space-y-4">
+          {/* Full Analysis */}
+          {selectedLayout && (
+            <div className="bg-gradient-to-br from-ocean-900 to-navy-900 border border-ocean-700 rounded-xl p-4">
+              <h3 className="font-heading font-semibold text-white mb-3 flex items-center gap-2">
+                <Zap className="w-4 h-4 text-ocean-400" />
+                Vollanalyse
+              </h3>
+              <button
+                onClick={handleRunFullAnalysis}
+                disabled={fullAnalyzing || !selectedLayout}
+                className="w-full flex items-center justify-center bg-ocean-600 hover:bg-ocean-500 text-white px-4 py-3 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {fullAnalyzing ? (
+                  <>
+                    <span className="inline-block animate-spin mr-2">⏳</span>
+                    Vollanalyse läuft...
+                  </>
+                ) : (
+                  <>
+                    <Zap className="w-4 h-4 mr-2" />
+                    Vollanalyse starten
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+
           {/* Analysis Trigger */}
           {selectedLayout && (
             <div className="bg-navy-900 border border-navy-700 rounded-xl p-4">
-              <h3 className="font-heading font-semibold text-white mb-3">Analyse starten</h3>
+              <h3 className="font-heading font-semibold text-white mb-3">Modulanalyse</h3>
               <div className="space-y-2">
                 {['ergonomics', 'volume_storage'].map((module) => (
                   <button
@@ -179,6 +250,47 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
                 <WarningList warnings={selectedAnalysis.warnings} />
               </div>
             </>
+          )}
+
+          {/* Version History */}
+          {selectedLayout && (
+            <div className="bg-navy-900 border border-navy-700 rounded-xl p-4">
+              <button
+                onClick={handleLoadVersions}
+                className="w-full flex items-center justify-between px-0 py-0 text-white font-heading font-semibold mb-3 hover:text-ocean-300 transition-colors"
+              >
+                <span className="flex items-center gap-2">
+                  <Clock className="w-4 h-4" />
+                  Versionshistorie
+                </span>
+                <span className="text-xs text-navy-400">{versions.length}</span>
+              </button>
+              {showVersions && versions.length > 0 ? (
+                <div className="space-y-2">
+                  {versions.map((version) => (
+                    <button
+                      key={version.id}
+                      onClick={() => handleSelectVersion(version)}
+                      className="w-full text-left px-3 py-2 rounded-lg text-sm bg-navy-800 hover:bg-navy-700 transition-colors"
+                    >
+                      <div className="font-mono text-ocean-300 text-xs font-semibold">v{version.version_number}</div>
+                      <div className="text-navy-400 text-xs mt-0.5">
+                        Erstellt am: {new Date(version.created_at).toLocaleString('de-DE')}
+                      </div>
+                      {version.change_summary && (
+                        <div className="text-navy-500 text-xs mt-1 truncate">{version.change_summary}</div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                showVersions && (
+                  <div className="text-center text-navy-500 text-xs py-4">
+                    Keine Versionshistorie verfügbar
+                  </div>
+                )
+              )}
+            </div>
           )}
 
           {/* Previous Analyses */}

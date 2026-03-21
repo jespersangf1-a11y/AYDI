@@ -37,10 +37,15 @@ class BoatDNAResolver:
             "community": COMM_D,
         }
         configs: dict[str, dict[str, dict]] = {}
-        for boat_class in ("small_sail", "cruising_sail", "large_motor", "superyacht"):
+        for boat_class in (
+            "small_sail", "cruising_sail", "racing_sail", "daysailer", "motorsailer",
+            "catamaran_sail", "catamaran_motor", "small_motor", "large_motor",
+            "sport_cruiser", "trawler", "explorer", "superyacht"
+        ):
             configs[boat_class] = {}
             for module_name, defaults in module_sources.items():
-                configs[boat_class][module_name] = defaults[boat_class]
+                if boat_class in defaults:
+                    configs[boat_class][module_name] = defaults[boat_class]
         return configs
 
     @classmethod
@@ -226,7 +231,7 @@ class BoatDNAResolver:
                 heel_base = 20
             else:
                 heel_base = 20
-            heel = heel_base // 2
+            heel = heel_base / 2
 
         # weights
         tier_index = ["standard", "premium", "luxury", "superyacht"].index(
@@ -452,13 +457,20 @@ class BoatDNAResolver:
         access = max(500, min(900, access))
 
         # standard_door_widths_mm
-        door_map = {
-            "standard": [600],
-            "premium": [600, 700],
-            "luxury": [600, 700, 800],
-            "superyacht": [700, 800, 900],
-        }
-        doors = door_map[tier]
+        # Check production_type first for more specific sizing
+        if dna.production_type == "mass_production":
+            doors = [600]
+        elif dna.production_type == "one_off":
+            doors = [700, 800, 900]
+        else:
+            # Fall back to tier-based mapping
+            door_map = {
+                "standard": [600],
+                "premium": [600, 700],
+                "luxury": [600, 700, 800],
+                "superyacht": [700, 800, 900],
+            }
+            doors = door_map[tier]
 
         # standard_berth_width_mm
         berth_map = {"standard": 700, "premium": 700, "luxury": 800, "superyacht": 900}

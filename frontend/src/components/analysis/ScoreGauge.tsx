@@ -17,7 +17,13 @@ export default function ScoreGauge({ score, label, size = 160 }: ScoreGaugeProps
   return (
     <div className="flex flex-col items-center">
       <div className="relative" style={{ width: size, height: size }}>
-        <svg className="transform -rotate-90" width={size} height={size}>
+        <svg
+          className="transform -rotate-90"
+          width={size}
+          height={size}
+          role="img"
+          aria-label={`${label}: ${Math.round(score)} von 100 Punkten`}
+        >
           <circle
             cx={size / 2}
             cy={size / 2}

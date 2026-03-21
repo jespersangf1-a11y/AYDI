@@ -67,6 +67,177 @@ BOAT_CLASS_DEFAULTS = {
             "access_complexity": 0.07,
         },
     },
+    "racing_sail": {
+        "min_passage_width_mm": 500,
+        "critical_passage_width_mm": 400,
+        "max_steps_cockpit_pantry": 5,
+        "min_helm_area_sqm": 1.5,
+        "min_helm_visibility_deg": 240,
+        "crew_guest_separation": False,
+        "heel_angle_deg": 25,
+        "weights": {
+            "passage_width": 0.25,
+            "path_efficiency": 0.13,
+            "crew_guest_separation": 0.02,
+            "accessibility": 0.20,
+            "helm_ergonomics": 0.15,
+            "heel_impact": 0.15,
+            "morning_circulation": 0.05,
+            "access_complexity": 0.05,
+        },
+    },
+    "daysailer": {
+        "min_passage_width_mm": 550,
+        "critical_passage_width_mm": 450,
+        "max_steps_cockpit_pantry": 6,
+        "min_helm_area_sqm": 1.5,
+        "min_helm_visibility_deg": 225,
+        "crew_guest_separation": False,
+        "heel_angle_deg": 20,
+        "weights": {
+            "passage_width": 0.22,
+            "path_efficiency": 0.14,
+            "crew_guest_separation": 0.04,
+            "accessibility": 0.21,
+            "helm_ergonomics": 0.13,
+            "heel_impact": 0.10,
+            "morning_circulation": 0.08,
+            "access_complexity": 0.08,
+        },
+    },
+    "motorsailer": {
+        "min_passage_width_mm": 650,
+        "critical_passage_width_mm": 500,
+        "max_steps_cockpit_pantry": 9,
+        "min_helm_area_sqm": 2.5,
+        "min_helm_visibility_deg": 230,
+        "crew_guest_separation": False,
+        "heel_angle_deg": 15,
+        "weights": {
+            "passage_width": 0.1979,
+            "path_efficiency": 0.1563,
+            "crew_guest_separation": 0.0625,
+            "accessibility": 0.1979,
+            "helm_ergonomics": 0.1458,
+            "heel_impact": 0.0833,
+            "morning_circulation": 0.0833,
+            "access_complexity": 0.0729,
+        },
+    },
+    "catamaran_sail": {
+        "min_passage_width_mm": 600,
+        "critical_passage_width_mm": 480,
+        "max_steps_cockpit_pantry": 8,
+        "min_helm_area_sqm": 2.5,
+        "min_helm_visibility_deg": 235,
+        "crew_guest_separation": False,
+        "heel_angle_deg": 15,
+        "weights": {
+            "passage_width": 0.2083,
+            "path_efficiency": 0.1563,
+            "crew_guest_separation": 0.0521,
+            "accessibility": 0.2083,
+            "helm_ergonomics": 0.1354,
+            "heel_impact": 0.0833,
+            "morning_circulation": 0.0833,
+            "access_complexity": 0.0729,
+        },
+    },
+    "catamaran_motor": {
+        "min_passage_width_mm": 650,
+        "critical_passage_width_mm": 500,
+        "max_steps_cockpit_pantry": 10,
+        "min_helm_area_sqm": 2.5,
+        "min_helm_visibility_deg": 240,
+        "crew_guest_separation": False,
+        "heel_angle_deg": 0,
+        "weights": {
+            "passage_width": 0.2045,
+            "path_efficiency": 0.1818,
+            "crew_guest_separation": 0.0682,
+            "accessibility": 0.2159,
+            "helm_ergonomics": 0.1591,
+            "heel_impact": 0.0,
+            "morning_circulation": 0.0909,
+            "access_complexity": 0.0795,
+        },
+    },
+    "small_motor": {
+        "min_passage_width_mm": 600,
+        "critical_passage_width_mm": 480,
+        "max_steps_cockpit_pantry": 9,
+        "min_helm_area_sqm": 2.0,
+        "min_helm_visibility_deg": 235,
+        "crew_guest_separation": False,
+        "heel_angle_deg": 0,
+        "weights": {
+            "passage_width": 0.2093,
+            "path_efficiency": 0.1860,
+            "crew_guest_separation": 0.0581,
+            "accessibility": 0.2209,
+            "helm_ergonomics": 0.1512,
+            "heel_impact": 0.0,
+            "morning_circulation": 0.0930,
+            "access_complexity": 0.0814,
+        },
+    },
+    "sport_cruiser": {
+        "min_passage_width_mm": 600,
+        "critical_passage_width_mm": 500,
+        "max_steps_cockpit_pantry": 10,
+        "min_helm_area_sqm": 3.0,
+        "min_helm_visibility_deg": 245,
+        "crew_guest_separation": False,
+        "heel_angle_deg": 0,
+        "weights": {
+            "passage_width": 0.1954,
+            "path_efficiency": 0.1839,
+            "crew_guest_separation": 0.0690,
+            "accessibility": 0.2069,
+            "helm_ergonomics": 0.1724,
+            "heel_impact": 0.0,
+            "morning_circulation": 0.0920,
+            "access_complexity": 0.0805,
+        },
+    },
+    "trawler": {
+        "min_passage_width_mm": 650,
+        "critical_passage_width_mm": 550,
+        "max_steps_cockpit_pantry": 11,
+        "min_helm_area_sqm": 2.5,
+        "min_helm_visibility_deg": 240,
+        "crew_guest_separation": False,
+        "heel_angle_deg": 0,
+        "weights": {
+            "passage_width": 0.2000,
+            "path_efficiency": 0.2000,
+            "crew_guest_separation": 0.0588,
+            "accessibility": 0.2118,
+            "helm_ergonomics": 0.1529,
+            "heel_impact": 0.0,
+            "morning_circulation": 0.0941,
+            "access_complexity": 0.0824,
+        },
+    },
+    "explorer": {
+        "min_passage_width_mm": 700,
+        "critical_passage_width_mm": 600,
+        "max_steps_cockpit_pantry": 12,
+        "min_helm_area_sqm": 3.0,
+        "min_helm_visibility_deg": 250,
+        "crew_guest_separation": True,
+        "heel_angle_deg": 12,
+        "weights": {
+            "passage_width": 0.16,
+            "path_efficiency": 0.17,
+            "crew_guest_separation": 0.15,
+            "accessibility": 0.18,
+            "helm_ergonomics": 0.13,
+            "heel_impact": 0.05,
+            "morning_circulation": 0.08,
+            "access_complexity": 0.08,
+        },
+    },
     "superyacht": {
         "min_passage_width_mm": 900,
         "critical_passage_width_mm": 650,
@@ -526,8 +697,31 @@ def analyze_access_complexity(zones: list[dict], config: dict) -> tuple[float, l
 
 
 def run_ergonomics_analysis(zones: list[dict], passages: list[dict], boat_class: str, config_overrides: dict | None = None, data_source: str = "measured") -> dict:
+    # Input validation
+    if not isinstance(zones, list) or len(zones) == 0:
+        return {
+            "available": False,
+            "reason": "Unzureichende Eingabedaten: zones muss eine nicht-leere Liste sein",
+        }
+
+    if not isinstance(passages, list):
+        return {
+            "available": False,
+            "reason": "Unzureichende Eingabedaten: passages muss eine Liste sein",
+        }
+
+    if not isinstance(config_overrides, (dict, type(None))):
+        return {
+            "available": False,
+            "reason": "Unzureichende Eingabedaten: config_overrides muss ein Dictionary sein",
+        }
+
     if boat_class not in BOAT_CLASS_DEFAULTS:
-        raise ValueError(f"Unknown boat class: {boat_class}")
+        return {
+            "available": False,
+            "reason": f"Unzureichende Eingabedaten: Unbekannte Bootsklasse: {boat_class}",
+        }
+
     config = BOAT_CLASS_DEFAULTS[boat_class].copy()
     weights = config.pop("weights").copy()
 

@@ -517,12 +517,20 @@ def parse_step(content: bytes, filename: str = "model.step") -> dict:
             content, filename, file_format="step"
         )
         warnings.extend(parse_warnings)
-    else:
-        warnings.append(
-            "trimesh ist nicht installiert. "
-            "Installieren Sie es mit: pip install trimesh. "
-            "Verwende vereinfachten Text-Parser."
-        )
+
+    # Fall back to text parser if trimesh is unavailable or returned no zones
+    if not zones:
+        if trimesh is not None:
+            warnings.append(
+                "trimesh konnte keine Zonen finden. "
+                "Verwende vereinfachten Text-Parser."
+            )
+        else:
+            warnings.append(
+                "trimesh ist nicht installiert. "
+                "Installieren Sie es mit: pip install trimesh. "
+                "Verwende vereinfachten Text-Parser."
+            )
         zones, decks, parse_warnings = _parse_step_text(content)
         warnings.extend(parse_warnings)
 

@@ -7,7 +7,7 @@ aiosqlite==0.20.0
 pydantic==2.10.3
 pydantic-settings==2.7.0
 alembic==1.14.0
-ezdxf==0.19.2
+ezdxf==1.4.3
 shapely==2.0.6
 numpy==2.2.1
 scipy==1.15.0

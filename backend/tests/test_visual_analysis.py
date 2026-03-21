@@ -277,7 +277,7 @@ class TestVisualAnalyzer:
         try:
             result = asyncio.run(analyzer.analyze_image(img_path, "interior_overview", "cruising_sail"))
             assert result["score"] == 78.0
-            assert result["confidence"]["level"] in ("high", "medium", "low", "insufficient")
+            assert result["confidence"]["level"] in ("high", "medium", "low", "insufficient", "visual_high", "visual_medium", "visual_low")
             assert result["analysis"]["spatial_score"] == 78
         finally:
             os.unlink(img_path)

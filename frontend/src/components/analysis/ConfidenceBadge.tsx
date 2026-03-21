@@ -40,12 +40,12 @@ const CONFIDENCE_CONFIG: Record<string, { label: string; color: string; icon: ty
 }
 
 const COLOR_CLASSES: Record<string, { bg: string; text: string }> = {
-  green: { bg: 'bg-green-100', text: 'text-green-800' },
-  blue: { bg: 'bg-blue-100', text: 'text-blue-800' },
-  amber: { bg: 'bg-amber-100', text: 'text-amber-800' },
-  red: { bg: 'bg-red-100', text: 'text-red-800' },
-  gray: { bg: 'bg-gray-100', text: 'text-gray-500' },
-  orange: { bg: 'bg-orange-100', text: 'text-orange-800' },
+  green: { bg: 'bg-emerald-900/30', text: 'text-emerald-300' },
+  blue: { bg: 'bg-blue-900/30', text: 'text-blue-300' },
+  amber: { bg: 'bg-amber-900/30', text: 'text-amber-300' },
+  red: { bg: 'bg-red-900/30', text: 'text-red-300' },
+  gray: { bg: 'bg-gray-800/50', text: 'text-gray-300' },
+  orange: { bg: 'bg-amber-900/30', text: 'text-amber-300' },
 }
 
 export default function ConfidenceBadge({

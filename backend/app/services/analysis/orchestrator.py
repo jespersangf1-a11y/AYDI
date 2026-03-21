@@ -84,6 +84,7 @@ def _get_module_runners() -> dict:
 async def run_full_analysis(
     context: AnalysisContext,
     module_runners: dict | None = None,
+    confidence_threshold: float = 0.7,
 ) -> dict:
     """Execute all applicable modules in dependency order.
 
@@ -91,6 +92,8 @@ async def run_full_analysis(
         context: All layout/project data needed by the modules.
         module_runners: Optional dict of module_name -> callable for testing.
             When *None* the real module functions are imported.
+        confidence_threshold: Threshold for overall confidence determination.
+            Defaults to 0.7.
 
     Returns:
         Dict with per-module results, overall score, and metadata.
@@ -122,7 +125,7 @@ async def run_full_analysis(
             for name, result in zip(module_names, tier_results):
                 if isinstance(result, Exception):
                     logger.error("Module %s failed: %s", name, result)
-                    errors[name] = str(result)
+                    errors[name] = {"error": str(result), "type": type(result).__name__}
                 elif isinstance(result, dict) and result.get("available") is False:
                     skipped[name] = result.get("reason", "Nicht verfuegbar")
                 elif isinstance(result, dict):
@@ -131,7 +134,7 @@ async def run_full_analysis(
                     context.module_results[name] = result
 
     # Compute overall weighted score
-    overall = _compute_overall_score(results, context.boat_class)
+    overall = _compute_overall_score(results, context.boat_class, confidence_threshold)
 
     return {
         "modules": results,
@@ -258,11 +261,17 @@ OVERALL_WEIGHTS: dict[str, dict[str, float]] = {
 }
 
 
-def _compute_overall_score(results: dict[str, dict], boat_class: str) -> dict:
+def _compute_overall_score(results: dict[str, dict], boat_class: str, confidence_threshold: float = 0.7) -> dict:
     """Compute weighted overall score from module results.
 
     Weights are normalised by the sum of weights for modules that actually
     produced a score, so skipped/failed modules do not drag the result down.
+
+    Args:
+        results: Dict of module name to result dict.
+        boat_class: Boat class for weight lookup.
+        confidence_threshold: Threshold for determining overall confidence
+            from measured module count ratio. Defaults to 0.7.
     """
     weights = OVERALL_WEIGHTS.get(boat_class, OVERALL_WEIGHTS["cruising_sail"])
 
@@ -289,7 +298,7 @@ def _compute_overall_score(results: dict[str, dict], boat_class: str) -> dict:
     measured_count = sum(
         1 for c in confidences if c in ("measured", "calculated")
     )
-    if measured_count >= len(confidences) * 0.7:
+    if measured_count >= len(confidences) * confidence_threshold:
         confidence = "measured"
     elif measured_count > 0:
         confidence = "calculated"

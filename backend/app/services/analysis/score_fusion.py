@@ -211,7 +211,7 @@ def _fuse_both(
     v_confidence = visual_result.get("confidence", "medium")
     discount = CONFIDENCE_DISCOUNT.get(v_confidence, 0.5)
     effective_vw = vw * discount
-    effective_sw = 1.0 - effective_vw if effective_vw < vw else sw
+    effective_sw = 1.0 - effective_vw
 
     # Normalize so weights sum to 1.0
     total = effective_sw + effective_vw

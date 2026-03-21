@@ -287,7 +287,8 @@ def test_module_error_does_not_crash_others():
     result = asyncio.run(run_full_analysis(ctx, module_runners=runners))
 
     assert "emotional" in result["errors"]
-    assert "Boom" in result["errors"]["emotional"]
+    assert "Boom" in result["errors"]["emotional"]["error"]
+    assert result["errors"]["emotional"]["type"] == "RuntimeError"
     assert result["error_count"] == 1
     # Other tier-1 modules still ran
     assert "ergonomics" in result["modules"]

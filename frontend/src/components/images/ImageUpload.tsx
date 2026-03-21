@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { Upload, X, Loader2, ImageIcon } from 'lucide-react'
 import type { BoatClass, ImageType, ImageAnalysisResult, ImageUploadData } from '../../types'
 import { IMAGE_TYPE_LABELS } from '../../types'
@@ -76,14 +76,21 @@ export default function ImageUpload({
     [handleFile],
   )
 
-  const clearFile = () => {
+  const clearFile = useCallback(() => {
     setFile(null)
     if (preview) URL.revokeObjectURL(preview)
     setPreview(null)
     setResult(null)
     setError(null)
     if (inputRef.current) inputRef.current.value = ''
-  }
+  }, [preview])
+
+  // Cleanup blob URLs on unmount and when component receives new preview
+  useEffect(() => {
+    return () => {
+      if (preview) URL.revokeObjectURL(preview)
+    }
+  }, [preview])
 
   const handleUpload = async () => {
     if (!file) return
@@ -125,6 +132,15 @@ export default function ImageUpload({
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onClick={() => inputRef.current?.click()}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              inputRef.current?.click()
+            }
+          }}
+          aria-label="Datei-Upload-Bereich. Bild hierher ziehen oder klicken zum Durchsuchen"
           className={`flex flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed p-12 cursor-pointer transition-colors ${
             dragOver
               ? 'border-ocean-400 bg-ocean-400/10'

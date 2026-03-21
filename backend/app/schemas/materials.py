@@ -16,7 +16,7 @@ class MaterialCreate(BaseModel):
     lifespan_years: float | None = None
     maintenance_interval_months: int | None = None
     maintenance_cost_factor: float = 0.0
-    known_issues: list[dict] | None = None
+    known_issues: list | None = None
     alternatives: list[str] | None = None
 
 
@@ -31,7 +31,7 @@ class MaterialUpdate(BaseModel):
     lifespan_years: float | None = None
     maintenance_interval_months: int | None = None
     maintenance_cost_factor: float | None = None
-    known_issues: list[dict] | None = None
+    known_issues: list | None = None
     alternatives: list[str] | None = None
 
 
@@ -47,7 +47,7 @@ class MaterialResponse(BaseModel):
     lifespan_years: float | None
     maintenance_interval_months: int | None
     maintenance_cost_factor: float
-    known_issues: list[dict] | None
+    known_issues: list | None
     alternatives: list[str] | None
     created_at: datetime
     updated_at: datetime

@@ -1,0 +1,31 @@
+{
+  "image_path": "/sessions/keen-nice-gauss/tmp/tmpatyfknn4.jpg",
+  "image_type": "interior_overview",
+  "boat_class": "cruising_sail",
+  "zone_type": null,
+  "analysis_depth": "standard",
+  "model_used": "claude-sonnet-4-20250514",
+  "analysis": {
+    "spatial_score": 78,
+    "confidence": "hoch",
+    "assessable": true,
+    "findings": [
+      {
+        "area": "salon"
+      }
+    ],
+    "cannot_assess": []
+  },
+  "confidence": {
+    "level": "visual_low",
+    "is_usable": false,
+    "factors": [
+      "Bildqualitaet niedrig (0.14)",
+      "Ergebnis mit Vorsicht zu interpretieren"
+    ],
+    "image_quality": 0.14,
+    "content_relevance": 1.0,
+    "assessment_certainty": 0.9
+  },
+  "score": 78.0
+}
