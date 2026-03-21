@@ -19,23 +19,23 @@ interface SectionProps {
 function Section({ title, hint, defaultOpen = false, children }: SectionProps) {
   const [open, setOpen] = useState(defaultOpen)
   return (
-    <div className="bg-navy-900 border border-navy-700 rounded-xl overflow-hidden">
+    <div className="bg-navy-900/40 border border-navy-700/40 rounded-xl overflow-hidden backdrop-blur-sm transition-colors duration-200 hover:bg-navy-900/50">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between px-5 py-4 hover:bg-navy-800 transition-colors"
+        className="w-full flex items-center justify-between px-6 py-4 transition-colors duration-200"
       >
         <div className="flex items-center gap-3">
           {open ? (
-            <ChevronDown className="w-4 h-4 text-ocean-400" />
+            <ChevronDown className="w-4 h-4 text-ocean-500" />
           ) : (
-            <ChevronRight className="w-4 h-4 text-navy-400" />
+            <ChevronRight className="w-4 h-4 text-navy-500" />
           )}
-          <span className="font-display font-semibold text-white">{title}</span>
-          {hint && <span className="text-xs text-navy-500">{hint}</span>}
+          <span className="font-serif font-semibold text-white">{title}</span>
+          {hint && <span className="text-xs text-navy-500 ml-2">{hint}</span>}
         </div>
       </button>
-      {open && <div className="px-5 pb-5 grid gap-4 sm:grid-cols-2">{children}</div>}
+      {open && <div className="px-6 pb-6 grid gap-4 sm:grid-cols-2 border-t border-navy-700/40">{children}</div>}
     </div>
   )
 }
@@ -58,10 +58,10 @@ interface FieldProps {
 function Field({ label, name, type = 'number', unit, placeholder, value, onChange, required, min, step, error }: FieldProps) {
   return (
     <div>
-      <label className="block text-sm text-navy-300 mb-1">
+      <label className="block text-xs font-semibold tracking-wider-premium uppercase text-navy-400 mb-2">
         {label}
-        {required && <span className="text-ocean-400 ml-1">*</span>}
-        {unit && <span className="text-navy-500 ml-1">({unit})</span>}
+        {required && <span className="text-ocean-400 ml-1.5">erforderlich</span>}
+        {unit && <span className="text-navy-500 ml-1.5">({unit})</span>}
       </label>
       <input
         type={type}
@@ -72,11 +72,11 @@ function Field({ label, name, type = 'number', unit, placeholder, value, onChang
         min={min}
         step={step}
         onChange={(e) => onChange(name, e.target.value)}
-        className={`w-full bg-navy-800 border rounded-lg px-3 py-2 text-white text-sm placeholder-navy-500 focus:outline-none transition-colors font-mono ${
-          error ? 'border-red-600 focus:border-red-500' : 'border-navy-600 focus:border-ocean-500'
+        className={`w-full bg-navy-800/50 border rounded-lg px-4 py-2.5 text-white text-sm placeholder-navy-500 focus:outline-none transition-colors duration-200 font-mono ${
+          error ? 'border-red-600/60 focus:border-red-500' : 'border-navy-600/40 focus:border-ocean-600'
         }`}
       />
-      {error && <p className="text-red-400 text-xs mt-1">{error}</p>}
+      {error && <p className="text-red-400 text-xs mt-1.5">{error}</p>}
     </div>
   )
 }
@@ -194,9 +194,9 @@ export default function SpecForm({ boatClass, loading, onSubmit, onBack }: SpecF
   const isSailboat = boatClass === 'small_sail' || boatClass === 'cruising_sail'
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-5">
       {/* Abmessungen — always open, length required */}
-      <Section title="Abmessungen" defaultOpen hint="Pflichtfeld: Länge">
+      <Section title="Abmessungen" defaultOpen hint="Erforderlich">
         <Field
           label="Länge über alles"
           name="length_m"
@@ -296,39 +296,39 @@ export default function SpecForm({ boatClass, loading, onSubmit, onBack }: SpecF
           onChange={handleChange}
         />
         <div>
-          <label className="block text-sm text-navy-300 mb-1">Steuerstand-Position</label>
+          <label className="block text-xs font-semibold tracking-wider-premium uppercase text-navy-400 mb-2">Steuerstand-Position</label>
           <select
             value={fields.helm_position}
             onChange={(e) => handleChange('helm_position', e.target.value)}
-            className="w-full bg-navy-800 border border-navy-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-ocean-500 transition-colors"
+            className="w-full bg-navy-800/50 border border-navy-600/40 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-ocean-600 transition-colors duration-200"
           >
-            <option value="">— Nicht angegeben —</option>
+            <option value="">Nicht angegeben</option>
             <option value="cockpit">Cockpit</option>
             <option value="flybridge">Flybridge</option>
             <option value="wheelhouse">Wheelhouse</option>
           </select>
         </div>
         <div>
-          <label className="block text-sm text-navy-300 mb-1">Flybridge vorhanden</label>
+          <label className="block text-xs font-semibold tracking-wider-premium uppercase text-navy-400 mb-2">Flybridge vorhanden</label>
           <select
             value={fields.has_flybridge}
             onChange={(e) => handleChange('has_flybridge', e.target.value)}
-            className="w-full bg-navy-800 border border-navy-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-ocean-500 transition-colors"
+            className="w-full bg-navy-800/50 border border-navy-600/40 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-ocean-600 transition-colors duration-200"
           >
-            <option value="">— Nicht angegeben —</option>
+            <option value="">Nicht angegeben</option>
             <option value="true">Ja</option>
             <option value="false">Nein</option>
           </select>
         </div>
         {(boatClass === 'large_motor' || boatClass === 'superyacht') && (
           <div>
-            <label className="block text-sm text-navy-300 mb-1">Crew-Quarters vorhanden</label>
+            <label className="block text-xs font-semibold tracking-wider-premium uppercase text-navy-400 mb-2">Crew-Quarters vorhanden</label>
             <select
               value={fields.has_crew_quarters}
               onChange={(e) => handleChange('has_crew_quarters', e.target.value)}
-              className="w-full bg-navy-800 border border-navy-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-ocean-500 transition-colors"
+              className="w-full bg-navy-800/50 border border-navy-600/40 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-ocean-600 transition-colors duration-200"
             >
-              <option value="">— Nicht angegeben —</option>
+              <option value="">Nicht angegeben</option>
               <option value="true">Ja</option>
               <option value="false">Nein</option>
             </select>
@@ -427,22 +427,22 @@ export default function SpecForm({ boatClass, loading, onSubmit, onBack }: SpecF
         />
       </Section>
 
-      <div className="bg-navy-900/50 border border-navy-700 rounded-lg px-4 py-3 text-sm text-navy-400">
-        Mehr Details = bessere Analyse. Nicht ausgefüllte Felder werden anhand der Bootsklasse geschätzt.
+      <div className="bg-navy-900/40 border border-navy-700/40 rounded-xl px-6 py-4 text-sm text-navy-400 backdrop-blur-sm">
+        Mehr Details führen zu besseren Ergebnissen. Felder ohne Angaben werden anhand der Bootsklasse geschätzt.
       </div>
 
-      <div className="flex gap-3 pt-2">
+      <div className="flex gap-3 pt-4">
         <button
           type="button"
           onClick={onBack}
-          className="px-5 py-2.5 rounded-lg bg-navy-800 text-navy-300 hover:bg-navy-700 text-sm transition-colors"
+          className="px-6 py-2.5 rounded-lg bg-navy-800/50 border border-navy-700/50 text-navy-300 hover:bg-navy-800 text-sm font-medium transition-colors duration-200 backdrop-blur-sm"
         >
           Zurück
         </button>
         <button
           type="submit"
           disabled={loading || fields.length_m === '' || Object.keys(errors).length > 0}
-          className="flex-1 px-5 py-2.5 rounded-lg bg-ocean-600 hover:bg-ocean-500 text-white font-semibold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 px-6 py-2.5 rounded-lg bg-ocean-700 hover:bg-ocean-600 text-white font-semibold text-sm transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? 'Analysiere...' : 'Analysieren'}
         </button>

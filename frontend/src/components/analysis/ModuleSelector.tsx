@@ -51,9 +51,9 @@ export default function ModuleSelector({
   }
 
   return (
-    <div>
-      <h3 className="font-display font-semibold text-white mb-4">Analysemodul wählen</h3>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="space-y-5">
+      <h3 className="font-serif text-title font-semibold text-white">Analysemodul wählen</h3>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {allModules.map((mod) => {
           const available = isAvailable(mod)
           const disabledReason = getDisabledReason(mod)
@@ -63,29 +63,29 @@ export default function ModuleSelector({
               key={mod}
               disabled={!available}
               onClick={() => available && onSelect(mod)}
-              className={`text-left rounded-xl p-4 border transition-all ${
+              className={`text-left rounded-xl p-4 border transition-all duration-200 ${
                 isSelected
-                  ? 'bg-ocean-900/50 border-ocean-600 text-white'
+                  ? 'card-premium border-ocean-600/60 bg-ocean-900/30 text-white'
                   : available
-                  ? 'bg-navy-900 border-navy-700 hover:border-ocean-600 hover:bg-navy-800 text-white'
-                  : 'bg-navy-900/50 border-navy-800 text-navy-600 cursor-not-allowed'
+                  ? 'card-premium hover:border-ocean-600/40 hover:bg-navy-800/40 text-white'
+                  : 'card-premium border-navy-800/40 bg-navy-900/20 text-navy-600 cursor-not-allowed opacity-60'
               }`}
             >
-              <div className="flex items-start justify-between mb-1">
+              <div className="flex items-start justify-between mb-2">
                 <span
-                  className={`text-sm font-semibold ${
+                  className={`text-sm font-sans font-semibold ${
                     isSelected ? 'text-ocean-200' : available ? 'text-white' : 'text-navy-500'
                   }`}
                 >
                   {ANALYSIS_MODULE_LABELS[mod]}
                 </span>
                 {isSelected && (
-                  <span className="text-xs px-1.5 py-0.5 rounded bg-ocean-700 text-ocean-200">
+                  <span className="text-xs px-2 py-1 rounded-full bg-ocean-700/60 text-ocean-200 font-medium">
                     Aktiv
                   </span>
                 )}
                 {!available && disabledReason && (
-                  <span className="text-xs text-navy-600 text-right leading-tight ml-2">
+                  <span className="text-xs text-navy-500 text-right leading-tight ml-2">
                     {disabledReason}
                   </span>
                 )}

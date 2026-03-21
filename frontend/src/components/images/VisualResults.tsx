@@ -17,10 +17,10 @@ interface VisualResultsProps {
 }
 
 const ASSESSMENT_STYLES: Record<string, { bg: string; text: string; label: string }> = {
-  gut: { bg: 'bg-green-500/20', text: 'text-green-400', label: 'Gut' },
-  akzeptabel: { bg: 'bg-blue-500/20', text: 'text-blue-400', label: 'Akzeptabel' },
-  mangelhaft: { bg: 'bg-orange-500/20', text: 'text-orange-400', label: 'Mangelhaft' },
-  kritisch: { bg: 'bg-red-500/20', text: 'text-red-400', label: 'Kritisch' },
+  gut: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', label: 'Gut' },
+  akzeptabel: { bg: 'bg-ocean-500/10', text: 'text-ocean-400', label: 'Akzeptabel' },
+  mangelhaft: { bg: 'bg-amber-500/10', text: 'text-amber-400', label: 'Mangelhaft' },
+  kritisch: { bg: 'bg-red-500/10', text: 'text-red-400', label: 'Kritisch' },
 }
 
 function AssessmentBadge({ assessment }: { assessment: string }) {
@@ -89,7 +89,7 @@ export default function VisualResults({
       <div className="flex items-center gap-3 flex-wrap">
         <ConfidenceBadge confidence={result.confidence} />
         {!result.image_quality_sufficient && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-red-500/20 px-3 py-1 text-xs font-medium text-red-400">
+          <span className="inline-flex items-center gap-1 rounded-md border border-red-500/30 bg-red-950/20 px-3 py-1.5 text-xs font-medium text-red-300">
             <AlertTriangle className="w-3 h-3" />
             Bildqualität unzureichend
           </span>
@@ -98,8 +98,8 @@ export default function VisualResults({
 
       {/* Scores */}
       {Object.keys(result.scores).length > 0 && (
-        <div className="rounded-xl border border-navy-700 bg-navy-900 p-5">
-          <h4 className="text-sm font-heading font-semibold text-navy-200 mb-4">
+        <div className="card-premium p-6 space-y-4">
+          <h4 className="text-sm font-serif font-semibold text-white">
             Bewertungen
           </h4>
           <div className="space-y-3">
@@ -112,38 +112,38 @@ export default function VisualResults({
 
       {/* Findings grouped by category */}
       {Object.keys(grouped).length > 0 && (
-        <div className="rounded-xl border border-navy-700 bg-navy-900 p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <h4 className="text-sm font-heading font-semibold text-navy-200">
+        <div className="card-premium p-6 space-y-5">
+          <div className="flex items-center justify-between border-b border-navy-700/30 pb-4">
+            <h4 className="text-sm font-serif font-semibold text-white">
               Befunde
             </h4>
             {hasLowConfidence && (
               <button
                 onClick={() => setShowLow(!showLow)}
-                className="flex items-center gap-1.5 text-xs text-navy-400 hover:text-navy-200 transition-colors"
+                className="flex items-center gap-1.5 text-xs text-navy-400 hover:text-ocean-300 transition-colors duration-200"
               >
                 {showLow ? (
                   <EyeOff className="w-3.5 h-3.5" />
                 ) : (
                   <Eye className="w-3.5 h-3.5" />
                 )}
-                {showLow ? 'Unsichere ausblenden' : 'Unsichere Befunde anzeigen'}
+                {showLow ? 'Unsichere ausblenden' : 'Unsichere anzeigen'}
               </button>
             )}
           </div>
 
           {Object.entries(grouped).map(([category, findings]) => (
-            <div key={category} className="space-y-2">
-              <h5 className="text-xs font-medium text-navy-400 uppercase tracking-wider">
+            <div key={category} className="space-y-3">
+              <h5 className="label-premium font-semibold">
                 {category}
               </h5>
               {findings.map((finding, i) => (
                 <div
                   key={`${category}-${i}`}
-                  className="rounded-lg border border-navy-700 bg-navy-800/50 p-3 space-y-2"
+                  className="border-l-2 border-navy-600/40 bg-navy-900/20 rounded-lg px-4 py-3 space-y-2.5 transition-colors duration-200 hover:bg-navy-900/30"
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <p className="text-sm text-navy-200">{finding.observation}</p>
+                    <p className="text-sm text-navy-100">{finding.observation}</p>
                     <AssessmentBadge assessment={finding.assessment} />
                   </div>
                   {finding.location_in_image && (
@@ -155,13 +155,13 @@ export default function VisualResults({
                     <p className="text-xs text-navy-400">{finding.detail}</p>
                   )}
                   {finding.suggestion && (
-                    <div className="flex items-start gap-1.5 text-xs text-ocean-400">
+                    <div className="flex items-start gap-2 text-xs text-ocean-300">
                       <Lightbulb className="w-3 h-3 mt-0.5 flex-shrink-0" />
                       <span>{finding.suggestion}</span>
                     </div>
                   )}
                   {finding.confidence === 'low' && (
-                    <span className="inline-block rounded bg-navy-700 px-1.5 py-0.5 text-[10px] text-navy-400">
+                    <span className="inline-block rounded text-[10px] text-navy-500 border border-navy-600/30 px-2 py-1">
                       Niedrige Sicherheit
                     </span>
                   )}
@@ -174,15 +174,15 @@ export default function VisualResults({
 
       {/* Positive aspects */}
       {result.positive_aspects.length > 0 && (
-        <div className="rounded-xl border border-green-500/20 bg-green-500/5 p-5 space-y-3">
-          <h4 className="flex items-center gap-2 text-sm font-heading font-semibold text-green-400">
+        <div className="rounded-xl border border-emerald-500/20 bg-emerald-950/10 p-6 space-y-4">
+          <h4 className="flex items-center gap-2 text-sm font-serif font-semibold text-emerald-400">
             <CheckCircle className="w-4 h-4" />
             Positive Aspekte
           </h4>
-          <ul className="space-y-1.5">
+          <ul className="space-y-2">
             {result.positive_aspects.map((item, i) => (
-              <li key={i} className="flex items-start gap-2 text-sm text-green-300">
-                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-green-500 flex-shrink-0" />
+              <li key={i} className="flex items-start gap-3 text-sm text-emerald-300">
+                <span className="mt-1.5 h-2 w-2 rounded-full bg-emerald-400 flex-shrink-0" />
                 {item}
               </li>
             ))}
@@ -192,15 +192,15 @@ export default function VisualResults({
 
       {/* Concerns */}
       {result.concerns.length > 0 && (
-        <div className="rounded-xl border border-orange-500/20 bg-orange-500/5 p-5 space-y-3">
-          <h4 className="flex items-center gap-2 text-sm font-heading font-semibold text-orange-400">
+        <div className="rounded-xl border border-amber-500/20 bg-amber-950/10 p-6 space-y-4">
+          <h4 className="flex items-center gap-2 text-sm font-serif font-semibold text-amber-400">
             <AlertTriangle className="w-4 h-4" />
             Bedenken
           </h4>
-          <ul className="space-y-1.5">
+          <ul className="space-y-2">
             {result.concerns.map((item, i) => (
-              <li key={i} className="flex items-start gap-2 text-sm text-orange-300">
-                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-orange-500 flex-shrink-0" />
+              <li key={i} className="flex items-start gap-3 text-sm text-amber-300">
+                <span className="mt-1.5 h-2 w-2 rounded-full bg-amber-400 flex-shrink-0" />
                 {item}
               </li>
             ))}
@@ -210,15 +210,15 @@ export default function VisualResults({
 
       {/* Recommendations */}
       {result.recommendations.length > 0 && (
-        <div className="rounded-xl border border-navy-700 bg-navy-900 p-5 space-y-3">
-          <h4 className="flex items-center gap-2 text-sm font-heading font-semibold text-ocean-400">
+        <div className="card-premium p-6 space-y-4">
+          <h4 className="flex items-center gap-2 text-sm font-serif font-semibold text-ocean-300">
             <Lightbulb className="w-4 h-4" />
             Empfehlungen
           </h4>
-          <ul className="space-y-1.5">
+          <ul className="space-y-2">
             {result.recommendations.map((item, i) => (
-              <li key={i} className="flex items-start gap-2 text-sm text-navy-300">
-                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-ocean-400 flex-shrink-0" />
+              <li key={i} className="flex items-start gap-3 text-sm text-navy-200">
+                <span className="mt-1.5 h-2 w-2 rounded-full bg-ocean-400 flex-shrink-0" />
                 {item}
               </li>
             ))}
@@ -228,10 +228,10 @@ export default function VisualResults({
 
       {/* Cannot assess (collapsed) */}
       {result.cannot_assess.length > 0 && (
-        <div className="rounded-xl border border-navy-700 bg-navy-900/50 p-4">
+        <div className="card-premium p-5">
           <button
             onClick={() => setCannotAssessOpen(!cannotAssessOpen)}
-            className="flex items-center gap-2 text-sm font-medium text-navy-400 hover:text-navy-300 transition-colors w-full"
+            className="flex items-center gap-2 text-sm font-medium text-navy-300 hover:text-navy-100 transition-colors duration-200 w-full"
           >
             {cannotAssessOpen ? (
               <ChevronDown className="w-4 h-4" />
@@ -241,7 +241,7 @@ export default function VisualResults({
             Nicht beurteilbar ({result.cannot_assess.length})
           </button>
           {cannotAssessOpen && (
-            <ul className="mt-3 space-y-1.5">
+            <ul className="mt-4 space-y-1.5 border-t border-navy-700/30 pt-4">
               {result.cannot_assess.map((item, i) => (
                 <li key={i} className="flex items-start gap-2 text-sm text-navy-500">
                   <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-navy-600 flex-shrink-0" />

@@ -15,19 +15,19 @@ interface SubScoreBarsProps {
 
 export default function SubScoreBars({ subScores }: SubScoreBarsProps) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-5">
       {Object.entries(subScores).map(([key, value]) => {
         const color =
-          value >= 80 ? 'bg-emerald-400' : value >= 60 ? 'bg-amber-400' : 'bg-red-400'
+          value >= 80 ? 'bg-emerald-400' : value >= 60 ? 'bg-amber-400' : value >= 40 ? 'bg-orange-400' : 'bg-red-400'
         return (
           <div key={key}>
-            <div className="flex justify-between text-sm mb-1">
-              <span className="text-navy-300">{SUB_SCORE_LABELS[key] || key}</span>
-              <span className="font-mono text-white">{Math.round(value)}</span>
+            <div className="flex justify-between items-center mb-2">
+              <span className="label-premium">{SUB_SCORE_LABELS[key] || key}</span>
+              <span className="font-mono text-sm font-semibold text-white">{Math.round(value)}</span>
             </div>
-            <div className="h-2 bg-navy-800 rounded-full overflow-hidden">
+            <div className="h-1.5 bg-navy-800/60 rounded-full overflow-hidden">
               <div
-                className={`h-full rounded-full transition-all duration-700 ${color}`}
+                className={`h-full rounded-full transition-all duration-300 ${color}`}
                 style={{ width: `${value}%` }}
               />
             </div>

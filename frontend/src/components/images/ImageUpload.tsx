@@ -4,6 +4,8 @@ import type { BoatClass, ImageType, ImageAnalysisResult, ImageUploadData } from 
 import { IMAGE_TYPE_LABELS } from '../../types'
 import { uploadAndAnalyzeImage, uploadProjectImage } from '../../services/api'
 import VisualResults from './VisualResults'
+import { MEDIA } from '../../config/media'
+import HeroSection from '../layout/HeroSection'
 
 interface ImageUploadProps {
   boatClass: BoatClass
@@ -124,163 +126,176 @@ export default function ImageUpload({
   }
 
   return (
-    <div className="space-y-6">
-      {/* Drop Zone */}
-      {!file && (
-        <div
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onClick={() => inputRef.current?.click()}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault()
-              inputRef.current?.click()
-            }
-          }}
-          aria-label="Datei-Upload-Bereich. Bild hierher ziehen oder klicken zum Durchsuchen"
-          className={`flex flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed p-12 cursor-pointer transition-colors ${
-            dragOver
-              ? 'border-ocean-400 bg-ocean-400/10'
-              : 'border-navy-600 bg-navy-900/50 hover:border-navy-500 hover:bg-navy-900'
-          }`}
-        >
-          <Upload className="w-10 h-10 text-navy-400" />
-          <div className="text-center">
-            <p className="text-sm font-medium text-navy-200">
-              Bild hierher ziehen oder klicken zum Durchsuchen
-            </p>
-            <p className="mt-1 text-xs text-navy-500">
-              JPG, PNG, WebP, HEIC — max. 20 MB
-            </p>
-          </div>
-          <input
-            ref={inputRef}
-            type="file"
-            accept=".jpg,.jpeg,.png,.webp,.heic"
-            onChange={handleInputChange}
-            className="hidden"
-          />
-        </div>
-      )}
+    <div>
+      <HeroSection
+        backgroundImage={MEDIA.hero.deck_detail}
+        title="Bildanalyse"
+        subtitle="Laden Sie Bilder von Yacht-Abschnitten hoch fr detaillierte visuelle Analyse und Zustandsbewertung"
+        label="Bilder"
+      />
 
-      {/* Preview + Controls */}
-      {file && !result && (
-        <div className="rounded-xl border border-navy-700 bg-navy-900 p-6 space-y-5">
-          <div className="flex items-start gap-5">
-            {/* Preview Image */}
-            <div className="relative w-48 h-36 rounded-lg overflow-hidden bg-navy-800 flex-shrink-0">
-              {preview ? (
-                <img
-                  src={preview}
-                  alt="Vorschau"
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="flex items-center justify-center h-full">
-                  <ImageIcon className="w-8 h-8 text-navy-600" />
+      <div className="space-y-8 px-10 py-12">
+        {/* Drop Zone */}
+        {!file && (
+          <div
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onClick={() => inputRef.current?.click()}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                inputRef.current?.click()
+              }
+            }}
+            aria-label="Datei-Upload-Bereich. Bild hierher ziehen oder klicken zum Durchsuchen"
+            className={`flex flex-col items-center justify-center gap-6 rounded-xl border-2 border-dashed px-12 py-16 cursor-pointer transition-all duration-200 ${
+              dragOver
+                ? 'border-ocean-400 bg-ocean-400/10'
+                : 'border-navy-600/50 bg-navy-900/20 hover:border-navy-500 hover:bg-navy-900/30'
+            }`}
+          >
+            <div className="rounded-full bg-navy-800/40 p-4 border border-navy-600/30">
+              <Upload className="w-8 h-8 text-ocean-400" />
+            </div>
+            <div className="text-center">
+              <p className="text-sm font-medium text-navy-100 font-serif">
+                Bild hierher ziehen oder klicken
+              </p>
+              <p className="mt-2 text-xs text-navy-400">
+                JPG, PNG, WebP, HEIC — max. 20 MB
+              </p>
+            </div>
+            <input
+              ref={inputRef}
+              type="file"
+              accept=".jpg,.jpeg,.png,.webp,.heic"
+              onChange={handleInputChange}
+              className="hidden"
+            />
+          </div>
+        )}
+
+        {/* Preview + Controls */}
+        {file && !result && (
+          <div className="card-premium p-8 space-y-6">
+            <div className="flex items-start gap-6">
+              {/* Preview Image */}
+              <div className="relative w-56 h-40 rounded-lg overflow-hidden bg-navy-800/60 border border-navy-700/30 flex-shrink-0">
+                {preview ? (
+                  <img
+                    src={preview}
+                    alt="Vorschau"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    <ImageIcon className="w-10 h-10 text-navy-600" />
+                  </div>
+                )}
+                <button
+                  onClick={clearFile}
+                  className="absolute top-2 right-2 p-1.5 rounded-full bg-navy-950/80 border border-navy-600 text-navy-300 hover:text-ocean-300 hover:border-ocean-500 transition-colors duration-200"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* File info + options */}
+              <div className="flex-1 space-y-6">
+                <div className="border-b border-navy-700/30 pb-4">
+                  <p className="label-premium mb-1">DATEI</p>
+                  <p className="text-white font-medium text-sm">{file.name}</p>
+                  <p className="text-xs text-navy-500 mt-1">
+                    {(file.size / 1024 / 1024).toFixed(1)} MB
+                  </p>
                 </div>
-              )}
+
+                {/* Image Type Selector */}
+                <div>
+                  <label className="label-premium mb-2 block">Bildtyp</label>
+                  <select
+                    value={imageType}
+                    onChange={(e) => setImageType(e.target.value as ImageType)}
+                    className="w-full rounded-lg border border-navy-600/40 bg-navy-800/60 px-4 py-2.5 text-sm text-navy-100 focus:border-ocean-500/60 focus:outline-none transition-colors duration-200"
+                  >
+                    {(Object.entries(IMAGE_TYPE_LABELS) as [ImageType, string][]).map(
+                      ([value, label]) => (
+                        <option key={value} value={value}>
+                          {label}
+                        </option>
+                      ),
+                    )}
+                  </select>
+                </div>
+
+                {/* Zone Type (optional) */}
+                <div>
+                  <label className="label-premium mb-2 block">Zonentyp (Optional)</label>
+                  <input
+                    type="text"
+                    value={zoneType}
+                    onChange={(e) => setZoneType(e.target.value)}
+                    placeholder="z.B. salon, cabin, pantry"
+                    className="w-full rounded-lg border border-navy-600/40 bg-navy-800/60 px-4 py-2.5 text-sm text-navy-100 placeholder:text-navy-600 focus:border-ocean-500/60 focus:outline-none transition-colors duration-200"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Upload Button */}
+            <div className="pt-4 border-t border-navy-700/30">
               <button
-                onClick={clearFile}
-                className="absolute top-1 right-1 p-1 rounded-full bg-navy-900/80 text-navy-300 hover:text-white transition-colors"
+                onClick={handleUpload}
+                disabled={uploading}
+                className="w-full flex items-center justify-center gap-2 rounded-lg bg-ocean-700 hover:bg-ocean-600 px-6 py-3 text-sm font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
               >
-                <X className="w-4 h-4" />
+                {uploading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Wird analysiert...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-4 h-4" />
+                    Hochladen & Analysieren
+                  </>
+                )}
               </button>
             </div>
+          </div>
+        )}
 
-            {/* File info + options */}
-            <div className="flex-1 space-y-4">
-              <div>
-                <p className="text-sm font-medium text-navy-200">{file.name}</p>
-                <p className="text-xs text-navy-500">
-                  {(file.size / 1024 / 1024).toFixed(1)} MB
-                </p>
-              </div>
+        {/* Error */}
+        {error && (
+          <div className="rounded-lg border border-red-500/20 bg-red-950/20 px-6 py-4 text-sm text-red-300">
+            {error}
+          </div>
+        )}
 
-              {/* Image Type Selector */}
+        {/* Results */}
+        {result && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
               <div>
-                <label className="block text-xs font-medium text-navy-400 mb-1">
-                  Bildtyp
-                </label>
-                <select
-                  value={imageType}
-                  onChange={(e) => setImageType(e.target.value as ImageType)}
-                  className="w-full rounded-lg border border-navy-600 bg-navy-800 px-3 py-2 text-sm text-navy-200 focus:border-ocean-500 focus:outline-none"
-                >
-                  {(Object.entries(IMAGE_TYPE_LABELS) as [ImageType, string][]).map(
-                    ([value, label]) => (
-                      <option key={value} value={value}>
-                        {label}
-                      </option>
-                    ),
-                  )}
-                </select>
+                <h3 className="font-serif text-lg font-medium text-white">
+                  Analyseergebnisse
+                </h3>
+                <p className="text-xs text-navy-500 mt-1">Detaillierte Bewertung des hochgeladenen Bildes</p>
               </div>
-
-              {/* Zone Type (optional) */}
-              <div>
-                <label className="block text-xs font-medium text-navy-400 mb-1">
-                  Zonentyp (optional)
-                </label>
-                <input
-                  type="text"
-                  value={zoneType}
-                  onChange={(e) => setZoneType(e.target.value)}
-                  placeholder="z.B. salon, cabin, pantry"
-                  className="w-full rounded-lg border border-navy-600 bg-navy-800 px-3 py-2 text-sm text-navy-200 placeholder:text-navy-600 focus:border-ocean-500 focus:outline-none"
-                />
-              </div>
+              <button
+                onClick={clearFile}
+                className="text-sm text-ocean-400 hover:text-ocean-300 transition-colors duration-200"
+              >
+                Neues Bild analysieren
+              </button>
             </div>
+            <VisualResults result={result} />
           </div>
-
-          {/* Upload Button */}
-          <button
-            onClick={handleUpload}
-            disabled={uploading}
-            className="w-full flex items-center justify-center gap-2 rounded-lg bg-ocean-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-ocean-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {uploading ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Wird analysiert...
-              </>
-            ) : (
-              <>
-                <Upload className="w-4 h-4" />
-                Hochladen & Analysieren
-              </>
-            )}
-          </button>
-        </div>
-      )}
-
-      {/* Error */}
-      {error && (
-        <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-          {error}
-        </div>
-      )}
-
-      {/* Results */}
-      {result && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-heading text-lg font-semibold text-white">
-              Analyseergebnisse
-            </h3>
-            <button
-              onClick={clearFile}
-              className="text-sm text-ocean-400 hover:text-ocean-300 transition-colors"
-            >
-              Neues Bild analysieren
-            </button>
-          </div>
-          <VisualResults result={result} />
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }

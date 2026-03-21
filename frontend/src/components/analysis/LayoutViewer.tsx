@@ -57,7 +57,7 @@ export default function LayoutViewer({ zones, passages }: LayoutViewerProps) {
   zones.forEach((z) => centroidMap.set(z.name, centroid(z.polygon)))
 
   return (
-    <div className="relative bg-navy-900 rounded-xl border border-navy-700 p-4">
+    <div className="relative card-premium p-6 overflow-hidden">
       <svg viewBox={viewBox} className="w-full h-auto" style={{ maxHeight: '500px' }}>
         {/* Zones */}
         {zones.map((zone) => {
@@ -70,12 +70,12 @@ export default function LayoutViewer({ zones, passages }: LayoutViewerProps) {
               <polygon
                 points={points}
                 fill={color}
-                fillOpacity={isHovered ? 0.4 : 0.2}
+                fillOpacity={isHovered ? 0.3 : 0.15}
                 stroke={color}
-                strokeWidth={isHovered ? 3 : 1.5}
+                strokeWidth={isHovered ? 2 : 1}
                 onMouseEnter={() => setHoveredZone(zone.name)}
                 onMouseLeave={() => setHoveredZone(null)}
-                className="cursor-pointer transition-all"
+                className="cursor-pointer transition-all duration-200"
               />
               <text
                 x={cx}
@@ -84,7 +84,8 @@ export default function LayoutViewer({ zones, passages }: LayoutViewerProps) {
                 dominantBaseline="middle"
                 fill="white"
                 fontSize={Math.max(100, (maxX - minX) / 30)}
-                className="pointer-events-none select-none"
+                opacity="0.8"
+                className="pointer-events-none select-none font-sans"
               >
                 {zone.name}
               </text>
@@ -104,10 +105,11 @@ export default function LayoutViewer({ zones, passages }: LayoutViewerProps) {
               y1={from[1]}
               x2={to[0]}
               y2={to[1]}
-              stroke="#94a3b8"
-              strokeWidth={Math.max(2, p.width_mm / 100)}
-              strokeDasharray={p.is_primary ? 'none' : '10,5'}
-              opacity={0.5}
+              stroke="#4a6fa8"
+              strokeWidth={Math.max(1.5, p.width_mm / 120)}
+              strokeDasharray={p.is_primary ? 'none' : '8,4'}
+              opacity="0.4"
+              className="transition-all duration-200"
             />
           )
         })}
@@ -119,10 +121,10 @@ export default function LayoutViewer({ zones, passages }: LayoutViewerProps) {
         if (!zone) return null
         const area = polygonArea(zone.polygon)
         return (
-          <div className="absolute top-4 right-4 bg-navy-800 border border-navy-600 rounded-lg p-3 text-sm">
-            <p className="font-medium text-white">{zone.name}</p>
-            <p className="text-navy-400">Typ: {zone.zone_type}</p>
-            <p className="text-navy-400 font-mono">Fläche: {area.toFixed(1)}m²</p>
+          <div className="absolute top-6 right-6 card-premium p-4 text-sm backdrop-blur-md">
+            <p className="font-sans font-semibold text-white">{zone.name}</p>
+            <p className="text-navy-400 text-xs mt-1">Typ: {zone.zone_type}</p>
+            <p className="text-navy-400 font-mono text-xs mt-1">Fläche: {area.toFixed(1)}m²</p>
           </div>
         )
       })()}

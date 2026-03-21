@@ -14,19 +14,17 @@ export default function UpgradePrompt({ upgradePrompt, onUpgrade }: UpgradePromp
   const moduleCount = upgradePrompt.additional_modules.length
 
   return (
-    <div className="bg-gradient-to-br from-ocean-900/40 to-navy-900 border border-ocean-700/50 rounded-xl p-6">
+    <div className="bg-navy-900/40 border border-navy-700/40 rounded-xl p-6 backdrop-blur-sm">
       <div className="flex items-start gap-4">
-        <div className="w-10 h-10 rounded-lg bg-ocean-800/60 flex items-center justify-center shrink-0">
-          <Layers className="w-5 h-5 text-ocean-300" />
+        <div className="w-10 h-10 rounded-lg bg-navy-800/50 flex items-center justify-center shrink-0">
+          <Layers className="w-5 h-5 text-ocean-500" />
         </div>
         <div className="flex-1">
-          <h3 className="font-display font-semibold text-white mb-1">
-            Vollanalyse freischalten
+          <h3 className="font-serif font-semibold text-white mb-2">
+            Vollständige Analyse freischalten
           </h3>
-          <p className="text-sm text-navy-300 mb-4">
-            Mit CAD-Daten und Materialwahl können{' '}
-            <span className="text-ocean-300 font-semibold">{moduleCount} weitere Module</span>{' '}
-            ausgewertet werden.
+          <p className="text-sm text-navy-400 mb-4 leading-relaxed">
+            Mit CAD-Daten und Materialwahl können <span className="text-ocean-400 font-semibold">{moduleCount} zusätzliche Module</span> ausgewertet werden.
           </p>
 
           {upgradePrompt.additional_modules.length > 0 && (
@@ -34,7 +32,7 @@ export default function UpgradePrompt({ upgradePrompt, onUpgrade }: UpgradePromp
               {upgradePrompt.additional_modules.map((mod) => (
                 <span
                   key={mod}
-                  className="px-2.5 py-1 rounded-full bg-navy-800 border border-navy-600 text-xs text-navy-300"
+                  className="px-3 py-1.5 rounded-full bg-navy-800/50 border border-navy-700/50 text-xs text-navy-300 font-medium"
                 >
                   {ANALYSIS_MODULE_LABELS[mod as AnalysisModule] ?? mod}
                 </span>
@@ -44,9 +42,9 @@ export default function UpgradePrompt({ upgradePrompt, onUpgrade }: UpgradePromp
 
           <button
             onClick={onUpgrade}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-ocean-600 hover:bg-ocean-500 text-white text-sm font-semibold transition-colors"
+            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg bg-ocean-700 hover:bg-ocean-600 text-white text-sm font-semibold transition-colors duration-200"
           >
-            Vollanalyse starten
+            Upgrade
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>

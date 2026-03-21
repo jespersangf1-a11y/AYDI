@@ -14,63 +14,63 @@ export default function DiffViewer({ diff }: DiffViewerProps) {
 
   if (!summary.has_changes) {
     return (
-      <div className="bg-navy-900 border border-navy-700 rounded-xl p-8 text-center">
-        <p className="text-navy-400">Keine Unterschiede zwischen den Versionen gefunden.</p>
+      <div className="card-premium p-8 text-center">
+        <p className="text-navy-400 text-sm">Keine Unterschiede zwischen den Versionen gefunden.</p>
       </div>
     )
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Summary bar */}
-      <div className="bg-navy-900 border border-navy-700 rounded-xl p-4">
-        <h3 className="font-display font-semibold text-white mb-3">Zusammenfassung</h3>
-        <div className="flex flex-wrap gap-3">
+      <div className="card-premium p-5">
+        <h3 className="font-sans font-semibold text-white mb-4">Zusammenfassung</h3>
+        <div className="flex flex-wrap gap-2.5">
           {summary.zones_added > 0 && (
-            <span className="flex items-center gap-1.5 text-sm text-emerald-300 bg-emerald-900/30 border border-emerald-800 px-3 py-1 rounded-full">
-              <Plus className="w-3.5 h-3.5" />
+            <span className="flex items-center gap-1.5 text-xs text-emerald-300 bg-emerald-900/20 border border-emerald-700/40 px-3 py-1.5 rounded-full font-medium">
+              <Plus className="w-3 h-3" />
               {summary.zones_added} Zone{summary.zones_added !== 1 ? 'n' : ''} hinzugefügt
             </span>
           )}
           {summary.zones_removed > 0 && (
-            <span className="flex items-center gap-1.5 text-sm text-red-300 bg-red-900/30 border border-red-800 px-3 py-1 rounded-full">
-              <Minus className="w-3.5 h-3.5" />
+            <span className="flex items-center gap-1.5 text-xs text-red-300 bg-red-900/20 border border-red-700/40 px-3 py-1.5 rounded-full font-medium">
+              <Minus className="w-3 h-3" />
               {summary.zones_removed} Zone{summary.zones_removed !== 1 ? 'n' : ''} entfernt
             </span>
           )}
           {summary.zones_modified > 0 && (
-            <span className="flex items-center gap-1.5 text-sm text-amber-300 bg-amber-900/30 border border-amber-800 px-3 py-1 rounded-full">
-              <Edit2 className="w-3.5 h-3.5" />
+            <span className="flex items-center gap-1.5 text-xs text-amber-300 bg-amber-900/20 border border-amber-700/40 px-3 py-1.5 rounded-full font-medium">
+              <Edit2 className="w-3 h-3" />
               {summary.zones_modified} Zone{summary.zones_modified !== 1 ? 'n' : ''} geändert
             </span>
           )}
           {summary.passages_added > 0 && (
-            <span className="flex items-center gap-1.5 text-sm text-emerald-300 bg-emerald-900/30 border border-emerald-800 px-3 py-1 rounded-full">
-              <Plus className="w-3.5 h-3.5" />
+            <span className="flex items-center gap-1.5 text-xs text-emerald-300 bg-emerald-900/20 border border-emerald-700/40 px-3 py-1.5 rounded-full font-medium">
+              <Plus className="w-3 h-3" />
               {summary.passages_added} Durchgang{summary.passages_added !== 1 ? 'e' : ''}{' '}
               hinzugefügt
             </span>
           )}
           {summary.passages_removed > 0 && (
-            <span className="flex items-center gap-1.5 text-sm text-red-300 bg-red-900/30 border border-red-800 px-3 py-1 rounded-full">
-              <Minus className="w-3.5 h-3.5" />
+            <span className="flex items-center gap-1.5 text-xs text-red-300 bg-red-900/20 border border-red-700/40 px-3 py-1.5 rounded-full font-medium">
+              <Minus className="w-3 h-3" />
               {summary.passages_removed} Durchgang{summary.passages_removed !== 1 ? 'e' : ''}{' '}
               entfernt
             </span>
           )}
           {summary.passages_modified > 0 && (
-            <span className="flex items-center gap-1.5 text-sm text-amber-300 bg-amber-900/30 border border-amber-800 px-3 py-1 rounded-full">
-              <Edit2 className="w-3.5 h-3.5" />
+            <span className="flex items-center gap-1.5 text-xs text-amber-300 bg-amber-900/20 border border-amber-700/40 px-3 py-1.5 rounded-full font-medium">
+              <Edit2 className="w-3 h-3" />
               {summary.passages_modified} Durchgang{summary.passages_modified !== 1 ? 'e' : ''}{' '}
               geändert
             </span>
           )}
           {summary.total_area_change_sqm !== 0 && (
             <span
-              className={`text-sm px-3 py-1 rounded-full border font-mono ${
+              className={`text-xs px-3 py-1.5 rounded-full border font-mono font-medium ${
                 summary.total_area_change_sqm > 0
-                  ? 'text-emerald-300 bg-emerald-900/30 border-emerald-800'
-                  : 'text-red-300 bg-red-900/30 border-red-800'
+                  ? 'text-emerald-300 bg-emerald-900/20 border-emerald-700/40'
+                  : 'text-red-300 bg-red-900/20 border-red-700/40'
               }`}
             >
               {summary.total_area_change_sqm > 0 ? '+' : ''}
@@ -81,13 +81,13 @@ export default function DiffViewer({ diff }: DiffViewerProps) {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-navy-900 border border-navy-700 rounded-xl p-1">
+      <div className="flex gap-1 card-premium p-1">
         {(['zones', 'passages'] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
-              tab === t ? 'bg-ocean-700 text-white' : 'text-navy-400 hover:text-white'
+            className={`flex-1 py-2 rounded-lg text-xs font-sans font-semibold uppercase tracking-wider-premium transition-all duration-200 ${
+              tab === t ? 'bg-ocean-700 text-white' : 'text-navy-400 hover:text-navy-200'
             }`}
           >
             {t === 'zones' ? 'Zonen' : 'Durchgänge'}
@@ -97,16 +97,16 @@ export default function DiffViewer({ diff }: DiffViewerProps) {
 
       {/* Zones diff */}
       {tab === 'zones' && (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {diff.zones.added.map((item, i) => (
             <div
               key={`added-${i}`}
-              className="bg-emerald-900/20 border border-emerald-800 rounded-xl p-4"
+              className="card-premium border-emerald-600/30 bg-emerald-900/10 p-4"
             >
-              <div className="flex items-center gap-2 mb-1">
-                <Plus className="w-4 h-4 text-emerald-400" />
-                <span className="font-semibold text-emerald-300">{item.name}</span>
-                <span className="text-xs text-emerald-600 uppercase">hinzugefügt</span>
+              <div className="flex items-center gap-2 mb-2">
+                <Plus className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                <span className="font-sans font-semibold text-emerald-300">{item.name}</span>
+                <span className="text-xs text-emerald-700 uppercase font-medium">hinzugefügt</span>
               </div>
               <p className="text-xs text-navy-400 ml-6">
                 Typ: {item.zone.zone_type} · Höhe: {item.zone.height_mm ?? '—'} mm
@@ -117,12 +117,12 @@ export default function DiffViewer({ diff }: DiffViewerProps) {
           {diff.zones.removed.map((item, i) => (
             <div
               key={`removed-${i}`}
-              className="bg-red-900/20 border border-red-800 rounded-xl p-4"
+              className="card-premium border-red-600/30 bg-red-900/10 p-4"
             >
-              <div className="flex items-center gap-2 mb-1">
-                <Minus className="w-4 h-4 text-red-400" />
-                <span className="font-semibold text-red-300">{item.name}</span>
-                <span className="text-xs text-red-700 uppercase">entfernt</span>
+              <div className="flex items-center gap-2 mb-2">
+                <Minus className="w-4 h-4 text-red-400 flex-shrink-0" />
+                <span className="font-sans font-semibold text-red-300">{item.name}</span>
+                <span className="text-xs text-red-700 uppercase font-medium">entfernt</span>
               </div>
               <p className="text-xs text-navy-400 ml-6">Typ: {item.zone.zone_type}</p>
             </div>
@@ -131,12 +131,12 @@ export default function DiffViewer({ diff }: DiffViewerProps) {
           {diff.zones.modified.map((item, i) => (
             <div
               key={`modified-${i}`}
-              className="bg-amber-900/20 border border-amber-800 rounded-xl p-4"
+              className="card-premium border-amber-600/30 bg-amber-900/10 p-4"
             >
               <div className="flex items-center gap-2 mb-2">
-                <Edit2 className="w-4 h-4 text-amber-400" />
-                <span className="font-semibold text-amber-300">{item.name}</span>
-                <span className="text-xs text-amber-700 uppercase">geändert</span>
+                <Edit2 className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                <span className="font-sans font-semibold text-amber-300">{item.name}</span>
+                <span className="text-xs text-amber-700 uppercase font-medium">geändert</span>
               </div>
               <div className="ml-6 space-y-1">
                 {item.changes.map((change, j) => (
@@ -154,7 +154,7 @@ export default function DiffViewer({ diff }: DiffViewerProps) {
           ))}
 
           {diff.zones.unchanged.length > 0 && (
-            <div className="bg-navy-900/50 border border-navy-800 rounded-xl p-4">
+            <div className="card-premium bg-navy-900/20 p-4">
               <p className="text-xs text-navy-500">
                 {diff.zones.unchanged.length} unveränderte Zone
                 {diff.zones.unchanged.length !== 1 ? 'n' : ''}:{' '}
@@ -167,18 +167,18 @@ export default function DiffViewer({ diff }: DiffViewerProps) {
 
       {/* Passages diff */}
       {tab === 'passages' && (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {diff.passages.added.map((item, i) => (
             <div
               key={`added-${i}`}
-              className="bg-emerald-900/20 border border-emerald-800 rounded-xl p-4"
+              className="card-premium border-emerald-600/30 bg-emerald-900/10 p-4"
             >
-              <div className="flex items-center gap-2 mb-1">
-                <Plus className="w-4 h-4 text-emerald-400" />
-                <span className="font-semibold text-emerald-300">
+              <div className="flex items-center gap-2 mb-2">
+                <Plus className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                <span className="font-sans font-semibold text-emerald-300">
                   {item.from_zone} → {item.to_zone}
                 </span>
-                <span className="text-xs text-emerald-600 uppercase">hinzugefügt</span>
+                <span className="text-xs text-emerald-700 uppercase font-medium">hinzugefügt</span>
               </div>
               <p className="text-xs text-navy-400 ml-6 font-mono">
                 Breite: {item.passage.width_mm} mm
@@ -189,14 +189,14 @@ export default function DiffViewer({ diff }: DiffViewerProps) {
           {diff.passages.removed.map((item, i) => (
             <div
               key={`removed-${i}`}
-              className="bg-red-900/20 border border-red-800 rounded-xl p-4"
+              className="card-premium border-red-600/30 bg-red-900/10 p-4"
             >
-              <div className="flex items-center gap-2 mb-1">
-                <Minus className="w-4 h-4 text-red-400" />
-                <span className="font-semibold text-red-300">
+              <div className="flex items-center gap-2 mb-2">
+                <Minus className="w-4 h-4 text-red-400 flex-shrink-0" />
+                <span className="font-sans font-semibold text-red-300">
                   {item.from_zone} → {item.to_zone}
                 </span>
-                <span className="text-xs text-red-700 uppercase">entfernt</span>
+                <span className="text-xs text-red-700 uppercase font-medium">entfernt</span>
               </div>
               <p className="text-xs text-navy-400 ml-6 font-mono">
                 Breite: {item.passage.width_mm} mm
@@ -207,14 +207,14 @@ export default function DiffViewer({ diff }: DiffViewerProps) {
           {diff.passages.modified.map((item, i) => (
             <div
               key={`modified-${i}`}
-              className="bg-amber-900/20 border border-amber-800 rounded-xl p-4"
+              className="card-premium border-amber-600/30 bg-amber-900/10 p-4"
             >
               <div className="flex items-center gap-2 mb-2">
-                <Edit2 className="w-4 h-4 text-amber-400" />
-                <span className="font-semibold text-amber-300">
+                <Edit2 className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                <span className="font-sans font-semibold text-amber-300">
                   {item.from_zone} → {item.to_zone}
                 </span>
-                <span className="text-xs text-amber-700 uppercase">geändert</span>
+                <span className="text-xs text-amber-700 uppercase font-medium">geändert</span>
               </div>
               <div className="ml-6 space-y-1">
                 {item.changes.map((change, j) => (
@@ -234,7 +234,7 @@ export default function DiffViewer({ diff }: DiffViewerProps) {
           {diff.passages.added.length === 0 &&
             diff.passages.removed.length === 0 &&
             diff.passages.modified.length === 0 && (
-              <div className="bg-navy-900/50 border border-navy-800 rounded-xl p-4 text-center">
+              <div className="card-premium bg-navy-900/20 p-4 text-center">
                 <p className="text-xs text-navy-500">Keine Änderungen an Durchgängen</p>
               </div>
             )}

@@ -39,13 +39,13 @@ const CONFIDENCE_CONFIG: Record<string, { label: string; color: string; icon: ty
   visual_only: { label: 'Nur visuell', color: 'amber', icon: Eye },
 }
 
-const COLOR_CLASSES: Record<string, { bg: string; text: string }> = {
-  green: { bg: 'bg-emerald-900/30', text: 'text-emerald-300' },
-  blue: { bg: 'bg-blue-900/30', text: 'text-blue-300' },
-  amber: { bg: 'bg-amber-900/30', text: 'text-amber-300' },
-  red: { bg: 'bg-red-900/30', text: 'text-red-300' },
-  gray: { bg: 'bg-gray-800/50', text: 'text-gray-300' },
-  orange: { bg: 'bg-amber-900/30', text: 'text-amber-300' },
+const COLOR_CLASSES: Record<string, { bg: string; text: string; border: string }> = {
+  green: { bg: 'bg-emerald-900/20', text: 'text-emerald-300', border: 'border-emerald-700/40' },
+  blue: { bg: 'bg-ocean-900/20', text: 'text-ocean-300', border: 'border-ocean-700/40' },
+  amber: { bg: 'bg-amber-900/20', text: 'text-amber-300', border: 'border-amber-700/40' },
+  red: { bg: 'bg-red-900/20', text: 'text-red-300', border: 'border-red-700/40' },
+  gray: { bg: 'bg-navy-800/40', text: 'text-navy-300', border: 'border-navy-700/40' },
+  orange: { bg: 'bg-orange-900/20', text: 'text-orange-300', border: 'border-orange-700/40' },
 }
 
 export default function ConfidenceBadge({
@@ -60,13 +60,13 @@ export default function ConfidenceBadge({
   }
   const colors = COLOR_CLASSES[cfg.color] ?? COLOR_CLASSES.gray
   const Icon = cfg.icon
-  const iconSize = size === 'sm' ? 'w-3 h-3' : 'w-4 h-4'
-  const textSize = size === 'sm' ? 'text-xs' : 'text-sm'
-  const padding = size === 'sm' ? 'px-2 py-0.5' : 'px-3 py-1'
+  const iconSize = size === 'sm' ? 'w-3 h-3' : 'w-3.5 h-3.5'
+  const textSize = size === 'sm' ? 'text-xs' : 'text-xs'
+  const padding = size === 'sm' ? 'px-2 py-1' : 'px-2.5 py-1'
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full font-medium ${colors.bg} ${colors.text} ${textSize} ${padding}`}
+      className={`inline-flex items-center gap-1.5 rounded-full font-medium border ${colors.bg} ${colors.text} ${textSize} ${padding} ${colors.border}`}
     >
       <Icon className={iconSize} />
       {showLabel && cfg.label}

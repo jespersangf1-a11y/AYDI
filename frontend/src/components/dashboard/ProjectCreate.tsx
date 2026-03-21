@@ -1,6 +1,8 @@
 import { useState } from 'react'
-import { Save, X } from 'lucide-react'
+import { Save, X, Upload } from 'lucide-react'
 import { createProject, createLayout, importDxf } from '../../services/api'
+import HeroSection from '../layout/HeroSection'
+import { MEDIA } from '../../config/media'
 import type { BoatClass, ZoneData, PassageData } from '../../types'
 import { BOAT_CLASS_LABELS } from '../../types'
 
@@ -65,108 +67,168 @@ export default function ProjectCreate({ onCreated, onCancel }: ProjectCreateProp
   }
 
   return (
-    <div className="max-w-2xl">
-      <h2 className="font-heading text-2xl font-bold text-white mb-6">Neues Projekt</h2>
+    <div>
+      <HeroSection
+        backgroundImage={MEDIA.hero.deck_detail}
+        title="Neues Projekt"
+        label="Yacht Design erstellen"
+      />
 
-      <form onSubmit={handleSubmit} className="space-y-5">
-        <div>
-          <label className="block text-sm font-medium text-navy-300 mb-1">Name *</label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            className="w-full bg-navy-900 border border-navy-700 rounded-lg px-4 py-2 text-white focus:border-ocean-500 focus:outline-none"
-            placeholder="z.B. Meridian 40 Cruiser"
-          />
+      <div className="px-10 py-12">
+        <div className="max-w-2xl">
+          <form onSubmit={handleSubmit} className="space-y-8">
+            {/* Project Name */}
+            <div>
+              <label className="label-premium block mb-3">Projektname *</label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                className="w-full card-premium px-6 py-4 text-white placeholder:text-navy-500 focus:bg-navy-900/70 focus:border-ocean-500 focus:outline-none transition-colors duration-200"
+                placeholder="z.B. Meridian 40 Cruiser"
+              />
+            </div>
+
+            {/* Description */}
+            <div>
+              <label className="label-premium block mb-3">Beschreibung</label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={4}
+                className="w-full card-premium px-6 py-4 text-white placeholder:text-navy-500 focus:bg-navy-900/70 focus:border-ocean-500 focus:outline-none resize-none transition-colors duration-200"
+                placeholder="Beschreiben Sie die Hauptmerkmale und den Zweck dieses Entwurfs"
+              />
+            </div>
+
+            {/* Boat Class */}
+            <div>
+              <label className="label-premium block mb-3">Bootsklasse *</label>
+              <select
+                value={boatClass}
+                onChange={(e) => setBoatClass(e.target.value as BoatClass)}
+                className="w-full card-premium px-6 py-4 text-white focus:bg-navy-900/70 focus:border-ocean-500 focus:outline-none transition-colors duration-200 appearance-none bg-right"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234ba7c3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`,
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'right 1rem center',
+                  backgroundSize: '20px',
+                  paddingRight: '2.5rem'
+                }}
+              >
+                {Object.entries(BOAT_CLASS_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Dimensions */}
+            <div className="grid grid-cols-2 gap-6">
+              <div>
+                <label className="label-premium block mb-3">Länge (m) *</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  min="1"
+                  value={lengthM}
+                  onChange={(e) => setLengthM(e.target.value)}
+                  required
+                  className="w-full card-premium px-6 py-4 text-white placeholder:text-navy-500 focus:bg-navy-900/70 focus:border-ocean-500 focus:outline-none transition-colors duration-200"
+                  placeholder="z.B. 12.5"
+                />
+              </div>
+              <div>
+                <label className="label-premium block mb-3">Breite (m) *</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  min="1"
+                  value={beamM}
+                  onChange={(e) => setBeamM(e.target.value)}
+                  required
+                  className="w-full card-premium px-6 py-4 text-white placeholder:text-navy-500 focus:bg-navy-900/70 focus:border-ocean-500 focus:outline-none transition-colors duration-200"
+                  placeholder="z.B. 4.2"
+                />
+              </div>
+            </div>
+
+            {/* File Upload */}
+            <div>
+              <label className="label-premium block mb-3">Layout-Datei (optional)</label>
+              <div className="relative">
+                <input
+                  type="file"
+                  accept=".json,.dxf"
+                  onChange={(e) => setLayoutFile(e.target.files?.[0] || null)}
+                  id="layout-file"
+                  className="hidden"
+                />
+                <label
+                  htmlFor="layout-file"
+                  className="card-premium px-6 py-8 block text-center cursor-pointer hover:bg-navy-900/60 hover:border-navy-600/40 transition-all duration-200 group"
+                >
+                  <div className="flex flex-col items-center">
+                    <Upload className="w-8 h-8 text-ocean-500 mb-3 group-hover:text-ocean-400 transition-colors duration-200" />
+                    {layoutFile ? (
+                      <div>
+                        <p className="text-white font-medium">{layoutFile.name}</p>
+                        <p className="text-navy-400 text-sm mt-1">
+                          {(layoutFile.size / 1024).toFixed(1)} KB
+                        </p>
+                      </div>
+                    ) : (
+                      <div>
+                        <p className="text-white font-medium">Datei auswählen</p>
+                        <p className="text-navy-400 text-sm mt-1">JSON oder DXF-Format</p>
+                      </div>
+                    )}
+                  </div>
+                </label>
+              </div>
+              <p className="text-navy-500 text-xs mt-3">
+                Unterstützte Formate: JSON oder DXF mit Zonendaten
+              </p>
+            </div>
+
+            {/* Error Message */}
+            {error && (
+              <div className="card-premium bg-red-900/20 border-red-700/40 px-6 py-4 text-red-300 text-sm">
+                {error}
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex gap-4 pt-4">
+              <button
+                type="submit"
+                disabled={submitting}
+                className="flex items-center gap-2 bg-ocean-700 hover:bg-ocean-600 disabled:opacity-50 disabled:cursor-not-allowed text-white px-8 py-4 rounded-lg font-serif font-medium transition-colors duration-200"
+              >
+                {submitting ? (
+                  <>
+                    <span className="inline-block w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
+                    Erstelle Projekt...
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" />
+                    Projekt erstellen
+                  </>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={onCancel}
+                className="flex items-center gap-2 text-navy-400 hover:text-white px-8 py-4 rounded-lg transition-colors duration-200 font-medium"
+              >
+                <X className="w-4 h-4" />
+                Abbrechen
+              </button>
+            </div>
+          </form>
         </div>
-
-        <div>
-          <label className="block text-sm font-medium text-navy-300 mb-1">Beschreibung</label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={3}
-            className="w-full bg-navy-900 border border-navy-700 rounded-lg px-4 py-2 text-white focus:border-ocean-500 focus:outline-none resize-none"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-navy-300 mb-1">Bootsklasse *</label>
-          <select
-            value={boatClass}
-            onChange={(e) => setBoatClass(e.target.value as BoatClass)}
-            className="w-full bg-navy-900 border border-navy-700 rounded-lg px-4 py-2 text-white focus:border-ocean-500 focus:outline-none"
-          >
-            {Object.entries(BOAT_CLASS_LABELS).map(([value, label]) => (
-              <option key={value} value={value}>{label}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-navy-300 mb-1">Länge (m) *</label>
-            <input
-              type="number"
-              step="0.1"
-              min="1"
-              value={lengthM}
-              onChange={(e) => setLengthM(e.target.value)}
-              required
-              className="w-full bg-navy-900 border border-navy-700 rounded-lg px-4 py-2 text-white focus:border-ocean-500 focus:outline-none"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-navy-300 mb-1">Breite (m) *</label>
-            <input
-              type="number"
-              step="0.1"
-              min="1"
-              value={beamM}
-              onChange={(e) => setBeamM(e.target.value)}
-              required
-              className="w-full bg-navy-900 border border-navy-700 rounded-lg px-4 py-2 text-white focus:border-ocean-500 focus:outline-none"
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-navy-300 mb-1">Layout-Datei (optional)</label>
-          <input
-            type="file"
-            accept=".json,.dxf"
-            onChange={(e) => setLayoutFile(e.target.files?.[0] || null)}
-            className="w-full bg-navy-900 border border-navy-700 rounded-lg px-4 py-2 text-white file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:bg-ocean-600 file:text-white file:text-sm file:cursor-pointer"
-          />
-          <p className="text-xs text-navy-500 mt-1">JSON oder DXF-Datei mit Zonendaten</p>
-        </div>
-
-        {error && (
-          <div className="bg-red-900/50 border border-red-700 rounded-lg p-3 text-red-300 text-sm">
-            {error}
-          </div>
-        )}
-
-        <div className="flex gap-3 pt-2">
-          <button
-            type="submit"
-            disabled={submitting}
-            className="flex items-center gap-2 bg-ocean-600 hover:bg-ocean-700 text-white px-5 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
-          >
-            <Save className="w-4 h-4" />
-            {submitting ? 'Erstelle...' : 'Projekt erstellen'}
-          </button>
-          <button
-            type="button"
-            onClick={onCancel}
-            className="flex items-center gap-2 text-navy-400 hover:text-white px-5 py-2 rounded-lg transition-colors"
-          >
-            <X className="w-4 h-4" />
-            Abbrechen
-          </button>
-        </div>
-      </form>
+      </div>
     </div>
   )
 }
