@@ -1,0 +1,91 @@
+<h2>AYDI — Landing Page Layout</h2>
+<p class="subtitle">Maritime Premium: Hell, tiefblau Akzente, Gold-Details. Welches Layout für die zwei Haupteinstiege?</p>
+
+<div class="cards">
+  <!-- Option A: Side by side -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background: #f8f9fc; border-radius: 8px; padding: 24px; min-height: 320px; font-family: system-ui;">
+        <!-- Header -->
+        <div style="text-align: center; margin-bottom: 24px;">
+          <div style="font-size: 14px; letter-spacing: 3px; color: #0c4a6e; text-transform: uppercase; margin-bottom: 4px;">⚓ AYDI</div>
+          <div style="font-size: 20px; font-weight: 700; color: #1a2846;">AI Yacht Design Intelligence</div>
+          <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Professionelle Yachtanalyse mit künstlicher Intelligenz</div>
+        </div>
+        <!-- Two cards side by side -->
+        <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+          <div style="flex: 1; background: white; border: 2px solid #0c4a6e; border-radius: 12px; padding: 16px; text-align: center;">
+            <div style="font-size: 24px; margin-bottom: 6px;">📐</div>
+            <div style="font-size: 13px; font-weight: 700; color: #0c4a6e;">Profi-Analyse</div>
+            <div style="font-size: 9px; color: #64748b; margin-top: 4px;">CAD-Import · Vollanalyse<br>12 Module · Detailberichte</div>
+            <div style="margin-top: 8px; background: #0c4a6e; color: white; border-radius: 6px; padding: 4px 8px; font-size: 9px;">Starten →</div>
+          </div>
+          <div style="flex: 1; background: white; border: 2px solid #b8860b; border-radius: 12px; padding: 16px; text-align: center;">
+            <div style="font-size: 24px; margin-bottom: 6px;">📸</div>
+            <div style="font-size: 13px; font-weight: 700; color: #b8860b;">Schnellanalyse</div>
+            <div style="font-size: 9px; color: #64748b; margin-top: 4px;">Fotos hochladen<br>Sofort-Einschätzung</div>
+            <div style="margin-top: 8px; background: #b8860b; color: white; border-radius: 6px; padding: 4px 8px; font-size: 9px;">Fotos laden →</div>
+          </div>
+        </div>
+        <!-- Feature row -->
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;">
+          <div style="background: white; border-radius: 6px; padding: 6px; text-align: center; font-size: 8px; color: #475569; border: 1px solid #e2e8f0;">🏗️ Struktur</div>
+          <div style="background: white; border-radius: 6px; padding: 6px; text-align: center; font-size: 8px; color: #475569; border: 1px solid #e2e8f0;">📏 Ergonomie</div>
+          <div style="background: white; border-radius: 6px; padding: 6px; text-align: center; font-size: 8px; color: #475569; border: 1px solid #e2e8f0;">💰 Kosten</div>
+          <div style="background: white; border-radius: 6px; padding: 6px; text-align: center; font-size: 8px; color: #475569; border: 1px solid #e2e8f0;">⚖️ Compliance</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Nebeneinander</h3>
+      <p>Beide Einstiege gleichwertig, sofort sichtbar. Feature-Kacheln darunter in einer Reihe.</p>
+    </div>
+  </div>
+
+  <!-- Option B: Hero + stacked -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background: #f8f9fc; border-radius: 8px; padding: 24px; min-height: 320px; font-family: system-ui;">
+        <!-- Header -->
+        <div style="text-align: center; margin-bottom: 16px;">
+          <div style="font-size: 14px; letter-spacing: 3px; color: #0c4a6e; text-transform: uppercase; margin-bottom: 4px;">⚓ AYDI</div>
+          <div style="font-size: 20px; font-weight: 700; color: #1a2846;">AI Yacht Design Intelligence</div>
+          <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Professionelle Yachtanalyse mit künstlicher Intelligenz</div>
+        </div>
+        <!-- Hero card: Profi -->
+        <div style="background: linear-gradient(135deg, #0c4a6e, #1e3a5f); border-radius: 12px; padding: 16px; color: white; margin-bottom: 10px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="font-size: 28px;">📐</div>
+            <div>
+              <div style="font-size: 14px; font-weight: 700;">Profi-Analyse</div>
+              <div style="font-size: 9px; opacity: 0.8;">CAD-Import · 12 Module · Detailberichte · Vollanalyse</div>
+            </div>
+            <div style="margin-left: auto; background: rgba(255,255,255,0.2); border-radius: 6px; padding: 4px 10px; font-size: 9px;">Starten →</div>
+          </div>
+        </div>
+        <!-- Smaller: Schnellanalyse -->
+        <div style="background: white; border: 2px solid #b8860b; border-radius: 12px; padding: 12px; margin-bottom: 12px;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="font-size: 22px;">📸</div>
+            <div>
+              <div style="font-size: 12px; font-weight: 700; color: #b8860b;">Schnellanalyse</div>
+              <div style="font-size: 9px; color: #64748b;">Fotos hochladen · Sofort-Einschätzung · Kein Login</div>
+            </div>
+            <div style="margin-left: auto; background: #b8860b; color: white; border-radius: 6px; padding: 4px 10px; font-size: 9px;">Fotos →</div>
+          </div>
+        </div>
+        <!-- Feature grid -->
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;">
+          <div style="background: white; border-radius: 6px; padding: 6px; text-align: center; font-size: 8px; color: #475569; border: 1px solid #e2e8f0;">🏗️ Struktur</div>
+          <div style="background: white; border-radius: 6px; padding: 6px; text-align: center; font-size: 8px; color: #475569; border: 1px solid #e2e8f0;">📏 Ergonomie</div>
+          <div style="background: white; border-radius: 6px; padding: 6px; text-align: center; font-size: 8px; color: #475569; border: 1px solid #e2e8f0;">💰 Kosten</div>
+          <div style="background: white; border-radius: 6px; padding: 6px; text-align: center; font-size: 8px; color: #475569; border: 1px solid #e2e8f0;">⚖️ Compliance</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Hero + Sekundär</h3>
+      <p>Profi-Analyse als großer Hero-Block mit Gradient. Schnellanalyse kleiner darunter. Klare Hierarchie.</p>
+    </div>
+  </div>
+</div>
