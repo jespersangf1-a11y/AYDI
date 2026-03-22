@@ -17,57 +17,6 @@ interface ImageUploadProps {
 const MAX_FILE_SIZE = 20 * 1024 * 1024 // 20 MB
 const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic']
 
-// Animations for image upload
-const imageUploadAnimationStyles = `
-  @keyframes dragBorderPulse {
-    0%, 100% {
-      border-color: rgba(0, 176, 240, 0.4);
-      background-color: rgba(0, 176, 240, 0.05);
-    }
-    50% {
-      border-color: rgba(0, 176, 240, 0.8);
-      background-color: rgba(0, 176, 240, 0.15);
-    }
-  }
-
-  @keyframes previewScaleIn {
-    from {
-      opacity: 0;
-      transform: scale(0.95);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-
-  @keyframes progressFill {
-    from {
-      width: 0;
-    }
-  }
-
-  @keyframes uploadPulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.7; }
-  }
-
-  .drag-active {
-    animation: dragBorderPulse 1.5s ease-in-out infinite;
-  }
-
-  .animate-preview-in {
-    animation: previewScaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-
-  .animate-progress {
-    animation: progressFill 0.6s ease-out forwards;
-  }
-
-  .animate-upload-pulse {
-    animation: uploadPulse 1.5s ease-in-out infinite;
-  }
-`
 
 export default function ImageUpload({
   boatClass,
@@ -190,8 +139,6 @@ export default function ImageUpload({
   }
 
   return (
-    <>
-      <style>{imageUploadAnimationStyles}</style>
       <div>
         <HeroSection
           backgroundVideo={MEDIA.video.yacht_sunset}
@@ -220,7 +167,7 @@ export default function ImageUpload({
               aria-label="Datei-Upload-Bereich. Bild hierher ziehen oder klicken zum Durchsuchen"
               className={`flex flex-col items-center justify-center gap-6 rounded-xl border-2 border-dashed px-8 md:px-12 py-16 cursor-pointer transition-all duration-300 ${
                 dragOver
-                  ? 'drag-active'
+                  ? 'animate-pulse-glow border-[rgba(45,139,168,0.6)] bg-[rgba(45,139,168,0.08)]'
                   : 'border-ocean-300/60 bg-ocean-50 hover:border-ocean-400/80 hover:bg-ocean-100/50'
               }`}
             >
@@ -248,7 +195,7 @@ export default function ImageUpload({
 
           {/* Preview + Controls */}
           {file && !result && (
-            <div className="card-premium p-6 md:p-8 space-y-6 animate-preview-in">
+            <div className="card-premium p-6 md:p-8 space-y-6 animate-fade-in-scale">
               <div className="flex flex-col md:flex-row gap-6">
                 {/* Preview Image */}
                 <div className="relative w-full md:w-56 h-48 md:h-40 rounded-lg overflow-hidden bg-sand-100 border border-sand-300 flex-shrink-0">
@@ -256,7 +203,7 @@ export default function ImageUpload({
                     <img
                       src={preview}
                       alt="Bildvorschau"
-                      className="w-full h-full object-cover animate-preview-in"
+                      className="w-full h-full object-cover animate-fade-in-scale"
                     />
                   ) : (
                     <div className="flex items-center justify-center h-full">
@@ -324,7 +271,7 @@ export default function ImageUpload({
                     </div>
                     <div className="h-2 bg-sand-100 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-gradient-to-r from-ocean-500 to-ocean-400 rounded-full animate-progress transition-all duration-300"
+                        className="h-full bg-gradient-to-r from-ocean-500 to-ocean-400 rounded-full animate-fill-bar transition-all duration-300"
                         style={{
                           width: `${uploadProgress}%`,
                         }}
@@ -336,7 +283,7 @@ export default function ImageUpload({
                   onClick={handleUpload}
                   disabled={uploading}
                   className={`w-full flex items-center justify-center gap-2 rounded-lg bg-ocean-600 hover:bg-ocean-700 px-6 py-3 text-sm font-medium text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 ${
-                    uploading ? 'animate-upload-pulse' : ''
+                    uploading ? 'animate-pulse-glow' : ''
                   }`}
                 >
                   {uploading ? (
@@ -357,14 +304,14 @@ export default function ImageUpload({
 
           {/* Error */}
           {error && (
-            <div className="rounded-lg border border-red-500/20 bg-red-950/20 px-6 py-4 text-sm text-red-300 animate-preview-in" role="alert">
+            <div className="rounded-lg border border-red-500/20 bg-red-950/20 px-6 py-4 text-sm text-red-300 animate-fade-in-scale" role="alert">
               {error}
             </div>
           )}
 
           {/* Results */}
           {result && (
-            <div className="space-y-6 animate-preview-in">
+            <div className="space-y-6 animate-fade-in-scale">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
                   <h3 className="font-serif text-lg font-medium text-navy-900">
@@ -384,6 +331,5 @@ export default function ImageUpload({
           )}
         </div>
       </div>
-    </>
   )
 }

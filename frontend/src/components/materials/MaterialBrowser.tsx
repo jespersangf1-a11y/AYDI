@@ -17,101 +17,6 @@ interface Material {
   notes?: string | null
 }
 
-// Animations for material browser
-const materialBrowserAnimationStyles = `
-  @keyframes tableRowHover {
-    0% {
-      background-color: transparent;
-    }
-    100% {
-      background-color: rgba(0, 176, 240, 0.08);
-    }
-  }
-
-  @keyframes panelSlideIn {
-    from {
-      opacity: 0;
-      transform: translateX(100%);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
-
-  @keyframes panelSlideOut {
-    from {
-      opacity: 1;
-      transform: translateX(0);
-    }
-    to {
-      opacity: 0;
-      transform: translateX(100%);
-    }
-  }
-
-  @keyframes mobileOverlayFadeIn {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-
-  @keyframes filterTransition {
-    from {
-      opacity: 0;
-      transform: translateY(-8px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  .table-row-hover {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  .table-row-hover:hover {
-    background-color: rgba(0, 176, 240, 0.1);
-    padding-left: 0.5rem;
-  }
-
-  .animate-panel-in {
-    animation: panelSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-
-  .animate-panel-out {
-    animation: panelSlideOut 0.3s ease-in;
-  }
-
-  .animate-overlay-in {
-    animation: mobileOverlayFadeIn 0.3s ease-out;
-  }
-
-  .animate-filter-in {
-    animation: filterTransition 0.3s ease-out;
-  }
-
-  @media (max-width: 768px) {
-    .detail-panel-mobile {
-      position: fixed;
-      inset: 0;
-      z-index: 50;
-      animation: mobileOverlayFadeIn 0.3s ease-out;
-    }
-
-    .detail-panel-mobile::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.4);
-      z-index: -1;
-    }
-  }
-`
 
 export default function MaterialBrowser() {
   const [materials, setMaterials] = useState<Material[]>([])
@@ -175,8 +80,6 @@ export default function MaterialBrowser() {
   }
 
   return (
-    <>
-      <style>{materialBrowserAnimationStyles}</style>
       <div>
         <HeroSection
           backgroundImage={MEDIA.materials.teak_deck}
@@ -187,7 +90,7 @@ export default function MaterialBrowser() {
 
         <div className="space-y-8 px-6 md:px-10 py-12">
           {/* Controls */}
-          <div className="space-y-4 md:space-y-0 md:flex md:items-end md:justify-between gap-4 animate-filter-in">
+          <div className="space-y-4 md:space-y-0 md:flex md:items-end md:justify-between gap-4 animate-fade-in-up">
             <div>
               <p className="label-premium mb-2">FILTER</p>
               <label className="text-xs font-medium text-navy-700">Kategorie:</label>
@@ -255,7 +158,7 @@ export default function MaterialBrowser() {
                           <tr
                             key={m.id}
                             onClick={() => handleSelectMaterial(m)}
-                            className={`table-row-hover border-b border-navy-700/20 cursor-pointer ${
+                            className={`hover:bg-[rgba(45,139,168,0.1)] hover:pl-2 transition-all duration-300 border-b border-navy-700/20 cursor-pointer ${
                               idx % 2 === 0 ? 'bg-navy-900/20' : 'bg-transparent'
                             } ${
                               selectedMaterial?.id === m.id
@@ -298,7 +201,7 @@ export default function MaterialBrowser() {
 
               {/* Detail panel — Desktop */}
               {selectedMaterial && (
-                <div className="hidden lg:flex lg:w-80 lg:shrink-0 card-premium p-8 space-y-6 animate-panel-in max-h-96 overflow-y-auto">
+                <div className="hidden lg:flex lg:w-80 lg:shrink-0 card-premium p-8 space-y-6 animate-slide-in-right max-h-96 overflow-y-auto">
                   <DetailPanel material={selectedMaterial} onClose={() => setSelectedMaterial(null)} />
                 </div>
               )}
@@ -307,8 +210,8 @@ export default function MaterialBrowser() {
 
           {/* Detail panel — Mobile Overlay */}
           {selectedMaterial && isMobileDetailOpen && (
-            <div className="lg:hidden detail-panel-mobile animate-overlay-in">
-              <div className="absolute bottom-0 left-0 right-0 card-premium rounded-t-2xl p-6 space-y-6 max-h-[70vh] overflow-y-auto animate-panel-in">
+            <div className="lg:hidden fixed inset-0 z-50 animate-backdrop-fade before:content-[''] before:absolute before:inset-0 before:bg-black/40 before:-z-10">
+              <div className="absolute bottom-0 left-0 right-0 card-premium rounded-t-2xl p-6 space-y-6 max-h-[70vh] overflow-y-auto animate-slide-in-right">
                 <div className="flex items-start justify-between mb-4">
                   <h3 className="font-serif text-lg font-medium text-navy-900">Details</h3>
                   <button
@@ -325,7 +228,6 @@ export default function MaterialBrowser() {
           )}
         </div>
       </div>
-    </>
   )
 }
 

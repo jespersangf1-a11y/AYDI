@@ -16,88 +16,6 @@ interface SectionProps {
   children: React.ReactNode
 }
 
-// Animations for sections and inputs
-const sectionAnimationStyles = `
-  @keyframes sectionExpand {
-    from {
-      opacity: 0;
-      max-height: 0;
-      overflow: hidden;
-    }
-    to {
-      opacity: 1;
-      max-height: 1000px;
-      overflow: visible;
-    }
-  }
-
-  @keyframes sectionCollapse {
-    from {
-      opacity: 1;
-      max-height: 1000px;
-      overflow: hidden;
-    }
-    to {
-      opacity: 0;
-      max-height: 0;
-      overflow: hidden;
-    }
-  }
-
-  @keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-8px); }
-    75% { transform: translateX(8px); }
-  }
-
-  @keyframes focusGlow {
-    0% { box-shadow: 0 0 0 0 rgba(0, 176, 240, 0.3); }
-    50% { box-shadow: 0 0 0 8px rgba(0, 176, 240, 0); }
-  }
-
-  @keyframes errorSlideIn {
-    from {
-      opacity: 0;
-      transform: translateY(-8px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  .section-content-open {
-    animation: sectionExpand 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-  }
-
-  .section-content-close {
-    animation: sectionCollapse 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-  }
-
-  .animate-shake {
-    animation: shake 0.5s cubic-bezier(0.36, 0, 0.66, -0.56);
-  }
-
-  .input-focus-glow:focus {
-    animation: focusGlow 0.3s ease-out;
-  }
-
-  .error-message-slide {
-    animation: errorSlideIn 0.3s ease-out;
-  }
-
-  .stepper-button {
-    transition: all 0.2s ease;
-  }
-
-  .stepper-button:hover {
-    background-color: rgba(0, 176, 240, 0.2);
-  }
-
-  .stepper-button:active {
-    transform: scale(0.95);
-  }
-`
 
 function Section({ title, hint, defaultOpen = false, children }: SectionProps) {
   const [open, setOpen] = useState(defaultOpen)
@@ -128,7 +46,7 @@ function Section({ title, hint, defaultOpen = false, children }: SectionProps) {
         </div>
       </button>
       {open && (
-        <div className="section-content-open px-6 pb-6 grid gap-4 sm:grid-cols-2 border-t border-sand-100">
+        <div className="animate-section-expand px-6 pb-6 grid gap-4 sm:grid-cols-2 border-t border-sand-100">
           {children}
         </div>
       )}
@@ -198,7 +116,7 @@ function Field({ label, name, type = 'number', unit, placeholder, value, onChang
             <button
               type="button"
               onClick={handleDecrement}
-              className="stepper-button p-1 rounded text-ocean-600 hover:text-ocean-700 pointer-events-auto"
+              className="p-1 rounded text-ocean-600 hover:text-ocean-700 hover:bg-[rgba(45,139,168,0.2)] active:scale-95 transition-all duration-200 pointer-events-auto"
               aria-label={`${label} verringern`}
             >
               <Minus className="w-3.5 h-3.5" />
@@ -206,7 +124,7 @@ function Field({ label, name, type = 'number', unit, placeholder, value, onChang
             <button
               type="button"
               onClick={handleIncrement}
-              className="stepper-button p-1 rounded text-ocean-600 hover:text-ocean-700 pointer-events-auto"
+              className="p-1 rounded text-ocean-600 hover:text-ocean-700 hover:bg-[rgba(45,139,168,0.2)] active:scale-95 transition-all duration-200 pointer-events-auto"
               aria-label={`${label} erhöhen`}
             >
               <Plus className="w-3.5 h-3.5" />
@@ -215,7 +133,7 @@ function Field({ label, name, type = 'number', unit, placeholder, value, onChang
         )}
       </div>
       {error && (
-        <p className="text-red-600 text-xs mt-1.5 error-message-slide" role="alert">
+        <p className="text-red-600 text-xs mt-1.5 animate-slide-down" role="alert">
           {error}
         </p>
       )}
@@ -343,8 +261,6 @@ export default function SpecForm({ boatClass, loading, onSubmit, onBack }: SpecF
   const isSailboat = boatClass === 'small_sail' || boatClass === 'cruising_sail'
 
   return (
-    <>
-      <style>{sectionAnimationStyles}</style>
       <form onSubmit={handleSubmit} className="space-y-5 group" noValidate>
         {/* Abmessungen — always open, length required */}
         <Section title="Abmessungen" defaultOpen hint="Erforderlich">
@@ -641,6 +557,5 @@ export default function SpecForm({ boatClass, loading, onSubmit, onBack }: SpecF
           </button>
         </div>
       </form>
-    </>
   )
 }
