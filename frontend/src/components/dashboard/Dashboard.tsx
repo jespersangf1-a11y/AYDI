@@ -17,61 +17,6 @@ const STATUS_COLORS: Record<string, string> = {
   archived: 'bg-gray-100 text-gray-700 border border-gray-300',
 }
 
-// Animations for dashboard
-const dashboardAnimationStyles = `
-  @keyframes projectCardSlideIn {
-    from {
-      opacity: 0;
-      transform: translateY(24px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  @keyframes emptyStateFloat {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-8px); }
-  }
-
-  @keyframes statusPulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.7; }
-  }
-
-  @keyframes iconBounce {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-  }
-
-  .animate-project-in {
-    animation: projectCardSlideIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-
-  .animate-empty-float {
-    animation: emptyStateFloat 3s ease-in-out infinite;
-  }
-
-  .animate-status-pulse {
-    animation: statusPulse 2s ease-in-out infinite;
-  }
-
-  .animate-icon-bounce {
-    animation: iconBounce 2s ease-in-out infinite;
-  }
-
-  .card-hover-lift {
-    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-
-  .card-hover-lift:hover {
-    transform: translateY(-12px);
-    box-shadow: 0 32px 64px rgba(0, 176, 240, 0.2);
-    border-color: rgba(0, 176, 240, 0.4);
-  }
-`
-
 export default function Dashboard({ onSelectProject }: DashboardProps) {
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
@@ -105,7 +50,6 @@ export default function Dashboard({ onSelectProject }: DashboardProps) {
 
   return (
     <>
-      <style>{dashboardAnimationStyles}</style>
       <div>
         <HeroSection
           backgroundVideo={MEDIA.video.sailing_aerial}
@@ -117,7 +61,7 @@ export default function Dashboard({ onSelectProject }: DashboardProps) {
         <div className="px-6 md:px-10 py-12">
           {projects.length === 0 ? (
             <div className="text-center py-16">
-              <div className="animate-empty-float mb-4">
+              <div className="mb-4">
                 <FolderOpen className="w-16 h-16 mx-auto text-navy-600" />
               </div>
               <p className="text-navy-700 text-lg font-serif">Noch keine Projekte vorhanden</p>
@@ -129,16 +73,14 @@ export default function Dashboard({ onSelectProject }: DashboardProps) {
                 <button
                   key={project.id}
                   onClick={() => onSelectProject(project.id)}
-                  className="card-hover-lift card-premium group text-left px-8 py-6 animate-project-in"
+                  className="card-premium group text-left px-8 py-6 animate-fade-in-up"
                   style={{ animationDelay: `${idx * 100}ms` }}
                   aria-label={`Projekt ${project.name}, Status: ${STATUS_LABELS[project.status]}`}
                 >
                   <div className="flex items-start justify-between mb-4">
-                    <Ship className="w-6 h-6 text-ocean-600 transition-colors duration-300 group-hover:text-ocean-700 group-hover:animate-icon-bounce" />
+                    <Ship className="w-6 h-6 text-ocean-600 transition-colors duration-300 group-hover:text-ocean-700" />
                     <span
-                      className={`text-xs px-3 py-1.5 rounded-md font-semibold uppercase tracking-wider-premium transition-all duration-300 ${
-                        project.status === 'active' ? 'animate-status-pulse' : ''
-                      } ${STATUS_COLORS[project.status] || ''}`}
+                      className={`text-xs px-3 py-1.5 rounded-md font-semibold uppercase tracking-wider-premium transition-all duration-300 ${STATUS_COLORS[project.status] || ''}`}
                     >
                       {STATUS_LABELS[project.status]}
                     </span>

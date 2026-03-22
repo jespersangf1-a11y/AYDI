@@ -10,72 +10,6 @@ interface QuickResultsProps {
   onNewAnalysis: () => void
 }
 
-// Animations for results
-const resultsAnimationStyles = `
-  @keyframes fadeInUp {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  @keyframes countUp {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-
-  @keyframes moduleSlideIn {
-    from {
-      opacity: 0;
-      transform: translateY(16px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  @keyframes moduleHoverLift {
-    0% { transform: translateY(0); }
-    100% { transform: translateY(-8px); }
-  }
-
-  @keyframes skeletonPulse {
-    0%, 100% { opacity: 0.6; }
-    50% { opacity: 1; }
-  }
-
-  .animate-fade-in-up {
-    animation: fadeInUp 0.6s ease-out;
-  }
-
-  .animate-module-in {
-    animation: moduleSlideIn 0.5s ease-out;
-  }
-
-  .module-card-hover {
-    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-
-  .module-card-hover:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 24px 48px rgba(0, 176, 240, 0.2);
-    border-color: rgba(0, 176, 240, 0.4);
-  }
-
-  .skeleton-loading {
-    animation: skeletonPulse 2s ease-in-out infinite;
-  }
-`
-
 const CONFIDENCE_LABELS: Record<string, string> = {
   measured: 'Gemessen',
   calculated: 'Berechnet',
@@ -118,7 +52,7 @@ function ModuleCard({ name, result, index = 0 }: { name: string; result: QuickMo
   if (!result.available) {
     return (
       <div
-        className="bg-sand-50 border border-sand-200 rounded-xl p-5 opacity-70 shadow-sm animate-module-in"
+        className="bg-sand-50 border border-sand-200 rounded-xl p-5 opacity-70 shadow-sm animate-fade-in-up"
         style={{ animationDelay: `${index * 80}ms` }}
       >
         <div className="flex items-start justify-between mb-2">
@@ -134,7 +68,7 @@ function ModuleCard({ name, result, index = 0 }: { name: string; result: QuickMo
 
   return (
     <div
-      className="module-card-hover bg-white border border-sand-200 rounded-xl p-5 shadow-sm animate-module-in"
+      className="card-premium bg-white border border-sand-200 rounded-xl p-5 shadow-sm animate-fade-in-up"
       style={{ animationDelay: `${index * 80}ms` }}
     >
       <div className="flex items-start justify-between mb-4">
@@ -161,7 +95,7 @@ function ModuleCard({ name, result, index = 0 }: { name: string; result: QuickMo
             }`}
             style={{
               width: `${result.score}%`,
-              animation: `countUp 1.2s ease-out ${index * 80}ms both`,
+              animation: `count-up 1.2s ease-out ${index * 80}ms both`,
             }}
           />
         </div>
@@ -233,7 +167,6 @@ export default function QuickResults({ result, onNewAnalysis }: QuickResultsProp
 
   return (
     <>
-      <style>{resultsAnimationStyles}</style>
       <div className="space-y-8">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 animate-fade-in-up">

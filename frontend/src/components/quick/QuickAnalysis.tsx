@@ -16,90 +16,6 @@ const BOAT_CLASS_DESCRIPTIONS: Record<string, string> = {
   superyacht: '30 m+  ·  Architektonisches Design, volle Privatheit',
 }
 
-// Animations for premium UX
-const stepAnimationStyles = `
-  @keyframes slideInRight {
-    from {
-      opacity: 0;
-      transform: translateX(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
-
-  @keyframes slideInLeft {
-    from {
-      opacity: 0;
-      transform: translateX(-20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
-
-  @keyframes stepPulse {
-    0% {
-      box-shadow: 0 0 0 0 rgba(0, 176, 240, 0.4);
-    }
-    70% {
-      box-shadow: 0 0 0 8px rgba(0, 176, 240, 0);
-    }
-    100% {
-      box-shadow: 0 0 0 0 rgba(0, 176, 240, 0);
-    }
-  }
-
-  @keyframes cardStaggered {
-    from {
-      opacity: 0;
-      transform: translateY(16px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  @keyframes checkmarkScale {
-    0% { transform: scale(0.5); }
-    50% { transform: scale(1.2); }
-    100% { transform: scale(1); }
-  }
-
-  .animate-step-pulse {
-    animation: stepPulse 2s infinite;
-  }
-
-  .animate-slide-right {
-    animation: slideInRight 0.5s ease-out;
-  }
-
-  .animate-slide-left {
-    animation: slideInLeft 0.5s ease-out;
-  }
-
-  .animate-card-staggered {
-    animation: cardStaggered 0.5s ease-out;
-  }
-
-  .animate-checkmark {
-    animation: checkmarkScale 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-  }
-
-  .card-hover-lift {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  .card-hover-lift:hover {
-    transform: translateY(-6px);
-    box-shadow: 0 24px 48px rgba(0, 176, 240, 0.15);
-    border-color: rgba(0, 176, 240, 0.4);
-  }
-`
-
 export default function QuickAnalysis() {
   const [step, setStep] = useState<Step>('select-class')
   const [prevStep, setPrevStep] = useState<Step>('select-class')
@@ -177,8 +93,6 @@ export default function QuickAnalysis() {
 
   return (
     <div>
-      <style>{stepAnimationStyles}</style>
-
       {/* Hero header — Carousel on start, static on other steps */}
       {step === 'select-class' ? (
         <HeroCarousel
@@ -242,14 +156,14 @@ export default function QuickAnalysis() {
                 <div
                   className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-mono font-semibold transition-all duration-500 ${
                     isActive
-                      ? 'bg-ocean-500 text-navy-900 ring-2 ring-ocean-300/50 animate-step-pulse'
+                      ? 'bg-ocean-500 text-navy-900 ring-2 ring-ocean-300/50 animate-pulse-glow'
                       : isDone
                       ? 'bg-emerald-500 text-navy-900 ring-1 ring-emerald-300/30'
                       : 'bg-sand-200 text-navy-600'
                   }`}
                 >
                   {isDone ? (
-                    <span className="animate-checkmark">✓</span>
+                    <span className="animate-fade-in-scale">✓</span>
                   ) : (
                     idx + 1
                   )}
@@ -275,15 +189,12 @@ export default function QuickAnalysis() {
 
         {/* Step: Select boat class */}
         {step === 'select-class' && (
-          <div className={`grid gap-4 sm:grid-cols-2 ${isMovingForward ? 'animate-slide-right' : 'animate-slide-left'}`}>
+          <div className={`grid gap-4 sm:grid-cols-2 ${isMovingForward ? 'animate-slide-in-right' : 'animate-slide-in-left'}`}>
             {(Object.keys(BOAT_CLASS_LABELS) as BoatClass[]).map((bc, idx) => (
               <button
                 key={bc}
                 onClick={() => handleSelectClass(bc)}
-                className="card-hover-lift text-left card-premium p-6 group overflow-hidden"
-                style={{
-                  animation: `cardStaggered 0.5s ease-out ${idx * 100}ms both`,
-                }}
+                className={`text-left card-premium p-6 group overflow-hidden animate-fade-in-up stagger-${idx + 1}`}
                 aria-label={`${BOAT_CLASS_LABELS[bc]}: ${BOAT_CLASS_DESCRIPTIONS[bc] || ''}`}
               >
                 <h3 className="font-serif text-lg font-medium text-navy-900 mb-1.5 group-hover:text-ocean-600 transition-colors duration-200">
@@ -299,10 +210,10 @@ export default function QuickAnalysis() {
 
         {/* Step: Enter specs */}
         {step === 'enter-specs' && selectedClass && (
-          <div className={isMovingForward ? 'animate-slide-right' : 'animate-slide-left'}>
+          <div className={isMovingForward ? 'animate-slide-in-right' : 'animate-slide-in-left'}>
             {error && (
               <div
-                className="bg-red-950/40 border-l-4 border-red-500 rounded-r-lg px-5 py-3 text-red-300 text-sm mb-8 animate-slide-right"
+                className="bg-red-950/40 border-l-4 border-red-500 rounded-r-lg px-5 py-3 text-red-300 text-sm mb-8 animate-slide-in-right"
                 role="alert"
               >
                 {error}
@@ -319,7 +230,7 @@ export default function QuickAnalysis() {
 
         {/* Step: Results */}
         {step === 'results' && result && (
-          <div className={isMovingForward ? 'animate-slide-right' : 'animate-slide-left'}>
+          <div className={isMovingForward ? 'animate-slide-in-right' : 'animate-slide-in-left'}>
             <QuickResults result={result} onNewAnalysis={handleNewAnalysis} />
           </div>
         )}
