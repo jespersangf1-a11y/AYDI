@@ -57,6 +57,8 @@ export default {
         'hero': ['3.5rem', { lineHeight: '1.1', letterSpacing: '-0.02em' }],
         'display': ['2.5rem', { lineHeight: '1.15', letterSpacing: '-0.015em' }],
         'title': ['1.75rem', { lineHeight: '1.25', letterSpacing: '-0.01em' }],
+        'subtitle': ['1.25rem', { lineHeight: '1.35', letterSpacing: '-0.005em' }],
+        'body-lg': ['1.0625rem', { lineHeight: '1.6' }],
       },
       backgroundImage: {
         'gradient-premium': 'linear-gradient(135deg, #faf8f5 0%, #f0ece4 50%, #faf8f5 100%)',
@@ -73,6 +75,13 @@ export default {
         'pulse-glow': 'pulse-glow 2s ease-in-out infinite',
         'draw-circle': 'draw-circle 1s ease-out both',
         'fill-bar': 'fill-bar 0.8s ease-out both',
+        'slide-down': 'slide-down 0.3s ease-out both',
+        'shake': 'shake 0.4s ease-out',
+        'section-expand': 'section-expand 0.3s ease-out both',
+        'section-collapse': 'section-collapse 0.2s ease-out both',
+        'slide-out-right': 'slide-out-right 0.3s cubic-bezier(0.4, 0, 0.2, 1) both',
+        'backdrop-fade': 'backdrop-fade 0.3s ease-out both',
+        'count-up': 'count-up 0.6s ease-out both',
       },
       keyframes: {
         fadeIn: {
@@ -99,8 +108,35 @@ export default {
           'from': { opacity: '0', transform: 'translateX(-24px)' },
           'to': { opacity: '1', transform: 'translateX(0)' },
         },
+        'slide-down': {
+          'from': { opacity: '0', transform: 'translateY(-8px)' },
+          'to': { opacity: '1', transform: 'translateY(0)' },
+        },
+        'shake': {
+          '0%, 100%': { transform: 'translateX(0)' },
+          '25%': { transform: 'translateX(-4px)' },
+          '50%': { transform: 'translateX(4px)' },
+          '75%': { transform: 'translateX(-2px)' },
+        },
+        'section-expand': {
+          'from': { 'grid-template-rows': '0fr', opacity: '0' },
+          'to': { 'grid-template-rows': '1fr', opacity: '1' },
+        },
+        'section-collapse': {
+          'from': { 'grid-template-rows': '1fr', opacity: '1' },
+          'to': { 'grid-template-rows': '0fr', opacity: '0' },
+        },
+        'slide-out-right': {
+          'from': { opacity: '1', transform: 'translateX(0)' },
+          'to': { opacity: '0', transform: 'translateX(100%)' },
+        },
+        'backdrop-fade': {
+          'from': { opacity: '0' },
+          'to': { opacity: '1' },
+        },
         'count-up': {
-          'from': { '--num': '0' },
+          'from': { opacity: '0' },
+          'to': { opacity: '1' },
         },
         'shimmer': {
           '0%': { 'background-position': '-200% 0' },
@@ -125,11 +161,25 @@ export default {
       backdropBlur: {
         'xs': '2px',
       },
+      spacing: {
+        'section': '4rem',
+        'section-lg': '6rem',
+      },
+      borderRadius: {
+        'card': '14px',
+        'button': '10px',
+        'badge': '8px',
+      },
+      transitionTimingFunction: {
+        'premium': 'cubic-bezier(0.4, 0, 0.2, 1)',
+        'bounce': 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+      },
       boxShadow: {
         'glow-ocean': '0 0 20px 0 rgba(45, 139, 168, 0.1)',
         'glow-ocean-lg': '0 0 40px 0 rgba(45, 139, 168, 0.12)',
         'inner-ocean': 'inset 0 1px 2px rgba(45, 139, 168, 0.08)',
         'card-hover': '0 8px 24px rgba(45, 139, 168, 0.12), 0 0 0 1px rgba(212, 218, 230, 0.6)',
+        'card-rest': '0 1px 3px rgba(11, 18, 32, 0.04), 0 1px 2px rgba(11, 18, 32, 0.06)',
       },
     },
   },
