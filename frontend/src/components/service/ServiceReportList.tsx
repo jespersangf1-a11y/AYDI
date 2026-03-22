@@ -61,29 +61,29 @@ const SEVERITY_CONFIG: Record<
   critical: {
     label: 'Kritisch',
     borderColor: 'border-l-red-500',
-    bgColor: 'bg-red-950/10',
-    text: 'text-red-300',
+    bgColor: 'bg-red-50',
+    text: 'text-red-700',
     icon: AlertCircle,
   },
   high: {
     label: 'Hoch',
     borderColor: 'border-l-orange-500',
-    bgColor: 'bg-orange-950/10',
-    text: 'text-orange-300',
+    bgColor: 'bg-orange-50',
+    text: 'text-orange-700',
     icon: AlertTriangle,
   },
   medium: {
     label: 'Mittel',
     borderColor: 'border-l-amber-500',
-    bgColor: 'bg-amber-950/10',
-    text: 'text-amber-300',
+    bgColor: 'bg-amber-50',
+    text: 'text-amber-700',
     icon: AlertTriangle,
   },
   low: {
     label: 'Niedrig',
-    borderColor: 'border-l-navy-600',
+    borderColor: 'border-l-navy-300',
     bgColor: 'bg-transparent',
-    text: 'text-navy-700',
+    text: 'text-navy-600',
     icon: Info,
   },
 }
@@ -111,7 +111,7 @@ function SeverityBadge({ severity }: { severity: Severity }) {
 
 function ResolvedBadge() {
   return (
-    <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-md border border-emerald-500/30 text-emerald-300">
+    <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-md border border-emerald-500/30 text-emerald-700 bg-emerald-50">
       <CheckCircle className="w-3 h-3" />
       Behoben
     </span>
@@ -161,7 +161,7 @@ export default function ServiceReportList() {
       <HeroSection
         backgroundImage={MEDIA.structure.hull_drydock}
         title="Serviceberichte"
-        subtitle="Berichte ber Wartung, Garantie, Umbau und erkannte Probleme mit Schweregradkennzeichnung"
+        subtitle="Berichte über Wartung, Garantie, Umbau und erkannte Probleme mit Schweregradkennzeichnung"
         label="Service"
       />
 
@@ -187,7 +187,7 @@ export default function ServiceReportList() {
             </div>
 
             <div className="w-full sm:w-auto">
-              <p className="label-premium mb-2">SCHWEREGARD</p>
+              <p className="label-premium mb-2">SCHWEREGRAD</p>
               <select
                 value={severityFilter}
                 onChange={(e) => handleSeverityChange(e.target.value)}
@@ -211,7 +211,7 @@ export default function ServiceReportList() {
         )}
 
         {error && (
-          <div className="card-premium bg-red-950/20 border-red-700/20 p-6 text-red-300 text-sm">
+          <div className="card-premium bg-red-50 border-red-200 p-6 text-red-700 text-sm">
             Fehler: {error}
           </div>
         )}
@@ -232,7 +232,7 @@ export default function ServiceReportList() {
                   key={report.id}
                   onClick={() => setExpandedReportId(isExpanded ? null : report.id)}
                   style={{ animation: `fadeInUp 0.6s ease-out ${idx * 60}ms forwards`, opacity: 0 }}
-                  className={`w-full text-left border-l-4 ${cfg.borderColor} border-r border-b border-navy-700/30 ${cfg.bgColor} rounded-lg p-6 transition-all duration-300 hover:shadow-lg hover:shadow-black/20 group`}
+                  className={`w-full text-left border-l-4 ${cfg.borderColor} border border-sand-200 ${cfg.bgColor} rounded-lg p-6 transition-all duration-300 hover:shadow-lg hover:shadow-sand-200/50 group`}
                   aria-expanded={isExpanded}
                   aria-label={`${report.description} - ${cfg.label}`}
                 >
@@ -256,7 +256,7 @@ export default function ServiceReportList() {
                   </div>
 
                   {/* Metadata Grid - Stacked on mobile */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-navy-600 pt-3 border-t border-navy-700/20">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-navy-600 pt-3 border-t border-sand-200">
                     <div>
                       <span className="label-premium mr-1">TYP</span>
                       <span className="text-navy-700">
@@ -286,7 +286,7 @@ export default function ServiceReportList() {
                     {report.cost_eur != null && (
                       <div>
                         <span className="label-premium mr-1">KOSTEN</span>
-                        <span className="font-mono text-amber-300">
+                        <span className="font-mono text-amber-700">
                           {report.cost_eur.toLocaleString('de-DE', {
                             style: 'currency',
                             currency: 'EUR',
@@ -306,7 +306,7 @@ export default function ServiceReportList() {
 
                   {/* Expandable Root Cause */}
                   {report.root_cause && isExpanded && (
-                    <div className="mt-4 pt-4 border-t border-navy-700/20 animate-slide-down">
+                    <div className="mt-4 pt-4 border-t border-sand-200 animate-slide-down">
                       <div className="flex items-start gap-2">
                         <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
                         <div className="flex-1">

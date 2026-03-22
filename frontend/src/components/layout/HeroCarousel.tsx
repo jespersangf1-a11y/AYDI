@@ -113,6 +113,11 @@ export default function HeroCarousel({
             opacity: isVisible ? 1 : 0,
             transition: `opacity ${fadeDuration}ms ease-in-out`,
           }}
+          onError={(e) => {
+            // Video not available — hide it and advance to next slide
+            (e.currentTarget as HTMLVideoElement).style.display = 'none'
+            advanceSlide()
+          }}
         >
           <source src={slide.src} type="video/mp4" />
         </video>

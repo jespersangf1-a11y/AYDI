@@ -793,9 +793,9 @@ def get_knowledge_for_structural_analysis(
 
 
 def get_knowledge_for_compliance(
-    propulsion: str = "sail",
-    length_m: float = 12.0,
-    operating_waters: str = "coastal",
+    propulsion: Optional[str] = "sail",
+    length_m: Optional[float] = 12.0,
+    operating_waters: Optional[str] = "coastal",
 ) -> Dict[str, Any]:
     """
     Returns compliance-relevant knowledge: ISO standards, CE categories, safety requirements.
@@ -819,6 +819,11 @@ def get_knowledge_for_compliance(
         "gas_requirements": {},
         "electrical_standards": [],
     }
+
+    # Normalize None values to defaults
+    length_m = length_m or 12.0
+    propulsion = propulsion or "sail"
+    operating_waters = operating_waters or "coastal"
 
     # Determine CE category based on length and operating waters
     ce_category = "C"  # default
@@ -859,6 +864,8 @@ def get_knowledge_for_compliance(
         "IEC 60092-504 — Schiffs-Elektrik",
         "12V DC oder 230V AC mit Isolationsüberwachung",
     ]
+
+    knowledge["notes"] = f"Compliance-Daten für CE-Kategorie {ce_category}, {propulsion}-Antrieb, {operating_waters}-Gewässer"
 
     return knowledge
 

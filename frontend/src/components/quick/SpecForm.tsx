@@ -257,10 +257,12 @@ export default function SpecForm({ boatClass, loading, onSubmit, onBack }: SpecF
   const validateFields = () => {
     const newErrors: Record<string, string> = {}
 
-    // Validate length_m
-    if (fields.length_m) {
+    // Validate length_m (required)
+    if (!fields.length_m || fields.length_m.trim() === '') {
+      newErrors.length_m = 'Länge ist erforderlich'
+    } else {
       const len = parseFloat(fields.length_m)
-      if (len < 2 || len > 100) {
+      if (isNaN(len) || len < 2 || len > 100) {
         newErrors.length_m = 'Länge muss zwischen 2 und 100 m liegen'
       }
     }
