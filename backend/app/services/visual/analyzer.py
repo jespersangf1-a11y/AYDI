@@ -91,6 +91,7 @@ class VisualAnalyzer:
         zone_type: str | None = None,
         analysis_depth: str = "standard",
         context: dict | None = None,
+        boat_dna: object | None = None,
     ) -> dict:
         """Analyze a single yacht image.
 
@@ -101,6 +102,7 @@ class VisualAnalyzer:
             zone_type: Optional zone type for focused analysis.
             analysis_depth: 'standard' or 'detailed' (uses stronger model).
             context: Optional extra context (length_m, beam_m, etc.).
+            boat_dna: Optional BoatDNA object for expert knowledge injection.
 
         Returns:
             Structured analysis result dict with score, findings,
@@ -127,9 +129,18 @@ class VisualAnalyzer:
             logger.error("Unsupported image format: %s", e)
             return self._error_result(image_path, image_type, str(e))
 
+        # Build visual context if boat_dna provided
+        visual_context = None
+        if boat_dna is not None:
+            try:
+                from app.services.visual.prompt_context import build_visual_context
+                visual_context = build_visual_context(boat_dna)
+            except Exception:
+                logger.warning("Failed to build visual context from boat_dna", exc_info=True)
+
         # Get prompt
         from app.services.visual.prompts import get_prompt
-        prompt = get_prompt(image_type, boat_class, zone_type, context)
+        prompt = get_prompt(image_type, boat_class, zone_type, context, visual_context)
 
         # Select model
         model = self.MODEL_DETAILED if analysis_depth == "detailed" else self.MODEL
@@ -223,6 +234,7 @@ class VisualAnalyzer:
         boat_class: str,
         zone_type: str | None = None,
         analysis_depth: str = "standard",
+        boat_dna: object | None = None,
     ) -> dict:
         """Analyze multiple images and fuse results.
 
@@ -231,6 +243,7 @@ class VisualAnalyzer:
             boat_class: Yacht class for calibrated evaluation.
             zone_type: Optional zone type for focused analysis.
             analysis_depth: 'standard' or 'detailed'.
+            boat_dna: Optional BoatDNA object for expert knowledge injection.
 
         Returns:
             Fused result dict with weighted scores, deduplicated findings,
@@ -244,6 +257,7 @@ class VisualAnalyzer:
                 boat_class=boat_class,
                 zone_type=img.get("zone_name") or zone_type,
                 analysis_depth=analysis_depth,
+                boat_dna=boat_dna,
             )
             individual_results.append(result)
 

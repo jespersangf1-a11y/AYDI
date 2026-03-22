@@ -10,6 +10,23 @@ import math
 
 logger = logging.getLogger(__name__)
 
+# Try to import knowledge databases for enriched structural analysis
+try:
+    from app.services.knowledge.hull_construction_deep import (
+        CONSTRUCTION_METHODS_DATABASE,
+        HULL_DECK_JOINT_DATABASE,
+    )
+except ImportError:
+    CONSTRUCTION_METHODS_DATABASE = {}
+    HULL_DECK_JOINT_DATABASE = {}
+
+try:
+    from app.services.knowledge.keel_rudder_underwater_deep import (
+        KEEL_DATABASE,
+    )
+except ImportError:
+    KEEL_DATABASE = {}
+
 BOAT_CLASS_DEFAULTS = {
     "small_sail": {
         "ideal_cog_x_range": (0.42, 0.52),
@@ -569,6 +586,31 @@ def analyze_heavy_zone_placement(
             penalty = (hz["weight_kg"] / total_heavy_weight) * 50.0
             score -= penalty
     score = max(0.0, score)
+
+    # Enrich with keel knowledge for structural considerations
+    if KEEL_DATABASE and total_heavy_weight > 500:  # Only for larger boats
+        try:
+            keel_types = KEEL_DATABASE.get("keel_types", {})
+            long_keel = keel_types.get("long_keel", {})
+            if long_keel:
+                fd = long_keel.get("force_distribution_de", {})
+                max_stress = fd.get("max_stress_location_de")
+                if max_stress and central_ratio < 0.6:
+                    warnings.append({
+                        "code": "KEEL_BOLT_STRESS_RISK",
+                        "severity": "warning",
+                        "message": (
+                            f"Mit {central_ratio:.0%} der Schwere außerhalb der zentralen Zone "
+                            f"besteht erhöhtes Risiko für Kielbolt-Versagen "
+                            f"(max. Spannungskonzentration am Übergang Kielgrat zu Rumpf)."
+                        ),
+                        "suggestion": (
+                            f"Schwerverteilung prüfen; schwere Zonen nach innen verlagern um "
+                            f"Biegemomente auf Kielbolzen zu minimieren."
+                        ),
+                    })
+        except (KeyError, TypeError, AttributeError):
+            pass
 
     return score, warnings, {
         "heavy_zones": heavy_info,

@@ -12,6 +12,7 @@ def get_spatial_analysis_prompt(
     boat_class: str,
     zone_type: str | None = None,
     context: dict | None = None,
+    visual_context: str | None = None,
 ) -> str:
     """Generate the spatial analysis prompt for Claude vision API.
 
@@ -19,6 +20,7 @@ def get_spatial_analysis_prompt(
         boat_class: One of small_sail, cruising_sail, large_motor, superyacht.
         zone_type: Optional zone type (e.g. 'salon', 'cabin') for focused analysis.
         context: Optional additional context dict.
+        visual_context: Optional boat-specific context from BoatDNA (includes expert knowledge).
 
     Returns:
         German-language prompt string requesting JSON output.
@@ -46,7 +48,11 @@ def get_spatial_analysis_prompt(
         if "beam_m" in context:
             extra_context += f"\nBootsbreite: {context['beam_m']}m."
 
-    return f"""Du bist ein erfahrener Yachtdesigner und Raumplaner mit ueber 20 Jahren Erfahrung im Yachtbau. Analysiere dieses Bild einer Yacht.
+    visual_context_section = ""
+    if visual_context:
+        visual_context_section = f"\n\n{visual_context}\n"
+
+    return f"""Du bist ein erfahrener Yachtdesigner und Raumplaner mit ueber 20 Jahren Erfahrung im Yachtbau. Analysiere dieses Bild einer Yacht.{visual_context_section}
 
 Bootsklasse: {class_desc}{extra_context}{zone_instruction}
 

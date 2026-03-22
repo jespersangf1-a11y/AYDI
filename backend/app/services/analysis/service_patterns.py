@@ -11,6 +11,27 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# Try to import knowledge databases for degradation and lifespan analysis
+try:
+    from app.services.knowledge.aging_lifecycle_manufacturers_deep import (
+        DEGRADATION_CYCLES_DATABASE,
+        MATERIAL_LIFESPAN_DATABASE,
+        MANUFACTURER_DATABASE_SAIL,
+        MANUFACTURER_DATABASE_MOTOR,
+    )
+except ImportError:
+    DEGRADATION_CYCLES_DATABASE = {}
+    MATERIAL_LIFESPAN_DATABASE = {}
+    MANUFACTURER_DATABASE_SAIL = {}
+    MANUFACTURER_DATABASE_MOTOR = {}
+
+try:
+    from app.services.knowledge.forensic_failure_analysis import (
+        CUMULATIVE_DEGRADATION_CYCLES,
+    )
+except ImportError:
+    CUMULATIVE_DEGRADATION_CYCLES = {}
+
 BOAT_CLASS_DEFAULTS = {
     "small_sail": {
         "min_reports_for_pattern": 3,
@@ -255,6 +276,9 @@ def analyze_age_patterns(
     report count across all buckets. Score is 100 for uniform distribution,
     penalized per spike bucket.
 
+    Enriched with DEGRADATION_CYCLES_DATABASE and MATERIAL_LIFESPAN_DATABASE
+    to identify self-reinforcing failure patterns.
+
     Returns (score 0-100, warnings, metrics).
     """
     warnings: list[dict] = []
@@ -292,9 +316,10 @@ def analyze_age_patterns(
     for label, count in bucket_counts.items():
         if count > 2 * avg:
             spike_buckets.append(label)
+            severity = "critical" if count > 3 * avg else "warning"
             warnings.append({
                 "code": "AGE_PATTERN_WARNING",
-                "severity": "warning",
+                "severity": severity,
                 "message": (
                     f"Überdurchschnittlich viele Serviceberichte im Altersfenster "
                     f"'{label}' ({count} Berichte, Ø {avg:.1f}). "
@@ -302,9 +327,31 @@ def analyze_age_patterns(
                 ),
                 "suggestion": (
                     f"Materialien und Komponenten, die typisch im Fenster '{label}' "
-                    f"versagen, auf Alternativen mit höherer Lebensdauer prüfen."
+                    f"versagen, auf Alternativen mit höherer Lebensdauer prüfen. "
+                    f"Wenn bekannt, selbstverstärkende Degradationszyklen überprüfen."
                 ),
             })
+
+            # Enrich with knowledge of self-reinforcing degradation cycles
+            if CUMULATIVE_DEGRADATION_CYCLES:
+                try:
+                    cycles = CUMULATIVE_DEGRADATION_CYCLES.get("common_cascades", [])
+                    if cycles:
+                        warnings.append({
+                            "code": "SELF_REINFORCING_DEGRADATION",
+                            "severity": "warning",
+                            "message": (
+                                f"Altersfenster '{label}' könnte selbstverstärkendem "
+                                f"Degradationszyklus unterliegen (z.B. Osmose → Delamination → "
+                                f"Wassereintritt → Kernfaulung)."
+                            ),
+                            "suggestion": (
+                                f"Inspektionsplan mit verstärktem Fokus auf frühe Indikatoren "
+                                f"für Materialabbau im Fenster '{label}' erstellen."
+                            ),
+                        })
+                except (KeyError, TypeError, AttributeError):
+                    pass
 
     if not spike_buckets:
         score = 100.0
@@ -333,6 +380,9 @@ def analyze_material_failures(
     Materials appearing in 3+ reports are flagged as failure risks.
     Score is 100 if no material is problematic.
 
+    Enriched with MATERIAL_LIFESPAN_DATABASE to provide real material
+    science data on expected failure modes.
+
     Returns (score 0-100, warnings, metrics).
     """
     warnings: list[dict] = []
@@ -353,13 +403,28 @@ def analyze_material_failures(
         if count >= min_reports:
             problematic_materials.append(mat)
             sev = "critical" if count >= min_reports * 2 else "warning"
+
+            # Enrich with knowledge from material lifespan database
+            known_failure_modes = []
+            if MATERIAL_LIFESPAN_DATABASE:
+                mat_lower = mat.lower()
+                for db_key, db_data in MATERIAL_LIFESPAN_DATABASE.items():
+                    if db_key.lower() in mat_lower or mat_lower in db_key.lower():
+                        modes = db_data.get("failure_modes", [])
+                        known_failure_modes = modes[:3]  # Top 3 failure modes
+                        break
+
+            msg = (
+                f"Material '{mat}' erscheint in {count} Serviceberichten "
+                f"(Mindestgrenze: {min_reports}). Erhöhtes Ausfallrisiko."
+            )
+            if known_failure_modes:
+                msg += f" Bekannte Ausfallmodi: {', '.join(str(m).replace('_', ' ') for m in known_failure_modes)}."
+
             warnings.append({
                 "code": "MATERIAL_FAILURE_RISK",
                 "severity": sev,
-                "message": (
-                    f"Material '{mat}' erscheint in {count} Serviceberichten "
-                    f"(Mindestgrenze: {min_reports}). Erhöhtes Ausfallrisiko."
-                ),
+                "message": msg,
                 "suggestion": (
                     f"Material '{mat}' in neuen Entwürfen durch bewährtere "
                     f"Alternative ersetzen oder Wartungsintervall verkürzen."

@@ -12,6 +12,7 @@ def get_helm_ergonomics_prompt(
     boat_class: str,
     zone_type: str | None = None,
     context: dict | None = None,
+    visual_context: str | None = None,
 ) -> str:
     """Generate the helm ergonomics prompt for Claude vision API.
 
@@ -19,13 +20,18 @@ def get_helm_ergonomics_prompt(
         boat_class: One of small_sail, cruising_sail, large_motor, superyacht.
         zone_type: Optional zone type for context.
         context: Optional additional context dict.
+        visual_context: Optional boat-specific context from BoatDNA (includes expert knowledge).
 
     Returns:
         German-language prompt string requesting JSON output.
     """
     class_desc = BOAT_CLASS_CONTEXT.get(boat_class, BOAT_CLASS_CONTEXT["cruising_sail"])
 
-    return f"""Du bist ein erfahrener Yachtkapitaen und Steuerstand-Ergonomie-Experte. Du hast hunderte Steuerstdaende verschiedener Yachten bewertet und weisst, was einen guten Arbeitsplatz am Steuer ausmacht. Analysiere dieses Bild.
+    visual_context_section = ""
+    if visual_context:
+        visual_context_section = f"\n\n{visual_context}\n"
+
+    return f"""Du bist ein erfahrener Yachtkapitaen und Steuerstand-Ergonomie-Experte. Du hast hunderte Steuerstdaende verschiedener Yachten bewertet und weisst, was einen guten Arbeitsplatz am Steuer ausmacht. Analysiere dieses Bild.{visual_context_section}
 
 Bootsklasse: {class_desc}
 

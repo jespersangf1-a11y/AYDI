@@ -10,6 +10,27 @@ from collections import deque
 
 logger = logging.getLogger(__name__)
 
+# Try to import knowledge databases for electrical and safety compliance
+try:
+    from app.services.knowledge.electrical_systems_deep import (
+        CRITICAL_WARNINGS,
+    )
+except ImportError:
+    CRITICAL_WARNINGS = {}
+
+try:
+    from app.services.knowledge.sanitary_interior_safety_deep import (
+        STANDARDS_DATABASE,
+        FIRE_SAFETY_DATABASE,
+        STABILITY_DATABASE,
+        GAS_INSTALLATION_DATABASE,
+    )
+except ImportError:
+    STANDARDS_DATABASE = {}
+    FIRE_SAFETY_DATABASE = {}
+    STABILITY_DATABASE = {}
+    GAS_INSTALLATION_DATABASE = {}
+
 BOAT_CLASS_DEFAULTS = {
     "small_sail": {
         "min_escape_width_mm": 600,
@@ -754,6 +775,28 @@ def analyze_fire_safety(
     else:
         access_score = 100.0
 
+    # Enrich with fire safety knowledge from database
+    if FIRE_SAFETY_DATABASE:
+        try:
+            # Check for critical fire safety risks
+            critical_hazards = FIRE_SAFETY_DATABASE.get("critical_hazards", [])
+            for hazard in critical_hazards[:2]:  # Top 2 hazards
+                if isinstance(hazard, dict):
+                    warnings.append({
+                        "code": "FIRE_SAFETY_HAZARD",
+                        "severity": "warning",
+                        "message": (
+                            f"Brandschutz-Risiko: {hazard.get('hazard_name', '?')} — "
+                            f"{hazard.get('description', '?')}"
+                        ),
+                        "suggestion": (
+                            f"Brandschutzplan und Evakuierungsrouten überprüfen. "
+                            f"{hazard.get('mitigation', 'Brandschutzstandards beachten.')}"
+                        ),
+                    })
+        except (KeyError, TypeError, AttributeError):
+            pass
+
     combined_score = clearance_score * 0.5 + access_score * 0.5
 
     return combined_score, warnings, {
@@ -999,6 +1042,28 @@ def analyze_electrical_access(
         })
     else:
         access_score = 100.0
+
+    # Enrich with electrical critical warnings from knowledge database
+    if CRITICAL_WARNINGS:
+        try:
+            # Add warnings about typical marine electrical issues
+            general_warnings = CRITICAL_WARNINGS.get("general_critical_issues", [])
+            for crit_issue in general_warnings[:2]:  # Top 2 critical issues
+                if isinstance(crit_issue, dict):
+                    warnings.append({
+                        "code": "ELECTRICAL_CRITICAL_RISK",
+                        "severity": "warning",
+                        "message": (
+                            f"Marine-Elektroanlage: Kritisches Risiko — "
+                            f"{crit_issue.get('description', '?')}"
+                        ),
+                        "suggestion": (
+                            f"Elektroanlage gemäß ABYC E-11 und DIN 13297 überprüfen. "
+                            f"{crit_issue.get('mitigation', '?')}"
+                        ),
+                    })
+        except (KeyError, TypeError, AttributeError):
+            pass
 
     combined_score = area_score * 0.5 + access_score * 0.5
 

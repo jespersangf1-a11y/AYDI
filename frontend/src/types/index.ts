@@ -571,3 +571,90 @@ export interface ZoneFusedScore {
   visual_component: number | null
   discrepancy_note: string | null
 }
+
+// --- Knowledge Base ---
+export interface KnowledgeSubcategory {
+  id: string
+  name: string
+  description: string | null
+  icon?: string | null
+}
+
+export interface KnowledgeCategory {
+  id: string
+  name: string
+  description: string
+  icon?: string | null
+  subcategory_count: number
+  subcategories: KnowledgeSubcategory[]
+  implementation_status: 'complete' | 'partial' | 'planned'
+  documentation_ready: boolean
+}
+
+export interface MaterialProperty {
+  name: string
+  value: string | number
+  unit?: string | null
+  typical_range?: { min: number; max: number } | null
+  notes?: string | null
+}
+
+export interface ManufacturerIssue {
+  title: string
+  description: string
+  severity: 'info' | 'warning' | 'critical'
+  affected_models: string[]
+  resolution?: string | null
+  workaround?: string | null
+}
+
+export interface ManufacturerKnowledge {
+  id: string
+  name: string
+  specialty: string
+  yacht_types: string[]
+  known_strengths: string[]
+  known_weaknesses: string[]
+  common_issues: ManufacturerIssue[]
+  notable_materials: string[]
+  quality_certifications: string[]
+  cost_positioning: 'budget' | 'mid-range' | 'premium' | 'ultra-premium'
+}
+
+export interface DegradationData {
+  timepoint_years: number
+  condition_percentage: number
+  primary_failure_mode?: string | null
+  secondary_failures?: string[] | null
+  maintenance_required?: string | null
+}
+
+export interface DegradationTimeline {
+  material: string
+  environment: 'tropical' | 'temperate' | 'polar' | 'saltwater_exposed' | 'fresh_water'
+  datapoints: DegradationData[]
+  expected_lifespan_years: number
+  mitigation_strategies: string[]
+  maintenance_plan: string[]
+  replacement_triggers: string[]
+}
+
+export interface KnowledgeDetail {
+  id: string
+  category_id: string
+  category_name: string
+  subcategory_id?: string | null
+  subcategory_name?: string | null
+  title: string
+  description: string
+  content_html?: string | null
+  content_markdown?: string | null
+  material_properties?: MaterialProperty[] | null
+  related_issues?: ManufacturerIssue[] | null
+  degradation_data?: DegradationTimeline | null
+  implementation_notes?: string | null
+  cost_impact?: { low: number; high: number } | null
+  compliance_standards?: string[] | null
+  created_at: string
+  updated_at: string
+}

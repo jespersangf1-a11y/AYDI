@@ -10,6 +10,7 @@ import {
   ChevronRight,
   Menu,
   X,
+  BookOpen,
 } from 'lucide-react'
 
 interface AppShellProps {
@@ -27,6 +28,7 @@ export default function AppShell({ currentView, onNavigate, children, breadcrumb
     { id: 'dashboard', label: 'Projekte', icon: BarChart3 },
     { id: 'project-create', label: 'Neues Projekt', icon: Plus },
     { id: 'materials', label: 'Materialien', icon: Package },
+    { id: 'knowledge', label: 'Wissen', icon: BookOpen },
     { id: 'service-reports', label: 'Serviceberichte', icon: Wrench },
     { id: 'image-analysis', label: 'Bildanalyse', icon: Camera },
   ]

@@ -29,6 +29,7 @@ def get_prompt(
     boat_class: str,
     zone_type: str | None = None,
     context: dict | None = None,
+    visual_context: str | None = None,
 ) -> str:
     """Get the appropriate prompt for an image type and boat class.
 
@@ -37,9 +38,10 @@ def get_prompt(
         boat_class: Yacht class (e.g. 'cruising_sail').
         zone_type: Optional zone type for focused analysis.
         context: Optional additional context (length_m, beam_m, etc.).
+        visual_context: Optional boat-specific context from BoatDNA (includes expert knowledge).
 
     Returns:
         German-language prompt string requesting structured JSON output.
     """
     prompt_fn = PROMPT_REGISTRY.get(image_type, get_spatial_analysis_prompt)
-    return prompt_fn(boat_class, zone_type, context)
+    return prompt_fn(boat_class, zone_type, context, visual_context)

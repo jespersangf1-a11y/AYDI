@@ -12,6 +12,7 @@ def get_exterior_assessment_prompt(
     boat_class: str,
     zone_type: str | None = None,
     context: dict | None = None,
+    visual_context: str | None = None,
 ) -> str:
     """Generate the exterior assessment prompt for Claude vision API.
 
@@ -19,6 +20,7 @@ def get_exterior_assessment_prompt(
         boat_class: One of small_sail, cruising_sail, large_motor, superyacht.
         zone_type: Optional zone type for context.
         context: Optional additional context dict.
+        visual_context: Optional boat-specific context from BoatDNA (includes expert knowledge).
 
     Returns:
         German-language prompt string requesting JSON output.
@@ -30,7 +32,11 @@ def get_exterior_assessment_prompt(
         if "length_m" in context:
             extra += f"\nBootslaenge: {context['length_m']}m."
 
-    return f"""Du bist ein erfahrener Yachtdesigner mit besonderem Augenmerk auf Exterieur-Design und Proportionslehre. Du erkennst gute Linien, harmonische Verhaeltnisse und handwerkliche Qualitaet auf den ersten Blick. Analysiere dieses Bild.
+    visual_context_section = ""
+    if visual_context:
+        visual_context_section = f"\n\n{visual_context}\n"
+
+    return f"""Du bist ein erfahrener Yachtdesigner mit besonderem Augenmerk auf Exterieur-Design und Proportionslehre. Du erkennst gute Linien, harmonische Verhaeltnisse und handwerkliche Qualitaet auf den ersten Blick. Analysiere dieses Bild.{visual_context_section}
 
 Bootsklasse: {class_desc}{extra}
 

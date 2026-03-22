@@ -7,6 +7,7 @@ import QuickAnalysis from './components/quick/QuickAnalysis'
 import MaterialBrowser from './components/materials/MaterialBrowser'
 import ServiceReportList from './components/service/ServiceReportList'
 import ImageUpload from './components/images/ImageUpload'
+import KnowledgePage from './pages/KnowledgePage'
 
 type View =
   | 'quick-analysis'
@@ -16,6 +17,7 @@ type View =
   | 'materials'
   | 'service-reports'
   | 'image-analysis'
+  | 'knowledge'
 
 export default function App() {
   const [view, setView] = useState<View>('quick-analysis')
@@ -35,6 +37,7 @@ export default function App() {
       'materials',
       'service-reports',
       'image-analysis',
+      'knowledge',
     ]
     if (validViews.includes(target as View)) {
       setView(target as View)
@@ -59,6 +62,7 @@ export default function App() {
       {view === 'materials' && <MaterialBrowser />}
       {view === 'service-reports' && <ServiceReportList />}
       {view === 'image-analysis' && <ImageUpload boatClass="cruising_sail" />}
+      {view === 'knowledge' && <KnowledgePage />}
     </AppShell>
   )
 }

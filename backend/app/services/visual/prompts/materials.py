@@ -12,6 +12,7 @@ def get_material_assessment_prompt(
     boat_class: str,
     zone_type: str | None = None,
     context: dict | None = None,
+    visual_context: str | None = None,
 ) -> str:
     """Generate the material assessment prompt for Claude vision API.
 
@@ -19,6 +20,7 @@ def get_material_assessment_prompt(
         boat_class: One of small_sail, cruising_sail, large_motor, superyacht.
         zone_type: Optional zone type for context.
         context: Optional additional context dict.
+        visual_context: Optional boat-specific context from BoatDNA (includes expert knowledge).
 
     Returns:
         German-language prompt string requesting JSON output.
@@ -29,7 +31,11 @@ def get_material_assessment_prompt(
     if zone_type:
         zone_note = f"\nDieser Bereich ist: {zone_type}."
 
-    return f"""Du bist ein erfahrener Material-Experte im Yachtbau mit umfassendem Wissen ueber maritime Werkstoffe, deren Alterungsverhalten und Qualitaetsmerkmale. Analysiere dieses Bild.
+    visual_context_section = ""
+    if visual_context:
+        visual_context_section = f"\n\n{visual_context}\n"
+
+    return f"""Du bist ein erfahrener Material-Experte im Yachtbau mit umfassendem Wissen ueber maritime Werkstoffe, deren Alterungsverhalten und Qualitaetsmerkmale. Analysiere dieses Bild.{visual_context_section}
 
 Bootsklasse: {class_desc}{zone_note}
 

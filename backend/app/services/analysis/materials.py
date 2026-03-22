@@ -8,6 +8,32 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# Try to import knowledge databases for enriched analysis
+try:
+    from app.services.knowledge.hull_construction_deep import (
+        RESIN_DATABASE,
+        FIBER_DATABASE,
+        CORE_MATERIALS_DATABASE,
+    )
+except ImportError:
+    RESIN_DATABASE = {}
+    FIBER_DATABASE = {}
+    CORE_MATERIALS_DATABASE = {}
+
+try:
+    from app.services.knowledge.aging_lifecycle_manufacturers_deep import (
+        MATERIAL_LIFESPAN_DATABASE,
+    )
+except ImportError:
+    MATERIAL_LIFESPAN_DATABASE = {}
+
+try:
+    from app.services.knowledge.keel_rudder_underwater_deep import (
+        ANTIFOULING_DATABASE,
+    )
+except ImportError:
+    ANTIFOULING_DATABASE = {}
+
 BOAT_CLASS_DEFAULTS = {
     "small_sail": {
         "min_lifespan_years": 15,
@@ -403,6 +429,9 @@ def analyze_known_issues(
     Each material.known_issues is a list of {issue, severity, conditions, source}.
     Higher severity issues cause larger score penalties.
 
+    Also enriches with knowledge from RESIN_DATABASE, FIBER_DATABASE,
+    CORE_MATERIALS_DATABASE for known marine material failure modes.
+
     Returns (score 0-100, warnings, metrics).
     """
     warnings: list[dict] = []
@@ -447,6 +476,38 @@ def analyze_known_issues(
                     f"Gegenmaßnahmen planen."
                 ),
             })
+
+        # Enrich with knowledge database if available
+        mat_name = mat.get("name", "").lower()
+        mat_category = mat.get("category", "").lower()
+        mat_subcat = mat.get("subcategory", "").lower()
+
+        # Check resin knowledge for GFK/FRP materials
+        if "gfk" in mat_category or "fiberglass" in mat_name or "polyester" in mat_name:
+            if "orthophthalic" in mat_name.lower() and RESIN_DATABASE:
+                ortho = RESIN_DATABASE.get("orthophthalic_polyester", {})
+                if ortho.get("osmosis_mechanism"):
+                    total_penalty += 15
+                    total_issues += 1
+                    critical_issues += 1
+                    warnings.append({
+                        "code": "KNOWLEDGE_OSMOSIS_RISK",
+                        "severity": "critical",
+                        "message": (
+                            f"Material '{mat.get('name', '?')}' in Zone '{zm['zone_name']}': "
+                            f"Orthophthalsäure-Polyester hat erhöhtes Osmose-Risiko "
+                            f"(Beginn typisch 10-15 Jahre bei Dauergewässerung)."
+                        ),
+                        "suggestion": (
+                            f"Isophthalsäure-Polyester oder Vinylester-Laminat "
+                            f"in Feuchtzonen für Zone '{zm['zone_name']}' bevorzugen."
+                        ),
+                    })
+            elif "vinylester" in mat_name.lower() and RESIN_DATABASE:
+                vinyl = RESIN_DATABASE.get("vinylester", {})
+                if vinyl.get("barrier_vs_full_hull"):
+                    # Vinylester is good - no penalty, but add info if relevant
+                    pass
 
     score = max(0.0, 100.0 - total_penalty)
 
@@ -634,6 +695,7 @@ def analyze_lifecycle_cost(
     """Estimate 20-year total cost of ownership per material.
 
     Considers purchase cost, annual maintenance, and replacement cycles.
+    Uses MATERIAL_LIFESPAN_DATABASE to validate and enrich lifespan estimates.
 
     Returns (score 0-100, warnings, metrics).
     """
@@ -661,6 +723,24 @@ def analyze_lifecycle_cost(
         cost_per_unit = mat.get("cost_per_unit", 0.0)
         maintenance_factor = mat.get("maintenance_cost_factor", 0.0)
         lifespan = mat.get("lifespan_years", 20)
+
+        # Try to enrich lifespan from knowledge database
+        mat_name = mat.get("name", "").lower()
+        if MATERIAL_LIFESPAN_DATABASE:
+            for mat_key, mat_data in MATERIAL_LIFESPAN_DATABASE.items():
+                if mat_key.lower() in mat_name or mat_name in mat_key.lower():
+                    # Use knowledge database lifespan if available
+                    known_lifespan = mat_data.get("typical_lifespan_years")
+                    if known_lifespan:
+                        # Parse if it's a string like "50+"
+                        try:
+                            if isinstance(known_lifespan, str):
+                                lifespan = int(known_lifespan.rstrip("+"))
+                            else:
+                                lifespan = known_lifespan
+                        except (ValueError, TypeError):
+                            pass
+                    break
 
         purchase = area * cost_per_unit
         annual_maintenance = purchase * maintenance_factor

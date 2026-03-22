@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import auth, benchmarks, collaborate, community, competitors, costs, images, import_cad, layouts, materials, projects, quick_analysis, reports, service_reports, structural_items, versions
+from app.api.routes import auth, benchmarks, collaborate, community, competitors, costs, images, import_cad, knowledge, layouts, materials, projects, quick_analysis, reports, service_reports, structural_items, versions
 from app.core.config import settings
 from app.db.database import engine
 from app.models.models import Base
@@ -57,6 +57,7 @@ app.include_router(collaborate.router, prefix="/api/v1")
 app.include_router(images.router, prefix="/api/v1")
 app.include_router(import_cad.router, prefix="/api/v1")
 app.include_router(community.router, prefix="/api/v1")
+app.include_router(knowledge.router, prefix="/api/v1")
 
 
 @app.get("/health")

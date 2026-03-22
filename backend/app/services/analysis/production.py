@@ -11,6 +11,16 @@ from collections import deque
 
 logger = logging.getLogger(__name__)
 
+# Try to import knowledge databases for production analysis
+try:
+    from app.services.knowledge.hull_construction_deep import (
+        CONSTRUCTION_METHODS_DATABASE,
+        QUALITY_ASSURANCE_AND_STANDARDS,
+    )
+except ImportError:
+    CONSTRUCTION_METHODS_DATABASE = {}
+    QUALITY_ASSURANCE_AND_STANDARDS = {}
+
 BOAT_CLASS_DEFAULTS = {
     "small_sail": {
         "min_sharp_angle_deg": 30,
@@ -518,6 +528,26 @@ def analyze_form_complexity(
 
     score = sum(zone_scores) / len(zone_scores) if zone_scores else 50.0
     score = max(0.0, min(100.0, score))
+
+    # Enrich with construction method knowledge for complex designs
+    if CONSTRUCTION_METHODS_DATABASE and (total_sharp > 5 or total_reflex > 2):
+        try:
+            methods = CONSTRUCTION_METHODS_DATABASE.get("hand_lay_up", {})
+            challenges = methods.get("production_challenges", [])
+            if challenges:
+                msg = "Komplexe Form erfordert besondere Laminier-Verfahren: "
+                msg += ", ".join(challenges[:3])
+                warnings.append({
+                    "code": "CONSTRUCTION_COMPLEXITY_WARNING",
+                    "severity": "warning",
+                    "message": msg,
+                    "suggestion": (
+                        "Formen vereinfachen oder spezialisiertes GFK-Fertigungsverfahren "
+                        "(z.B. RTM, Vacuum-Infusion) in Betracht ziehen."
+                    ),
+                })
+        except (KeyError, TypeError, AttributeError):
+            pass
 
     return score, warnings, {
         "total_sharp_angles": total_sharp,
