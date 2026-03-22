@@ -19,9 +19,12 @@ export const MEDIA = {
     sailing_wide: hero('photo-1534438327276-14e5300c3a48'),       // Wide sailing shot
   },
 
-  // Video backgrounds (Coverr / Pexels free stock)
+  // Video backgrounds (Pexels free stock — autoplay, muted, looped)
   video: {
     ocean_calm: 'https://videos.pexels.com/video-files/1918465/1918465-hd_1920_1080_24fps.mp4',
+    sailing_aerial: 'https://videos.pexels.com/video-files/2491284/2491284-hd_1920_1080_24fps.mp4',
+    ocean_waves: 'https://videos.pexels.com/video-files/1093662/1093662-hd_1920_1080_30fps.mp4',
+    yacht_sunset: 'https://videos.pexels.com/video-files/857251/857251-hd_1920_1080_25fps.mp4',
   },
 
   // Structural Analysis / Hull

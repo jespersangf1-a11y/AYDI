@@ -194,6 +194,7 @@ export default function ImageUpload({
       <style>{imageUploadAnimationStyles}</style>
       <div>
         <HeroSection
+          backgroundVideo={MEDIA.video.yacht_sunset}
           backgroundImage={MEDIA.hero.deck_detail}
           title="Bildanalyse"
           subtitle="Laden Sie Bilder von Yacht-Abschnitten hoch für detaillierte visuelle Analyse und Zustandsbewertung"

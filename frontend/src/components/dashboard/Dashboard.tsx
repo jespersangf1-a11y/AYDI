@@ -108,6 +108,7 @@ export default function Dashboard({ onSelectProject }: DashboardProps) {
       <style>{dashboardAnimationStyles}</style>
       <div>
         <HeroSection
+          backgroundVideo={MEDIA.video.sailing_aerial}
           backgroundImage={MEDIA.hero.sailing_wide}
           title="Projekte"
           label="Yacht Design Verwaltung"

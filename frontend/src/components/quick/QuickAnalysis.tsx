@@ -153,7 +153,12 @@ export default function QuickAnalysis() {
   const heroImage =
     step === 'enter-specs'
       ? MEDIA.hero.deck_detail
+      : step === 'results'
+      ? MEDIA.hero.aerial_yacht
       : MEDIA.hero.ocean_horizon
+
+  // Video background for the initial boat class selection step
+  const heroVideo = step === 'select-class' ? MEDIA.video.ocean_calm : undefined
 
   const heroTitle =
     step === 'select-class'
@@ -173,12 +178,25 @@ export default function QuickAnalysis() {
     <div>
       <style>{stepAnimationStyles}</style>
 
-      {/* Hero header with background image */}
+      {/* Hero header with background video/image */}
       <div className="hero-section min-h-[240px] md:min-h-[300px] flex items-end overflow-hidden">
-        <div
-          className="absolute inset-0 w-full h-full bg-cover bg-center transition-all duration-500"
-          style={{ backgroundImage: `url(${heroImage})` }}
-        />
+        {heroVideo ? (
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover transition-opacity duration-700"
+            key={heroVideo}
+          >
+            <source src={heroVideo} type="video/mp4" />
+          </video>
+        ) : (
+          <div
+            className="absolute inset-0 w-full h-full bg-cover bg-center transition-all duration-500"
+            style={{ backgroundImage: `url(${heroImage})` }}
+          />
+        )}
         <div className="relative w-full px-6 md:px-10 pb-8 pt-20 z-10">
           <p className="label-premium mb-2 opacity-90">Schnelle Analyse</p>
           <h1 className="font-serif text-3xl md:text-display font-medium text-white">

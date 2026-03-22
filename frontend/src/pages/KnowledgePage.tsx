@@ -189,6 +189,7 @@ export default function KnowledgePage() {
     <div>
       <style>{ANIMATIONS}</style>
       <HeroSection
+        backgroundVideo={MEDIA.video.ocean_waves}
         backgroundImage={MEDIA.overview.blueprint}
         title="Wissensdatenbank"
         subtitle="Umfassendes Nachschlagewerk für Yachtdesign, Materialwissenschaft und maritime Standards – sorgfältig kuratiert wie ein klassisches Nachschlagewerk"
