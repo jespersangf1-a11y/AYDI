@@ -52,7 +52,7 @@
 
 @layer base {
   body {
-    @apply min-h-screen bg-slate-950;
+    @apply min-h-screen bg-sand-50;
     font-feature-settings: 'kern' 1, 'liga' 1;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -67,24 +67,24 @@
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: rgba(45, 139, 168, 0.2);
+    background: rgba(45, 139, 168, 0.25);
     border-radius: 3px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: rgba(45, 139, 168, 0.35);
+    background: rgba(45, 139, 168, 0.4);
   }
 
   /* Focus visible for accessibility */
   *:focus-visible {
-    outline: 2px solid rgba(75, 167, 195, 0.6);
+    outline: 2px solid rgba(45, 139, 168, 0.7);
     outline-offset: 2px;
     border-radius: 4px;
   }
 
   /* Better text selection */
   ::selection {
-    background: rgba(45, 139, 168, 0.3);
-    color: #d4dae6;
+    background: rgba(45, 139, 168, 0.2);
+    color: #0b1220;
   }
 }
 
@@ -96,7 +96,7 @@
   .hero-section::before {
     content: '';
     @apply absolute inset-0;
-    background: linear-gradient(180deg, rgba(6,10,20,0.55) 0%, rgba(6,10,20,0.85) 60%, rgba(6,10,20,0.98) 100%);
+    background: linear-gradient(180deg, rgba(30,45,74,0.4) 0%, rgba(30,45,74,0.65) 60%, rgba(30,45,74,0.8) 100%);
     z-index: 1;
   }
   .hero-section > * {
@@ -106,16 +106,16 @@
 
   /* Card styles */
   .card-premium {
-    @apply bg-navy-900/40 border border-navy-700/40 rounded-xl backdrop-blur-sm;
-    transition: border-color 0.3s ease, background-color 0.3s ease;
+    @apply bg-white border border-sand-200 rounded-xl shadow-sm;
+    transition: border-color 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
   }
   .card-premium:hover {
-    @apply border-navy-600/50 bg-navy-900/60;
+    @apply border-navy-100 bg-white shadow-md;
   }
 
   /* Label style */
   .label-premium {
-    @apply text-xs font-sans font-semibold tracking-wider-premium uppercase text-navy-400;
+    @apply text-xs font-sans font-semibold tracking-wider-premium uppercase text-navy-600;
   }
 
   /* Score colors */
@@ -132,7 +132,7 @@
   .animate-slide-in-left { animation: slide-in-left 0.4s ease-out both; }
 
   .animate-shimmer {
-    background: linear-gradient(90deg, transparent 0%, rgba(45, 139, 168, 0.06) 50%, transparent 100%);
+    background: linear-gradient(90deg, transparent 0%, rgba(45, 139, 168, 0.08) 50%, transparent 100%);
     background-size: 200% 100%;
     animation: shimmer 1.5s ease-in-out infinite;
   }
@@ -153,7 +153,7 @@
 
   /* Skeleton loading base */
   .skeleton {
-    background: linear-gradient(90deg, rgba(30, 45, 74, 0.4) 0%, rgba(45, 139, 168, 0.08) 50%, rgba(30, 45, 74, 0.4) 100%);
+    background: linear-gradient(90deg, rgba(224, 215, 200, 0.5) 0%, rgba(240, 236, 228, 0.8) 50%, rgba(224, 215, 200, 0.5) 100%);
     background-size: 200% 100%;
     animation: shimmer 1.5s ease-in-out infinite;
     border-radius: 0.5rem;

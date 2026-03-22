@@ -158,9 +158,9 @@ export default function HeroCarousel({
         {showDomainLabel && domainLabel && (
           <div
             className="mb-4 transition-all duration-400"
-            style={{ opacity: domainFading ? 0 : 0.7, transform: domainFading ? 'translateY(-4px)' : 'translateY(0)' }}
+            style={{ opacity: domainFading ? 0 : 0.9, transform: domainFading ? 'translateY(-4px)' : 'translateY(0)' }}
           >
-            <span className="inline-block px-3 py-1 text-[10px] font-sans uppercase tracking-[0.2em] text-ocean-300 border border-ocean-700/40 rounded-full backdrop-blur-sm bg-navy-900/30">
+            <span className="inline-block px-3 py-1 text-[10px] font-sans uppercase tracking-[0.2em] text-white border border-white/40 rounded-full backdrop-blur-sm bg-white/15">
               {domainLabel}
             </span>
           </div>
@@ -184,7 +184,7 @@ export default function HeroCarousel({
         {/* Subtitle */}
         {subtitle && (
           <p
-            className="font-sans text-[15px] text-navy-300 max-w-2xl leading-relaxed mt-2 opacity-0"
+            className="font-sans text-[15px] text-white max-w-2xl leading-relaxed mt-2 opacity-0"
             style={{ animation: 'fadeInUp 600ms ease-out 200ms forwards' }}
           >
             {subtitle}

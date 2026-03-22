@@ -149,7 +149,7 @@ function ModuleCardWithAnimation({
       }}
     >
       <div className="flex items-start justify-between mb-3">
-        <h4 className="text-sm font-sans font-semibold text-navy-100">
+        <h4 className="text-sm font-sans font-semibold text-navy-900">
           {getModuleLabel(moduleName)}
         </h4>
         <span className={`font-mono text-2xl font-bold ${scoreColor(score)}`}>
@@ -160,7 +160,7 @@ function ModuleCardWithAnimation({
         <ConfidenceBadge confidence={confidence} size="sm" />
       </div>
       {warningCount > 0 && (
-        <div className="flex items-center gap-2 text-xs text-navy-400">
+        <div className="flex items-center gap-2 text-xs text-navy-600">
           <AlertTriangle className="w-3 h-3 flex-shrink-0" />
           <span>
             {warningCount} Hinweis{warningCount !== 1 ? 'e' : ''}
@@ -200,16 +200,16 @@ export default function FullAnalysisView({
             ) : (
               <div className="flex flex-col items-center">
                 <div className="flex items-center justify-center w-[120px] h-[120px] rounded-full border-2 border-navy-700/60">
-                  <span className="font-mono text-2xl text-navy-400">--</span>
+                  <span className="font-mono text-2xl text-navy-600">--</span>
                 </div>
-                <span className="mt-3 text-xs font-sans font-semibold uppercase tracking-wider-premium text-navy-300">
+                <span className="mt-3 text-xs font-sans font-semibold uppercase tracking-wider-premium text-navy-700">
                   Gesamtbewertung
                 </span>
               </div>
             )}
             <div className="space-y-3">
               <ConfidenceBadge confidence={result.overall_confidence} />
-              <div className="flex items-center gap-2 text-xs text-navy-400">
+              <div className="flex items-center gap-2 text-xs text-navy-600">
                 <Clock className="w-3.5 h-3.5" />
                 <span>{formatTimestamp(result.executed_at)}</span>
               </div>
@@ -218,12 +218,12 @@ export default function FullAnalysisView({
 
           {/* Summary stats */}
           <div className="flex flex-wrap items-center gap-3 sm:gap-5 text-xs w-full lg:w-auto">
-            <div className="flex items-center gap-2 text-navy-300">
+            <div className="flex items-center gap-2 text-navy-700">
               <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
               <span>{result.module_count} Module analysiert</span>
             </div>
             {result.skipped_count > 0 && (
-              <div className="flex items-center gap-2 text-navy-400">
+              <div className="flex items-center gap-2 text-navy-600">
                 <SkipForward className="w-4 h-4 text-navy-500 flex-shrink-0" />
                 <span>{result.skipped_count} uebersprungen</span>
               </div>
@@ -276,7 +276,7 @@ export default function FullAnalysisView({
               >
                 <div className="flex items-center gap-2 mb-2">
                   <SkipForward className="w-4 h-4 text-navy-500 flex-shrink-0" />
-                  <h4 className="text-sm font-sans font-semibold text-navy-400">
+                  <h4 className="text-sm font-sans font-semibold text-navy-600">
                     {getModuleLabel(moduleName)}
                   </h4>
                 </div>

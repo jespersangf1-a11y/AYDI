@@ -96,7 +96,7 @@ export default function KnowledgeDetailPanel({ data, onClose }: KnowledgeDetailP
       case 'info':
         return <Info className="w-5 h-5 text-blue-400" />
       default:
-        return <Info className="w-5 h-5 text-navy-400" />
+        return <Info className="w-5 h-5 text-navy-600" />
     }
   }
 
@@ -117,7 +117,7 @@ export default function KnowledgeDetailPanel({ data, onClose }: KnowledgeDetailP
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-end sm:justify-center animate-backdrop-fade">
       <style>{ANIMATIONS}</style>
       <div className="bg-black/50" onClick={onClose} style={{ position: 'absolute', inset: 0 }} aria-hidden="true" />
-      <div className="relative w-full max-w-2xl mx-4 max-h-[90vh] sm:max-h-[90vh] bg-navy-900/95 border border-navy-700/50 rounded-t-xl sm:rounded-xl shadow-2xl overflow-hidden flex flex-col animate-slide-in-right"
+      <div className="relative w-full max-w-2xl mx-4 max-h-[90vh] sm:max-h-[90vh] bg-navy-900/95 border border-sand-200 rounded-t-xl sm:rounded-xl shadow-2xl overflow-hidden flex flex-col animate-slide-in-right"
         role="dialog"
         aria-modal="true"
         aria-labelledby="knowledge-title"
@@ -129,11 +129,11 @@ export default function KnowledgeDetailPanel({ data, onClose }: KnowledgeDetailP
               {data.category_name}
               {data.subcategory_name && ` / ${data.subcategory_name}`}
             </p>
-            <h2 className="font-serif text-xl sm:text-2xl font-medium text-white" id="knowledge-title">{data.title}</h2>
+            <h2 className="font-serif text-xl sm:text-2xl font-medium text-navy-900" id="knowledge-title">{data.title}</h2>
           </div>
           <button
             onClick={onClose}
-            className="text-navy-400 hover:text-ocean-300 hover:bg-navy-800/40 p-2 rounded transition-all duration-200 flex-shrink-0"
+            className="text-navy-600 hover:text-ocean-700 hover:bg-sand-50/40 p-2 rounded transition-all duration-200 flex-shrink-0"
             aria-label="Schließen"
           >
             <X className="w-6 h-6" />
@@ -145,14 +145,14 @@ export default function KnowledgeDetailPanel({ data, onClose }: KnowledgeDetailP
           {/* Description */}
           <div style={{ animation: `fadeInUp 0.6s ease-out forwards` }}>
             <h3 className="label-premium mb-3">ÜBERSICHT</h3>
-            <p className="text-navy-200 leading-relaxed">{data.description}</p>
+            <p className="text-navy-600 leading-relaxed">{data.description}</p>
           </div>
 
           {/* HTML Content */}
           {data.content_html && (
             <div style={{ animation: `fadeInUp 0.6s ease-out 100ms forwards`, opacity: 0 }} className="prose prose-invert max-w-none">
               <div
-                className="text-navy-200 space-y-4"
+                className="text-navy-600 space-y-4"
                 dangerouslySetInnerHTML={{ __html: data.content_html }}
               />
             </div>
@@ -165,7 +165,7 @@ export default function KnowledgeDetailPanel({ data, onClose }: KnowledgeDetailP
               <div className="overflow-x-auto rounded-lg border border-navy-700/30">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-navy-700/40 bg-navy-900/40">
+                    <tr className="border-b border-sand-200 bg-white">
                       <th className="text-left px-4 py-3 label-premium font-semibold">Eigenschaft</th>
                       <th className="text-left px-4 py-3 label-premium font-semibold">Wert</th>
                       <th className="text-left px-4 py-3 label-premium font-semibold">Einheit</th>
@@ -180,12 +180,12 @@ export default function KnowledgeDetailPanel({ data, onClose }: KnowledgeDetailP
                           idx % 2 === 0 ? 'bg-navy-900/20' : 'bg-transparent'
                         }`}
                       >
-                        <td className="px-4 py-3 text-white font-medium">{prop.name}</td>
-                        <td className="px-4 py-3 font-mono text-ocean-300">
+                        <td className="px-4 py-3 text-navy-900 font-medium">{prop.name}</td>
+                        <td className="px-4 py-3 font-mono text-ocean-600">
                           {typeof prop.value === 'number' ? prop.value.toFixed(2) : prop.value}
                         </td>
-                        <td className="px-4 py-3 text-navy-400 text-sm">{prop.unit ?? ''}</td>
-                        <td className="px-4 py-3 text-navy-400 text-sm">
+                        <td className="px-4 py-3 text-navy-600 text-sm">{prop.unit ?? ''}</td>
+                        <td className="px-4 py-3 text-navy-600 text-sm">
                           {prop.typical_range
                             ? `${prop.typical_range.min.toFixed(2)} - ${prop.typical_range.max.toFixed(2)}`
                             : '—'}
@@ -207,14 +207,14 @@ export default function KnowledgeDetailPanel({ data, onClose }: KnowledgeDetailP
               </div>
               <div className="space-y-4">
                 <div className="card-premium p-4">
-                  <p className="text-sm text-navy-300 mb-2">
-                    <span className="font-medium text-white">Material:</span> {data.degradation_data.material}
+                  <p className="text-sm text-navy-700 mb-2">
+                    <span className="font-medium text-navy-900">Material:</span> {data.degradation_data.material}
                   </p>
-                  <p className="text-sm text-navy-300 mb-2">
-                    <span className="font-medium text-white">Umgebung:</span> {data.degradation_data.environment}
+                  <p className="text-sm text-navy-700 mb-2">
+                    <span className="font-medium text-navy-900">Umgebung:</span> {data.degradation_data.environment}
                   </p>
-                  <p className="text-sm text-navy-300">
-                    <span className="font-medium text-white">Erwartete Lebensdauer:</span>{' '}
+                  <p className="text-sm text-navy-700">
+                    <span className="font-medium text-navy-900">Erwartete Lebensdauer:</span>{' '}
                     {data.degradation_data.expected_lifespan_years} Jahre
                   </p>
                 </div>
@@ -223,16 +223,16 @@ export default function KnowledgeDetailPanel({ data, onClose }: KnowledgeDetailP
                 <div className="space-y-2">
                   {data.degradation_data.datapoints.map((point, idx) => (
                     <div key={idx} className="flex items-center gap-4">
-                      <div className="w-16 text-sm font-mono text-navy-400">
+                      <div className="w-16 text-sm font-mono text-navy-600">
                         Jahr {point.timepoint_years}
                       </div>
-                      <div className="flex-1 bg-navy-800/40 rounded-full h-2 overflow-hidden">
+                      <div className="flex-1 bg-sand-50/40 rounded-full h-2 overflow-hidden">
                         <div
                           className="h-full bg-gradient-to-r from-green-600 via-amber-500 to-red-600"
                           style={{ width: `${point.condition_percentage}%` }}
                         />
                       </div>
-                      <div className="w-16 text-right text-sm font-mono text-ocean-300">
+                      <div className="w-16 text-right text-sm font-mono text-ocean-600">
                         {point.condition_percentage}%
                       </div>
                     </div>
@@ -245,7 +245,7 @@ export default function KnowledgeDetailPanel({ data, onClose }: KnowledgeDetailP
                     <p className="label-premium mb-2">WARTUNGSPLAN</p>
                     <ul className="space-y-1.5">
                       {data.degradation_data.maintenance_plan.map((item, idx) => (
-                        <li key={idx} className="flex items-start gap-2 text-sm text-navy-200">
+                        <li key={idx} className="flex items-start gap-2 text-sm text-navy-600">
                           <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
                           <span>{item}</span>
                         </li>
@@ -269,22 +269,22 @@ export default function KnowledgeDetailPanel({ data, onClose }: KnowledgeDetailP
                   <div key={idx} style={{ animation: `fadeInUp 0.4s ease-out ${idx * 50}ms forwards`, opacity: 0 }} className={`card-premium border p-4 transition-all duration-200 hover:shadow-lg hover:shadow-black/20 ${getSeverityColor(issue.severity)}`}>
                     <div className="flex items-start gap-3 mb-2">
                       {getSeverityIcon(issue.severity)}
-                      <h4 className="font-medium text-white flex-1">{issue.title}</h4>
+                      <h4 className="font-medium text-navy-900 flex-1">{issue.title}</h4>
                     </div>
-                    <p className="text-sm text-navy-200 mb-2">{issue.description}</p>
+                    <p className="text-sm text-navy-600 mb-2">{issue.description}</p>
                     {issue.affected_models && issue.affected_models.length > 0 && (
-                      <p className="text-xs text-navy-400 mb-2">
+                      <p className="text-xs text-navy-600 mb-2">
                         <span className="font-medium">Betroffene Modelle:</span> {issue.affected_models.join(', ')}
                       </p>
                     )}
                     {issue.resolution && (
-                      <div className="text-xs text-navy-300 bg-green-950/30 border border-green-700/20 rounded p-2 mb-2">
+                      <div className="text-xs text-navy-700 bg-green-950/30 border border-green-700/20 rounded p-2 mb-2">
                         <p className="font-medium text-green-400 mb-1">✓ Lösung:</p>
                         <p>{issue.resolution}</p>
                       </div>
                     )}
                     {issue.workaround && (
-                      <div className="text-xs text-navy-300 bg-amber-950/30 border border-amber-700/20 rounded p-2">
+                      <div className="text-xs text-navy-700 bg-amber-950/30 border border-amber-700/20 rounded p-2">
                         <p className="font-medium text-amber-400 mb-1">⚡ Workaround:</p>
                         <p>{issue.workaround}</p>
                       </div>
@@ -300,8 +300,8 @@ export default function KnowledgeDetailPanel({ data, onClose }: KnowledgeDetailP
             <div>
               <h3 className="label-premium mb-3">KOSTENFOLGEN</h3>
               <div className="card-premium p-4">
-                <p className="text-sm text-navy-300">
-                  Geschätzter Kostenbereich: <span className="font-mono text-ocean-300 font-medium">
+                <p className="text-sm text-navy-700">
+                  Geschätzter Kostenbereich: <span className="font-mono text-ocean-600 font-medium">
                     {data.cost_impact.low.toFixed(0)} € - {data.cost_impact.high.toFixed(0)} €
                   </span>
                 </p>
@@ -330,11 +330,11 @@ export default function KnowledgeDetailPanel({ data, onClose }: KnowledgeDetailP
           {data.implementation_notes && (
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <Wrench className="w-5 h-5 text-ocean-400" />
+                <Wrench className="w-5 h-5 text-ocean-600" />
                 <h3 className="label-premium">IMPLEMENTIERUNGSHINWEISE</h3>
               </div>
               <div className="card-premium p-4 bg-ocean-950/20 border-ocean-700/30">
-                <p className="text-navy-200 text-sm leading-relaxed">{data.implementation_notes}</p>
+                <p className="text-navy-600 text-sm leading-relaxed">{data.implementation_notes}</p>
               </div>
             </div>
           )}
@@ -347,7 +347,7 @@ export default function KnowledgeDetailPanel({ data, onClose }: KnowledgeDetailP
           </p>
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-ocean-900/40 hover:bg-ocean-900/60 border border-ocean-700/40 rounded-lg text-sm font-medium text-ocean-300 transition-all duration-200 hover:shadow-lg hover:shadow-ocean-900/30"
+            className="px-4 py-2 bg-ocean-900/40 hover:bg-ocean-900/60 border border-ocean-700/40 rounded-lg text-sm font-medium text-ocean-600 transition-all duration-200 hover:shadow-lg hover:shadow-ocean-900/30"
             aria-label="Schließen"
           >
             Schließen

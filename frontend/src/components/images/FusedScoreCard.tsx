@@ -35,7 +35,7 @@ export default function FusedScoreCard({
       {/* Header */}
       <div className="flex items-center justify-between border-b border-navy-700/30 pb-4">
         <div>
-          <h3 className="font-serif text-base font-medium text-white">
+          <h3 className="font-serif text-base font-medium text-navy-900">
             {moduleLabel}
           </h3>
           <p className="text-xs text-navy-500 mt-1">{moduleName}</p>
@@ -53,14 +53,14 @@ export default function FusedScoreCard({
           <span className={`font-mono text-5xl font-bold ${scoreColor(mainScore)}`}>
             {Math.round(mainScore)}
           </span>
-          <span className="ml-2 text-sm text-navy-400">/100</span>
+          <span className="ml-2 text-sm text-navy-600">/100</span>
         </div>
       )}
 
       {/* Sub-scores: structured vs visual */}
       <div className="grid grid-cols-2 gap-4">
         {fusedScore.structured_score !== null && (
-          <div className="rounded-lg border border-navy-700/30 bg-navy-900/20 p-4 text-center transition-colors duration-200 hover:bg-navy-900/40">
+          <div className="rounded-lg border border-navy-700/30 bg-navy-900/20 p-4 text-center transition-colors duration-200 hover:bg-white">
             <p className="label-premium mb-2">Strukturiert</p>
             <p
               className={`font-mono text-2xl font-bold ${scoreColor(fusedScore.structured_score)}`}
@@ -73,7 +73,7 @@ export default function FusedScoreCard({
           </div>
         )}
         {fusedScore.visual_score !== null && (
-          <div className="rounded-lg border border-navy-700/30 bg-navy-900/20 p-4 text-center transition-colors duration-200 hover:bg-navy-900/40">
+          <div className="rounded-lg border border-navy-700/30 bg-navy-900/20 p-4 text-center transition-colors duration-200 hover:bg-white">
             <p className="label-premium mb-2">Visuell</p>
             <p
               className={`font-mono text-2xl font-bold ${scoreColor(fusedScore.visual_score)}`}
@@ -107,7 +107,7 @@ export default function FusedScoreCard({
           {fusedScore.data_sources.map((source) => (
             <span
               key={source}
-              className="inline-block rounded-md border border-navy-600/20 bg-navy-800/40 px-2.5 py-1 text-[10px] font-medium text-navy-400"
+              className="inline-block rounded-md border border-navy-600/20 bg-sand-50/40 px-2.5 py-1 text-[10px] font-medium text-navy-600"
             >
               {source}
             </span>

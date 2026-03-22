@@ -59,8 +59,8 @@ export default {
         'title': ['1.75rem', { lineHeight: '1.25', letterSpacing: '-0.01em' }],
       },
       backgroundImage: {
-        'gradient-premium': 'linear-gradient(135deg, #0b1220 0%, #0d2730 50%, #0b1220 100%)',
-        'gradient-card': 'linear-gradient(180deg, rgba(21,61,74,0.08) 0%, rgba(11,18,32,0.4) 100%)',
+        'gradient-premium': 'linear-gradient(135deg, #faf8f5 0%, #f0ece4 50%, #faf8f5 100%)',
+        'gradient-card': 'linear-gradient(180deg, rgba(212,218,230,0.4) 0%, rgba(250,248,245,0.8) 100%)',
       },
       animation: {
         'fade-in': 'fadeIn 0.6s ease-out',
@@ -126,10 +126,10 @@ export default {
         'xs': '2px',
       },
       boxShadow: {
-        'glow-ocean': '0 0 20px 0 rgba(45, 139, 168, 0.15)',
-        'glow-ocean-lg': '0 0 40px 0 rgba(45, 139, 168, 0.2)',
-        'inner-ocean': 'inset 0 1px 2px rgba(45, 139, 168, 0.1)',
-        'card-hover': '0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(45, 139, 168, 0.1)',
+        'glow-ocean': '0 0 20px 0 rgba(45, 139, 168, 0.1)',
+        'glow-ocean-lg': '0 0 40px 0 rgba(45, 139, 168, 0.12)',
+        'inner-ocean': 'inset 0 1px 2px rgba(45, 139, 168, 0.08)',
+        'card-hover': '0 8px 24px rgba(45, 139, 168, 0.12), 0 0 0 1px rgba(212, 218, 230, 0.6)',
       },
     },
   },

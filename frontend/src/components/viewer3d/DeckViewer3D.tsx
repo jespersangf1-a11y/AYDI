@@ -227,7 +227,7 @@ export default function DeckViewer3D({
   const gridSize = Math.ceil(cameraDist * 1.5)
 
   return (
-    <div className="relative w-full h-full min-h-[400px] bg-navy-900 rounded-xl border border-navy-700 overflow-hidden">
+    <div className="relative w-full h-full min-h-[400px] bg-sand-50 rounded-xl border border-sand-200 overflow-hidden">
       {/* Toolbar overlay */}
       <ViewerControls
         exploded={exploded}
@@ -389,7 +389,7 @@ function DeckLabel({
       distanceFactor={12}
       zIndexRange={[5, 0]}
     >
-      <div className="bg-navy-800/80 border border-navy-600 rounded px-2 py-0.5 text-xs text-ocean-300 font-heading font-medium whitespace-nowrap pointer-events-none select-none">
+      <div className="bg-white border border-sand-200 rounded px-2 py-0.5 text-xs text-ocean-600 font-heading font-medium whitespace-nowrap pointer-events-none select-none shadow-sm">
         {name}
       </div>
     </Html>

@@ -9,7 +9,7 @@ interface WarningListProps {
 const SEVERITY_CONFIG = {
   critical: { icon: AlertTriangle, bg: 'bg-navy-900/30', leftBorder: 'border-l-2 border-l-red-400', text: 'text-red-300', label: 'Kritisch' },
   warning: { icon: AlertCircle, bg: 'bg-navy-900/30', leftBorder: 'border-l-2 border-l-amber-400', text: 'text-amber-300', label: 'Warnung' },
-  info: { icon: Info, bg: 'bg-navy-900/30', leftBorder: 'border-l-2 border-l-ocean-400', text: 'text-ocean-300', label: 'Info' },
+  info: { icon: Info, bg: 'bg-navy-900/30', leftBorder: 'border-l-2 border-l-ocean-400', text: 'text-ocean-600', label: 'Info' },
 }
 
 interface WarningCardProps {
@@ -24,7 +24,7 @@ function WarningCard({ warning, index }: WarningCardProps) {
 
   return (
     <div
-      className={`${config.bg} border border-navy-700/40 ${config.leftBorder} rounded-lg backdrop-blur-sm transition-all duration-200 hover:shadow-lg hover:shadow-navy-900/20 hover:-translate-y-0.5 overflow-hidden`}
+      className={`${config.bg} border border-sand-200 ${config.leftBorder} rounded-lg backdrop-blur-sm transition-all duration-200 hover:shadow-lg hover:shadow-navy-900/20 hover:-translate-y-0.5 overflow-hidden`}
       style={{
         animation: `slideIn 0.4s ease-out ${index * 100}ms both`,
       }}
@@ -38,7 +38,7 @@ function WarningCard({ warning, index }: WarningCardProps) {
           <div className="flex-1 min-w-0">
             <p className={`text-sm font-medium ${config.text}`}>{warning.message}</p>
             {!isExpanded && (
-              <p className="text-xs text-navy-400 mt-1.5 line-clamp-1">{warning.suggestion}</p>
+              <p className="text-xs text-navy-600 mt-1.5 line-clamp-1">{warning.suggestion}</p>
             )}
           </div>
           <ChevronDown
@@ -51,7 +51,7 @@ function WarningCard({ warning, index }: WarningCardProps) {
 
       {isExpanded && (
         <div className="px-4 pb-4 border-t border-navy-700/20 animate-slideDown">
-          <p className="text-xs text-navy-300 leading-relaxed">{warning.suggestion}</p>
+          <p className="text-xs text-navy-700 leading-relaxed">{warning.suggestion}</p>
         </div>
       )}
     </div>
@@ -61,7 +61,7 @@ function WarningCard({ warning, index }: WarningCardProps) {
 export default function WarningList({ warnings }: WarningListProps) {
   if (warnings.length === 0) {
     return (
-      <p className="text-navy-400 text-xs font-sans font-semibold uppercase tracking-wider-premium">
+      <p className="text-navy-600 text-xs font-sans font-semibold uppercase tracking-wider-premium">
         Keine Warnungen
       </p>
     )

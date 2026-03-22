@@ -85,7 +85,7 @@ export default function ProjectCreate({ onCreated, onCancel }: ProjectCreateProp
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                className="w-full card-premium px-6 py-4 text-white placeholder:text-navy-500 focus:bg-navy-900/70 focus:border-ocean-500 focus:outline-none transition-colors duration-200"
+                className="w-full card-premium px-6 py-4 text-navy-900 placeholder:text-navy-600 focus:border-ocean-400 focus:outline-none transition-colors duration-200"
                 placeholder="z.B. Meridian 40 Cruiser"
               />
             </div>
@@ -97,7 +97,7 @@ export default function ProjectCreate({ onCreated, onCancel }: ProjectCreateProp
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={4}
-                className="w-full card-premium px-6 py-4 text-white placeholder:text-navy-500 focus:bg-navy-900/70 focus:border-ocean-500 focus:outline-none resize-none transition-colors duration-200"
+                className="w-full card-premium px-6 py-4 text-navy-900 placeholder:text-navy-500 focus:bg-navy-900/70 focus:border-ocean-500 focus:outline-none resize-none transition-colors duration-200"
                 placeholder="Beschreiben Sie die Hauptmerkmale und den Zweck dieses Entwurfs"
               />
             </div>
@@ -108,7 +108,7 @@ export default function ProjectCreate({ onCreated, onCancel }: ProjectCreateProp
               <select
                 value={boatClass}
                 onChange={(e) => setBoatClass(e.target.value as BoatClass)}
-                className="w-full card-premium px-6 py-4 text-white focus:bg-navy-900/70 focus:border-ocean-500 focus:outline-none transition-colors duration-200 appearance-none bg-right"
+                className="w-full card-premium px-6 py-4 text-navy-900 focus:border-ocean-400 focus:outline-none transition-colors duration-200 appearance-none bg-right"
                 style={{
                   backgroundImage: `url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234ba7c3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`,
                   backgroundRepeat: 'no-repeat',
@@ -134,7 +134,7 @@ export default function ProjectCreate({ onCreated, onCancel }: ProjectCreateProp
                   value={lengthM}
                   onChange={(e) => setLengthM(e.target.value)}
                   required
-                  className="w-full card-premium px-6 py-4 text-white placeholder:text-navy-500 focus:bg-navy-900/70 focus:border-ocean-500 focus:outline-none transition-colors duration-200"
+                  className="w-full card-premium px-6 py-4 text-navy-900 placeholder:text-navy-600 focus:border-ocean-400 focus:outline-none transition-colors duration-200"
                   placeholder="z.B. 12.5"
                 />
               </div>
@@ -147,7 +147,7 @@ export default function ProjectCreate({ onCreated, onCancel }: ProjectCreateProp
                   value={beamM}
                   onChange={(e) => setBeamM(e.target.value)}
                   required
-                  className="w-full card-premium px-6 py-4 text-white placeholder:text-navy-500 focus:bg-navy-900/70 focus:border-ocean-500 focus:outline-none transition-colors duration-200"
+                  className="w-full card-premium px-6 py-4 text-navy-900 placeholder:text-navy-600 focus:border-ocean-400 focus:outline-none transition-colors duration-200"
                   placeholder="z.B. 4.2"
                 />
               </div>
@@ -166,34 +166,34 @@ export default function ProjectCreate({ onCreated, onCancel }: ProjectCreateProp
                 />
                 <label
                   htmlFor="layout-file"
-                  className="card-premium px-6 py-8 block text-center cursor-pointer hover:bg-navy-900/60 hover:border-navy-600/40 transition-all duration-200 group"
+                  className="card-premium px-6 py-8 block text-center cursor-pointer hover:shadow-md hover:border-sand-300 transition-all duration-200 group"
                 >
                   <div className="flex flex-col items-center">
-                    <Upload className="w-8 h-8 text-ocean-500 mb-3 group-hover:text-ocean-400 transition-colors duration-200" />
+                    <Upload className="w-8 h-8 text-ocean-600 mb-3 group-hover:text-ocean-700 transition-colors duration-200" />
                     {layoutFile ? (
                       <div>
-                        <p className="text-white font-medium">{layoutFile.name}</p>
-                        <p className="text-navy-400 text-sm mt-1">
+                        <p className="text-navy-900 font-medium">{layoutFile.name}</p>
+                        <p className="text-navy-600 text-sm mt-1">
                           {(layoutFile.size / 1024).toFixed(1)} KB
                         </p>
                       </div>
                     ) : (
                       <div>
-                        <p className="text-white font-medium">Datei auswählen</p>
-                        <p className="text-navy-400 text-sm mt-1">JSON oder DXF-Format</p>
+                        <p className="text-navy-900 font-medium">Datei auswählen</p>
+                        <p className="text-navy-600 text-sm mt-1">JSON oder DXF-Format</p>
                       </div>
                     )}
                   </div>
                 </label>
               </div>
-              <p className="text-navy-500 text-xs mt-3">
+              <p className="text-navy-600 text-xs mt-3">
                 Unterstützte Formate: JSON oder DXF mit Zonendaten
               </p>
             </div>
 
             {/* Error Message */}
             {error && (
-              <div className="card-premium bg-red-900/20 border-red-700/40 px-6 py-4 text-red-300 text-sm">
+              <div className="card-premium bg-red-50 border-red-300 px-6 py-4 text-red-700 text-sm">
                 {error}
               </div>
             )}
@@ -203,7 +203,7 @@ export default function ProjectCreate({ onCreated, onCancel }: ProjectCreateProp
               <button
                 type="submit"
                 disabled={submitting}
-                className="flex items-center gap-2 bg-ocean-700 hover:bg-ocean-600 disabled:opacity-50 disabled:cursor-not-allowed text-white px-8 py-4 rounded-lg font-serif font-medium transition-colors duration-200"
+                className="flex items-center gap-2 bg-ocean-600 hover:bg-ocean-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-8 py-4 rounded-lg font-serif font-medium transition-colors duration-200"
               >
                 {submitting ? (
                   <>
@@ -220,7 +220,7 @@ export default function ProjectCreate({ onCreated, onCancel }: ProjectCreateProp
               <button
                 type="button"
                 onClick={onCancel}
-                className="flex items-center gap-2 text-navy-400 hover:text-white px-8 py-4 rounded-lg transition-colors duration-200 font-medium"
+                className="flex items-center gap-2 text-navy-700 hover:text-navy-900 px-8 py-4 rounded-lg transition-colors duration-200 font-medium"
               >
                 <X className="w-4 h-4" />
                 Abbrechen

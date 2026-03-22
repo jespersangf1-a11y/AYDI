@@ -200,14 +200,14 @@ export default function KnowledgePage() {
         {/* Search Bar */}
         <div className="max-w-3xl mx-auto">
           <div className="relative group">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-navy-400 group-focus-within:text-ocean-400 transition-colors duration-200" />
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-navy-600 group-focus-within:text-ocean-600 transition-colors duration-200" />
             <input
               type="text"
               placeholder="Suchen Sie in der Wissensdatenbank..."
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
               aria-label="Wissensdatenbank durchsuchen"
-              className="w-full pl-12 pr-12 py-3 bg-navy-800/60 border border-navy-600/40 rounded-lg text-white placeholder-navy-500 focus:outline-none focus:border-ocean-500/60 focus:ring-2 focus:ring-ocean-500/20 transition-all duration-200"
+              className="w-full pl-12 pr-12 py-3 bg-white border border-sand-200 rounded-lg text-navy-900 placeholder-navy-500 focus:outline-none focus:border-ocean-500 focus:ring-2 focus:ring-ocean-500/20 transition-all duration-200"
             />
             {isSearching && (
               <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
@@ -220,14 +220,14 @@ export default function KnowledgePage() {
           {showSearchResults && searchResults.length === 0 && !isSearching && searchQuery.length > 1 && (
             <div className="text-center mt-8 py-12 animate-fade-up">
               <Eye className="w-12 h-12 text-navy-600 mx-auto mb-4" />
-              <p className="text-navy-400 text-sm">Keine Ergebnisse für "{searchQuery}"</p>
-              <p className="text-navy-500 text-xs mt-2">Versuchen Sie andere Suchbegriffe</p>
+              <p className="text-navy-700 text-sm">Keine Ergebnisse für "{searchQuery}"</p>
+              <p className="text-navy-600 text-xs mt-2">Versuchen Sie andere Suchbegriffe</p>
             </div>
           )}
         </div>
 
         {loading && (
-          <div className="text-center py-12 text-navy-400">
+          <div className="text-center py-12 text-navy-700">
             <div className="animate-spin inline-block">
               <div className="w-8 h-8 border-2 border-ocean-400/30 border-t-ocean-400 rounded-full" />
             </div>
@@ -243,7 +243,7 @@ export default function KnowledgePage() {
         )}
 
         {!loading && !error && !showSearchResults && displayedCategories.length === 0 && (
-          <div className="card-premium px-10 py-12 text-center text-navy-400">
+          <div className="card-premium px-10 py-12 text-center text-navy-700">
             Keine Kategorien verfügbar
           </div>
         )}
@@ -260,23 +260,23 @@ export default function KnowledgePage() {
                   key={result.id}
                   onClick={() => setSelectedDetail(result)}
                   style={{ animation: `fadeInUp 0.6s ease-out ${idx * 80}ms forwards`, opacity: 0 }}
-                  className="card-premium p-6 text-left hover:bg-navy-800/50 hover:shadow-lg hover:shadow-ocean-500/10 transition-all duration-200 group"
+                  className="card-premium p-6 text-left hover:bg-sand-50 hover:shadow-lg hover:shadow-ocean-500/10 transition-all duration-200 group"
                   aria-label={`${result.title} öffnen`}
                 >
                   <div className="flex items-start gap-3 mb-3">
-                    <span className="text-ocean-400 group-hover:scale-110 group-hover:text-ocean-300 transition-all duration-200">
+                    <span className="text-ocean-600 group-hover:scale-110 group-hover:text-ocean-600 transition-all duration-200">
                       {getCategoryIcon(result.category_name)}
                     </span>
                     <div className="flex-1">
-                      <p className="text-xs font-medium text-navy-400 uppercase tracking-wide">
+                      <p className="text-xs font-medium text-navy-700 uppercase tracking-wide">
                         {result.category_name}
                       </p>
-                      <h3 className="font-serif font-medium text-white mt-1 group-hover:text-ocean-300 transition-colors">
+                      <h3 className="font-serif font-medium text-navy-900 mt-1 group-hover:text-ocean-600 transition-colors">
                         {result.title}
                       </h3>
                     </div>
                   </div>
-                  <p className="text-sm text-navy-300 line-clamp-2">{result.description}</p>
+                  <p className="text-sm text-navy-700 line-clamp-2">{result.description}</p>
                 </button>
               ))}
             </div>
@@ -292,18 +292,18 @@ export default function KnowledgePage() {
                 <button
                   onClick={() => handleCategoryClick(category.id)}
                   style={{ animation: `fadeInUp 0.6s ease-out ${catIdx * 80}ms forwards`, opacity: 0 }}
-                  className="w-full card-premium p-6 text-left hover:bg-navy-800/50 hover-ocean-glow transition-all duration-200 group"
+                  className="w-full card-premium p-6 text-left hover:bg-sand-50 hover-ocean-glow transition-all duration-200 group"
                   aria-expanded={expandedCategoryId === category.id}
                   aria-label={`${category.name} - ${expandedCategoryId === category.id ? 'Eingeklappt' : 'Ausgeklappt'}`}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-start gap-4 flex-1">
-                      <div className="flex-shrink-0 text-ocean-400 mt-1 group-hover:scale-110 group-hover:text-ocean-300 transition-all duration-200">
+                      <div className="flex-shrink-0 text-ocean-600 mt-1 group-hover:scale-110 group-hover:text-ocean-600 transition-all duration-200">
                         {getCategoryIcon(category.name)}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-3 mb-2 flex-wrap">
-                          <h3 className="font-serif text-lg font-medium text-white group-hover:text-ocean-300 transition-colors">
+                          <h3 className="font-serif text-lg font-medium text-navy-900 group-hover:text-ocean-600 transition-colors">
                             {category.name}
                           </h3>
                           <span
@@ -316,13 +316,13 @@ export default function KnowledgePage() {
                             {getStatusLabel(category.implementation_status)}
                           </span>
                         </div>
-                        <p className="text-sm text-navy-300 line-clamp-2 mb-3">{category.description}</p>
-                        <div className="flex items-center gap-4 text-xs text-navy-400">
+                        <p className="text-sm text-navy-700 line-clamp-2 mb-3">{category.description}</p>
+                        <div className="flex items-center gap-4 text-xs text-navy-600">
                           <span className="font-mono">
                             {category.subcategory_count} {category.subcategory_count === 1 ? 'Unterkategorie' : 'Unterkategorien'}
                           </span>
                           {category.documentation_ready && (
-                            <span className="flex items-center gap-1 text-green-400">
+                            <span className="flex items-center gap-1 text-green-600">
                               ✓ Dokumentiert
                             </span>
                           )}
@@ -330,7 +330,7 @@ export default function KnowledgePage() {
                       </div>
                     </div>
                     <ChevronDown
-                      className={`w-5 h-5 text-navy-500 flex-shrink-0 group-hover:text-ocean-400 transition-all duration-300 ${
+                      className={`w-5 h-5 text-navy-600 flex-shrink-0 group-hover:text-ocean-600 transition-all duration-300 ${
                         expandedCategoryId === category.id ? 'rotate-180' : ''
                       }`}
                     />
@@ -346,19 +346,19 @@ export default function KnowledgePage() {
                           key={sub.id}
                           onClick={() => handleViewDetail(sub.id)}
                           style={{ animation: `fadeInUp 0.4s ease-out ${subIdx * 60}ms forwards`, opacity: 0 }}
-                          className="w-full card-premium p-4 text-left hover:bg-navy-800/40 hover:translate-x-1 transition-all duration-200 border-l-2 border-ocean-700/40 hover:border-ocean-500 group"
+                          className="w-full card-premium p-4 text-left hover:bg-sand-50 hover:translate-x-1 transition-all duration-200 border-l-2 border-ocean-500/40 hover:border-ocean-500 group"
                           aria-label={`Öffne ${sub.name}`}
                         >
-                          <h4 className="font-medium text-white mb-1 group-hover:text-ocean-300 transition-colors">
+                          <h4 className="font-medium text-navy-900 mb-1 group-hover:text-ocean-600 transition-colors">
                             {sub.name}
                           </h4>
                           {sub.description && (
-                            <p className="text-sm text-navy-400 line-clamp-1">{sub.description}</p>
+                            <p className="text-sm text-navy-700 line-clamp-1">{sub.description}</p>
                           )}
                         </button>
                       ))
                     ) : (
-                      <div className="card-premium p-4 text-navy-400 text-sm">
+                      <div className="card-premium p-4 text-navy-700 text-sm">
                         Keine Unterkategorien verfügbar
                       </div>
                     )}
@@ -371,12 +371,12 @@ export default function KnowledgePage() {
 
         {/* Info Box */}
         {!loading && !error && !showSearchResults && categories.length > 0 && (
-          <div className="mt-12 card-premium bg-ocean-950/20 border-ocean-700/30 p-6">
+          <div className="mt-12 card-premium bg-ocean-50/40 border-ocean-200 p-6">
             <div className="flex gap-4">
-              <BookOpen className="w-6 h-6 text-ocean-400 flex-shrink-0 mt-1" />
+              <BookOpen className="w-6 h-6 text-ocean-600 flex-shrink-0 mt-1" />
               <div>
-                <h3 className="font-medium text-white mb-2">Über diese Wissensdatenbank</h3>
-                <p className="text-sm text-navy-300 leading-relaxed">
+                <h3 className="font-medium text-navy-900 mb-2">Über diese Wissensdatenbank</h3>
+                <p className="text-sm text-navy-700 leading-relaxed">
                   Diese Wissensdatenbank ist Ihr digitales Nachschlagewerk für alle Aspekte des Yachtdesigns.
                   Ähnlich wie Nigel Calders klassisches Bootsbesitzer-Nachschlagewerk bietet es autorisierte,
                   vertrauenswürdige Informationen über Materialwissenschaft, Degradation, maritime Standards und bewährte Praktiken.

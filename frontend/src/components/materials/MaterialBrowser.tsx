@@ -190,13 +190,13 @@ export default function MaterialBrowser() {
           <div className="space-y-4 md:space-y-0 md:flex md:items-end md:justify-between gap-4 animate-filter-in">
             <div>
               <p className="label-premium mb-2">FILTER</p>
-              <label className="text-xs font-medium text-navy-300">Kategorie:</label>
+              <label className="text-xs font-medium text-navy-700">Kategorie:</label>
             </div>
             <div className="flex flex-col md:flex-row gap-3">
               <select
                 value={selectedCategory}
                 onChange={(e) => handleCategoryChange(e.target.value)}
-                className="bg-navy-800/60 border border-navy-600/40 rounded-lg px-4 py-2.5 text-navy-100 text-sm focus:outline-none focus:border-ocean-500/60 transition-all duration-200 focus:ring-2 focus:ring-ocean-500/20"
+                className="bg-sand-50/60 border border-sand-200 rounded-lg px-4 py-2.5 text-navy-900 text-sm focus:outline-none focus:border-ocean-500/60 transition-all duration-200 focus:ring-2 focus:ring-ocean-500/20"
               >
                 <option value="">Alle Kategorien</option>
                 {categories.map((c) => (
@@ -210,7 +210,7 @@ export default function MaterialBrowser() {
                 placeholder="Nach Material suchen..."
                 value={searchTerm}
                 onChange={(e) => handleSearchChange(e.target.value)}
-                className="bg-navy-800/60 border border-navy-600/40 rounded-lg px-4 py-2.5 text-navy-100 text-sm placeholder:text-navy-500 focus:outline-none focus:border-ocean-500/60 transition-all duration-200 focus:ring-2 focus:ring-ocean-500/20"
+                className="bg-sand-50/60 border border-sand-200 rounded-lg px-4 py-2.5 text-navy-900 text-sm placeholder:text-navy-500 focus:outline-none focus:border-ocean-500/60 transition-all duration-200 focus:ring-2 focus:ring-ocean-500/20"
                 aria-label="Materialen suchen"
               />
             </div>
@@ -219,7 +219,7 @@ export default function MaterialBrowser() {
           {loading && (
             <div className="text-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ocean-500 mx-auto mb-4" />
-              <p className="text-navy-400">Materialien werden geladen...</p>
+              <p className="text-navy-600">Materialien werden geladen...</p>
             </div>
           )}
 
@@ -234,14 +234,14 @@ export default function MaterialBrowser() {
               {/* Table */}
               <div className="flex-1 overflow-hidden">
                 {filtered.length === 0 ? (
-                  <div className="card-premium px-8 md:px-10 py-12 text-center text-navy-400">
+                  <div className="card-premium px-8 md:px-10 py-12 text-center text-navy-600">
                     Keine Materialien gefunden
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="border-b border-navy-700/40">
+                        <tr className="border-b border-sand-200">
                           <th className="text-left px-4 md:px-6 py-4 label-premium font-semibold">Material</th>
                           <th className="hidden sm:table-cell text-left px-4 md:px-6 py-4 label-premium font-semibold">Kategorie</th>
                           <th className="hidden md:table-cell text-left px-4 md:px-6 py-4 label-premium font-semibold">Unterkategorie</th>
@@ -272,18 +272,18 @@ export default function MaterialBrowser() {
                             }}
                             aria-label={`Material: ${m.name}, Kategorie: ${m.category}`}
                           >
-                            <td className="px-4 md:px-6 py-4 text-white font-medium text-sm">{m.name}</td>
-                            <td className="hidden sm:table-cell px-4 md:px-6 py-4 text-navy-300 text-sm">{m.category}</td>
-                            <td className="hidden md:table-cell px-4 md:px-6 py-4 text-navy-400 text-sm">{m.subcategory ?? ''}</td>
-                            <td className="px-4 md:px-6 py-4 text-right font-mono text-navy-300 text-sm">
+                            <td className="px-4 md:px-6 py-4 text-navy-900 font-medium text-sm">{m.name}</td>
+                            <td className="hidden sm:table-cell px-4 md:px-6 py-4 text-navy-700 text-sm">{m.category}</td>
+                            <td className="hidden md:table-cell px-4 md:px-6 py-4 text-navy-600 text-sm">{m.subcategory ?? ''}</td>
+                            <td className="px-4 md:px-6 py-4 text-right font-mono text-navy-700 text-sm">
                               {m.cost_eur_per_unit != null
                                 ? `${m.cost_eur_per_unit.toFixed(0)} € / ${m.unit ?? 'Stk.'}`
                                 : '—'}
                             </td>
-                            <td className="hidden sm:table-cell px-4 md:px-6 py-4 text-right font-mono text-navy-300 text-sm">
+                            <td className="hidden sm:table-cell px-4 md:px-6 py-4 text-right font-mono text-navy-700 text-sm">
                               {m.lifespan_years != null ? `${m.lifespan_years} J.` : '—'}
                             </td>
-                            <td className="hidden lg:table-cell px-4 md:px-6 py-4 text-right font-mono text-navy-300 text-sm">
+                            <td className="hidden lg:table-cell px-4 md:px-6 py-4 text-right font-mono text-navy-700 text-sm">
                               {m.maintenance_interval_months != null
                                 ? `${m.maintenance_interval_months} Mo.`
                                 : '—'}
@@ -310,10 +310,10 @@ export default function MaterialBrowser() {
             <div className="lg:hidden detail-panel-mobile animate-overlay-in">
               <div className="absolute bottom-0 left-0 right-0 card-premium rounded-t-2xl p-6 space-y-6 max-h-[70vh] overflow-y-auto animate-panel-in">
                 <div className="flex items-start justify-between mb-4">
-                  <h3 className="font-serif text-lg font-medium text-white">Details</h3>
+                  <h3 className="font-serif text-lg font-medium text-navy-900">Details</h3>
                   <button
                     onClick={handleCloseDetail}
-                    className="text-navy-400 hover:text-ocean-300 transition-colors duration-200"
+                    className="text-navy-600 hover:text-ocean-700 transition-colors duration-200"
                     aria-label="Detail-Panel schließen"
                   >
                     <X className="w-6 h-6" />
@@ -334,10 +334,10 @@ function DetailPanel({ material, onClose }: { material: Material; onClose: () =>
     <>
       <div className="hidden lg:block">
         <div className="flex items-start justify-between mb-4">
-          <h3 className="font-serif text-lg font-medium text-white">{material.name}</h3>
+          <h3 className="font-serif text-lg font-medium text-navy-900">{material.name}</h3>
           <button
             onClick={onClose}
-            className="text-navy-400 hover:text-ocean-300 transition-colors duration-200"
+            className="text-navy-600 hover:text-ocean-700 transition-colors duration-200"
             aria-label="Panel schließen"
           >
             <X className="w-5 h-5" />
@@ -349,19 +349,19 @@ function DetailPanel({ material, onClose }: { material: Material; onClose: () =>
         {material.category && (
           <div>
             <p className="label-premium mb-1">KATEGORIE</p>
-            <p className="text-white">{material.category}</p>
+            <p className="text-navy-900">{material.category}</p>
           </div>
         )}
         {material.subcategory && (
           <div>
             <p className="label-premium mb-1">UNTERKATEGORIE</p>
-            <p className="text-white">{material.subcategory}</p>
+            <p className="text-navy-900">{material.subcategory}</p>
           </div>
         )}
         {material.cost_eur_per_unit != null && (
           <div>
             <p className="label-premium mb-1">PREIS</p>
-            <p className="font-mono text-ocean-300">
+            <p className="font-mono text-ocean-600">
               {material.cost_eur_per_unit.toFixed(2)} € / {material.unit ?? 'Stk.'}
             </p>
           </div>
@@ -369,19 +369,19 @@ function DetailPanel({ material, onClose }: { material: Material; onClose: () =>
         {material.lifespan_years != null && (
           <div>
             <p className="label-premium mb-1">LEBENSDAUER</p>
-            <p className="font-mono text-white">{material.lifespan_years} Jahre</p>
+            <p className="font-mono text-navy-900">{material.lifespan_years} Jahre</p>
           </div>
         )}
         {material.maintenance_interval_months != null && (
           <div>
             <p className="label-premium mb-1">WARTUNGSINTERVALL</p>
-            <p className="font-mono text-white">{material.maintenance_interval_months} Monate</p>
+            <p className="font-mono text-navy-900">{material.maintenance_interval_months} Monate</p>
           </div>
         )}
         {material.notes && (
           <div>
             <p className="label-premium mb-1">NOTIZEN</p>
-            <p className="text-navy-300 text-sm leading-relaxed">{material.notes}</p>
+            <p className="text-navy-700 text-sm leading-relaxed">{material.notes}</p>
           </div>
         )}
         {material.properties && Object.keys(material.properties).length > 0 && (
@@ -390,8 +390,8 @@ function DetailPanel({ material, onClose }: { material: Material; onClose: () =>
             <div className="space-y-1.5 text-xs">
               {Object.entries(material.properties).map(([k, v]) => (
                 <div key={k} className="flex justify-between">
-                  <span className="text-navy-400">{k}</span>
-                  <span className="font-mono text-navy-300">{String(v)}</span>
+                  <span className="text-navy-600">{k}</span>
+                  <span className="font-mono text-navy-700">{String(v)}</span>
                 </div>
               ))}
             </div>

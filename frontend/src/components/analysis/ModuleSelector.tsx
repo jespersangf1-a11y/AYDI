@@ -52,7 +52,7 @@ export default function ModuleSelector({
 
   return (
     <div className="space-y-5">
-      <h3 className="font-serif text-title font-semibold text-white">Analysemodul wählen</h3>
+      <h3 className="font-serif text-title font-semibold text-navy-900">Analysemodul wählen</h3>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {allModules.map((mod) => {
           const available = isAvailable(mod)
@@ -65,16 +65,16 @@ export default function ModuleSelector({
               onClick={() => available && onSelect(mod)}
               className={`text-left rounded-xl p-4 border transition-all duration-200 ${
                 isSelected
-                  ? 'card-premium border-ocean-600/60 bg-ocean-900/30 text-white'
+                  ? 'card-premium border-ocean-600/60 bg-ocean-900/30 text-navy-900'
                   : available
-                  ? 'card-premium hover:border-ocean-600/40 hover:bg-navy-800/40 text-white'
+                  ? 'card-premium hover:border-ocean-600/40 hover:bg-sand-50/40 text-navy-900'
                   : 'card-premium border-navy-800/40 bg-navy-900/20 text-navy-600 cursor-not-allowed opacity-60'
               }`}
             >
               <div className="flex items-start justify-between mb-2">
                 <span
                   className={`text-sm font-sans font-semibold ${
-                    isSelected ? 'text-ocean-200' : available ? 'text-white' : 'text-navy-500'
+                    isSelected ? 'text-ocean-200' : available ? 'text-navy-900' : 'text-navy-500'
                   }`}
                 >
                   {ANALYSIS_MODULE_LABELS[mod]}
@@ -93,7 +93,7 @@ export default function ModuleSelector({
               {MODULE_DESCRIPTIONS[mod] && (
                 <p
                   className={`text-xs leading-relaxed ${
-                    available ? 'text-navy-400' : 'text-navy-700'
+                    available ? 'text-navy-600' : 'text-navy-700'
                   }`}
                 >
                   {MODULE_DESCRIPTIONS[mod]}

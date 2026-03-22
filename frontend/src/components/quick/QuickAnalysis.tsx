@@ -209,13 +209,13 @@ export default function QuickAnalysis() {
               style={{ backgroundImage: `url(${heroImage})` }}
             />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-navy-950/85 via-navy-950/50 to-navy-950/30" />
+          <div className="absolute inset-0 bg-gradient-to-t from-navy-950/85 via-navy-950/55 to-navy-950/35" />
           <div className="relative w-full px-6 md:px-10 pb-8 pt-20 z-10">
-            <p className="label-premium mb-2 opacity-90">Schnelle Analyse</p>
+            <p className="label-premium mb-2 opacity-90" style={{ color: 'rgba(255,255,255,0.9)' }}>Schnelle Analyse</p>
             <h1 className="font-serif text-3xl md:text-display font-medium text-white">
               {heroTitle}
             </h1>
-            <p className="font-sans text-sm text-navy-300 mt-2 max-w-xl leading-relaxed">
+            <p className="font-sans text-sm text-white mt-2 max-w-xl leading-relaxed">
               {heroSubtitle}
             </p>
           </div>
@@ -242,10 +242,10 @@ export default function QuickAnalysis() {
                 <div
                   className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-mono font-semibold transition-all duration-500 ${
                     isActive
-                      ? 'bg-ocean-700/80 text-white ring-2 ring-ocean-500/50 animate-step-pulse'
+                      ? 'bg-ocean-500 text-navy-900 ring-2 ring-ocean-300/50 animate-step-pulse'
                       : isDone
-                      ? 'bg-emerald-600/60 text-emerald-300 ring-1 ring-emerald-500/30'
-                      : 'bg-navy-800/60 text-navy-500'
+                      ? 'bg-emerald-500 text-navy-900 ring-1 ring-emerald-300/30'
+                      : 'bg-sand-200 text-navy-600'
                   }`}
                 >
                   {isDone ? (
@@ -256,7 +256,7 @@ export default function QuickAnalysis() {
                 </div>
                 <span
                   className={`text-xs md:text-[13px] font-sans font-medium transition-all duration-300 whitespace-nowrap ${
-                    isActive ? 'text-white font-semibold' : isDone ? 'text-navy-300' : 'text-navy-500'
+                    isActive ? 'text-navy-900 font-semibold' : isDone ? 'text-navy-700' : 'text-navy-600'
                   }`}
                 >
                   {s.label}
@@ -264,7 +264,7 @@ export default function QuickAnalysis() {
                 {idx < steps.length - 1 && (
                   <div
                     className={`hidden md:block w-12 h-px mx-2 transition-all duration-500 ${
-                      isDone ? 'bg-emerald-600/60' : isActive ? 'bg-ocean-500/50' : 'bg-navy-800'
+                      isDone ? 'bg-emerald-600/60' : isActive ? 'bg-ocean-500/50' : 'bg-sand-50'
                     }`}
                   />
                 )}
@@ -286,10 +286,10 @@ export default function QuickAnalysis() {
                 }}
                 aria-label={`${BOAT_CLASS_LABELS[bc]}: ${BOAT_CLASS_DESCRIPTIONS[bc] || ''}`}
               >
-                <h3 className="font-serif text-lg font-medium text-white mb-1.5 group-hover:text-ocean-300 transition-colors duration-200">
+                <h3 className="font-serif text-lg font-medium text-navy-900 mb-1.5 group-hover:text-ocean-600 transition-colors duration-200">
                   {BOAT_CLASS_LABELS[bc]}
                 </h3>
-                <p className="text-[13px] text-navy-400 leading-relaxed">
+                <p className="text-[13px] text-navy-600 leading-relaxed">
                   {BOAT_CLASS_DESCRIPTIONS[bc] || ''}
                 </p>
               </button>

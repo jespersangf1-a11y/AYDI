@@ -11,10 +11,10 @@ interface DashboardProps {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  draft: 'bg-navy-700/60 text-navy-200 border border-navy-600/40',
-  active: 'bg-ocean-900/60 text-ocean-200 border border-ocean-600/40',
-  review: 'bg-amber-900/60 text-amber-200 border border-amber-600/40',
-  archived: 'bg-navy-800/60 text-navy-300 border border-navy-700/40',
+  draft: 'bg-sand-200 text-navy-700 border border-sand-300',
+  active: 'bg-ocean-100 text-ocean-700 border border-ocean-300',
+  review: 'bg-amber-100 text-amber-700 border border-amber-300',
+  archived: 'bg-gray-100 text-gray-700 border border-gray-300',
 }
 
 // Animations for dashboard
@@ -88,7 +88,7 @@ export default function Dashboard({ onSelectProject }: DashboardProps) {
     return (
       <div className="text-center py-12">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ocean-500 mx-auto mb-4" />
-        <p className="text-navy-400">Projekte werden geladen...</p>
+        <p className="text-navy-600">Projekte werden geladen...</p>
       </div>
     )
   }
@@ -120,8 +120,8 @@ export default function Dashboard({ onSelectProject }: DashboardProps) {
               <div className="animate-empty-float mb-4">
                 <FolderOpen className="w-16 h-16 mx-auto text-navy-600" />
               </div>
-              <p className="text-navy-400 text-lg font-serif">Noch keine Projekte vorhanden</p>
-              <p className="text-navy-500 text-sm mt-2">Erstellen Sie Ihr erstes Yacht-Design-Projekt</p>
+              <p className="text-navy-700 text-lg font-serif">Noch keine Projekte vorhanden</p>
+              <p className="text-navy-600 text-sm mt-2">Erstellen Sie Ihr erstes Yacht-Design-Projekt</p>
             </div>
           ) : (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -134,7 +134,7 @@ export default function Dashboard({ onSelectProject }: DashboardProps) {
                   aria-label={`Projekt ${project.name}, Status: ${STATUS_LABELS[project.status]}`}
                 >
                   <div className="flex items-start justify-between mb-4">
-                    <Ship className="w-6 h-6 text-ocean-500 transition-colors duration-300 group-hover:text-ocean-300 group-hover:animate-icon-bounce" />
+                    <Ship className="w-6 h-6 text-ocean-600 transition-colors duration-300 group-hover:text-ocean-700 group-hover:animate-icon-bounce" />
                     <span
                       className={`text-xs px-3 py-1.5 rounded-md font-semibold uppercase tracking-wider-premium transition-all duration-300 ${
                         project.status === 'active' ? 'animate-status-pulse' : ''
@@ -144,26 +144,26 @@ export default function Dashboard({ onSelectProject }: DashboardProps) {
                     </span>
                   </div>
 
-                  <h3 className="font-serif text-title font-medium text-white mb-2 group-hover:text-ocean-200 transition-colors duration-300">
+                  <h3 className="font-serif text-title font-medium text-navy-900 mb-2 group-hover:text-ocean-700 transition-colors duration-300">
                     {project.name}
                   </h3>
 
                   {project.description && (
-                    <p className="text-sm text-navy-300 mb-4 leading-relaxed line-clamp-2">
+                    <p className="text-sm text-navy-700 mb-4 leading-relaxed line-clamp-2">
                       {project.description}
                     </p>
                   )}
 
-                  <div className="border-t border-navy-700/40 pt-4 space-y-3">
+                  <div className="border-t border-sand-200 pt-4 space-y-3">
                     <div className="flex items-center justify-between text-xs">
                       <span className="label-premium">Bootsklasse</span>
-                      <span className="text-ocean-300 font-medium">
+                      <span className="text-ocean-600 font-medium">
                         {BOAT_CLASS_LABELS[project.boat_class]}
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-xs">
                       <span className="label-premium">Abmessungen</span>
-                      <span className="text-ocean-300 font-medium font-mono">
+                      <span className="text-ocean-600 font-medium font-mono">
                         {project.length_m}m × {project.beam_m}m
                       </span>
                     </div>

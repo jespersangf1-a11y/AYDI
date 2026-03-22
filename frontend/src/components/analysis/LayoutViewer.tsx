@@ -40,7 +40,7 @@ export default function LayoutViewer({ zones, passages }: LayoutViewerProps) {
   const [hoveredZone, setHoveredZone] = useState<string | null>(null)
 
   if (zones.length === 0) {
-    return <div className="text-navy-400 text-sm">Kein Layout vorhanden</div>
+    return <div className="text-navy-600 text-sm">Kein Layout vorhanden</div>
   }
 
   // Calculate bounding box
@@ -122,9 +122,9 @@ export default function LayoutViewer({ zones, passages }: LayoutViewerProps) {
         const area = polygonArea(zone.polygon)
         return (
           <div className="absolute top-6 right-6 card-premium p-4 text-sm backdrop-blur-md">
-            <p className="font-sans font-semibold text-white">{zone.name}</p>
-            <p className="text-navy-400 text-xs mt-1">Typ: {zone.zone_type}</p>
-            <p className="text-navy-400 font-mono text-xs mt-1">Fläche: {area.toFixed(1)}m²</p>
+            <p className="font-sans font-semibold text-navy-900">{zone.name}</p>
+            <p className="text-navy-600 text-xs mt-1">Typ: {zone.zone_type}</p>
+            <p className="text-navy-600 font-mono text-xs mt-1">Fläche: {area.toFixed(1)}m²</p>
           </div>
         )
       })()}

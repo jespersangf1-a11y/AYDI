@@ -83,7 +83,7 @@ const SEVERITY_CONFIG: Record<
     label: 'Niedrig',
     borderColor: 'border-l-navy-600',
     bgColor: 'bg-transparent',
-    text: 'text-navy-300',
+    text: 'text-navy-700',
     icon: Info,
   },
 }
@@ -175,7 +175,7 @@ export default function ServiceReportList() {
                 value={categoryFilter}
                 onChange={(e) => handleCategoryChange(e.target.value)}
                 aria-label="Kategorie filtern"
-                className="w-full sm:w-auto bg-navy-800/60 border border-navy-600/40 rounded-lg px-4 py-2.5 text-navy-100 text-sm focus:outline-none focus:border-ocean-500/60 focus:ring-2 focus:ring-ocean-500/20 transition-all duration-200"
+                className="w-full sm:w-auto bg-sand-50/60 border border-sand-200 rounded-lg px-4 py-2.5 text-navy-900 text-sm focus:outline-none focus:border-ocean-500/60 focus:ring-2 focus:ring-ocean-500/20 transition-all duration-200"
               >
                 <option value="">Alle Kategorien</option>
                 {categories.map((c) => (
@@ -192,7 +192,7 @@ export default function ServiceReportList() {
                 value={severityFilter}
                 onChange={(e) => handleSeverityChange(e.target.value)}
                 aria-label="Schweregrad filtern"
-                className="w-full sm:w-auto bg-navy-800/60 border border-navy-600/40 rounded-lg px-4 py-2.5 text-navy-100 text-sm focus:outline-none focus:border-ocean-500/60 focus:ring-2 focus:ring-ocean-500/20 transition-all duration-200"
+                className="w-full sm:w-auto bg-sand-50/60 border border-sand-200 rounded-lg px-4 py-2.5 text-navy-900 text-sm focus:outline-none focus:border-ocean-500/60 focus:ring-2 focus:ring-ocean-500/20 transition-all duration-200"
               >
                 <option value="">Alle Schweregrade</option>
                 <option value="critical">Kritisch</option>
@@ -205,7 +205,7 @@ export default function ServiceReportList() {
         </div>
 
         {loading && (
-          <div className="text-center py-12 text-navy-400">
+          <div className="text-center py-12 text-navy-600">
             Berichte werden geladen...
           </div>
         )}
@@ -217,7 +217,7 @@ export default function ServiceReportList() {
         )}
 
         {!loading && !error && reports.length === 0 && (
-          <div className="card-premium px-10 py-12 text-center text-navy-400">
+          <div className="card-premium px-10 py-12 text-center text-navy-600">
             Keine Berichte gefunden
           </div>
         )}
@@ -238,7 +238,7 @@ export default function ServiceReportList() {
                 >
                   <div className="flex items-start justify-between gap-4 mb-3">
                     <div className="flex-1">
-                      <p className="text-white font-medium text-sm leading-snug group-hover:text-ocean-300 transition-colors">
+                      <p className="text-navy-900 font-medium text-sm leading-snug group-hover:text-ocean-700 transition-colors">
                         {report.description}
                       </p>
                     </div>
@@ -256,29 +256,29 @@ export default function ServiceReportList() {
                   </div>
 
                   {/* Metadata Grid - Stacked on mobile */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-navy-400 pt-3 border-t border-navy-700/20">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-navy-600 pt-3 border-t border-navy-700/20">
                     <div>
                       <span className="label-premium mr-1">TYP</span>
-                      <span className="text-navy-300">
+                      <span className="text-navy-700">
                         {REPORT_TYPE_LABELS[report.report_type] ?? report.report_type}
                       </span>
                     </div>
                     {report.category && (
                       <div>
                         <span className="label-premium mr-1">KATEGORIE</span>
-                        <span className="text-navy-300">{report.category}</span>
+                        <span className="text-navy-700">{report.category}</span>
                       </div>
                     )}
                     {report.zone_type && (
                       <div>
                         <span className="label-premium mr-1">ZONE</span>
-                        <span className="text-navy-300">{report.zone_type}</span>
+                        <span className="text-navy-700">{report.zone_type}</span>
                       </div>
                     )}
                     {report.boat_class && (
                       <div>
                         <span className="label-premium mr-1">KLASSE</span>
-                        <span className="text-navy-300">
+                        <span className="text-navy-700">
                           {BOAT_CLASS_LABELS[report.boat_class]}
                         </span>
                       </div>
@@ -297,7 +297,7 @@ export default function ServiceReportList() {
                     {report.boat_age_months != null && (
                       <div>
                         <span className="label-premium mr-1">BOOTSALTER</span>
-                        <span className="font-mono text-navy-300">
+                        <span className="font-mono text-navy-700">
                           {report.boat_age_months} Monate
                         </span>
                       </div>
@@ -311,7 +311,7 @@ export default function ServiceReportList() {
                         <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
                         <div className="flex-1">
                           <p className="label-premium mb-2">URSACHE</p>
-                          <p className="text-xs text-navy-200 leading-relaxed">{report.root_cause}</p>
+                          <p className="text-xs text-navy-600 leading-relaxed">{report.root_cause}</p>
                         </div>
                       </div>
                     </div>

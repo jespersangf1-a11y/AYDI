@@ -42,10 +42,10 @@ const CONFIDENCE_CONFIG: Record<string, { label: string; color: string; icon: ty
 
 const COLOR_CLASSES: Record<string, { bg: string; text: string; border: string }> = {
   green: { bg: 'bg-emerald-900/20', text: 'text-emerald-300', border: 'border-emerald-700/40' },
-  blue: { bg: 'bg-ocean-900/20', text: 'text-ocean-300', border: 'border-ocean-700/40' },
+  blue: { bg: 'bg-ocean-900/20', text: 'text-ocean-600', border: 'border-ocean-700/40' },
   amber: { bg: 'bg-amber-900/20', text: 'text-amber-300', border: 'border-amber-700/40' },
   red: { bg: 'bg-red-900/20', text: 'text-red-300', border: 'border-red-700/40' },
-  gray: { bg: 'bg-navy-800/40', text: 'text-navy-300', border: 'border-navy-700/40' },
+  gray: { bg: 'bg-sand-50/40', text: 'text-navy-700', border: 'border-sand-200' },
   orange: { bg: 'bg-orange-900/20', text: 'text-orange-300', border: 'border-orange-700/40' },
 }
 
@@ -91,7 +91,7 @@ export default function ConfidenceBadge({
       </span>
 
       {showTooltip && (
-        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-navy-900 text-navy-100 text-xs rounded whitespace-nowrap z-20 border border-navy-700 shadow-lg animate-fadeInScale">
+        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-navy-800 text-xs rounded whitespace-nowrap z-20 border border-sand-200 shadow-lg animate-fadeInScale">
           {cfg.tooltip}
         </div>
       )}

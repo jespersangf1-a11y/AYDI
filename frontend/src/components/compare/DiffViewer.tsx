@@ -15,7 +15,7 @@ export default function DiffViewer({ diff }: DiffViewerProps) {
   if (!summary.has_changes) {
     return (
       <div className="card-premium p-8 text-center">
-        <p className="text-navy-400 text-sm">Keine Unterschiede zwischen den Versionen gefunden.</p>
+        <p className="text-navy-600 text-sm">Keine Unterschiede zwischen den Versionen gefunden.</p>
       </div>
     )
   }
@@ -24,7 +24,7 @@ export default function DiffViewer({ diff }: DiffViewerProps) {
     <div className="space-y-6">
       {/* Summary bar */}
       <div className="card-premium p-5">
-        <h3 className="font-sans font-semibold text-white mb-4">Zusammenfassung</h3>
+        <h3 className="font-sans font-semibold text-navy-900 mb-4">Zusammenfassung</h3>
         <div className="flex flex-wrap gap-2.5">
           {summary.zones_added > 0 && (
             <span className="flex items-center gap-1.5 text-xs text-emerald-300 bg-emerald-900/20 border border-emerald-700/40 px-3 py-1.5 rounded-full font-medium">
@@ -87,7 +87,7 @@ export default function DiffViewer({ diff }: DiffViewerProps) {
             key={t}
             onClick={() => setTab(t)}
             className={`flex-1 py-2 rounded-lg text-xs font-sans font-semibold uppercase tracking-wider-premium transition-all duration-200 ${
-              tab === t ? 'bg-ocean-700 text-white' : 'text-navy-400 hover:text-navy-200'
+              tab === t ? 'bg-ocean-700 text-navy-900' : 'text-navy-600 hover:text-navy-600'
             }`}
           >
             {t === 'zones' ? 'Zonen' : 'Durchgänge'}
@@ -108,7 +108,7 @@ export default function DiffViewer({ diff }: DiffViewerProps) {
                 <span className="font-sans font-semibold text-emerald-300">{item.name}</span>
                 <span className="text-xs text-emerald-700 uppercase font-medium">hinzugefügt</span>
               </div>
-              <p className="text-xs text-navy-400 ml-6">
+              <p className="text-xs text-navy-600 ml-6">
                 Typ: {item.zone.zone_type} · Höhe: {item.zone.height_mm ?? '—'} mm
               </p>
             </div>
@@ -124,7 +124,7 @@ export default function DiffViewer({ diff }: DiffViewerProps) {
                 <span className="font-sans font-semibold text-red-300">{item.name}</span>
                 <span className="text-xs text-red-700 uppercase font-medium">entfernt</span>
               </div>
-              <p className="text-xs text-navy-400 ml-6">Typ: {item.zone.zone_type}</p>
+              <p className="text-xs text-navy-600 ml-6">Typ: {item.zone.zone_type}</p>
             </div>
           ))}
 
@@ -141,7 +141,7 @@ export default function DiffViewer({ diff }: DiffViewerProps) {
               <div className="ml-6 space-y-1">
                 {item.changes.map((change, j) => (
                   <div key={j} className="flex items-center gap-2 text-xs">
-                    <span className="text-navy-400 w-32 shrink-0">{change.field}</span>
+                    <span className="text-navy-600 w-32 shrink-0">{change.field}</span>
                     <span className="font-mono text-red-400 line-through">
                       {String(change.old)}
                     </span>
@@ -180,7 +180,7 @@ export default function DiffViewer({ diff }: DiffViewerProps) {
                 </span>
                 <span className="text-xs text-emerald-700 uppercase font-medium">hinzugefügt</span>
               </div>
-              <p className="text-xs text-navy-400 ml-6 font-mono">
+              <p className="text-xs text-navy-600 ml-6 font-mono">
                 Breite: {item.passage.width_mm} mm
               </p>
             </div>
@@ -198,7 +198,7 @@ export default function DiffViewer({ diff }: DiffViewerProps) {
                 </span>
                 <span className="text-xs text-red-700 uppercase font-medium">entfernt</span>
               </div>
-              <p className="text-xs text-navy-400 ml-6 font-mono">
+              <p className="text-xs text-navy-600 ml-6 font-mono">
                 Breite: {item.passage.width_mm} mm
               </p>
             </div>
@@ -219,7 +219,7 @@ export default function DiffViewer({ diff }: DiffViewerProps) {
               <div className="ml-6 space-y-1">
                 {item.changes.map((change, j) => (
                   <div key={j} className="flex items-center gap-2 text-xs">
-                    <span className="text-navy-400 w-32 shrink-0">{change.field}</span>
+                    <span className="text-navy-600 w-32 shrink-0">{change.field}</span>
                     <span className="font-mono text-red-400 line-through">
                       {String(change.old)}
                     </span>

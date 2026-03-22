@@ -188,16 +188,16 @@ export default function ZoneMesh({
       {(hovered || showLabels) && (
         <Html position={centroid} center distanceFactor={15} zIndexRange={[10, 0]}>
           <div
-            className="bg-navy-800 border border-navy-600 rounded px-2 py-1 text-xs whitespace-nowrap pointer-events-none select-none"
+            className="bg-sand-50 border border-navy-600 rounded px-2 py-1 text-xs whitespace-nowrap pointer-events-none select-none"
             style={{ color: 'white' }}
           >
             <span className="font-medium">{zone.name}</span>
             {hovered && (
               <>
                 <br />
-                <span className="text-navy-300">{typeLabel}</span>
+                <span className="text-navy-700">{typeLabel}</span>
                 <br />
-                <span className="font-mono text-navy-300">
+                <span className="font-mono text-navy-700">
                   {area.toFixed(1)} m&sup2;
                 </span>
               </>

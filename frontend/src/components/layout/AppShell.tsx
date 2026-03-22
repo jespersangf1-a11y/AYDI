@@ -44,26 +44,26 @@ export default function AppShell({ currentView, onNavigate, children, breadcrumb
   ]
 
   return (
-    <div className="flex h-screen bg-slate-950">
+    <div className="flex h-screen bg-sand-50">
       {/* Sidebar - Hidden on mobile */}
       {!isMobile && (
       <aside
         className={`${
           sidebarCollapsed ? 'w-[72px]' : 'w-64'
-        } bg-navy-950/80 backdrop-blur-md border-r border-navy-800/30 flex flex-col transition-all duration-300`}
+        } bg-white border-r border-sand-200 flex flex-col transition-all duration-300`}
       >
         {/* Logo */}
-        <div className="px-5 py-6 border-b border-navy-800/30">
+        <div className="px-5 py-6 border-b border-sand-200">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-ocean-800/40 flex items-center justify-center flex-shrink-0">
-              <Anchor className="w-5 h-5 text-ocean-400" strokeWidth={1.5} />
+            <div className="w-9 h-9 rounded-lg bg-ocean-100 flex items-center justify-center flex-shrink-0">
+              <Anchor className="w-5 h-5 text-ocean-600" strokeWidth={1.5} />
             </div>
             {!sidebarCollapsed && (
               <div className="animate-fade-in transition-opacity duration-200">
-                <h1 className="font-serif text-lg font-medium text-white tracking-wide-premium">
+                <h1 className="font-serif text-lg font-medium text-navy-900 tracking-wide-premium">
                   AYDI
                 </h1>
-                <p className="text-[10px] font-sans font-medium tracking-wider-premium uppercase text-navy-500">
+                <p className="text-[10px] font-sans font-medium tracking-wider-premium uppercase text-navy-600">
                   Yacht Design Intelligence
                 </p>
               </div>
@@ -74,7 +74,7 @@ export default function AppShell({ currentView, onNavigate, children, breadcrumb
         {/* Collapse toggle */}
         <button
           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-          className="mx-3 mt-4 mb-2 p-2 rounded-lg text-navy-500 hover:text-navy-300 hover:bg-navy-800/30 transition-colors self-end"
+          className="mx-3 mt-4 mb-2 p-2 rounded-lg text-navy-600 hover:text-ocean-600 hover:bg-sand-100 transition-colors self-end"
           aria-label={sidebarCollapsed ? 'Sidebar erweitern' : 'Sidebar minimieren'}
         >
           {sidebarCollapsed ? <Menu className="w-4 h-4" /> : <X className="w-4 h-4" />}
@@ -94,16 +94,16 @@ export default function AppShell({ currentView, onNavigate, children, breadcrumb
                 title={sidebarCollapsed ? item.label : undefined}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-sans font-medium relative group transition-all duration-200 hover:scale-[1.02] ${
                   active
-                    ? 'bg-ocean-900/30 text-ocean-300'
-                    : 'text-navy-400 hover:text-ocean-400'
+                    ? 'bg-ocean-100 text-ocean-700'
+                    : 'text-navy-600 hover:text-ocean-600'
                 }`}
               >
                 {/* Active indicator - left border animation */}
                 {active && (
-                  <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-ocean-400 rounded-r-sm" />
+                  <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-ocean-600 rounded-r-sm" />
                 )}
                 <Icon className={`w-[18px] h-[18px] flex-shrink-0 transition-colors duration-200 ${
-                  active ? 'text-ocean-400' : 'group-hover:text-ocean-400'
+                  active ? 'text-ocean-600' : 'group-hover:text-ocean-600'
                 }`} strokeWidth={1.5} />
                 {!sidebarCollapsed && (
                   <span className="transition-all duration-200">{item.label}</span>
@@ -115,8 +115,8 @@ export default function AppShell({ currentView, onNavigate, children, breadcrumb
 
         {/* Version info at bottom */}
         {!sidebarCollapsed && (
-          <div className="px-5 py-4 border-t border-navy-800/30 transition-opacity duration-200">
-            <p className="text-[10px] font-sans text-navy-600 tracking-wide-premium">
+          <div className="px-5 py-4 border-t border-sand-200 transition-opacity duration-200">
+            <p className="text-[10px] font-sans text-navy-500 tracking-wide-premium">
               v0.9.0 Preview
             </p>
           </div>
@@ -127,7 +127,7 @@ export default function AppShell({ currentView, onNavigate, children, breadcrumb
       {/* Mobile Bottom Navigation Bar */}
       {isMobile && (
         <div className="fixed bottom-0 left-0 right-0 z-50">
-          <nav className="bg-navy-950/90 backdrop-blur-lg border-t border-navy-800/30 flex justify-around items-end pb-safe">
+          <nav className="bg-white backdrop-blur-lg border-t border-sand-200 flex justify-around items-end pb-safe shadow-lg">
             {navItems.map((item) => {
               const Icon = item.icon
               const active = currentView === item.id
@@ -138,14 +138,14 @@ export default function AppShell({ currentView, onNavigate, children, breadcrumb
                   aria-label={item.label}
                   aria-current={active ? 'page' : undefined}
                   className={`flex flex-col items-center justify-center py-3 px-2 transition-all duration-200 ${
-                    active ? 'text-ocean-400' : 'text-navy-400'
+                    active ? 'text-ocean-600' : 'text-navy-600'
                   }`}
                 >
                   <Icon className={`w-5 h-5 mb-1 transition-colors duration-200 ${
-                    active ? 'text-ocean-400' : ''
+                    active ? 'text-ocean-600' : ''
                   }`} strokeWidth={1.5} />
                   <span className={`text-[10px] font-sans font-medium tracking-wide transition-colors duration-200 ${
-                    active ? 'text-ocean-400' : 'text-navy-500'
+                    active ? 'text-ocean-600' : 'text-navy-600'
                   }`}>
                     {item.label.split(' ')[0]}
                   </span>
@@ -157,13 +157,13 @@ export default function AppShell({ currentView, onNavigate, children, breadcrumb
       )}
 
       {/* Main Content */}
-      <main className={`flex-1 overflow-auto bg-slate-950 flex flex-col ${isMobile ? 'pb-24' : ''}`}>
+      <main className={`flex-1 overflow-auto bg-sand-50 flex flex-col ${isMobile ? 'pb-24' : ''}`}>
         {/* Breadcrumb Navigation */}
         {breadcrumbs && breadcrumbs.length > 0 && (
-          <div className="bg-navy-950/60 backdrop-blur-sm border-b border-navy-800/20 px-6 md:px-10 py-3 flex items-center gap-2 animate-fade-in">
+          <div className="bg-white border-b border-sand-200 px-6 md:px-10 py-3 flex items-center gap-2 animate-fade-in">
             <button
               onClick={() => onNavigate('dashboard')}
-              className="text-[13px] font-sans text-ocean-500 hover:text-ocean-400 transition-colors duration-200"
+              className="text-[13px] font-sans text-ocean-600 hover:text-ocean-700 transition-colors duration-200"
             >
               Dashboard
             </button>
@@ -173,12 +173,12 @@ export default function AppShell({ currentView, onNavigate, children, breadcrumb
                 {crumb.onClick ? (
                   <button
                     onClick={crumb.onClick}
-                    className="text-[13px] font-sans text-ocean-500 hover:text-ocean-400 transition-colors duration-200"
+                    className="text-[13px] font-sans text-ocean-600 hover:text-ocean-700 transition-colors duration-200"
                   >
                     {crumb.label}
                   </button>
                 ) : (
-                  <span className="text-[13px] font-sans font-medium text-navy-300">{crumb.label}</span>
+                  <span className="text-[13px] font-sans font-medium text-navy-700">{crumb.label}</span>
                 )}
               </div>
             ))}

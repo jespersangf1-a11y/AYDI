@@ -109,7 +109,7 @@ function Section({ title, hint, defaultOpen = false, children }: SectionProps) {
   }
 
   return (
-    <div className="bg-navy-900/40 border border-navy-700/40 rounded-xl overflow-hidden backdrop-blur-sm transition-all duration-300 hover:bg-navy-900/50 group">
+    <div className="bg-white border border-sand-200 rounded-xl overflow-hidden shadow-sm transition-all duration-300 hover:shadow-md group">
       <button
         type="button"
         onClick={handleToggle}
@@ -119,16 +119,16 @@ function Section({ title, hint, defaultOpen = false, children }: SectionProps) {
       >
         <div className="flex items-center gap-3">
           {open ? (
-            <ChevronDown className="w-4 h-4 text-ocean-500 transition-transform duration-300" />
+            <ChevronDown className="w-4 h-4 text-ocean-600 transition-transform duration-300" />
           ) : (
-            <ChevronRight className="w-4 h-4 text-navy-500 group-hover:text-ocean-500 transition-colors duration-200" />
+            <ChevronRight className="w-4 h-4 text-navy-500 group-hover:text-ocean-600 transition-colors duration-200" />
           )}
-          <span className="font-serif font-semibold text-white">{title}</span>
-          {hint && <span className="text-xs text-navy-500 ml-2">{hint}</span>}
+          <span className="font-serif font-semibold text-navy-900">{title}</span>
+          {hint && <span className="text-xs text-navy-600 ml-2">{hint}</span>}
         </div>
       </button>
       {open && (
-        <div className="section-content-open px-6 pb-6 grid gap-4 sm:grid-cols-2 border-t border-navy-700/40">
+        <div className="section-content-open px-6 pb-6 grid gap-4 sm:grid-cols-2 border-t border-sand-100">
           {children}
         </div>
       )}
@@ -167,11 +167,11 @@ function Field({ label, name, type = 'number', unit, placeholder, value, onChang
   return (
     <div>
       <label className={`block text-xs font-semibold tracking-wider-premium uppercase mb-2 transition-colors duration-200 ${
-        isFocused ? 'text-ocean-400' : error ? 'text-red-400' : 'text-navy-400'
+        isFocused ? 'text-ocean-600' : error ? 'text-red-600' : 'text-navy-700'
       }`}>
         {label}
-        {required && <span className="text-ocean-400 ml-1.5">erforderlich</span>}
-        {unit && <span className={`ml-1.5 ${isFocused ? 'text-ocean-500' : 'text-navy-500'}`}>({unit})</span>}
+        {required && <span className="text-ocean-600 ml-1.5">erforderlich</span>}
+        {unit && <span className={`ml-1.5 ${isFocused ? 'text-ocean-600' : 'text-navy-600'}`}>({unit})</span>}
       </label>
       <div className="relative">
         <input
@@ -185,12 +185,12 @@ function Field({ label, name, type = 'number', unit, placeholder, value, onChang
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           onChange={(e) => onChange(name, e.target.value)}
-          className={`w-full bg-navy-800/50 border rounded-lg px-4 py-2.5 text-white text-sm placeholder-navy-500 focus:outline-none transition-all duration-200 font-mono ${
+          className={`w-full bg-white border rounded-lg px-4 py-2.5 text-navy-900 text-sm placeholder-navy-400 focus:outline-none transition-all duration-200 font-mono ${
             error
-              ? 'border-red-600/60 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
+              ? 'border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-500/20'
               : isFocused
-              ? 'border-ocean-500/60 focus:ring-2 focus:ring-ocean-500/20'
-              : 'border-navy-600/40 hover:border-navy-500/60'
+              ? 'border-ocean-400 focus:ring-2 focus:ring-ocean-500/20'
+              : 'border-sand-200 hover:border-sand-300'
           }`}
         />
         {type === 'number' && (
@@ -198,7 +198,7 @@ function Field({ label, name, type = 'number', unit, placeholder, value, onChang
             <button
               type="button"
               onClick={handleDecrement}
-              className="stepper-button p-1 rounded text-ocean-400 hover:text-ocean-300 pointer-events-auto"
+              className="stepper-button p-1 rounded text-ocean-600 hover:text-ocean-700 pointer-events-auto"
               aria-label={`${label} verringern`}
             >
               <Minus className="w-3.5 h-3.5" />
@@ -206,7 +206,7 @@ function Field({ label, name, type = 'number', unit, placeholder, value, onChang
             <button
               type="button"
               onClick={handleIncrement}
-              className="stepper-button p-1 rounded text-ocean-400 hover:text-ocean-300 pointer-events-auto"
+              className="stepper-button p-1 rounded text-ocean-600 hover:text-ocean-700 pointer-events-auto"
               aria-label={`${label} erhöhen`}
             >
               <Plus className="w-3.5 h-3.5" />
@@ -215,7 +215,7 @@ function Field({ label, name, type = 'number', unit, placeholder, value, onChang
         )}
       </div>
       {error && (
-        <p className="text-red-400 text-xs mt-1.5 error-message-slide" role="alert">
+        <p className="text-red-600 text-xs mt-1.5 error-message-slide" role="alert">
           {error}
         </p>
       )}
@@ -467,11 +467,11 @@ export default function SpecForm({ boatClass, loading, onSubmit, onBack }: SpecF
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold tracking-wider-premium uppercase text-navy-400 mb-2">Steuerstand-Position</label>
+            <label className="block text-xs font-semibold tracking-wider-premium uppercase text-navy-700 mb-2">Steuerstand-Position</label>
             <select
               value={fields.helm_position}
               onChange={(e) => handleChange('helm_position', e.target.value)}
-              className="w-full bg-navy-800/50 border border-navy-600/40 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-ocean-600 transition-all duration-200 focus:ring-2 focus:ring-ocean-500/20"
+              className="w-full bg-white border border-sand-200 rounded-lg px-4 py-2.5 text-navy-900 text-sm focus:outline-none focus:border-ocean-400 transition-all duration-200 focus:ring-2 focus:ring-ocean-500/20"
             >
               <option value="">Nicht angegeben</option>
               <option value="cockpit">Cockpit</option>
@@ -480,11 +480,11 @@ export default function SpecForm({ boatClass, loading, onSubmit, onBack }: SpecF
             </select>
           </div>
           <div>
-            <label className="block text-xs font-semibold tracking-wider-premium uppercase text-navy-400 mb-2">Flybridge vorhanden</label>
+            <label className="block text-xs font-semibold tracking-wider-premium uppercase text-navy-600 mb-2">Flybridge vorhanden</label>
             <select
               value={fields.has_flybridge}
               onChange={(e) => handleChange('has_flybridge', e.target.value)}
-              className="w-full bg-navy-800/50 border border-navy-600/40 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-ocean-600 transition-all duration-200 focus:ring-2 focus:ring-ocean-500/20"
+              className="w-full bg-sand-100 border border-sand-200 rounded-lg px-4 py-2.5 text-navy-900 text-sm focus:outline-none focus:border-ocean-600 transition-all duration-200 focus:ring-2 focus:ring-ocean-500/20"
             >
               <option value="">Nicht angegeben</option>
               <option value="true">Ja</option>
@@ -493,11 +493,11 @@ export default function SpecForm({ boatClass, loading, onSubmit, onBack }: SpecF
           </div>
           {(boatClass === 'large_motor' || boatClass === 'superyacht') && (
             <div>
-              <label className="block text-xs font-semibold tracking-wider-premium uppercase text-navy-400 mb-2">Crew-Quarters vorhanden</label>
+              <label className="block text-xs font-semibold tracking-wider-premium uppercase text-navy-600 mb-2">Crew-Quarters vorhanden</label>
               <select
                 value={fields.has_crew_quarters}
                 onChange={(e) => handleChange('has_crew_quarters', e.target.value)}
-                className="w-full bg-navy-800/50 border border-navy-600/40 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-ocean-600 transition-all duration-200 focus:ring-2 focus:ring-ocean-500/20"
+                className="w-full bg-sand-100 border border-sand-200 rounded-lg px-4 py-2.5 text-navy-900 text-sm focus:outline-none focus:border-ocean-600 transition-all duration-200 focus:ring-2 focus:ring-ocean-500/20"
               >
                 <option value="">Nicht angegeben</option>
                 <option value="true">Ja</option>
@@ -618,7 +618,7 @@ export default function SpecForm({ boatClass, loading, onSubmit, onBack }: SpecF
           </div>
         </Section>
 
-        <div className="bg-navy-900/40 border border-navy-700/40 rounded-xl px-6 py-4 text-sm text-navy-400 backdrop-blur-sm">
+        <div className="bg-sand-50 border border-sand-200 rounded-xl px-6 py-4 text-sm text-navy-600">
           Mehr Details führen zu besseren Ergebnissen. Felder ohne Angaben werden anhand der Bootsklasse geschätzt.
         </div>
 
@@ -626,14 +626,14 @@ export default function SpecForm({ boatClass, loading, onSubmit, onBack }: SpecF
           <button
             type="button"
             onClick={onBack}
-            className="px-6 py-2.5 rounded-lg bg-navy-800/50 border border-navy-700/50 text-navy-300 hover:bg-navy-800/70 text-sm font-medium transition-all duration-200 backdrop-blur-sm hover:shadow-lg"
+            className="px-6 py-2.5 rounded-lg bg-sand-100 border border-sand-200 text-navy-700 hover:bg-sand-200 text-sm font-medium transition-all duration-200 hover:shadow-md"
           >
             Zurück
           </button>
           <button
             type="submit"
             disabled={loading || fields.length_m === '' || Object.keys(errors).length > 0}
-            className="flex-1 px-6 py-2.5 rounded-lg bg-ocean-700 hover:bg-ocean-600 text-white font-semibold text-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
+            className="flex-1 px-6 py-2.5 rounded-lg bg-ocean-600 hover:bg-ocean-700 text-white font-semibold text-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
           >
             {loading ? 'Analysiere...' : 'Analysieren'}
           </button>

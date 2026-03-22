@@ -24,7 +24,7 @@ function SeverityIcon({ severity }: { severity: string }) {
     return <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
   if (severity === 'warning')
     return <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />
-  return <Info className="w-4 h-4 text-ocean-400 flex-shrink-0" />
+  return <Info className="w-4 h-4 text-ocean-600 flex-shrink-0" />
 }
 
 export default function ViewerInfoPanel({
@@ -46,7 +46,7 @@ export default function ViewerInfoPanel({
   })
 
   return (
-    <div className="absolute top-3 right-3 z-10 w-64 bg-navy-800/95 backdrop-blur-sm border border-navy-600 rounded-lg overflow-hidden">
+    <div className="absolute top-3 right-3 z-10 w-64 bg-sand-50/95 backdrop-blur-sm border border-navy-600 rounded-lg overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between p-3 border-b border-navy-700">
         <div className="flex items-center gap-2">
@@ -54,13 +54,13 @@ export default function ViewerInfoPanel({
             className="w-3 h-3 rounded-sm"
             style={{ backgroundColor: color }}
           />
-          <h3 className="text-sm font-heading font-semibold text-white">
+          <h3 className="text-sm font-heading font-semibold text-navy-900">
             {zone.name}
           </h3>
         </div>
         <button
           onClick={onClose}
-          className="text-navy-400 hover:text-white transition-colors"
+          className="text-navy-600 hover:text-navy-900 transition-colors"
           title="Schlie\u00dfen"
         >
           <X className="w-4 h-4" />
@@ -93,7 +93,7 @@ export default function ViewerInfoPanel({
       {/* Warnings */}
       {zoneWarnings.length > 0 && (
         <div className="border-t border-navy-700 p-3">
-          <p className="text-xs font-heading font-medium text-navy-300 mb-2">
+          <p className="text-xs font-heading font-medium text-navy-700 mb-2">
             Warnungen ({zoneWarnings.length})
           </p>
           <div className="space-y-2">
@@ -104,9 +104,9 @@ export default function ViewerInfoPanel({
               >
                 <SeverityIcon severity={w.severity} />
                 <div>
-                  <p className="text-white">{w.message}</p>
+                  <p className="text-navy-900">{w.message}</p>
                   {w.suggestion && (
-                    <p className="text-navy-400 mt-0.5">{w.suggestion}</p>
+                    <p className="text-navy-600 mt-0.5">{w.suggestion}</p>
                   )}
                 </div>
               </div>
@@ -129,8 +129,8 @@ function DetailRow({
 }) {
   return (
     <div className="flex justify-between">
-      <span className="text-navy-400">{label}</span>
-      <span className={`text-white ${mono ? 'font-mono' : ''}`}>{value}</span>
+      <span className="text-navy-600">{label}</span>
+      <span className={`text-navy-900 ${mono ? 'font-mono' : ''}`}>{value}</span>
     </div>
   )
 }

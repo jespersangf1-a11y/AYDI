@@ -28,11 +28,11 @@ function BreakdownBar({
       <div className="flex justify-between items-center mb-2">
         <span className="label-premium">{label}</span>
         <div className="text-right">
-          <span className="font-mono text-sm font-semibold text-white">{formatCurrency(value)}</span>
+          <span className="font-mono text-sm font-semibold text-navy-900">{formatCurrency(value)}</span>
           <span className="text-navy-500 text-xs ml-2">({pct.toFixed(1)} %)</span>
         </div>
       </div>
-      <div className="h-1.5 bg-navy-800/60 rounded-full overflow-hidden">
+      <div className="h-1.5 bg-sand-50/60 rounded-full overflow-hidden">
         <div
           className={`h-full rounded-full transition-all duration-300 ${colorClass}`}
           style={{ width: `${pct}%` }}
@@ -69,7 +69,7 @@ export default function CostOverview({ projectId, layoutId }: CostOverviewProps)
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 text-navy-400 text-xs font-sans font-semibold uppercase tracking-wider-premium">
+      <div className="flex items-center gap-2 text-navy-600 text-xs font-sans font-semibold uppercase tracking-wider-premium">
         <div className="w-1.5 h-1.5 rounded-full bg-navy-400 animate-pulse"></div>
         Lade Kostendaten
       </div>
@@ -96,7 +96,7 @@ export default function CostOverview({ projectId, layoutId }: CostOverviewProps)
       {/* Total cost hero */}
       <div className="card-premium p-6 text-center">
         <p className="label-premium mb-3">Geschätzte Gesamtkosten</p>
-        <p className="font-mono text-4xl font-bold text-white mb-2">
+        <p className="font-mono text-4xl font-bold text-navy-900 mb-2">
           {formatCurrency(summary.total_cost)}
         </p>
         <p className="text-xs text-navy-500">
@@ -111,7 +111,7 @@ export default function CostOverview({ projectId, layoutId }: CostOverviewProps)
             key={t}
             onClick={() => setActiveTab(t)}
             className={`flex-1 py-2 rounded-lg text-xs font-sans font-semibold uppercase tracking-wider-premium transition-all duration-200 ${
-              activeTab === t ? 'bg-ocean-700 text-white' : 'text-navy-400 hover:text-navy-200'
+              activeTab === t ? 'bg-ocean-700 text-navy-900' : 'text-navy-600 hover:text-navy-600'
             }`}
           >
             {t === 'category' ? 'Nach Kategorie' : 'Nach Zone'}
@@ -122,9 +122,9 @@ export default function CostOverview({ projectId, layoutId }: CostOverviewProps)
       {/* Category breakdown */}
       {activeTab === 'category' && (
         <div className="card-premium p-6 space-y-4">
-          <h3 className="font-sans font-semibold text-white">Aufschlüsselung nach Kategorie</h3>
+          <h3 className="font-sans font-semibold text-navy-900">Aufschlüsselung nach Kategorie</h3>
           {categoryEntries.length === 0 ? (
-            <p className="text-navy-400 text-xs">Keine Kategoriedaten verfügbar</p>
+            <p className="text-navy-600 text-xs">Keine Kategoriedaten verfügbar</p>
           ) : (
             <div className="space-y-4">
               {categoryEntries.map(([cat, val], i) => (
@@ -144,9 +144,9 @@ export default function CostOverview({ projectId, layoutId }: CostOverviewProps)
       {/* Zone breakdown */}
       {activeTab === 'zone' && (
         <div className="card-premium p-6 space-y-4">
-          <h3 className="font-sans font-semibold text-white">Aufschlüsselung nach Zone</h3>
+          <h3 className="font-sans font-semibold text-navy-900">Aufschlüsselung nach Zone</h3>
           {zoneEntries.length === 0 ? (
-            <p className="text-navy-400 text-xs">Keine Zonendaten verfügbar</p>
+            <p className="text-navy-600 text-xs">Keine Zonendaten verfügbar</p>
           ) : (
             <div className="space-y-4">
               {zoneEntries.map(([zone, val], i) => (

@@ -101,7 +101,7 @@ export default function HeroSection({
         </h1>
         {subtitle && (
           <p
-            className="font-sans text-[15px] text-navy-300 max-w-2xl leading-relaxed mt-2 opacity-0 animate-fade-in"
+            className="font-sans text-[15px] text-navy-900 max-w-2xl leading-relaxed mt-2 opacity-0 animate-fade-in"
             style={{
               animation: 'fadeInUp 600ms ease-out forwards',
               animationDelay: '200ms',

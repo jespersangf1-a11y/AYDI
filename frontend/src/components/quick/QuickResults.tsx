@@ -84,10 +84,10 @@ const CONFIDENCE_LABELS: Record<string, string> = {
 }
 
 const CONFIDENCE_STYLES: Record<string, string> = {
-  measured: 'bg-emerald-900/50 text-emerald-300 border-emerald-700',
-  calculated: 'bg-ocean-900/50 text-ocean-300 border-ocean-700',
-  estimated: 'bg-amber-900/50 text-amber-300 border-amber-700',
-  benchmark: 'bg-navy-800 text-navy-300 border-navy-600',
+  measured: 'bg-emerald-100 text-emerald-700 border-emerald-300',
+  calculated: 'bg-ocean-100 text-ocean-700 border-ocean-300',
+  estimated: 'bg-amber-100 text-amber-700 border-amber-300',
+  benchmark: 'bg-sand-100 text-navy-700 border-sand-300',
 }
 
 const SEVERITY_ICONS = {
@@ -97,9 +97,9 @@ const SEVERITY_ICONS = {
 }
 
 const SEVERITY_COLORS = {
-  critical: 'text-red-400',
-  warning: 'text-amber-400',
-  info: 'text-ocean-400',
+  critical: 'text-red-600',
+  warning: 'text-amber-600',
+  info: 'text-ocean-600',
 }
 
 function ModuleCard({ name, result, index = 0 }: { name: string; result: QuickModuleResult; index?: number }) {
@@ -118,12 +118,12 @@ function ModuleCard({ name, result, index = 0 }: { name: string; result: QuickMo
   if (!result.available) {
     return (
       <div
-        className="bg-navy-900/40 border border-navy-700/40 rounded-xl p-5 opacity-60 backdrop-blur-sm animate-module-in"
+        className="bg-sand-50 border border-sand-200 rounded-xl p-5 opacity-70 shadow-sm animate-module-in"
         style={{ animationDelay: `${index * 80}ms` }}
       >
         <div className="flex items-start justify-between mb-2">
-          <span className="text-sm font-semibold text-navy-400">{label}</span>
-          <span className="text-xs px-2.5 py-1 rounded-full bg-navy-800/50 border border-navy-700/50 text-navy-500">
+          <span className="text-sm font-semibold text-navy-700">{label}</span>
+          <span className="text-xs px-2.5 py-1 rounded-full bg-sand-100 border border-sand-300 text-navy-600">
             Level 2+
           </span>
         </div>
@@ -134,11 +134,11 @@ function ModuleCard({ name, result, index = 0 }: { name: string; result: QuickMo
 
   return (
     <div
-      className="module-card-hover bg-navy-900/40 border border-navy-700/40 rounded-xl p-5 backdrop-blur-sm animate-module-in"
+      className="module-card-hover bg-white border border-sand-200 rounded-xl p-5 shadow-sm animate-module-in"
       style={{ animationDelay: `${index * 80}ms` }}
     >
       <div className="flex items-start justify-between mb-4">
-        <span className="text-sm font-semibold text-white">{label}</span>
+        <span className="text-sm font-semibold text-navy-900">{label}</span>
         {result.score != null && (
           <span className={`font-mono font-bold text-lg ${scoreColor}`}>
             {Math.round(result.score)}
@@ -148,7 +148,7 @@ function ModuleCard({ name, result, index = 0 }: { name: string; result: QuickMo
 
       {/* Score bar with smooth animation */}
       {result.score != null && (
-        <div className="h-1.5 bg-navy-800/50 rounded-full overflow-hidden mb-4">
+        <div className="h-1.5 bg-sand-200 rounded-full overflow-hidden mb-4">
           <div
             className={`h-full rounded-full transition-all duration-1000 ease-out ${
               result.score >= 80
@@ -173,11 +173,11 @@ function ModuleCard({ name, result, index = 0 }: { name: string; result: QuickMo
           {result.key_findings.slice(0, 3).map((f, i) => {
             const sev = f.severity as keyof typeof SEVERITY_ICONS
             const Icon = SEVERITY_ICONS[sev] ?? CheckCircle
-            const color = SEVERITY_COLORS[sev] ?? 'text-navy-400'
+            const color = SEVERITY_COLORS[sev] ?? 'text-navy-600'
             return (
               <li key={i} className="flex items-start gap-2">
                 <Icon className={`w-3.5 h-3.5 mt-0.5 shrink-0 ${color}`} />
-                <span className="text-xs text-navy-300 leading-relaxed">{f.finding}</span>
+                <span className="text-xs text-navy-700 leading-relaxed">{f.finding}</span>
               </li>
             )
           })}
@@ -186,7 +186,7 @@ function ModuleCard({ name, result, index = 0 }: { name: string; result: QuickMo
 
       {/* Confidence badge */}
       {result.confidence && (
-        <div className="mt-4 pt-4 border-t border-navy-700/40">
+        <div className="mt-4 pt-4 border-t border-sand-200">
           <span
             className={`text-xs px-2.5 py-1 rounded-full border ${
               CONFIDENCE_STYLES[result.confidence] ?? CONFIDENCE_STYLES.benchmark
@@ -238,16 +238,16 @@ export default function QuickResults({ result, onNewAnalysis }: QuickResultsProp
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 animate-fade-in-up">
           <div>
-            <p className="text-xs font-semibold tracking-wider-premium uppercase text-navy-400 mb-2">
+            <p className="text-xs font-semibold tracking-wider-premium uppercase text-navy-600 mb-2">
               Analyseergebnisse
             </p>
-            <p className="text-sm text-navy-400">
-              <span className="font-mono text-ocean-300">{specs_provided}</span> bereitgestellte Angaben · <span className="font-mono text-navy-300">{specs_inferred}</span> geschätzte Werte
+            <p className="text-sm text-navy-700">
+              <span className="font-mono text-ocean-600">{specs_provided}</span> bereitgestellte Angaben · <span className="font-mono text-navy-600">{specs_inferred}</span> geschätzte Werte
             </p>
           </div>
           <button
             onClick={onNewAnalysis}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-navy-800/50 border border-navy-700/50 hover:bg-navy-800/70 text-navy-300 text-sm font-medium transition-all duration-200 backdrop-blur-sm hover:shadow-lg active:scale-95"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-sand-100 border border-sand-300 hover:bg-sand-200 text-navy-700 text-sm font-medium transition-all duration-200 hover:shadow-md active:scale-95"
             aria-label="Neue Analyse starten"
           >
             <RotateCcw className="w-4 h-4" />
@@ -256,7 +256,7 @@ export default function QuickResults({ result, onNewAnalysis }: QuickResultsProp
         </div>
 
         {/* Overall score */}
-        <div className="bg-navy-900/40 border border-navy-700/40 rounded-xl p-6 md:p-8 backdrop-blur-sm animate-fade-in-up" style={{ animationDelay: '100ms' }}>
+        <div className="bg-white border border-sand-200 rounded-xl p-6 md:p-8 shadow-sm animate-fade-in-up" style={{ animationDelay: '100ms' }}>
           <div className="flex flex-col md:flex-row md:items-center gap-6 md:gap-8">
             <div className="flex-shrink-0">
               <ScoreGauge score={displayedScore} label="Gesamtbewertung" size={140} />
@@ -271,7 +271,7 @@ export default function QuickResults({ result, onNewAnalysis }: QuickResultsProp
                   {CONFIDENCE_LABELS[overall_assessment.confidence] ?? overall_assessment.confidence}
                 </span>
               </div>
-              <p className="text-navy-300 text-sm leading-relaxed">{overall_assessment.summary}</p>
+              <p className="text-navy-700 text-sm leading-relaxed">{overall_assessment.summary}</p>
             </div>
           </div>
         </div>
@@ -279,7 +279,7 @@ export default function QuickResults({ result, onNewAnalysis }: QuickResultsProp
         {/* Available modules */}
         {availableModules.length > 0 && (
           <div className="animate-fade-in-up" style={{ animationDelay: '200ms' }}>
-            <p className="text-xs font-semibold tracking-wider-premium uppercase text-navy-400 mb-4">
+            <p className="text-xs font-semibold tracking-wider-premium uppercase text-navy-600 mb-4">
               Analysierte Module
             </p>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

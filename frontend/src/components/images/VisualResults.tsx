@@ -18,7 +18,7 @@ interface VisualResultsProps {
 
 const ASSESSMENT_STYLES: Record<string, { bg: string; text: string; label: string }> = {
   gut: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', label: 'Gut' },
-  akzeptabel: { bg: 'bg-ocean-500/10', text: 'text-ocean-400', label: 'Akzeptabel' },
+  akzeptabel: { bg: 'bg-ocean-500/10', text: 'text-ocean-600', label: 'Akzeptabel' },
   mangelhaft: { bg: 'bg-amber-500/10', text: 'text-amber-400', label: 'Mangelhaft' },
   kritisch: { bg: 'bg-red-500/10', text: 'text-red-400', label: 'Kritisch' },
 }
@@ -27,7 +27,7 @@ function AssessmentBadge({ assessment }: { assessment: string }) {
   const key = assessment.toLowerCase()
   const style = ASSESSMENT_STYLES[key] ?? {
     bg: 'bg-navy-700',
-    text: 'text-navy-300',
+    text: 'text-navy-700',
     label: assessment,
   }
   return (
@@ -56,10 +56,10 @@ function ScoreBar({ label, score }: { label: string; score: number }) {
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between text-xs">
-        <span className="text-navy-300">{label}</span>
-        <span className="font-mono text-navy-200">{Math.round(score)}</span>
+        <span className="text-navy-700">{label}</span>
+        <span className="font-mono text-navy-600">{Math.round(score)}</span>
       </div>
-      <div className="h-2 rounded-full bg-navy-800">
+      <div className="h-2 rounded-full bg-sand-50">
         <div
           className={`h-full rounded-full transition-all duration-700 ${color}`}
           style={{ width: `${Math.min(score, 100)}%` }}
@@ -99,7 +99,7 @@ export default function VisualResults({
       {/* Scores */}
       {Object.keys(result.scores).length > 0 && (
         <div className="card-premium p-6 space-y-4">
-          <h4 className="text-sm font-serif font-semibold text-white">
+          <h4 className="text-sm font-serif font-semibold text-navy-900">
             Bewertungen
           </h4>
           <div className="space-y-3">
@@ -114,13 +114,13 @@ export default function VisualResults({
       {Object.keys(grouped).length > 0 && (
         <div className="card-premium p-6 space-y-5">
           <div className="flex items-center justify-between border-b border-navy-700/30 pb-4">
-            <h4 className="text-sm font-serif font-semibold text-white">
+            <h4 className="text-sm font-serif font-semibold text-navy-900">
               Befunde
             </h4>
             {hasLowConfidence && (
               <button
                 onClick={() => setShowLow(!showLow)}
-                className="flex items-center gap-1.5 text-xs text-navy-400 hover:text-ocean-300 transition-colors duration-200"
+                className="flex items-center gap-1.5 text-xs text-navy-600 hover:text-ocean-700 transition-colors duration-200"
               >
                 {showLow ? (
                   <EyeOff className="w-3.5 h-3.5" />
@@ -140,10 +140,10 @@ export default function VisualResults({
               {findings.map((finding, i) => (
                 <div
                   key={`${category}-${i}`}
-                  className="border-l-2 border-navy-600/40 bg-navy-900/20 rounded-lg px-4 py-3 space-y-2.5 transition-colors duration-200 hover:bg-navy-900/30"
+                  className="border-l-2 border-sand-200 bg-navy-900/20 rounded-lg px-4 py-3 space-y-2.5 transition-colors duration-200 hover:bg-navy-900/30"
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <p className="text-sm text-navy-100">{finding.observation}</p>
+                    <p className="text-sm text-navy-900">{finding.observation}</p>
                     <AssessmentBadge assessment={finding.assessment} />
                   </div>
                   {finding.location_in_image && (
@@ -152,10 +152,10 @@ export default function VisualResults({
                     </p>
                   )}
                   {finding.detail && (
-                    <p className="text-xs text-navy-400">{finding.detail}</p>
+                    <p className="text-xs text-navy-600">{finding.detail}</p>
                   )}
                   {finding.suggestion && (
-                    <div className="flex items-start gap-2 text-xs text-ocean-300">
+                    <div className="flex items-start gap-2 text-xs text-ocean-600">
                       <Lightbulb className="w-3 h-3 mt-0.5 flex-shrink-0" />
                       <span>{finding.suggestion}</span>
                     </div>
@@ -211,13 +211,13 @@ export default function VisualResults({
       {/* Recommendations */}
       {result.recommendations.length > 0 && (
         <div className="card-premium p-6 space-y-4">
-          <h4 className="flex items-center gap-2 text-sm font-serif font-semibold text-ocean-300">
+          <h4 className="flex items-center gap-2 text-sm font-serif font-semibold text-ocean-600">
             <Lightbulb className="w-4 h-4" />
             Empfehlungen
           </h4>
           <ul className="space-y-2">
             {result.recommendations.map((item, i) => (
-              <li key={i} className="flex items-start gap-3 text-sm text-navy-200">
+              <li key={i} className="flex items-start gap-3 text-sm text-navy-600">
                 <span className="mt-1.5 h-2 w-2 rounded-full bg-ocean-400 flex-shrink-0" />
                 {item}
               </li>
@@ -231,7 +231,7 @@ export default function VisualResults({
         <div className="card-premium p-5">
           <button
             onClick={() => setCannotAssessOpen(!cannotAssessOpen)}
-            className="flex items-center gap-2 text-sm font-medium text-navy-300 hover:text-navy-100 transition-colors duration-200 w-full"
+            className="flex items-center gap-2 text-sm font-medium text-navy-700 hover:text-navy-900 transition-colors duration-200 w-full"
           >
             {cannotAssessOpen ? (
               <ChevronDown className="w-4 h-4" />

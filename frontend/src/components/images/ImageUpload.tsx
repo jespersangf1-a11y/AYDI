@@ -221,17 +221,17 @@ export default function ImageUpload({
               className={`flex flex-col items-center justify-center gap-6 rounded-xl border-2 border-dashed px-8 md:px-12 py-16 cursor-pointer transition-all duration-300 ${
                 dragOver
                   ? 'drag-active'
-                  : 'border-navy-600/50 bg-navy-900/20 hover:border-navy-500/70 hover:bg-navy-900/30'
+                  : 'border-ocean-300/60 bg-ocean-50 hover:border-ocean-400/80 hover:bg-ocean-100/50'
               }`}
             >
-              <div className="rounded-full bg-navy-800/40 p-4 border border-navy-600/30 group-hover:border-ocean-500 transition-colors duration-300">
-                <Upload className="w-8 h-8 text-ocean-400" />
+              <div className="rounded-full bg-ocean-100 p-4 border border-ocean-300 group-hover:border-ocean-500 transition-colors duration-300">
+                <Upload className="w-8 h-8 text-ocean-600" />
               </div>
               <div className="text-center">
-                <p className="text-sm font-medium text-navy-100 font-serif">
+                <p className="text-sm font-medium text-navy-900 font-serif">
                   Bild hierher ziehen oder klicken
                 </p>
-                <p className="mt-2 text-xs text-navy-400">
+                <p className="mt-2 text-xs text-navy-600">
                   JPG, PNG, WebP, HEIC — max. 20 MB
                 </p>
               </div>
@@ -251,7 +251,7 @@ export default function ImageUpload({
             <div className="card-premium p-6 md:p-8 space-y-6 animate-preview-in">
               <div className="flex flex-col md:flex-row gap-6">
                 {/* Preview Image */}
-                <div className="relative w-full md:w-56 h-48 md:h-40 rounded-lg overflow-hidden bg-navy-800/60 border border-navy-700/30 flex-shrink-0">
+                <div className="relative w-full md:w-56 h-48 md:h-40 rounded-lg overflow-hidden bg-sand-100 border border-sand-300 flex-shrink-0">
                   {preview ? (
                     <img
                       src={preview}
@@ -265,7 +265,7 @@ export default function ImageUpload({
                   )}
                   <button
                     onClick={clearFile}
-                    className="absolute top-2 right-2 p-1.5 rounded-full bg-navy-950/80 border border-navy-600 text-navy-300 hover:text-ocean-300 hover:border-ocean-500 transition-all duration-200 hover:scale-110"
+                    className="absolute top-2 right-2 p-1.5 rounded-full bg-navy-900/80 border border-navy-700 text-navy-900 hover:text-ocean-700 hover:border-ocean-500 transition-all duration-200 hover:scale-110"
                     aria-label="Bild entfernen"
                   >
                     <X className="w-4 h-4" />
@@ -274,9 +274,9 @@ export default function ImageUpload({
 
                 {/* File info + options */}
                 <div className="flex-1 space-y-6">
-                  <div className="border-b border-navy-700/30 pb-4">
+                  <div className="border-b border-sand-200 pb-4">
                     <p className="label-premium mb-1">DATEI</p>
-                    <p className="text-white font-medium text-sm">{file.name}</p>
+                    <p className="text-navy-900 font-medium text-sm">{file.name}</p>
                     <p className="text-xs text-navy-500 mt-1">
                       {(file.size / 1024 / 1024).toFixed(1)} MB
                     </p>
@@ -288,7 +288,7 @@ export default function ImageUpload({
                     <select
                       value={imageType}
                       onChange={(e) => setImageType(e.target.value as ImageType)}
-                      className="w-full rounded-lg border border-navy-600/40 bg-navy-800/60 px-4 py-2.5 text-sm text-navy-100 focus:border-ocean-500/60 focus:outline-none transition-all duration-200 focus:ring-2 focus:ring-ocean-500/20"
+                      className="w-full rounded-lg border border-sand-200 bg-sand-50/60 px-4 py-2.5 text-sm text-navy-900 focus:border-ocean-500/60 focus:outline-none transition-all duration-200 focus:ring-2 focus:ring-ocean-500/20"
                     >
                       {(Object.entries(IMAGE_TYPE_LABELS) as [ImageType, string][]).map(
                         ([value, label]) => (
@@ -308,7 +308,7 @@ export default function ImageUpload({
                       value={zoneType}
                       onChange={(e) => setZoneType(e.target.value)}
                       placeholder="z.B. salon, cabin, pantry"
-                      className="w-full rounded-lg border border-navy-600/40 bg-navy-800/60 px-4 py-2.5 text-sm text-navy-100 placeholder:text-navy-600 focus:border-ocean-500/60 focus:outline-none transition-all duration-200 focus:ring-2 focus:ring-ocean-500/20"
+                      className="w-full rounded-lg border border-sand-200 bg-sand-50/60 px-4 py-2.5 text-sm text-navy-900 placeholder:text-navy-600 focus:border-ocean-500/60 focus:outline-none transition-all duration-200 focus:ring-2 focus:ring-ocean-500/20"
                     />
                   </div>
                 </div>
@@ -319,10 +319,10 @@ export default function ImageUpload({
                 {uploading && uploadProgress > 0 && (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-navy-400">Upload-Fortschritt</span>
-                      <span className="text-ocean-300 font-medium">{Math.round(uploadProgress)}%</span>
+                      <span className="text-navy-600">Upload-Fortschritt</span>
+                      <span className="text-ocean-600 font-medium">{Math.round(uploadProgress)}%</span>
                     </div>
-                    <div className="h-2 bg-navy-800/50 rounded-full overflow-hidden">
+                    <div className="h-2 bg-sand-100 rounded-full overflow-hidden">
                       <div
                         className="h-full bg-gradient-to-r from-ocean-500 to-ocean-400 rounded-full animate-progress transition-all duration-300"
                         style={{
@@ -335,7 +335,7 @@ export default function ImageUpload({
                 <button
                   onClick={handleUpload}
                   disabled={uploading}
-                  className={`w-full flex items-center justify-center gap-2 rounded-lg bg-ocean-700 hover:bg-ocean-600 px-6 py-3 text-sm font-medium text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 ${
+                  className={`w-full flex items-center justify-center gap-2 rounded-lg bg-ocean-600 hover:bg-ocean-700 px-6 py-3 text-sm font-medium text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 ${
                     uploading ? 'animate-upload-pulse' : ''
                   }`}
                 >
@@ -367,14 +367,14 @@ export default function ImageUpload({
             <div className="space-y-6 animate-preview-in">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
-                  <h3 className="font-serif text-lg font-medium text-white">
+                  <h3 className="font-serif text-lg font-medium text-navy-900">
                     Analyseergebnisse
                   </h3>
                   <p className="text-xs text-navy-500 mt-1">Detaillierte Bewertung des hochgeladenen Bildes</p>
                 </div>
                 <button
                   onClick={clearFile}
-                  className="text-sm text-ocean-400 hover:text-ocean-300 transition-colors duration-200"
+                  className="text-sm text-ocean-600 hover:text-ocean-700 transition-colors duration-200"
                 >
                   Neues Bild analysieren
                 </button>

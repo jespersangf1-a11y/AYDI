@@ -53,15 +53,15 @@ function BarItem({ label, value, index }: BarItemProps) {
             {label}
           </span>
           {truncated && showTooltip && (
-            <div className="absolute bottom-full left-0 mb-2 px-2 py-1 bg-navy-900 text-navy-100 text-xs rounded whitespace-nowrap z-10 border border-navy-700">
+            <div className="absolute bottom-full left-0 mb-2 px-2 py-1 bg-white text-navy-800 text-xs rounded whitespace-nowrap z-10 border border-sand-200 shadow-md">
               {label}
             </div>
           )}
         </div>
         <div className="relative">
-          <span className="font-mono text-sm font-semibold text-white">{Math.round(value)}</span>
+          <span className="font-mono text-sm font-semibold text-navy-900">{Math.round(value)}</span>
           {showTooltip && (
-            <div className="absolute bottom-full right-0 mb-2 px-2.5 py-1 bg-navy-900 text-navy-100 text-xs rounded border border-navy-700 whitespace-nowrap">
+            <div className="absolute bottom-full right-0 mb-2 px-2.5 py-1 bg-white text-navy-800 text-xs rounded border border-sand-200 shadow-md whitespace-nowrap">
               {Math.round(value)} / 100
             </div>
           )}
@@ -69,7 +69,7 @@ function BarItem({ label, value, index }: BarItemProps) {
       </div>
 
       <div
-        className="h-1.5 bg-navy-800/60 rounded-full overflow-hidden cursor-help transition-all duration-200 hover:h-2"
+        className="h-1.5 bg-sand-200 rounded-full overflow-hidden cursor-help transition-all duration-200 hover:h-2"
         onMouseEnter={() => setShowTooltip(true)}
         onMouseLeave={() => setShowTooltip(false)}
       >

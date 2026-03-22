@@ -155,7 +155,7 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
   }
 
   if (loading) {
-    return <div className="text-navy-400">Lade...</div>
+    return <div className="text-navy-600">Lade...</div>
   }
 
   if (error && !project) {
@@ -163,7 +163,7 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
   }
 
   if (!project) {
-    return <div className="text-navy-400">Lade...</div>
+    return <div className="text-navy-600">Lade...</div>
   }
 
   const tabs: { id: TabType; label: string; icon: React.ReactNode }[] = [
@@ -186,7 +186,7 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
         {/* Back Button */}
         <button
           onClick={onBack}
-          className="flex items-center gap-2 text-navy-400 hover:text-ocean-300 transition-colors duration-200 mb-8"
+          className="flex items-center gap-2 text-navy-600 hover:text-ocean-700 transition-colors duration-200 mb-8"
         >
           <ArrowLeft className="w-5 h-5" />
           <span className="text-sm font-medium">Zurück</span>
@@ -204,20 +204,20 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
             <Ship className="w-8 h-8 text-ocean-500" />
             <div>
               <p className="label-premium mb-1">Projektstatus</p>
-              <p className="text-white font-serif text-lg">
+              <p className="text-navy-900 font-serif text-lg">
                 {STATUS_LABELS[project.status]}
               </p>
             </div>
           </div>
           {project.description && (
-            <p className="text-navy-300 text-sm max-w-md text-right">
+            <p className="text-navy-700 text-sm max-w-md text-right">
               {project.description}
             </p>
           )}
         </div>
 
         {/* Tab Navigation with Sliding Indicator */}
-        <div className="border-b border-navy-700/40 mb-8 flex gap-4 sm:gap-8 overflow-x-auto scrollbar-hide">
+        <div className="border-b border-sand-200 mb-8 flex gap-4 sm:gap-8 overflow-x-auto scrollbar-hide">
           <div className="relative flex gap-4 sm:gap-8 min-w-full">
             {tabs.map((tab) => (
               <button
@@ -225,8 +225,8 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 pb-4 font-medium text-sm transition-colors duration-200 relative whitespace-nowrap ${
                   activeTab === tab.id
-                    ? 'text-ocean-300'
-                    : 'text-navy-400 hover:text-navy-300'
+                    ? 'text-ocean-600'
+                    : 'text-navy-600 hover:text-navy-700'
                 }`}
                 aria-selected={activeTab === tab.id}
                 aria-label={tab.label}
@@ -257,15 +257,15 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
                       className={`card-premium px-6 py-5 text-left transition-all duration-300 hover:shadow-lg hover:shadow-ocean-500/10 group ${
                         selectedLayout?.id === layout.id
                           ? 'bg-ocean-900/40 border-ocean-600/60'
-                          : 'hover:bg-navy-900/60 hover:border-navy-600/40'
+                          : 'hover:bg-navy-900/60 hover:border-sand-200'
                       }`}
                       aria-selected={selectedLayout?.id === layout.id}
                       aria-label={`Layout ${layout.name}`}
                     >
-                      <div className="font-serif text-lg font-medium text-white mb-1 group-hover:text-ocean-300 transition-colors">
+                      <div className="font-serif text-lg font-medium text-navy-900 mb-1 group-hover:text-ocean-700 transition-colors">
                         {layout.name}
                       </div>
-                      <div className="text-xs text-navy-400">
+                      <div className="text-xs text-navy-600">
                         Version {layout.version}
                       </div>
                     </button>
@@ -284,7 +284,7 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
             {layouts.length === 0 && (
               <div className="card-premium px-8 py-12 text-center">
                 <Layers className="w-12 h-12 mx-auto mb-4 text-navy-600" />
-                <p className="text-navy-400">Noch kein Layout vorhanden</p>
+                <p className="text-navy-600">Noch kein Layout vorhanden</p>
               </div>
             )}
           </div>
@@ -298,14 +298,14 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div>
                     <p className="label-premium mb-2">Umfassende Analyse</p>
-                    <p className="text-white font-serif text-lg">
+                    <p className="text-navy-900 font-serif text-lg">
                       Alle Module analysieren
                     </p>
                   </div>
                   <button
                     onClick={handleRunFullAnalysis}
                     disabled={fullAnalyzing || !selectedLayout}
-                    className="flex items-center gap-2 bg-ocean-700 hover:bg-ocean-600 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 hover:shadow-lg hover:shadow-ocean-700/30"
+                    className="flex items-center gap-2 bg-ocean-700 hover:bg-ocean-600 disabled:opacity-50 disabled:cursor-not-allowed text-navy-900 px-6 py-3 rounded-lg font-medium transition-all duration-200 hover:shadow-lg hover:shadow-ocean-700/30"
                     aria-label="Vollständige Analyse starten"
                   >
                     {fullAnalyzing ? (
@@ -335,10 +335,10 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
                       onClick={() => handleRunAnalysis(module)}
                       disabled={analyzing}
                       style={{ animation: `fadeInUp 0.6s ease-out ${idx * 100}ms forwards`, opacity: 0 }}
-                      className="card-premium px-6 py-4 flex items-center justify-between hover:bg-navy-900/60 hover:border-navy-600/40 hover:shadow-lg hover:shadow-ocean-500/10 disabled:opacity-50 transition-all duration-200 group"
+                      className="card-premium px-6 py-4 flex items-center justify-between hover:bg-navy-900/60 hover:border-sand-200 hover:shadow-lg hover:shadow-ocean-500/10 disabled:opacity-50 transition-all duration-200 group"
                       aria-label={`${MODULE_LABELS[module]} analysieren`}
                     >
-                      <span className="text-white font-medium group-hover:text-ocean-300 transition-colors">
+                      <span className="text-navy-900 font-medium group-hover:text-ocean-700 transition-colors">
                         {MODULE_LABELS[module]}
                       </span>
                       <Play className="w-4 h-4 text-ocean-500 group-hover:scale-110 transition-transform" />
@@ -353,7 +353,7 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
               <div className="space-y-8">
                 <div style={{ animation: `fadeInUp 0.6s ease-out forwards` }}>
                   <p className="label-premium mb-4">Analyseergebnisse</p>
-                  <p className="text-white font-serif text-lg mb-6">
+                  <p className="text-navy-900 font-serif text-lg mb-6">
                     {MODULE_LABELS[selectedAnalysis.module] || selectedAnalysis.module}
                   </p>
                   <div className="card-premium px-8 py-8 flex items-center justify-center hover:shadow-lg hover:shadow-ocean-500/10 transition-all duration-300">
@@ -393,15 +393,15 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
                       className={`card-premium px-6 py-4 text-left flex items-center justify-between transition-all duration-200 hover:shadow-lg hover:shadow-ocean-500/10 group ${
                         selectedAnalysis?.id === a.id
                           ? 'bg-ocean-900/40 border-ocean-600/60'
-                          : 'hover:bg-navy-900/60 hover:border-navy-600/40'
+                          : 'hover:bg-navy-900/60 hover:border-sand-200'
                       }`}
                       aria-selected={selectedAnalysis?.id === a.id}
                       aria-label={`${MODULE_LABELS[a.module] || a.module} - ${Math.round(a.overall_score)} von 100`}
                     >
-                      <span className="text-white font-medium group-hover:text-ocean-300 transition-colors">
+                      <span className="text-navy-900 font-medium group-hover:text-ocean-700 transition-colors">
                         {MODULE_LABELS[a.module] || a.module}
                       </span>
-                      <span className="text-ocean-300 font-mono text-sm font-semibold">
+                      <span className="text-ocean-600 font-mono text-sm font-semibold">
                         {Math.round(a.overall_score)}/100
                       </span>
                     </button>
@@ -422,7 +422,7 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
                     key={version.id}
                     onClick={() => handleSelectVersion(version)}
                     style={{ animation: `fadeInUp 0.6s ease-out ${idx * 80}ms forwards`, opacity: 0 }}
-                    className="card-premium px-6 py-5 text-left hover:bg-navy-900/60 hover:border-navy-600/40 hover:shadow-lg hover:shadow-ocean-500/10 transition-all duration-200 group relative"
+                    className="card-premium px-6 py-5 text-left hover:bg-navy-900/60 hover:border-sand-200 hover:shadow-lg hover:shadow-ocean-500/10 transition-all duration-200 group relative"
                     aria-label={`Version ${version.version_number}`}
                   >
                     {/* Timeline indicator */}
@@ -430,15 +430,15 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
 
                     <div className="flex items-start justify-between">
                       <div>
-                        <div className="font-mono text-ocean-300 font-semibold mb-1 group-hover:text-ocean-200 transition-colors">
+                        <div className="font-mono text-ocean-600 font-semibold mb-1 group-hover:text-ocean-200 transition-colors">
                           Version {version.version_number}
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-navy-400">
+                        <div className="flex items-center gap-2 text-sm text-navy-600">
                           <Calendar className="w-3 h-3" />
                           {new Date(version.created_at).toLocaleString('de-DE')}
                         </div>
                         {version.change_summary && (
-                          <div className="text-sm text-navy-300 mt-2">
+                          <div className="text-sm text-navy-700 mt-2">
                             {version.change_summary}
                           </div>
                         )}
@@ -450,10 +450,10 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
             ) : (
               <button
                 onClick={handleLoadVersions}
-                className="card-premium px-8 py-6 text-center hover:bg-navy-900/60 hover:border-navy-600/40 hover:shadow-lg hover:shadow-ocean-500/10 transition-all duration-200 w-full"
+                className="card-premium px-8 py-6 text-center hover:bg-navy-900/60 hover:border-sand-200 hover:shadow-lg hover:shadow-ocean-500/10 transition-all duration-200 w-full"
                 aria-label="Versionshistorie laden"
               >
-                <p className="text-navy-400">Versionshistorie laden</p>
+                <p className="text-navy-600">Versionshistorie laden</p>
               </button>
             )}
           </div>

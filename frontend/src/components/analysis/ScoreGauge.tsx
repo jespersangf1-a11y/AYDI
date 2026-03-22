@@ -152,7 +152,7 @@ export default function ScoreGauge({ score, label, size = 'md' }: ScoreGaugeProp
             {animatedScore}
           </span>
           <span
-            className="text-navy-400"
+            className="text-navy-600"
             style={{
               fontSize: sizeValue * 0.08,
               animation: hasAnimated ? 'none' : 'fadeIn 0.5s ease-out 0.4s both',
@@ -163,7 +163,7 @@ export default function ScoreGauge({ score, label, size = 'md' }: ScoreGaugeProp
         </div>
       </div>
 
-      <span className="mt-3 text-xs font-sans font-semibold uppercase tracking-wider-premium text-navy-300">
+      <span className="mt-3 text-xs font-sans font-semibold uppercase tracking-wider-premium text-navy-700">
         {label}
       </span>
 
