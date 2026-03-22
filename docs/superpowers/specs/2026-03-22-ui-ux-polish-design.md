@@ -96,6 +96,12 @@ Remove `.score-good` — merge with `.score-excellent` (two greens unnecessary).
 
 **Additionally:** Update score color logic in ScoreGauge.tsx, SubScoreBars.tsx, and FusedScoreCard.tsx to use these classes or equivalent WCAG-compliant Tailwind classes (emerald-600, amber-600, orange-600, red-600).
 
+**SVG gradient stops (ScoreGauge.tsx):** SVG `<stop>` elements cannot use Tailwind classes — they require raw hex values. Map to the updated WCAG palette:
+- Excellent: `#059669` (emerald-600) / `#34d399` (emerald-400 for gradient end)
+- Acceptable: `#d97706` (amber-600) / `#fbbf24` (amber-400 for gradient end)
+- Poor: `#ea580c` (orange-600) / `#fb923c` (orange-400 for gradient end)
+- Critical: `#dc2626` (red-600) / `#f87171` (red-400 for gradient end)
+
 ---
 
 ## Phase 2: Component Polish
@@ -143,10 +149,16 @@ Remove `.score-good` — merge with `.score-excellent` (two greens unnecessary).
 | `.animate-fill-bar` | width 0→target | 800ms | ease-out | progressFill |
 | `.animate-shimmer` | background-position sweep | 1500ms | ease-in-out infinite | shimmer, skeletonPulse |
 | `.animate-shake` | translateX wiggle | 400ms | ease-out | shake (SpecForm) |
-| `.animate-section-expand` | height 0→auto + opacity | 300ms | ease-out | sectionExpand |
-| `.animate-section-collapse` | height auto→0 + opacity | 200ms | ease-out | sectionCollapse |
+| `.animate-section-expand` | grid-rows 0fr→1fr + opacity | 300ms | ease-out | sectionExpand |
+| `.animate-section-collapse` | grid-rows 1fr→0fr + opacity | 200ms | ease-out | sectionCollapse |
 | `.animate-slide-out-right` | opacity + translateX(0→100%) | 300ms | ease-premium | slideOutRight, panelSlideOut |
 | `.animate-backdrop-fade` | opacity 0→1 on overlay | 300ms | ease-out | backdropFade, mobileOverlayFadeIn |
+| `.animate-count-up` | opacity 0→1 (score numbers) | 600ms | ease-out | countUp |
+
+**Implementation notes for new animations:**
+- All 6 new animations (shake, section-expand, section-collapse, slide-out-right, backdrop-fade, count-up) require BOTH `@keyframes` in globals.css AND `animation` entries in tailwind.config.js.
+- `section-expand`/`section-collapse`: Use `grid-template-rows: 0fr → 1fr` technique (not `height: auto` which cannot be animated). Wrap content in `<div style="overflow: hidden"><div style="min-height: 0">...</div></div>`.
+- `ease-premium` is a new easing (Phase 1.6) — must be added to tailwind.config.js before these animations can reference it.
 
 **Remove (infinite animations on static elements):** `iconBounce`, `statusPulse`, `emptyStateFloat`, `moduleHoverLift` — replace with one-shot or static alternatives.
 
@@ -419,7 +431,7 @@ critical (<40):   bg-red-50 text-red-700 border-red-200
 ### Verify for consistency (may need minor updates):
 - `frontend/src/components/quick/UpgradePrompt.tsx` — card/badge consistency check
 - `frontend/src/components/costs/CostOverview.tsx` — card consistency check
-- `frontend/src/components/compare/DiffViewer.tsx` — card consistency check
+- `frontend/src/components/compare/DiffViewer.tsx` — card class alignment only; its emerald/amber colors are intentional diff semantics (added/changed), NOT score colors — do not change
 - `frontend/src/components/dashboard/ProjectCreate.tsx` — inline styles check
 
 ### Not Modified:
