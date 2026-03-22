@@ -821,4 +821,137 @@ KNOWLEDGE_INDEX = {
             },
         },
     },
+    # =========================================================================
+    # 15. RUMPFKONSTRUKTION TIEFENWISSEN (hull_construction_deep.py)
+    # =========================================================================
+    "15_hull_construction_deep": {
+        "title": "Rumpfkonstruktion — Vollständiges Tiefenwissen",
+        "status": "implemented",
+        "module": "hull_construction_deep.py",
+        "description": "Harz-/Faser-/Gelcoat-/Kernmaterial-Datenbanken, Konstruktionsmethoden, Rumpf-Deck-Verbindungen, Strukturanalyse, Reparatur, QA, ISO 12215",
+        "subcategories": {
+            "15.1_resins": {"title": "Harzsysteme", "status": "implemented", "entries": "Orthophthal-/Isophthal-Polyester, Vinylester, Epoxid, Phenol — Mechanik, Chemie, Osmose-Risiko"},
+            "15.2_fibers": {"title": "Fasertypen", "status": "implemented", "entries": "E-Glas, S-Glas, Carbon HM/HT/IM, Aramid/Kevlar, Basalt, UHMWPE — Kennwerte, Hybrid-Laminate"},
+            "15.3_gelcoat": {"title": "Gelcoat-Systeme", "status": "implemented", "entries": "Iso-NPG, Vinylester-Gelcoat, Epoxid-Primer, Fehlerbild-Katalog (Crazing, Pinholes, Chalking)"},
+            "15.4_core_materials": {"title": "Kernmaterialien", "status": "implemented", "entries": "End-Grain Balsa, PVC Divinycell, SAN CoreCell, Nomex/Alu/PP-Honeycomb — Feuchteaufnahme, Kompression"},
+            "15.5_construction_methods": {"title": "Bauverfahren", "status": "implemented", "entries": "Handlaminat, Vakuumsack, VARTM/SCRIMP Infusion, Prepreg/Autoklav — Faseranteile, QA-Methoden"},
+            "15.6_hull_deck_joints": {"title": "Rumpf-Deck-Verbindungen", "status": "implemented", "entries": "Verschraubt, Durchbolzt, Verklebt (3M 5200/Sikaflex 292/Plexus), Überlaminiert — Versagensmodi"},
+            "15.7_structural_analysis": {"title": "Strukturanalyse", "status": "implemented", "entries": "Laminat-Theorie (CLT), FEA-Grundlagen, ISO 12215 Scantling, Spannungsverteilung"},
+            "15.8_repair": {"title": "Reparaturverfahren", "status": "implemented", "entries": "Osmose-Sanierung, Strukturreparatur, Gelcoat-Ausbesserung, Kernersatz, Blister-Behandlung"},
+            "15.9_materials_specs": {"title": "Materialspezifikationen", "status": "implemented", "entries": "Mechanische Kennwerte-Tabellen, Temperaturbeständigkeit, UV-Resistenz"},
+            "15.10_environment": {"title": "Umwelt & Alterung", "status": "implemented", "entries": "Osmose-Mechanismen, UV-Degradation, Hydrolyse, Temperaturzyklen, Ermüdung"},
+            "15.11_hybrid_advanced": {"title": "Hybrid & Fortgeschrittene Materialien", "status": "implemented", "entries": "Carbon-Glas-Hybride, Infusionsepoxid, Nano-Modifikation, Bio-Composites"},
+            "15.12_case_studies": {"title": "Fallstudien", "status": "implemented", "entries": "Reale Rumpfschäden, Osmose-Fälle, Strukturversagen, Reparatur-Dokumentation"},
+            "15.13_qa_standards": {"title": "QA & Normen", "status": "implemented", "entries": "ISO 12215, CE 2013/53/EU, Lloyd's/DNV-Klassifikation, Prüfverfahren"},
+            "15.14_reference": {"title": "Technische Referenzdaten", "status": "implemented", "entries": "Umrechnungstabellen, Materialkennwerte-Vergleich, Harz-Mischverhältnisse"},
+        },
+    },
+    # =========================================================================
+    # 16. KIEL / RUDER / UNTERWASSER (keel_rudder_underwater_deep.py)
+    # =========================================================================
+    "16_keel_rudder_underwater_deep": {
+        "title": "Kiel, Ruder & Unterwasserschiff — Tiefenwissen",
+        "status": "implemented",
+        "module": "keel_rudder_underwater_deep.py",
+        "description": "Kieltypen & -bolzen, Ruderanlagen, Antifouling-Systeme, Opferanoden, Integrierte Warnungen",
+        "subcategories": {
+            "16.1_keels": {"title": "Kielsysteme", "status": "implemented", "entries": "5 Kieltypen, 4 Bolzenmaterialien, 5 Inspektionsmethoden, Bavaria Match Recall, Cheeki Rafiki"},
+            "16.2_rudders": {"title": "Ruderanlagen", "status": "implemented", "entries": "Spaten-/Skeg-/Zwillingsruder, 3 Lagersysteme, 3 Dichtungssysteme, Verschleißmessung"},
+            "16.3_antifouling": {"title": "Antifouling", "status": "implemented", "entries": "Ablativ/Hart/Foul-Release/Kupferfrei, Kompatibilitätsmatrix, 3 Regulierungsrahmen"},
+            "16.4_anodes": {"title": "Opferanoden", "status": "implemented", "entries": "Zink/Magnesium/Aluminium, 1%-Regel, 50%-Austausch, Galvanische Spannungsreihe"},
+            "16.5_warnings": {"title": "Integrierte Warnungen", "status": "implemented", "entries": "Kielbolzen-Korrosion, Alu-Kupfer-Kontakt, Ruder-Delamination, Osmose-Kiel"},
+        },
+    },
+    # =========================================================================
+    # 17. MOTOR & ANTRIEB (engine_drivetrain_deep.py)
+    # =========================================================================
+    "17_engine_drivetrain_deep": {
+        "title": "Motor & Antriebsstrang — Tiefenwissen",
+        "status": "implemented",
+        "module": "engine_drivetrain_deep.py",
+        "description": "Marine-Diesel-Datenbank, Kühlsystem, Abgasanlage, Kraftstoffsystem, Antriebsstrang, Steueranlage",
+        "subcategories": {
+            "17.1_engines": {"title": "Marine-Diesel", "status": "implemented", "entries": "Yanmar/Volvo Penta/Nanni/Beta Marine, Leistungskurven, Wartungsintervalle, Common-Rail vs mechanisch"},
+            "17.2_cooling": {"title": "Kühlsystem", "status": "implemented", "entries": "Seewasser-/Frischwasser-Kreislauf, Impeller, Wärmetauscher, Mischkrümmer (häufigstes Versagen)"},
+            "17.3_exhaust": {"title": "Abgasanlage", "status": "implemented", "entries": "Nass-/Trockenabgas, Mischkrümmer Guss-/Edelstahl, Hydrolock-Risiko, Abgasschlauch-Inspektio"},
+            "17.4_fuel": {"title": "Kraftstoffsystem", "status": "implemented", "entries": "Diesel Bug, Racor-Filter, Tankinspektion, EN 590, Wasserabscheider"},
+            "17.5_drivetrain": {"title": "Antriebsstrang", "status": "implemented", "entries": "Wellenanlage 0.05mm, PSS-Dichtung, Saildrive-Membran 7-10J, Propeller fest/falt/verstellbar"},
+            "17.6_steering": {"title": "Steueranlage", "status": "implemented", "entries": "Seilzug/Kette/Zahnstange, Hydraulik, Autopilot-Integration, Notpinne"},
+        },
+    },
+    # =========================================================================
+    # 18. ELEKTRIK (electrical_systems_deep.py)
+    # =========================================================================
+    "18_electrical_systems_deep": {
+        "title": "Elektrische Systeme — Tiefenwissen",
+        "status": "implemented",
+        "module": "electrical_systems_deep.py",
+        "description": "Batterien, Verkabelung, Verbindungstechnik, Absicherung, Landstrom, Wechselrichter, Korrosionsschutz",
+        "subcategories": {
+            "18.1_batteries": {"title": "Batteriesysteme", "status": "implemented", "entries": "AGM/Gel/LiFePO4/Blei, BMS, Ladeprofile, ABYC E-13, Kapazitätsberechnung"},
+            "18.2_wiring": {"title": "Verkabelung", "status": "implemented", "entries": "ABYC E-11, 3%/10%-Spannungsfall, Querschnittsberechnung, Kabeltypen verzinnt/Marine-Grade"},
+            "18.3_connections": {"title": "Verbindungstechnik", "status": "implemented", "entries": "Crimpung (Ratchet-Presszangen), Lötverbot ABYC, Schrumpfschlauch, Korrosionsschutz"},
+            "18.4_fusing": {"title": "Absicherung", "status": "implemented", "entries": "ANL/ATO/MIDI/Streifensicherung, 150%-Regel, Batterie-Hauptschalter, Leitungsschutz"},
+            "18.5_shore_power": {"title": "Landstrom", "status": "implemented", "entries": "230V AC, Trenntrafo vs Galvanischer Isolator, FI-Schutz 30mA, Polaritätsprüfung"},
+            "18.6_inverter_gen": {"title": "Wechselrichter & Generatoren", "status": "implemented", "entries": "Victron/Mastervolt/Whisper, Reine Sinuswelle, Fischer Panda, Parallelschaltung"},
+            "18.7_corrosion": {"title": "Korrosionsschutz", "status": "implemented", "entries": "Streustrom 10-1000x Beschleunigung, Galvanischer Isolator, ICCP, Erdungskonzepte"},
+            "18.8_warnings": {"title": "Kritische Warnungen", "status": "implemented", "entries": "Lithium-Thermal-Runaway, AC-Leckstrom im Wasser, Falsche Polarität, Überlastung"},
+        },
+    },
+    # =========================================================================
+    # 19. SANITÄR / INTERIEUR / SICHERHEIT (sanitary_interior_safety_deep.py)
+    # =========================================================================
+    "19_sanitary_interior_safety_deep": {
+        "title": "Sanitär, Interieur & Sicherheit — Tiefenwissen",
+        "status": "implemented",
+        "module": "sanitary_interior_safety_deep.py",
+        "description": "Seeventile, Toiletten, Gas, Interieur, Feuchtigkeit, Brandschutz, Leckabwehr, Stabilität, Normen",
+        "subcategories": {
+            "19.1_seacocks": {"title": "Seeventile", "status": "implemented", "entries": "Groco/TruDesign/Blakes, Bronze DZR vs Komposit, Kugel-/Kegelhahn, Wartungsintervalle"},
+            "19.2_toilets": {"title": "Toilettensysteme", "status": "implemented", "entries": "Manuell/Elektrisch/Vakuum, Jabsco/Raritan, Fäkalientank, Joker-Ventile, Geruchsprobleme"},
+            "19.3_gas": {"title": "Gasinstallation", "status": "implemented", "entries": "EN ISO 10239, Gasprüfung, Gaswarner, Gaskasten-Drainage, Schlauch-Lebensdauer"},
+            "19.4_interior": {"title": "Interieur", "status": "implemented", "entries": "Sperrholz Marine-Grade, Furniere, Polster, Isolierung, Schimmelprävention"},
+            "19.5_moisture": {"title": "Feuchtigkeit & Kondensation", "status": "implemented", "entries": "Taupunktberechnung, Dampfsperre, Ventilation, Feuchtemessung, Schimmelbekämpfung"},
+            "19.6_fire_safety": {"title": "Brandschutz", "status": "implemented", "entries": "ISO 9094, Feuerlöscher-Typen, Löschanlage Motorraum, Fluchtwege, Rauchmelder"},
+            "19.7_leak_defense": {"title": "Leckabwehr", "status": "implemented", "entries": "Bilgepumpen elektrisch/manuell, Hochwasseralarm, Lenzventile, Notmaßnahmen"},
+            "19.8_stability": {"title": "Stabilität & Seetüchtigkeit", "status": "implemented", "entries": "ISO 12217, CE-Kategorien A-D, AVS, GZ-Kurve, Beladungsoptimierung"},
+            "19.9_standards": {"title": "Normen & Vorschriften", "status": "implemented", "entries": "CE 2013/53/EU, ISO-Sammlung, BSH, ABYC, Flaggenstaatanforderungen"},
+        },
+    },
+    # =========================================================================
+    # 20. RIGG / SEGEL / TEAKDECK (rigging_sails_deck_deep.py)
+    # =========================================================================
+    "20_rigging_sails_deck_deep": {
+        "title": "Rigg, Segel & Teakdeck — Tiefenwissen",
+        "status": "implemented",
+        "module": "rigging_sails_deck_deep.py",
+        "description": "Stehendes Rigg, Masten, Segel, Teakdeck, Decksbeschlag-Montage, Fehlerbehebung, Wartung",
+        "subcategories": {
+            "20.1_standing_rigging": {"title": "Stehendes Rigg", "status": "implemented", "entries": "1x19/7x19/Dyform/Rod, Nitronic 50, Terminals, Inspektionsmethoden, Lebensdauer 10-15J"},
+            "20.2_masts": {"title": "Masten & Bäume", "status": "implemented", "entries": "Aluminium 6082-T6, Carbon, Profil-Querschnitte, Salingwinkel, Mastfuß"},
+            "20.3_sails": {"title": "Segel", "status": "implemented", "entries": "Dacron/Laminat/3DL, Segelschnitt, UV-Schutz, Nähte, Lebensdauer-Faktoren"},
+            "20.4_teak_deck": {"title": "Teakdeck", "status": "implemented", "entries": "Sikaflex 298/290 DC PRO, Bond Breaker, Burma vs Plantation, Dicke 8-10mm, Schleifen"},
+            "20.5_hardware_mounting": {"title": "Decksbeschlag-Montage", "status": "implemented", "entries": "Backing-Plates, Dichtung Butylband/Sikaflex, Kernverstärkung, Drehmomente"},
+            "20.6_troubleshooting": {"title": "Rigg-Fehlerbehebung", "status": "implemented", "entries": "Drahtbruch, Korrosion, Lose Terminals, Mastfall-Probleme, Not-Reparatur"},
+            "20.7_sail_maintenance": {"title": "Segel-Wartung", "status": "implemented", "entries": "Waschen, UV-Schutz erneuern, Nähte prüfen, Lagerung, Reparatur-Patches"},
+            "20.8_teak_maintenance": {"title": "Teakdeck-Wartung", "status": "implemented", "entries": "Reinigung, Fugen-Erneuerung, Schleifen, Öl vs unbehandelt, Leck-Diagnose"},
+            "20.9_installation_standards": {"title": "Montage-Standards", "status": "implemented", "entries": "ISO-Vorgaben, ABYC H-27, Drehmoment-Tabellen, Sealant-Auswahl, Schraubentypen"},
+        },
+    },
+    # =========================================================================
+    # 21. ALTERUNG / LEBENSZYKLUS / HERSTELLER (aging_lifecycle_manufacturers_deep.py)
+    # =========================================================================
+    "21_aging_lifecycle_manufacturers_deep": {
+        "title": "Alterung, Lebenszyklus & Hersteller-Datenbank",
+        "status": "implemented",
+        "module": "aging_lifecycle_manufacturers_deep.py",
+        "description": "Material-Lebensdauern (16 Materialien), Degradationszyklen, 23 Hersteller-Profile (Segel/Motor/Custom)",
+        "subcategories": {
+            "21.1_material_lifespans": {"title": "Material-Lebensdauern", "status": "implemented", "entries": "16 Materialien mit min/typ/max Lebensdauer, Degradationsmechanismen, Inspektionsmethoden"},
+            "21.2_degradation_cycles": {"title": "Degradationszyklen", "status": "implemented", "entries": "3 selbstverstärkende Zyklen: Feuchtigkeit→Steifigkeit, Osmose→Mikrorisse, Korrosion→Dichtung"},
+            "21.3_sail_manufacturers": {"title": "Segel-Yacht-Hersteller", "status": "implemented", "entries": "11 Werften: Bavaria, Hanse, Jeanneau, Beneteau, Hallberg-Rassy, X-Yachts, Oyster, Swan, Dehler, Najad, Contest"},
+            "21.4_motor_manufacturers": {"title": "Motor-Yacht-Hersteller", "status": "implemented", "entries": "8 Werften: Princess, Sunseeker, Fairline, Nimbus, Linssen, Grand Banks, Nordhavn, Boston Whaler"},
+            "21.5_custom_manufacturers": {"title": "Custom-/Semi-Custom-Werften", "status": "implemented", "entries": "4 Werften: Baltic Yachts, Southern Wind, Wally, Spirit Yachts"},
+        },
+    },
 }
