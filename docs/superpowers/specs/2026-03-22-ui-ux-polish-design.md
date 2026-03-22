@@ -10,10 +10,12 @@
 
 AYDI frontend is a Scandinavian maritime-themed yacht design analysis platform built with React 18 + TypeScript + Tailwind CSS. The current design is already high-quality with Navy/Ocean/Sand color palette, Playfair Display + Inter typography, and extensive animations. This spec defines targeted polish to elevate consistency, accessibility, and refinement.
 
+**Note:** CLAUDE.md lists DM Sans + Plus Jakarta Sans as target fonts, but the actual tailwind.config.js uses Playfair Display + Inter. This spec works with the implemented fonts. Font alignment with CLAUDE.md is a separate decision.
+
 **Key constraints:**
 - German UI text, English code
 - Preserve existing Scandinavian maritime aesthetic
-- No functionality changes — visual polish only
+- Primarily visual polish. Exceptions: Phase 4.1 (IntersectionObserver scroll reveal) and Phase 5.5 (keyboard navigation) add minimal behavioral code required for polish and accessibility respectively.
 - All changes must propagate through design tokens where possible
 
 ---
@@ -22,9 +24,9 @@ AYDI frontend is a Scandinavian maritime-themed yacht design analysis platform b
 
 ### 1.1 Color Corrections
 
-**Problem:** Multiple components use hardcoded `rgba(0, 176, 240, ...)` (bright cyan) instead of the Ocean design tokens `rgba(45, 139, 168, ...)`. Found in: Dashboard.tsx, QuickResults.tsx, MaterialBrowser.tsx hover shadows/borders.
+**Problem:** Multiple components use hardcoded `rgba(0, 176, 240, ...)` (bright cyan) instead of the Ocean design tokens `rgba(45, 139, 168, ...)`. Found in 6 files: Dashboard.tsx, QuickResults.tsx, MaterialBrowser.tsx, SpecForm.tsx, QuickAnalysis.tsx, ImageUpload.tsx (hover shadows/borders).
 
-**Fix:** Replace all `rgba(0, 176, 240, ...)` with Ocean-token equivalents across all components.
+**Fix:** Replace all `rgba(0, 176, 240, ...)` with Ocean-token equivalents across all 6 components.
 
 ### 1.2 Typography Scale
 
@@ -43,8 +45,9 @@ AYDI frontend is a Scandinavian maritime-themed yacht design analysis platform b
 **Add:**
 ```
 'card-rest': '0 1px 3px rgba(11, 18, 32, 0.04), 0 1px 2px rgba(11, 18, 32, 0.06)',
-'card-elevated': '0 12px 32px rgba(11, 18, 32, 0.08), 0 0 0 1px rgba(212, 218, 230, 0.5)',
 ```
+
+Note: `card-hover` already exists in the config. `card-rest` is the new neutral resting shadow. Together with the existing `card-hover`, this completes the card shadow system.
 
 ### 1.4 Spacing Tokens
 
@@ -79,7 +82,9 @@ transitionTimingFunction: {
 
 ### 1.7 Score Colors (globals.css)
 
-**Replace hardcoded hex values:**
+**Note:** The `.score-*` classes exist in globals.css but are currently unused by any component. Score colors are applied via inline Tailwind classes in components like ScoreGauge.tsx, SubScoreBars.tsx, and FusedScoreCard.tsx. The fix must update both the globals.css definitions AND the inline color logic in those components.
+
+**Replace hardcoded hex values in globals.css:**
 ```css
 .score-excellent { @apply text-emerald-600; }   /* was #4ade80 — WCAG fail */
 .score-acceptable { @apply text-amber-600; }     /* was #fbbf24 — WCAG fail */
@@ -89,39 +94,71 @@ transitionTimingFunction: {
 
 Remove `.score-good` — merge with `.score-excellent` (two greens unnecessary).
 
+**Additionally:** Update score color logic in ScoreGauge.tsx, SubScoreBars.tsx, and FusedScoreCard.tsx to use these classes or equivalent WCAG-compliant Tailwind classes (emerald-600, amber-600, orange-600, red-600).
+
 ---
 
 ## Phase 2: Component Polish
 
 ### 2.1 Centralize Animations
 
-**Problem:** 6+ components define inline `<style>` blocks with their own @keyframes. Duplicated and inconsistent.
+**Problem:** 15+ components define inline `<style>` blocks with their own @keyframes. Duplicated and inconsistent. Full inventory:
+
+| Component | Inline @keyframes |
+|-----------|-------------------|
+| Dashboard.tsx | projectCardSlideIn, emptyStateFloat, statusPulse, iconBounce |
+| QuickResults.tsx | fadeInUp, countUp, moduleSlideIn, moduleHoverLift, skeletonPulse |
+| QuickAnalysis.tsx | slideInRight, slideInLeft, stepPulse, cardStaggered, checkmarkScale |
+| SpecForm.tsx | sectionExpand, sectionCollapse, shake, focusGlow, errorSlideIn |
+| MaterialBrowser.tsx | tableRowHover, panelSlideIn, panelSlideOut, mobileOverlayFadeIn, filterTransition |
+| ImageUpload.tsx | dragBorderPulse, previewScaleIn, progressFill, uploadPulse |
+| FullAnalysisView.tsx | slideIn, fadeIn |
+| ConfidenceBadge.tsx | fadeInScale |
+| WarningList.tsx | slideIn, slideDown |
+| SubScoreBars.tsx | slideIn |
+| ScoreGauge.tsx | fadeIn |
+| HeroCarousel.tsx | fadeInUp |
+| HeroSection.tsx | fadeInUp |
+| ProjectDetail.tsx | fadeInUp, slideInLeft, slideUnderline |
+| ServiceReportList.tsx | fadeInUp, slideDown, borderGlow |
+| KnowledgeDetail.tsx | slideInRight, slideOutRight, backdropFade, fadeInUp |
+| KnowledgePage.tsx | fadeInUp, slideDown, ocnglow, pulse-glow |
 
 **Fix:**
 - Move ALL @keyframes to globals.css
 - Remove all inline `<style>` template strings from components
 - Components use only Tailwind classes or globals.css utility classes
 
-**Canonical animation set (globals.css):**
+**Canonical animation set (globals.css) — 8 base + 6 specialized:**
 
-| Class | Animation | Duration | Easing |
-|-------|-----------|----------|--------|
-| `.animate-fade-in` | opacity 0→1 | 400ms | ease-out |
-| `.animate-fade-in-up` | opacity + translateY(16px→0) | 500ms | ease-out |
-| `.animate-fade-in-scale` | opacity + scale(0.95→1) | 400ms | ease-out |
-| `.animate-slide-in-right` | opacity + translateX(24px→0) | 400ms | ease-premium |
-| `.animate-slide-in-left` | opacity + translateX(-24px→0) | 400ms | ease-premium |
-| `.animate-draw-circle` | stroke-dashoffset | 1000ms | ease-out |
-| `.animate-fill-bar` | width 0→target | 800ms | ease-out |
-| `.animate-shimmer` | background-position sweep | 1500ms | ease-in-out infinite |
+| Class | Animation | Duration | Easing | Replaces |
+|-------|-----------|----------|--------|----------|
+| `.animate-fade-in` | opacity 0→1 | 400ms | ease-out | fadeIn (multiple) |
+| `.animate-fade-in-up` | opacity + translateY(16px→0) | 500ms | ease-out | fadeInUp (7 components) |
+| `.animate-fade-in-scale` | opacity + scale(0.95→1) | 400ms | ease-out | fadeInScale, previewScaleIn, checkmarkScale |
+| `.animate-slide-in-right` | opacity + translateX(24px→0) | 400ms | ease-premium | slideInRight, panelSlideIn |
+| `.animate-slide-in-left` | opacity + translateX(-24px→0) | 400ms | ease-premium | slideInLeft |
+| `.animate-slide-down` | opacity + translateY(-8px→0) | 300ms | ease-out | slideDown (multiple) |
+| `.animate-draw-circle` | stroke-dashoffset | 1000ms | ease-out | (ScoreGauge) |
+| `.animate-fill-bar` | width 0→target | 800ms | ease-out | progressFill |
+| `.animate-shimmer` | background-position sweep | 1500ms | ease-in-out infinite | shimmer, skeletonPulse |
+| `.animate-shake` | translateX wiggle | 400ms | ease-out | shake (SpecForm) |
+| `.animate-section-expand` | height 0→auto + opacity | 300ms | ease-out | sectionExpand |
+| `.animate-section-collapse` | height auto→0 + opacity | 200ms | ease-out | sectionCollapse |
+| `.animate-slide-out-right` | opacity + translateX(0→100%) | 300ms | ease-premium | slideOutRight, panelSlideOut |
+| `.animate-backdrop-fade` | opacity 0→1 on overlay | 300ms | ease-out | backdropFade, mobileOverlayFadeIn |
 
-**Remove infinite animations:** `iconBounce`, `statusPulse`, `emptyStateFloat`, `moduleHoverLift` — replace with static or one-shot alternatives.
+**Remove (infinite animations on static elements):** `iconBounce`, `statusPulse`, `emptyStateFloat`, `moduleHoverLift` — replace with one-shot or static alternatives.
+
+**Remove (redundant, covered by canonical set):** `projectCardSlideIn`, `moduleSlideIn`, `cardStaggered`, `tableRowHover`, `filterTransition`, `errorSlideIn`, `focusGlow`, `borderGlow`, `ocnglow`, `slideUnderline`, `uploadPulse`, `dragBorderPulse`, `countUp` — these are all variants of the 14 canonical animations above.
 
 **Keep:** `pulse-glow` only for active loading states (not static elements).
 
 ### 2.2 Card Hover System
 
-**Standardize across all components:**
+**Note:** `.card-premium` already exists in globals.css (lines 108-114) with `rounded-xl shadow-sm` and hover `shadow-md`. This is a **redefinition** — replace the existing class, do not add a second one. The current Dashboard hover lift of `-12px` is intentionally reduced to `-6px` for a more refined feel.
+
+**Replace existing `.card-premium` in globals.css:**
 ```css
 .card-premium {
   @apply bg-white border border-sand-200 shadow-card-rest;
@@ -282,14 +319,18 @@ Sidebar nav icons: `scale(1.1)` on hover, 200ms transition.
 
 ### 5.1 Color Contrast Fixes
 
+**Note:** `text-navy-300` and `text-sand-400` are not currently used in any component. These entries are preventive guidance — if these colors appear during implementation, use the corrected alternatives. The score color issues ARE real (defined in globals.css, applied via inline logic in components).
+
 | Element | Current | Fix | Result |
 |---------|---------|-----|--------|
-| `text-navy-300` on white | 3.4:1 FAIL | → `text-navy-400` | 4.7:1 PASS |
-| `text-sand-400` as label | 2.6:1 FAIL | → `text-sand-600` | 5.3:1 PASS |
-| `.score-excellent` (#4ade80) | 2.0:1 FAIL | → badge: `bg-emerald-50 text-emerald-700` | 5.0:1+ PASS |
-| `.score-good` (#86efac) | 1.7:1 FAIL | → merge with excellent | N/A |
-| `.score-acceptable` (#fbbf24) | 1.8:1 FAIL | → badge: `bg-amber-50 text-amber-700` | 5.0:1+ PASS |
-| `.score-poor` (#f97316) | 3.0:1 FAIL | → badge: `bg-orange-50 text-orange-700` | 5.0:1+ PASS |
+| `text-navy-300` on white (preventive) | 3.4:1 FAIL | → use `text-navy-400` instead | 4.7:1 PASS |
+| `text-sand-400` as label (preventive) | 2.6:1 FAIL | → use `text-sand-600` instead | 5.3:1 PASS |
+| `.score-excellent` (#4ade80) | ~2.0:1 FAIL | → badge: `bg-emerald-50 text-emerald-700` | Verify exact ratio during implementation |
+| `.score-good` (#86efac) | ~1.7:1 FAIL | → merge with excellent | N/A |
+| `.score-acceptable` (#fbbf24) | ~1.8:1 FAIL | → badge: `bg-amber-50 text-amber-700` | Verify exact ratio during implementation |
+| `.score-poor` (#f97316) | ~3.0:1 FAIL | → badge: `bg-orange-50 text-orange-700` | Verify exact ratio during implementation |
+
+**Implementation note:** Exact contrast ratios should be verified with a contrast checker tool during implementation for each specific color pairing.
 
 ### 5.2 Score Display Redesign
 
@@ -334,34 +375,52 @@ critical (<40):   bg-red-50 text-red-700 border-red-200
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+  /* Exception: height transitions for accordions (SpecForm sections) need non-zero duration */
+  .section-expand-transition {
+    transition-duration: 1ms !important;
+  }
 }
 ```
+
+**Note:** The blanket `!important` override is intentionally aggressive for accessibility. The `.section-expand-transition` exception preserves accordion usability where instant height changes would be disorienting.
 
 ---
 
 ## Files Affected
 
-### Modified:
+### Modified (Foundation — Phase 1):
 - `frontend/tailwind.config.js` — new tokens (typography, shadows, spacing, radii, easings)
-- `frontend/src/styles/globals.css` — centralized animations, component classes, a11y
-- `frontend/src/components/layout/AppShell.tsx` — nav polish, touch targets
-- `frontend/src/components/layout/HeroSection.tsx` — overlay, CTA
-- `frontend/src/components/layout/HeroCarousel.tsx` — domain label crossfade
-- `frontend/src/components/quick/QuickAnalysis.tsx` — step indicator, layout
-- `frontend/src/components/quick/QuickResults.tsx` — remove inline styles, use tokens
-- `frontend/src/components/quick/SpecForm.tsx` — input focus, section styling
-- `frontend/src/components/dashboard/Dashboard.tsx` — remove inline styles, card system
-- `frontend/src/components/dashboard/ProjectDetail.tsx` — card consistency
-- `frontend/src/components/materials/MaterialBrowser.tsx` — remove inline styles, zebra
-- `frontend/src/components/service/ServiceReportList.tsx` — card consistency
-- `frontend/src/components/knowledge/KnowledgeDetail.tsx` — card consistency
-- `frontend/src/pages/KnowledgePage.tsx` — card consistency
-- `frontend/src/components/analysis/ScoreGauge.tsx` — aria-label
-- `frontend/src/components/analysis/ConfidenceBadge.tsx` — aria-label, badge classes
-- `frontend/src/components/analysis/SubScoreBars.tsx` — score color tokens
-- `frontend/src/components/analysis/WarningList.tsx` — card consistency
+- `frontend/src/styles/globals.css` — centralized animations, component classes, a11y, reduced-motion
+
+### Modified (Inline styles removal + color fixes — Phase 1.1 & 2.1):
+- `frontend/src/components/dashboard/Dashboard.tsx` — remove inline @keyframes (4), fix hardcoded cyan
+- `frontend/src/components/dashboard/ProjectDetail.tsx` — remove inline @keyframes (3)
+- `frontend/src/components/quick/QuickAnalysis.tsx` — remove inline @keyframes (5), fix hardcoded cyan
+- `frontend/src/components/quick/QuickResults.tsx` — remove inline @keyframes (5), fix hardcoded cyan
+- `frontend/src/components/quick/SpecForm.tsx` — remove inline @keyframes (5), fix hardcoded cyan
+- `frontend/src/components/materials/MaterialBrowser.tsx` — remove inline @keyframes (5), fix hardcoded cyan
+- `frontend/src/components/images/ImageUpload.tsx` — remove inline @keyframes (4), fix hardcoded cyan
+- `frontend/src/components/analysis/FullAnalysisView.tsx` — remove inline @keyframes (2)
+- `frontend/src/components/analysis/ConfidenceBadge.tsx` — remove inline @keyframes (1), badge classes, aria-label
+- `frontend/src/components/analysis/WarningList.tsx` — remove inline @keyframes (2), card consistency
+- `frontend/src/components/analysis/SubScoreBars.tsx` — remove inline @keyframes (1), score color tokens
+- `frontend/src/components/analysis/ScoreGauge.tsx` — remove inline @keyframes (1), aria-label
+- `frontend/src/components/layout/HeroCarousel.tsx` — remove inline @keyframes (1), domain label crossfade
+- `frontend/src/components/layout/HeroSection.tsx` — remove inline @keyframes (1), overlay, CTA
+- `frontend/src/components/service/ServiceReportList.tsx` — remove inline @keyframes (3), card consistency
+- `frontend/src/components/knowledge/KnowledgeDetail.tsx` — remove inline @keyframes (4), card consistency
+- `frontend/src/pages/KnowledgePage.tsx` — remove inline @keyframes (4), card consistency
+
+### Modified (Screen polish + a11y — Phases 3-5):
+- `frontend/src/components/layout/AppShell.tsx` — nav polish, touch targets, keyboard nav
 - `frontend/src/components/images/FusedScoreCard.tsx` — score color tokens
 - `frontend/src/components/images/VisualResults.tsx` — card consistency
+
+### Verify for consistency (may need minor updates):
+- `frontend/src/components/quick/UpgradePrompt.tsx` — card/badge consistency check
+- `frontend/src/components/costs/CostOverview.tsx` — card consistency check
+- `frontend/src/components/compare/DiffViewer.tsx` — card consistency check
+- `frontend/src/components/dashboard/ProjectCreate.tsx` — inline styles check
 
 ### Not Modified:
 - `frontend/src/components/viewer3d/*` — 3D viewer untouched
