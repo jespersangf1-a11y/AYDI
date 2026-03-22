@@ -655,4 +655,170 @@ KNOWLEDGE_INDEX = {
             },
         },
     },
+    "12_deck_hardware_deep": {
+        "title": "Deck-Hardware Tiefenwissen",
+        "module": "deck_hardware_deep",
+        "description": "Exhaustive technical specifications for all marine deck hardware",
+        "subcategories": {
+            "12.1_winches": {
+                "title": "Winschen-Datenbank",
+                "status": "implemented",
+                "entries": "Harken (Radial/Performa/Electric 15-80), Lewmar EVO, Andersen, Antal, Spinlock — Zugkraft, Übersetzung, Wartung, Troubleshooting",
+            },
+            "12.2_blocks": {
+                "title": "Blöcke & Umlenkrollen",
+                "status": "implemented",
+                "entries": "Lastberechnung, Umlenkfaktoren, Kugel-/Nadel-/Gleitlager, Harken/Lewmar/Antal/Ronstan Specs",
+            },
+            "12.3_cleats": {
+                "title": "Klampen & Klemmen",
+                "status": "implemented",
+                "entries": "Hornklampen, Camcleats, Clamcleats — Materialien (316SS, Bronze, Aluminium), Dimensionierung",
+            },
+            "12.4_tracks": {
+                "title": "Schienensysteme",
+                "status": "implemented",
+                "entries": "T-Track 22-32mm, Lewmar Specs, Großschotwagen, Genua-Schienen, Montage-Befestigung",
+            },
+            "12.5_hatches": {
+                "title": "Luken-Datenbank",
+                "status": "implemented",
+                "entries": "Lewmar (Low/Ultra-Low/Ocean Profile), Goiot, Bomar — Sandwich-Deck-Montage, Dichtungsprofile",
+            },
+            "12.6_portlights": {
+                "title": "Bullaugen & Fenster",
+                "status": "implemented",
+                "entries": "Acryl vs Polycarbonat vs Glas, Dichtungsmethoden, UV-Beständigkeit, Nachschleifen",
+            },
+            "12.7_stanchions": {
+                "title": "Relingsstützen & Drahtseile",
+                "status": "implemented",
+                "entries": "Fußtypen, Höhenanforderungen ISO 15085, Drahtseil-Materialien, Dyneema-Alternativen",
+            },
+            "12.8_pad_eyes": {
+                "title": "Augenplatten & Beschlagsbefestigung",
+                "status": "implemented",
+                "entries": "Wichard Specs, Sicherheitsfaktoren, Backing-Plate-Berechnung, Kernverstärkung",
+            },
+            "12.9_maintenance": {
+                "title": "Wartungsmatrix Deck-Hardware",
+                "status": "implemented",
+                "entries": "Schmierungsintervalle, Ersatzteil-Planung, Winterlagerung, Service-Kits",
+            },
+            "12.10_quality_origin": {
+                "title": "Qualitäts- und Herkunftsmatrix",
+                "status": "implemented",
+                "entries": "Premiumhersteller vs Budgetmarken, OEM-Lieferketten, Fälschungserkennung",
+            },
+            "12.11_installation": {
+                "title": "Best Practices Montage",
+                "status": "implemented",
+                "entries": "Kernverstärkung, Dichtungstechniken, Schraubendrehmomente, Anti-Knarr-Maßnahmen",
+            },
+        },
+    },
+    "13_coatings_sealants_deep": {
+        "title": "Beschichtungs- und Dichtungssystem-Tiefenwissen",
+        "module": "coatings_sealants_deep",
+        "description": "Exhaustive technical specifications for marine sealants, paints, varnishes, and epoxy systems",
+        "subcategories": {
+            "13.1_sealants": {
+                "title": "Dichtmassen-Datenbank",
+                "status": "implemented",
+                "entries": "PU/MS-Polymer/Polysulfid/Silikon/Butyl-Vergleich, Sikaflex (291i/295UV/591/290i DC), 3M (5200/4200/4000UV), Anwendungsmatrix",
+            },
+            "13.2_epoxy": {
+                "title": "Epoxid-Systeme",
+                "status": "implemented",
+                "entries": "West System (105 Harz, 205-209 Härter, Füller 403-410), Aminröte, Harz-Vergleich Polyester/Vinylester/Epoxid",
+            },
+            "13.3_paint_systems": {
+                "title": "Lacksysteme",
+                "status": "implemented",
+                "entries": "Antifouling (International/Hempel/Jotun), Topside 2K-PU, Alkyd vs PU, Awlgrip vs Alexseal, Holzlacke",
+            },
+            "13.4_polyurethane_chemistry": {
+                "title": "PU-Chemie",
+                "status": "implemented",
+                "entries": "Isocyanat-Reaktionen, Feuchtehärtung, Topfzeit-Faktoren, Haftungsmechanismen",
+            },
+            "13.5_cure_factors": {
+                "title": "Aushärtungsfaktoren",
+                "status": "implemented",
+                "entries": "Temperatur/Feuchte-Matrizen, Arrhenius-Modell, Mindest-/Maximalwerte, Taupunkt-Berechnung",
+            },
+            "13.6_common_mistakes": {
+                "title": "Typische Fehler & Behebung",
+                "status": "implemented",
+                "entries": "Haftungsversagen, Blasenbildung, Kraterbildung, Ablösung — Ursachen und Reparatur",
+            },
+            "13.7_surface_prep": {
+                "title": "Oberflächenvorbereitung Detail",
+                "status": "implemented",
+                "entries": "GFK/Holz/Aluminium/Edelstahl-spezifisch, Schleifgrade, Reinigung, Primer-Auswahl",
+            },
+            "13.8_compatibility": {
+                "title": "Kompatibilitätsmatrix",
+                "status": "implemented",
+                "entries": "Sealant-auf-Sealant, Lack-auf-Lack, Primer-Substrate, Lösemittel-Verträglichkeit",
+            },
+            "13.9_specs_international": {
+                "title": "Technische Spezifikationen (International Paint)",
+                "status": "implemented",
+                "entries": "Ergiebigkeit, Schichtdicken, Überarbeitungszeiten, Produktreihen-Vergleich",
+            },
+            "13.10_environmental": {
+                "title": "Umwelt & Gesundheit",
+                "status": "implemented",
+                "entries": "VOC-Grenzwerte, Biozid-Regulierung, Atemschutz, Entsorgung, EU-Richtlinien",
+            },
+        },
+    },
+    "14_rigging_anchor_steering_deep": {
+        "title": "Rigg-Hardware, Anker, Steuerung & Borddurchlässe — Tiefenwissen",
+        "module": "rigging_anchor_steering_deep",
+        "description": "Exhaustive specifications for rigging terminals, anchors, steering systems, and through-hull fittings",
+        "subcategories": {
+            "14.1_rigging_terminals": {
+                "title": "Rigg-Terminals",
+                "status": "implemented",
+                "entries": "Sta-Lok/Norseman/Hi-MOD, Draht 1x19/7x19/Dyform, Stabrigg Navtec Nitronic 50, Montage-Drehmomente",
+            },
+            "14.2_turnbuckles": {
+                "title": "Wantenspanner",
+                "status": "implemented",
+                "entries": "Offen/geschlossen, Sicherungsmethoden (Splinte/Draht/Loctite), Dimensionierung, Hebelberechnung",
+            },
+            "14.3_shackles": {
+                "title": "Schäkel-Datenbank",
+                "status": "implemented",
+                "entries": "Wichard Specs, D-Schäkel-Lasten, Schnappschäkel, Bolzentypen, WLL vs Bruchlast",
+            },
+            "14.4_anchor_systems": {
+                "title": "Ankersysteme",
+                "status": "implemented",
+                "entries": "7 Ankertypen (Rocna/Mantus/Spade/Fortress/CQR/Bruce/Delta), Kettengüten G30-G70, Roden-Typen, Dimensionierung",
+            },
+            "14.5_windlass": {
+                "title": "Ankerwindenl",
+                "status": "implemented",
+                "entries": "Vertikal/Horizontal, Lofrans/Lewmar/Quick, Elektrische Dimensionierung, Kettennuss-Kompatibilität",
+            },
+            "14.6_steering": {
+                "title": "Steueranlagen",
+                "status": "implemented",
+                "entries": "Seilzug/Kette/Zahnstange, Jefa/Whitlock, Ruder-Lager, Autopilot-Hydraulik, Notpinne",
+            },
+            "14.7_through_hulls": {
+                "title": "Borddurchlässe",
+                "status": "implemented",
+                "entries": "Groco/TruDesign/Blakes, Bronze-Legierungen, Kugel- vs Kegelhahn, Schlauchanschlüsse, Elektrolyse-Schutz",
+            },
+            "14.8_practical_guidelines": {
+                "title": "Praktische Richtlinien",
+                "status": "implemented",
+                "entries": "Rigg-Inspektion (rig-check), Anker-Dimensionierung, Steueranlagen-Wartung, Borddurchlass-Inspektion",
+            },
+        },
+    },
 }
