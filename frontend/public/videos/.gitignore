@@ -1,0 +1,3 @@
+# Video files are downloaded locally via download-videos.ps1
+# Don't commit large video files to git
+*.mp4

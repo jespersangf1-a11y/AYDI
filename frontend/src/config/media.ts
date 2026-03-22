@@ -20,15 +20,15 @@ export const MEDIA = {
     sailing_wide: hero('photo-1534438327276-14e5300c3a48'),       // Wide sailing shot
   },
 
-  // Video backgrounds (Pexels free stock — autoplay, muted, looped)
+  // Video backgrounds (locally served from public/videos/ — downloaded via download-videos.ps1)
   video: {
-    ocean_calm: 'https://videos.pexels.com/video-files/1918465/1918465-hd_1920_1080_24fps.mp4',
-    sailing_aerial: 'https://videos.pexels.com/video-files/2491284/2491284-hd_1920_1080_24fps.mp4',
-    ocean_waves: 'https://videos.pexels.com/video-files/1093662/1093662-hd_1920_1080_30fps.mp4',
-    yacht_sunset: 'https://videos.pexels.com/video-files/857251/857251-hd_1920_1080_25fps.mp4',
-    yacht_sailing: 'https://videos.pexels.com/video-files/7333913/7333913-hd_1920_1080_25fps.mp4',
-    boat_sea: 'https://videos.pexels.com/video-files/11864823/11864823-hd_1920_1080_30fps.mp4',
-    sailing_ocean: 'https://videos.pexels.com/video-files/5124098/5124098-hd_1920_1080_30fps.mp4',
+    ocean_calm: '/videos/ocean-calm.mp4',
+    sailing_aerial: '/videos/sailing-aerial.mp4',
+    ocean_waves: '/videos/ocean-waves.mp4',
+    yacht_sunset: '/videos/yacht-sunset.mp4',
+    yacht_sailing: '/videos/yacht-sailing.mp4',
+    boat_sea: '/videos/boat-sea.mp4',
+    sailing_ocean: '/videos/sailing-ocean.mp4',
   },
 
   // ===================================================================
