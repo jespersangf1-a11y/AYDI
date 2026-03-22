@@ -3,6 +3,7 @@ import type { BoatClass, PublicSpecs, QuickAnalysisResponse } from '../../types'
 import { BOAT_CLASS_LABELS } from '../../types'
 import { runQuickAnalysis } from '../../services/api'
 import { MEDIA } from '../../config/media'
+import HeroCarousel from '../layout/HeroCarousel'
 import SpecForm from './SpecForm'
 import QuickResults from './QuickResults'
 
@@ -178,35 +179,48 @@ export default function QuickAnalysis() {
     <div>
       <style>{stepAnimationStyles}</style>
 
-      {/* Hero header with background video/image */}
-      <div className="hero-section min-h-[240px] md:min-h-[300px] flex items-end overflow-hidden">
-        {heroVideo ? (
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="absolute inset-0 w-full h-full object-cover transition-opacity duration-700"
-            key={heroVideo}
-          >
-            <source src={heroVideo} type="video/mp4" />
-          </video>
-        ) : (
-          <div
-            className="absolute inset-0 w-full h-full bg-cover bg-center transition-all duration-500"
-            style={{ backgroundImage: `url(${heroImage})` }}
-          />
-        )}
-        <div className="relative w-full px-6 md:px-10 pb-8 pt-20 z-10">
-          <p className="label-premium mb-2 opacity-90">Schnelle Analyse</p>
-          <h1 className="font-serif text-3xl md:text-display font-medium text-white">
-            {heroTitle}
-          </h1>
-          <p className="font-sans text-sm text-navy-300 mt-2 max-w-xl leading-relaxed">
-            {heroSubtitle}
-          </p>
+      {/* Hero header — Carousel on start, static on other steps */}
+      {step === 'select-class' ? (
+        <HeroCarousel
+          title={heroTitle}
+          subtitle={heroSubtitle}
+          label="Yacht Design Intelligence"
+          imageDuration={6000}
+          videoDuration={10000}
+          fadeDuration={1500}
+          showDomainLabel={true}
+        />
+      ) : (
+        <div className="hero-section min-h-[240px] md:min-h-[300px] flex items-end overflow-hidden">
+          {heroVideo ? (
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="absolute inset-0 w-full h-full object-cover transition-opacity duration-700"
+              key={heroVideo}
+            >
+              <source src={heroVideo} type="video/mp4" />
+            </video>
+          ) : (
+            <div
+              className="absolute inset-0 w-full h-full bg-cover bg-center transition-all duration-500"
+              style={{ backgroundImage: `url(${heroImage})` }}
+            />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-navy-950/85 via-navy-950/50 to-navy-950/30" />
+          <div className="relative w-full px-6 md:px-10 pb-8 pt-20 z-10">
+            <p className="label-premium mb-2 opacity-90">Schnelle Analyse</p>
+            <h1 className="font-serif text-3xl md:text-display font-medium text-white">
+              {heroTitle}
+            </h1>
+            <p className="font-sans text-sm text-navy-300 mt-2 max-w-xl leading-relaxed">
+              {heroSubtitle}
+            </p>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Content */}
       <div className="max-w-5xl mx-auto px-6 md:px-10 py-10 md:py-12">
