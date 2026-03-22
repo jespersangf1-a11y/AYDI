@@ -623,6 +623,36 @@ KNOWLEDGE_INDEX = {
                 "status": "implemented",
                 "entries": "Vollständige Checkliste: Motor, Wassersystem, Elektrik, Rumpf/Deck, Rigg",
             },
+            "11.11_energiesysteme": {
+                "title": "Energiesysteme (Solar, Wind, Batterien, Watermaker)",
+                "status": "implemented",
+                "entries": "Solar-Erträge, Panel-Typen, MPPT vs PWM, 3 Windgeneratoren, LiFePO4-Praxis (Uma/Delos/Hafenkino), Watermaker (5 Marken)",
+            },
+            "11.12_equipment_tests": {
+                "title": "Equipment-Vergleichstests (YACHT, SVB)",
+                "status": "implemented",
+                "entries": "Anker, Winschen, Feuerlöscher (Lithium), Kartenplotter, Rettungsmittel, Polituren, Segeltuch",
+            },
+            "11.13_gfk_reparatur_detail": {
+                "title": "GFK-Reparatur Detailanleitungen",
+                "status": "implemented",
+                "entries": "Gelcoat-Reparatur (Marietim-Methode), Blasen-Reparatur (20:1-Regel), Deck-Soft-Spots, Interior-Refit, Landstrom-Normen",
+            },
+            "11.14_osmose_diagnostik": {
+                "title": "Osmose-Diagnostik-Methoden",
+                "status": "implemented",
+                "entries": "5 Erkennungsmethoden: Feuchtemessung (Tramex), UV-Fluoreszenz, Blasen-Stichprobe, Klopftest, Roto-Blast",
+            },
+            "11.15_rigg_versicherung": {
+                "title": "Rigg-Schadensstatistik (Pantaenius)",
+                "status": "implemented",
+                "entries": "500 Mastbrüche/3 Jahre, Kosten 30-100k EUR, Rig-Sense Pro, Farbeindringprüfung",
+            },
+            "11.16_gebrauchtboot_markt": {
+                "title": "Gebrauchtboot-Marktwissen",
+                "status": "implemented",
+                "entries": "Preisbereiche nach Größe, Gutachterkosten, 7 Todsünden beim Bootskauf, 22 dokumentierte Versagensfälle",
+            },
         },
     },
 }

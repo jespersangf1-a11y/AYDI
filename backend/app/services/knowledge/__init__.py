@@ -193,6 +193,13 @@ from .expert_community_knowledge import (
     ANTIFOULING_EXPERT_KNOWLEDGE,
     COMPOSITE_EXPERT_KNOWLEDGE,
     WINTERIZATION_EXPERT_KNOWLEDGE,
+    ENERGY_SYSTEMS_EXPERT_KNOWLEDGE,
+    EQUIPMENT_TEST_KNOWLEDGE,
+    GFK_REPAIR_DETAILED,
     get_expert_knowledge_for_topic,
     get_all_expert_sources,
+)
+
+from .practical_experience import (
+    USED_BOAT_MARKET_KNOWLEDGE,
 )

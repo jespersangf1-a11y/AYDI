@@ -321,6 +321,51 @@ OSMOSIS_EXPERT_KNOWLEDGE: Dict[str, Any] = {
             "measurement": "Messung mit kalibrierten Feuchtemessgerät (Tramex)",
             "common_error_de": "Häufigster Fehler: Zu früh beschichtet — Feuchtigkeit eingeschlossen"
         }
+    },
+    "detection_methods": {
+        "source": ["yacht", "bootsprofis", "nauticare"],
+        "description_de": "Methoden zur Osmose-Erkennung und Diagnose",
+        "methods": [
+            {
+                "method": "Feuchtemessung (Moisture Meter)",
+                "tool": "Tramex Skipper Plus oder Sovereign Moisturemeter",
+                "procedure_de": "Boot mindestens 2 Wochen nach Kranen trocknen lassen. Systematische Messung in Rasterform (50cm Abstand). Immer gleicher Anpressdruck.",
+                "thresholds": {
+                    "acceptable": "< 15% relative Feuchte",
+                    "investigation_needed": "15-25% — weitere Untersuchung",
+                    "osmosis_likely": "> 25% — Osmose wahrscheinlich",
+                    "critical": "> 35% — schwere Durchfeuchtung"
+                },
+                "note_de": "Messwerte sind RELATIV, nicht absolut. Immer Vergleichsmessung an bekannt trockener Stelle."
+            },
+            {
+                "method": "UV-Licht-Test (Fluoreszenztest)",
+                "tool": "UV-Prüflampe (365nm Wellenlänge)",
+                "procedure_de": "Gelcoat anschleifen (sauber, trocken). UV-Lampe im abgedunkelten Bereich auf Oberfläche richten. Osmose-Ester fluoreszieren als dunkle Flecken.",
+                "advantage_de": "Erkennt Osmose BEVOR Blasen sichtbar sind — Früherkennung!",
+                "source": "yacht (Osmose-Spezial Teil 2)"
+            },
+            {
+                "method": "Blasen-Stichprobe",
+                "tool": "Spitzes Teppichmesser oder Stechbeitel-Ecke",
+                "procedure_de": "Blase aufstechen, Flüssigkeit auffangen. Geruchstest: stechend-sauer = Essigsäure = Osmose. Farbtest: gelblich-braun = fortgeschritten.",
+                "timing_de": "Optimaler Testzeitpunkt: Herbst nach 6 Monaten im Wasser (Blasen auf Maximum)",
+                "source": "yacht (Osmose-Spezial)"
+            },
+            {
+                "method": "Klopftest (Tap Test)",
+                "tool": "Gummihammer oder Münze",
+                "procedure_de": "Systematisch über Rumpf/Deck klopfen. Gesundes Laminat = heller Klang. Delamination/Feuchtigkeit = dumpfer, hohler Klang.",
+                "limitation_de": "Nur grobe Einschätzung, nicht quantitativ",
+                "source": "bootsprofis"
+            },
+            {
+                "method": "Roto-Blast / Sandstrahltest",
+                "tool": "Roto-Blast Gerät",
+                "procedure_de": "Gelcoat-Oberfläche wird kontrolliert abgetragen. Ermöglicht Sichtprüfung des darunterliegenden Laminats.",
+                "source": "yacht"
+            }
+        ]
     }
 }
 
@@ -429,6 +474,51 @@ RIGGING_EXPERT_KNOWLEDGE: Dict[str, Any] = {
                 "prevention": "Seemannschaft"
             }
         ]
+    },
+    "pantaenius_damage_statistics": {
+        "source": ["pantaenius"],
+        "description_de": "Rigg-Schadensstatistik aus Versicherungsdaten (Pantaenius, 3-Jahres-Zeitraum)",
+        "total_mast_failures": 500,
+        "period": "3 Jahre",
+        "typical_cost_42ft": {
+            "range": "30.000-100.000 EUR",
+            "includes": "Mastprofil, stehendes Gut, alle Segel, Deckschäden, Elektronik",
+            "note_de": "Kann bei älteren Booten zum wirtschaftlichen Totalschaden führen"
+        },
+        "common_failure_areas": [
+            {
+                "area": "Halteplatten und Befestigungen",
+                "failure_de": "Platten verschieben oder kippen sich. Rissbildung und Muldenverformung sichtbar."
+            },
+            {
+                "area": "Bolzen und Stifte",
+                "failure_de": "Bolzen/Stifte zu klein oder falsch dimensioniert. Beschädigung an Bolzensitzen, Terminalverformung, Lümmelbeschlag-Probleme."
+            },
+            {
+                "area": "Draht und Splinte",
+                "failure_de": "Splinte dürfen NICHT wiederverwendet werden. Materialfestigkeit nimmt bei wiederholtem Biegen ab."
+            },
+            {
+                "area": "Mastprofil",
+                "failure_de": "Haarrisse am Mastfuß, Kerben, Dellen, starke Korrosion beeinträchtigen die Festigkeit."
+            }
+        ],
+        "rigg_check_tools": {
+            "spinlock_rig_sense_pro": {
+                "description_de": "Misst Wantenspannung bis 8 Tonnen",
+                "use": "Präzise Einstellung der Riggspannung",
+                "cost": "ca. 350 EUR"
+            },
+            "zollstock_methode": {
+                "description_de": "Einfache Methode mit Zollstock zur Riggspannungs-Kontrolle",
+                "cost": "0 EUR"
+            },
+            "dye_penetrant": {
+                "description_de": "Farbeindringprüfung für Risse an Terminals und Köpfen",
+                "use": "Rod-Rigging-Inspektion, Pressverbindungen",
+                "cost": "ca. 30-50 EUR pro Set"
+            }
+        }
     }
 }
 
@@ -1025,6 +1115,428 @@ WINTERIZATION_EXPERT_KNOWLEDGE: Dict[str, Any] = {
 
 
 # ============================================================================
+# ENERGIE-SYSTEME — Energy System Knowledge from Cruising Community
+# Source: Hafenkino, Sailing Uma, SV Delos, Blauwasser.de, SVB
+# ============================================================================
+
+ENERGY_SYSTEMS_EXPERT_KNOWLEDGE: Dict[str, Any] = {
+    "solar_systems": {
+        "source": ["hafenkino", "svb", "blauwasser"],
+        "description_de": "Solaranlagen für Segelyachten — Praxiswissen",
+        "daily_yield": {
+            "large_system_400w_plus": "4+ kWh/Tag bei Sonnenschein (Mai, Mittelmeer)",
+            "medium_system_200w": "2-3 kWh/Tag (Sommer, Nordeuropa)",
+            "small_system_100w": "0.8-1.5 kWh/Tag",
+            "note_de": "Ertrag stark abhängig von Ausrichtung, Verschattung durch Rigg, und Neigungswinkel"
+        },
+        "panel_types": {
+            "rigid_monocrystalline": {
+                "efficiency": "20-22%",
+                "lifespan": "20-25 Jahre",
+                "pros": ["Höchste Effizienz", "Langlebig", "Preiswerter pro Watt"],
+                "cons": ["Schwer", "Starr", "Bruchgefahr"],
+                "mounting": "Davits, Bimini-Gestell, Deckaufbau"
+            },
+            "semi_flexible": {
+                "efficiency": "18-20%",
+                "lifespan": "5-10 Jahre",
+                "pros": ["Leicht", "Anpassbar an Deckform", "Einfache Montage"],
+                "cons": ["Kürzere Lebensdauer", "Hitzeempfindlich", "Delaminiert oft"],
+                "note_de": "Nicht direkt auf Deck kleben — Hinterlüftung nötig, sonst überhitzt Zelle"
+            }
+        },
+        "charge_controllers": {
+            "mppt_vs_pwm": {
+                "mppt": "Maximum Power Point Tracking — 15-30% mehr Ertrag als PWM. Standard ab 200W.",
+                "pwm": "Pulse Width Modulation — einfacher, günstiger, nur für kleine Systeme < 100W sinnvoll",
+                "brands": ["Victron SmartSolar MPPT", "Votronic MPP", "EPEver Tracer"]
+            }
+        }
+    },
+
+    "wind_generators": {
+        "source": ["hafenkino", "blauwasser"],
+        "description_de": "Windgeneratoren an Bord — Praxiserfahrungen",
+        "minimum_power": "400W für sinnvolle Erträge",
+        "daily_yield_trade_winds": "~2 kWh/Tag (Passatgebiet, Ägäis-Sommer)",
+        "daily_yield_variable": "0.5-1.5 kWh/Tag (Nordeuropa, variable Winde)",
+        "brands": [
+            {"name": "Superwind 350", "power": "350W", "noise": "leise", "quality": "hoch", "cost": "~2.000 EUR"},
+            {"name": "Silentwind 400+", "power": "420W", "noise": "leise", "quality": "hoch", "cost": "~1.800 EUR"},
+            {"name": "Rutland 1200", "power": "500W", "noise": "laut bei Starkwind", "quality": "mittel", "cost": "~1.200 EUR"}
+        ],
+        "installation_notes": [
+            "Montage auf Heckbügel mindestens 2m über Deck (Sicherheit + Windausbeute)",
+            "Vibrationsdämpfer zwingend erforderlich",
+            "Bremsschalter/Kurzschlussschalter für Sturm und Wartung"
+        ]
+    },
+
+    "battery_systems_real_world": {
+        "source": ["sailing_uma", "sv_delos", "hafenkino", "blauwasser"],
+        "description_de": "Batterie-Praxiserfahrungen aus der Langfahrt-Community",
+        "lifepo4_setups": [
+            {
+                "boat": "Sailing Uma (Pearson 36, 1972)",
+                "bank": "12x Battle Born 100Ah 12V",
+                "total_capacity": "1.200 Ah @ 12V (14.400 Wh)",
+                "specs_per_battery": {
+                    "weight": "14 kg (31 lbs)",
+                    "dimensions": "324 x 175 x 229 mm",
+                    "continuous_discharge": "100A",
+                    "surge": "200A (30 Sek)",
+                    "cycles": "3.000-5.000",
+                    "warranty": "10 Jahre"
+                },
+                "experience_de": "20.000+ Seemeilen, inkl. Elektro-Antrieb für beide Saildrives"
+            },
+            {
+                "boat": "SV Delos (Amel Super Maramu 53ft)",
+                "bank": "8x Battle Born 100Ah",
+                "total_capacity": "400 Ah @ 24V (9.600 Wh)",
+                "experience_de": "4+ Saisons getestet, exzellente Performance, Spannung bleibt hoch auch bei 100A Entladung"
+            },
+            {
+                "boat": "Hafenkino (Langfahrt-Setup)",
+                "bank": "Victron LiFePO4 Smart 12.8V/200Ah",
+                "monitoring": "Victron Cerbo GX (Zentrale Steuereinheit)",
+                "experience_de": "Solarladen von 65% auf 85% an sonnigem Tag bei laufenden Verbrauchern"
+            }
+        ],
+        "maintenance_budget_rule": {
+            "source": "sv_delos",
+            "annual_general": "1.5% des Bootswertes (Pumpen, Impeller, Ölwechsel, Segelreparaturen)",
+            "annual_major": "1.5-3% des Bootswertes (Rigg, Segel, Helling, Antifouling)",
+            "example": "100.000 EUR Boot = 1.500-4.500 EUR/Jahr (DIY)",
+            "note_de": "Bei professioneller Arbeit deutlich höher. SV Delos: Range 1-5% über 10 Jahre."
+        }
+    },
+
+    "watermaker_systems": {
+        "source": ["blauwasser", "yacht"],
+        "description_de": "Watermaker/Wassermacher für Yachten",
+        "principle": "Hochdruck-Umkehrosmose: Seewasser wird durch Membran gepresst, Salz und Verunreinigungen zurückgehalten",
+        "components": [
+            "Seewasser-Einlass über Seeventil",
+            "Grobfilter: Algen, Sand, große Partikel",
+            "Sedimentfilter: 5 µm Feinheit",
+            "Hochdruckpumpe (60-80 bar)",
+            "RO-Membran (Umkehrosmose)",
+            "Produktwasser-Auslass (trinkbar)",
+            "Konzentrat-Auslass (Salzwasser zurück ins Meer)"
+        ],
+        "brands": [
+            {"name": "Schenker", "origin": "Italien", "capacity": "30-150 L/h", "note": "Energieeffizient, beliebt bei Langfahrt"},
+            {"name": "Spectra", "origin": "USA", "capacity": "20-80 L/h", "note": "Clark-Pumpe, sehr energieeffizient (4-6 Ah/Liter)"},
+            {"name": "AQUATEC", "origin": "Deutschland", "capacity": "50-200 L/h", "note": "Robuste Hochdruck-Systeme"},
+            {"name": "AQUAbibe", "origin": "Deutschland", "capacity": "50-140 L/h", "note": "Kompakt, gut für Retrofit"},
+            {"name": "Dessalator", "origin": "Frankreich", "capacity": "30-100 L/h", "note": "Solider Klassiker"}
+        ],
+        "maintenance": [
+            "Konservierung bei Nichtgebrauch > 5 Tage (Biozid-Lösung)",
+            "Vorfilter regelmäßig wechseln (alle 250-500 Betriebsstunden)",
+            "RO-Membran: Lebensdauer 3-7 Jahre bei korrekter Pflege",
+            "Nie in Hafenwasser oder verschmutztem Wasser betreiben",
+            "Salinity-Sensor kalibrieren (Produktwasser muss < 500 ppm TDS sein)"
+        ]
+    }
+}
+
+
+# ============================================================================
+# EQUIPMENT-TESTS — Spezifische Testresultate aus YACHT-TV und SVB
+# Source: yacht.de, SVB, Practical Sailor
+# ============================================================================
+
+EQUIPMENT_TEST_KNOWLEDGE: Dict[str, Any] = {
+    "anchor_tests": {
+        "source": ["yacht"],
+        "description_de": "Anker-Vergleichstests (YACHT Magazin)",
+        "yacht_test_2024": {
+            "location": "Flensburger Förde",
+            "method": "6 Anker getestet mit Taucher-Beobachtung unter Wasser",
+            "findings": [
+                {"brand": "Plastimo", "result_de": "Testsieger der letzten 3 Tests. Schnelles, sicheres Eingraben. Dauerhafter Halt."},
+                {"brand": "Fortress", "result_de": "Hielt nur auf Sandgrund zuverlässig. Auf Schlick/Seegras eingeschränkt."}
+            ],
+            "key_insight_de": "Die Grundeinstellung (Winkel der Flügel) entscheidet über die Haltekraft"
+        }
+    },
+
+    "winch_tests": {
+        "source": ["yacht"],
+        "description_de": "Einhand-Winsch-Kurbeln und Elektro-Winschen",
+        "single_hand_cranks": [
+            {"brand": "Antal Speedylock", "type": "Einhand", "tested": True},
+            {"brand": "Harken Carbo OneTouch", "type": "Einhand", "tested": True},
+            {"brand": "Lewmar One-Touch", "type": "Einhand", "tested": True},
+            {"brand": "Ronstan Quick-Lock", "type": "Einhand", "tested": True}
+        ],
+        "electric_winches": [
+            {"brand": "Seldén E40rev", "feature": "Elektrische Winsch mit Rückwärtsgang", "note": "Für Rollreff ideal"},
+            {"brand": "Ewincher", "feature": "Konvertiert jede Winsch zur E-Winsch", "note": "Nachrüstlösung"}
+        ]
+    },
+
+    "fire_safety_tests": {
+        "source": ["yacht"],
+        "description_de": "Feuerlöscher-Tests speziell für Boote",
+        "lithium_battery_fires": {
+            "tested_products": [
+                {"name": "Lithium X6 (Bavaria)", "type": "Speziallöscher Lithium"},
+                {"name": "P6.0 (CW Fire)", "type": "Speziallöscher"},
+                {"name": "Pro-Line Water Lithium (Gloria)", "type": "Wassernebel"},
+                {"name": "G6 SDJ Gel (Jockel)", "type": "Gel-Löscher"}
+            ],
+            "key_finding_de": "LiFePO4 thermisch deutlich sicherer als NMC-Lithium. Bei NMC Thermal Runaway sehr schwer zu löschen."
+        },
+        "automatic_systems": {
+            "maus_system": {
+                "origin": "Schweiz",
+                "type": "Aerosol-Löschsystem",
+                "advantage_de": "Hinterlässt keine Rückstände. Automatische Auslösung.",
+                "use_case": "Motorraum, Batteriekasten"
+            }
+        }
+    },
+
+    "navigation_electronics_tests": {
+        "source": ["yacht", "svb"],
+        "description_de": "Kartenplotter und Navigations-Elektronik Tests",
+        "chartplotters_2024": [
+            {
+                "brand": "B&G",
+                "model": "Zeus S (Einstieg) / Zeus³ 12 (Premium)",
+                "display": "SolarMAX HD (sonnenlichttauglich, polarisiert, regentauglich)",
+                "connectivity": "NMEA 2000",
+                "cartography": ["C-MAP", "Navionics", "NV Digital"],
+                "note": "8mm Flush-Mount-Profil"
+            },
+            {
+                "brand": "Raymarine",
+                "model": "Axiom 2 Pro",
+                "os": "Android-basiert",
+                "note": "Individualisierbar mit Apps"
+            },
+            {
+                "brand": "Q-Experience",
+                "model": "Q2",
+                "origin": "Finnland",
+                "os": "Android-basiert",
+                "note": "Newcomer, gut positioniert zwischen Platzhirschen"
+            }
+        ],
+        "electronic_compasses_test": {
+            "devices_tested": 8,
+            "manufacturers": 6,
+            "price_range": "200-857 EUR",
+            "source": "yacht"
+        },
+        "autopilot_safety": {
+            "documented_rammings": 5,
+            "cause_de": "Autopilot-Nutzung ohne ausreichende Wachsamkeit",
+            "source": "yacht"
+        }
+    },
+
+    "life_safety_tests": {
+        "source": ["yacht"],
+        "description_de": "Rettungsmittel-Tests",
+        "life_rafts": {
+            "test_2015": {
+                "models_tested": 6,
+                "method": "Pool-Test mit künstlichen Wellen und Wind",
+                "problems_found": [
+                    "Mangelhafte Qualität bei günstigen Modellen",
+                    "Nutzloses Equipment (stumpfe Messer, undichte Pumpen)",
+                    "Wassereintrittsprobleme durch Drainage-Öffnungen"
+                ]
+            },
+            "standard": "ISO 9650-2 (Küstengewässer, 24 Stunden)"
+        },
+        "life_jackets": {
+            "classes": {
+                "150_newton": "Standard Hochsee, 15-16 Modelle getestet",
+                "275_newton": "Schwerwetter/Offshore, 9+ automatische Schwimmwesten getestet"
+            },
+            "major_test": "24 Automatik-Schwimmwesten im Vergleich",
+            "standard": "EN ISO 12402"
+        }
+    },
+
+    "gelcoat_polish_tests": {
+        "source": ["yacht"],
+        "description_de": "Politur und Gelcoat-Pflege Vergleichstests",
+        "tested_brands": [
+            "Vosschemie / Yachtcare (Polyglanz)",
+            "3M Poliersysteme",
+            "Dr. Keddo Simarflüssig",
+            "Dinitrol",
+            "Rot-Weiß",
+            "Maincare",
+            "Möwe",
+            "Polish & Protect",
+            "Renskib"
+        ],
+        "recommendations": {
+            "for_chalking": "Rubbing Compound (grob) → Politur (fein) → Wachsversiegelung",
+            "for_maintenance": "Carnauba-Wachs als Langzeitschutz",
+            "machine_type": "Exzenter-Poliermaschine bevorzugt (weniger Risiko als Rotationspolierer)"
+        }
+    },
+
+    "sail_material_knowledge": {
+        "source": ["yacht", "blauwasser"],
+        "description_de": "Segeltuch-Materialwissen",
+        "materials": {
+            "dacron_dc": {
+                "name": "Dacron (Dimension Polyant DC-Material)",
+                "type": "Gewebtes Polyester",
+                "use": "Standardsegel, Fahrtensegel",
+                "lifespan": "8-15 Jahre",
+                "note_de": "Robuster Allrounder, UV-beständig"
+            },
+            "dcx_xply": {
+                "name": "DCX (DC mit X-Ply Schicht)",
+                "type": "Hybrid — gewebtes Polyester + diagonale Faserlage",
+                "advantage_de": "Bessere Dehnungsfestigkeit diagonal, verbesserte mechanische Festigkeit, UV-Schutz",
+                "use": "Verbesserte Fahrtensegel"
+            },
+            "aramid_laminate": {
+                "name": "Quantum XRP Ultra Aramid Black",
+                "type": "Laminatsegel",
+                "use": "Performance-Fahrtensegel bis 40 Fuß",
+                "note_de": "Bessere Profilstabilität als reines Dacron"
+            }
+        }
+    }
+}
+
+
+# ============================================================================
+# GFK-REPARATUR DETAIL — Spezifische Reparaturanleitungen
+# Source: Marietim, Sail Life, NautiCare, yacht.de
+# ============================================================================
+
+GFK_REPAIR_DETAILED: Dict[str, Any] = {
+    "gelcoat_repair_marietim_method": {
+        "source": ["marietim"],
+        "description_de": "Gelcoat-Reparatur nach Marietim-Methode (Polyester statt Epoxid)",
+        "philosophy_de": "Materialkompatibilität: Gelcoat ist Polyester, daher Reparatur auch mit Polyester — nicht Epoxid",
+        "steps": [
+            "1. Haarrisse mit Dremel-Fräser V-förmig öffnen (2-3mm breit, 2mm tief)",
+            "2. Staub und Fett entfernen (Aceton)",
+            "3. Mit Polyesterharz (+ Härter) füllen — NICHT Epoxid",
+            "4. Glattziehen und leicht überfüllen (Schwund beim Aushärten)",
+            "5. Nach Aushärtung plan schleifen (120er → 240er → 400er → 800er)",
+            "6. Komplette neue Gelcoat-Schicht aufspritzen oder rollen",
+            "7. Nassschliff 1000er → 1500er → 2000er, dann polieren"
+        ],
+        "advantage_de": "Einheitliches Polyester-System — keine Haftungsprobleme zwischen Epoxid und Polyester",
+        "note_de": "Bei strukturellen Schäden (tiefer als Gelcoat): IMMER Epoxid + Glasfaser verwenden"
+    },
+
+    "blister_repair_procedure": {
+        "source": ["sail_life", "nauticare"],
+        "description_de": "Professionelle Blasen-Reparatur (Osmose-Einzelblasen)",
+        "tools": ["36er Schleifscheibe", "Winkelschleifer", "Teppichmesser (spitz)", "Epoxidharz", "Glasfasergewebe"],
+        "critical_rule_de": "Vertiefung muss 20x BREITER als TIEF sein — flache Mulde, kein Krater!",
+        "steps": [
+            "1. Blase mit spitzem Messer aufstechen, Flüssigkeit auffangen",
+            "2. Geruchstest: stechend-sauer = Osmose bestätigt",
+            "3. Mit 36er Schleifscheibe Blase und beschädigtes Laminat abtragen",
+            "4. Nicht tiefer schleifen als letzte beschädigte Laminatschicht",
+            "5. Mulde muss 20x breiter als tief sein (z.B. 3mm tief = 60mm breit)",
+            "6. Glasfasermatten in gestaffelten Größen schneiden (größte = Muldengröße)",
+            "7. Nass-in-nass laminieren: Epoxid → Glasfaser → Epoxid → nächste Lage",
+            "8. Epoxid-Sperrschicht über gesamten Reparaturbereich (min. 300µm)",
+            "9. Nach vollständiger Aushärtung: Schleifen → Primer → Antifouling"
+        ]
+    },
+
+    "grp_layering_sequence": {
+        "source": ["marietim"],
+        "description_de": "Reihenfolge der Lagen bei GFK-Reparaturen",
+        "method": "Große Lage zuerst (unten), dann kleiner werdend nach oben",
+        "reason_de": "Kraftfluss: äußere Schicht trägt die Last. Große Basis, verjüngt sich nach außen."
+    },
+
+    "deck_soft_spot_repair": {
+        "source": ["yacht", "sail_life"],
+        "description_de": "Weiche Stellen im Deck (Sandwich-Delamination) reparieren",
+        "diagnosis": [
+            "Drucktest: Mit Fuß/Hand drücken — gibt nach = Soft Spot",
+            "Klopftest: Dumpfer Klang vs. heller Klang bei gesundem Laminat",
+            "Feuchtemessung: Erhöhte Werte im betroffenen Bereich"
+        ],
+        "repair_injection": {
+            "suitable_for": "Delamination < 0.5m², Kern noch intakt (nur abgelöst)",
+            "steps": [
+                "5-6mm Löcher in obere Deckschicht bohren (Raster 50-80mm)",
+                "Epoxidharz mit Spritzen injizieren bis aus Nachbarlöchern austritt",
+                "Folie auflegen, mit Gewichten/Vakuum belasten",
+                "24h aushärten lassen",
+                "Löcher mit Gelcoat verschließen"
+            ]
+        },
+        "repair_core_replacement": {
+            "suitable_for": "Kernfäule, Balsazerfall, große Bereiche",
+            "steps": [
+                "Obere Laminatschicht vorsichtig entfernen (Stichsäge, Multitool)",
+                "Faulen Kern komplett ausräumen (bei Balsa: alles raus!)",
+                "Fläche trocknen — bei Balsa-Fäule: WOCHEN",
+                "Neuen Kern einsetzen: PVC-Schaum (Divinycell) oder SAN (Corecell)",
+                "NICHT wieder Balsa einsetzen — Upgrade auf PVC/SAN!",
+                "Kern mit Epoxid einkleben (Thixotropie-Zusatz für Standfestigkeit)",
+                "Obere Laminatschicht neu aufbauen (Epoxid + Glasfaser, 2-3 Lagen)",
+                "Gelcoat oder Antislip-Farbe als Finish"
+            ],
+            "note_de": "Bei strukturellen Decksbereichen (Winschen, Klampen): unbedingt Kernverstärkung einplanen"
+        }
+    },
+
+    "interior_refit_materials": {
+        "source": ["no_frills_sailing"],
+        "description_de": "Materialien für Interior-Refit (bewährte Praxis)",
+        "wood": {
+            "teak_massiv": "Für sichtbare Flächen, Kanten, Handläufe",
+            "birch_plywood_4mm": "Für Deckenverkleidungen",
+            "oak_battens": "Unterkonstruktion, weiß gestrichen"
+        },
+        "adhesives": {
+            "pur_glue_d4": "PUR-Kleber (D4-Klassifizierung) — sehr stark, wasserfest",
+            "epoxy_coating": "2 volle Epoxid-Schichten auf Unterkonstruktion"
+        },
+        "varnish_system": {
+            "product": "International Gold Spar Varnish",
+            "procedure_de": "4-Schicht-System mit abnehmender Verdünnung",
+            "layers": [
+                "Schicht 1: 50% Verdünnung (dringt tief ins Holz)",
+                "Schicht 2: 30% Verdünnung",
+                "Schicht 3: 10% Verdünnung",
+                "Schicht 4+: Unverdünnt (mind. 3 Schichten unverdünnt)"
+            ]
+        }
+    },
+
+    "shore_power_standards": {
+        "source": ["bootstechnik"],
+        "description_de": "Norm-gerechter Landanschluss",
+        "standard": "DIN EN 60092-507:2024-12 (Elektrische Installationen auf Schiffen, Teil 507: Yachten)",
+        "components": [
+            "CEE-Stecker (blau, 230V, 16A für Yachten)",
+            "FI/RCD-Schutzschalter (30mA Auslösestrom)",
+            "Leitungsschutzschalter (B- oder C-Charakteristik)",
+            "Trenntransformator (optional aber empfohlen)",
+            "Galvanischer Isolator (Minimum)",
+            "Erdungsschiene"
+        ],
+        "note_de": "Landanschluss ist häufigste Ursache für galvanische Korrosion — Schutzmaßnahmen zwingend"
+    }
+}
+
+
+# ============================================================================
 # ASSESSMENT FUNCTION
 # ============================================================================
 
@@ -1039,19 +1551,24 @@ def get_expert_knowledge_for_topic(topic: str) -> Dict[str, Any]:
         Dict with relevant expert knowledge
     """
     topic_mapping = {
-        "hull_inspection": {"purchase": PURCHASE_EXPERTISE, "composite": COMPOSITE_EXPERT_KNOWLEDGE},
-        "osmosis": {"osmosis": OSMOSIS_EXPERT_KNOWLEDGE, "composite": COMPOSITE_EXPERT_KNOWLEDGE},
+        "hull_inspection": {"purchase": PURCHASE_EXPERTISE, "composite": COMPOSITE_EXPERT_KNOWLEDGE, "gfk_repair": GFK_REPAIR_DETAILED},
+        "osmosis": {"osmosis": OSMOSIS_EXPERT_KNOWLEDGE, "composite": COMPOSITE_EXPERT_KNOWLEDGE, "gfk_repair": GFK_REPAIR_DETAILED},
         "rigging": {"rigging": RIGGING_EXPERT_KNOWLEDGE},
         "engine": {"engine": ENGINE_EXPERT_KNOWLEDGE},
-        "electrical": {"electrical": ELECTRICAL_EXPERT_KNOWLEDGE},
-        "teak_deck": {"teak": TEAK_DECK_EXPERT_KNOWLEDGE},
+        "electrical": {"electrical": ELECTRICAL_EXPERT_KNOWLEDGE, "energy": ENERGY_SYSTEMS_EXPERT_KNOWLEDGE},
+        "teak_deck": {"teak": TEAK_DECK_EXPERT_KNOWLEDGE, "gfk_repair": GFK_REPAIR_DETAILED},
         "seacocks": {"seacocks": SEACOCK_EXPERT_KNOWLEDGE},
         "antifouling": {"antifouling": ANTIFOULING_EXPERT_KNOWLEDGE},
         "purchase_guidance": {"purchase": PURCHASE_EXPERTISE},
-        "sandwich_core": {"composite": COMPOSITE_EXPERT_KNOWLEDGE},
-        "galvanic_corrosion": {"electrical": ELECTRICAL_EXPERT_KNOWLEDGE},
-        "shore_power": {"electrical": ELECTRICAL_EXPERT_KNOWLEDGE},
+        "sandwich_core": {"composite": COMPOSITE_EXPERT_KNOWLEDGE, "gfk_repair": GFK_REPAIR_DETAILED},
+        "galvanic_corrosion": {"electrical": ELECTRICAL_EXPERT_KNOWLEDGE, "energy": ENERGY_SYSTEMS_EXPERT_KNOWLEDGE},
+        "shore_power": {"electrical": ELECTRICAL_EXPERT_KNOWLEDGE, "gfk_repair": GFK_REPAIR_DETAILED},
         "winterization": {"winterization": WINTERIZATION_EXPERT_KNOWLEDGE},
+        "energy_systems": {"energy": ENERGY_SYSTEMS_EXPERT_KNOWLEDGE},
+        "equipment": {"equipment": EQUIPMENT_TEST_KNOWLEDGE},
+        "safety": {"equipment": EQUIPMENT_TEST_KNOWLEDGE},
+        "navigation": {"equipment": EQUIPMENT_TEST_KNOWLEDGE},
+        "gfk_repair": {"gfk_repair": GFK_REPAIR_DETAILED, "composite": COMPOSITE_EXPERT_KNOWLEDGE},
     }
     return topic_mapping.get(topic, {})
 
@@ -1076,4 +1593,9 @@ def get_all_expert_sources() -> List[Dict[str, str]]:
         {"name": "frag-jochen.de", "type": "web", "url": "https://frag-jochen.de", "focus": "Teakdeck-Sanierung"},
         {"name": "Victron Energy", "type": "manufacturer", "url": "https://victronenergy.com", "focus": "Bordstrom, Galvanische Korrosion"},
         {"name": "Mastervolt", "type": "manufacturer", "url": "https://mastervolt.de", "focus": "Korrosionsschutz, Bordstrom"},
+        {"name": "Sail Life", "type": "youtube", "url": "https://saillifechannel.com", "focus": "DIY-Refit, GFK-Reparatur, Osmose"},
+        {"name": "Sailing Uma", "type": "youtube", "url": "https://sailinguma.com", "focus": "Elektro-Antrieb, LiFePO4, Off-Grid"},
+        {"name": "SV Delos", "type": "youtube", "url": "https://svdelos.com", "focus": "Langfahrt-Wartung, Budget, Batteriesysteme"},
+        {"name": "Hafenkino.blog", "type": "blog", "url": "https://hafenkino.blog", "focus": "Energiemanagement, Solar, Langfahrt"},
+        {"name": "No-Frills-Sailing", "type": "blog", "url": "https://no-frills-sailing.com", "focus": "Interior-Refit, Holzarbeiten, Lackierung"},
     ]

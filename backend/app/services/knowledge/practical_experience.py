@@ -776,7 +776,98 @@ REAL_FAILURE_CASES: List[RealFailureCase] = [
             "Versicherungsanforderungen beachten"
         ],
         severity="catastrophic"
-    )
+    ),
+
+    RealFailureCase(
+        case_name="Volvo MD2000 Elektrik-Totalausfall",
+        boat_type="Diverse Segelyachten 30-40ft (2005-2015)",
+        year=2018,
+        source="boote-forum.de + segeln-forum.de (multiple threads)",
+        description_de="Volvo Penta MD2000-Serie (MD2010, MD2020, MD2030, MD2040) berüchtigt für korrodierte Steckverbinder. Salzwasser kriecht in Stecker, Motorsteuerung fällt komplett aus. In einem Fall mitten in der Biskaya bei Starkwind.",
+        failure_mechanism="Korrosion in elektrischen Steckverbindungen durch Salzwasser-Exposition",
+        root_cause="Unzureichende Abdichtung der Motorstecker ab Werk. Motorraum-Belüftung führt salzhaltige Luft direkt an Elektronik.",
+        lesson_learned="VP MD2000-Serie hat die schlechteste Elektrik-Zuverlässigkeit aller gängigen Bootsdiesel. Stecker müssen mit Korrosionsschutz (ACF-50 oder Ballistol) behandelt werden.",
+        prevention_measures=[
+            "Alle Stecker mit Korrosionsschutzspray behandeln (ACF-50)",
+            "Steckverbindungen mit Schrumpfschlauch zusätzlich abdichten",
+            "Reservesicherungen und Ersatz-Relais an Bord",
+            "Bei Neukauf: Yanmar oder Beta Marine bevorzugen"
+        ],
+        severity="moderate"
+    ),
+
+    RealFailureCase(
+        case_name="Volvo SD130 Saildrive Überflutung",
+        boat_type="Bavaria, Hanse, Jeanneau (diverse 30-42ft)",
+        year=2020,
+        source="segeln-forum.de + Volvo Penta Service Bulletin",
+        description_de="Saildrive-Membrandichtung (Diaphragma) nach 7-8 Jahren porös. Seewasser dringt in Saildrive-Gehäuse, dann über Motorwanne in Bilge. Boot wäre beinahe gesunken im Hafen.",
+        failure_mechanism="Alterung der Gummi-Membrandichtung zwischen Saildrive und Rumpf",
+        root_cause="Membran hat begrenzte Lebensdauer (7-10 Jahre). Viele Eigner ignorieren den Wartungshinweis.",
+        lesson_learned="Saildrive-Membran ist ein SICHERHEITS-kritisches Bauteil. Austausch alle 7 Jahre Pflicht, unabhängig vom Zustand.",
+        prevention_measures=[
+            "Membran alle 7 Jahre tauschen (Kosten: 600-1.200 EUR)",
+            "Jährlich Saildrive-Öl auf Wassereinbruch prüfen (milchig = Wasser)",
+            "Bilge-Alarm installieren",
+            "Saildrive-Zinkanode jährlich kontrollieren"
+        ],
+        severity="catastrophic"
+    ),
+
+    RealFailureCase(
+        case_name="Dieselpest nach Winterlager",
+        boat_type="Diverse Motorboote und Segelyachten",
+        year=2019,
+        source="boote-forum.de (Sammelthread 50+ Beiträge)",
+        description_de="Boot stand 6 Monate mit halbvollem Tank im Winterlager. Kondenswasser sammelte sich am Tankboden. Bakterien und Pilze (Hormoconis resinae) bildeten schwarzen Biofilm. Kraftstofffilter verstopfte nach 30 Minuten Motorlauf. Motor starb auf See.",
+        failure_mechanism="Mikrobiologische Kontamination des Dieselkraftstoffs durch Kondenswasser im Tank",
+        root_cause="Halbvoller Tank im Winterlager = Kondensation. Biodiesel-Anteil (B7) fördert Pilzwachstum.",
+        lesson_learned="Tank VOR dem Winterlager RANDVOLL machen. Kein Luftraum = kein Kondenswasser = keine Dieselpest.",
+        prevention_measures=[
+            "Tank vor Winterlager komplett füllen",
+            "Biozid-Additiv zusetzen (Grotamar 82, Marine 16)",
+            "Wasserabscheider im Kraftstoffsystem (Racor-Vorfilter)",
+            "Tankdrain jährlich auf Wasser prüfen",
+            "Ersatz-Kraftstofffilter immer an Bord"
+        ],
+        severity="moderate"
+    ),
+
+    RealFailureCase(
+        case_name="Ankerketten-Bruch in Bucht (Kroatien)",
+        boat_type="Bavaria 46 (2012)",
+        year=2021,
+        source="segeln-forum.de + yacht-forum.de",
+        description_de="Ankerkette (8mm verzinkt, Baumarkt-Qualität) brach bei Windstärke 6 in kroatischer Bucht. Boot trieb auf Felsen. Grund: Kette war nicht DIN 766 / ISO 4565 zertifiziert.",
+        failure_mechanism="Minderwertiges Kettenmaterial ohne Marine-Zertifizierung. Schwachstelle an Schweißnaht.",
+        root_cause="Eigner hatte günstige Baumarkt-Kette statt zertifizierter Ankerkette installiert.",
+        lesson_learned="Nur DIN 766 / ISO 4565 zertifizierte Ankerketten verwenden. Baumarkt-Ketten sind für Boote LEBENSGEFÄHRLICH.",
+        prevention_measures=[
+            "Nur zertifizierte Ankerketten kaufen (DIN 766 / ISO 4565)",
+            "Kette jährlich auf Verschleiß prüfen (Glieder mit Messschieber)",
+            "Verzinkung prüfen: Rostansatz = Kette ersetzen",
+            "Kettenverbinder (Wirbelschäkel) regelmäßig kontrollieren"
+        ],
+        severity="catastrophic"
+    ),
+
+    RealFailureCase(
+        case_name="PSS-Wellendichtung undicht nach falschem Einbau",
+        boat_type="Contest 36 (1989, Refit 2019)",
+        year=2021,
+        source="boote-forum.de",
+        description_de="Nach Refit PSS-Dichtung eingebaut. Boot machte 2 Liter/Stunde Wasser. Ursache: Welle nicht exakt fluchtig, Kohlering saß nicht plan. Stopfbuchse wurde wieder eingebaut.",
+        failure_mechanism="PSS-Wellendichtung erfordert perfekte Wellenausrichtung. Bei Altbooten mit Wellenversatz nicht geeignet.",
+        root_cause="Welle hatte 0.3mm Schlag — für PSS zu viel, für Stopfbuchse akzeptabel.",
+        lesson_learned="PSS-Dichtung nur bei perfekter Wellenausrichtung (< 0.1mm Schlag). Bei Altbooten oft Stopfbuchse die bessere Wahl.",
+        prevention_measures=[
+            "Wellenausrichtung vor PSS-Einbau mit Messuhr prüfen",
+            "Maximaler Schlag für PSS: 0.1mm",
+            "Alternative: Volvo-Typ Simmerring-Dichtung (toleranter)",
+            "Stopfbuchse als bewährte Fallback-Lösung"
+        ],
+        severity="moderate"
+    ),
 ]
 
 
@@ -893,6 +984,61 @@ CRIMPING_KNOWLEDGE = {
         "Dielectric Grease (Molykote, Permatex, nicht WD-40)",
         "Digitale Schieblehre (zur Kontrolle der Crimpe-Geometrie)"
     ]
+}
+
+
+# ============================================================================
+# GEBRAUCHTBOOT-MARKT — Used Boat Market Knowledge
+# Source: yacht.de, bootsprofis, blauwasser
+# ============================================================================
+
+USED_BOAT_MARKET_KNOWLEDGE: Dict[str, Any] = {
+    "price_ranges_by_size": {
+        "source": ["yacht"],
+        "under_7m": {
+            "budget": "4.000-15.000 EUR",
+            "examples": ["Neptun 22", "Varianta 18", "Jantar 21"],
+            "note_de": "Einstieg in den Segelsport, Binnenrevier oder Küste"
+        },
+        "under_9m": {
+            "budget": "15.000-45.000 EUR",
+            "examples": ["Sailart 20", "First 24", "Leisure 23"],
+            "note_de": "Top 20 Kompaktkruezer laut YACHT"
+        },
+        "9_12m": {
+            "budget": "40.000-120.000 EUR",
+            "examples": ["Bavaria 30+", "Hanse 345", "Jeanneau Sun Odyssey 33i"],
+            "note_de": "Vollwertige Fahrtensegler für Ostsee/Mittelmeer"
+        },
+        "12_15m": {
+            "budget": "80.000-250.000 EUR",
+            "examples": ["Bavaria 40", "Hallberg-Rassy 37", "X-Yachts X-41"],
+            "note_de": "Langfahrt-tauglich, Blue Water"
+        }
+    },
+
+    "survey_costs": {
+        "gutachten_sichtpruefung": "400-800 EUR",
+        "gutachten_komplett": "800-1.500 EUR (inkl. Feuchtemessung + Bericht)",
+        "osmose_spezial": "300-500 EUR",
+        "rigg_fachmann": "400-700 EUR",
+        "motor_fachmann": "200-400 EUR",
+        "refit_unter_1000": "GFK-Refit unter 1.000 EUR möglich (dokumentiert von yacht.de)",
+        "note_de": "Gutachterkosten amortisieren sich fast immer — versteckte Mängel kosten ein Vielfaches"
+    },
+
+    "common_purchase_mistakes": {
+        "source": ["bootsprofis"],
+        "seven_deadly_sins": [
+            "Emotionale Entscheidung statt rationaler Analyse",
+            "Technische Inspektion überspringen (Gutachten einsparen)",
+            "Bootstyp nicht vorab definiert (Fahrtgebiet, Crewgröße, Erfahrung)",
+            "Kauf überstürzen (Angst, das Boot zu verlieren)",
+            "Falsche Fragen stellen (nur nach Optik, nicht nach Technik)",
+            "Systemfunktions-Checks auslassen (Motor, Elektrik, Pumpen)",
+            "Keine Probefahrt / Seatrial machen"
+        ]
+    }
 }
 
 
