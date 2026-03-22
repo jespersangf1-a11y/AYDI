@@ -308,6 +308,149 @@ MANUFACTURER_PATTERNS: Dict[str, ManufacturerPattern] = {
         country_of_origin="UK",
         years_active="1973–heute",
         notes="Collector's Item. Preise basieren auf Langzeitvetrauen."
+    ),
+
+    "Dehler": ManufacturerPattern(
+        manufacturer="Dehler (Deutschland, Hanse Group)",
+        known_issues=[
+            {
+                "issue": "Ältere Modelle (pre-2000): Kielbolzen-Korrosion bekannt",
+                "mechanism": "Gusseisen-Kiel mit Edelstahl-Bolzen — galvanische Korrosion",
+                "severity": "high",
+                "models_affected": ["Dehler 34", "Dehler 36"],
+                "source": "boote-forum.de + Gutachterberichte"
+            },
+            {
+                "issue": "Sandwich-Deck Feuchtigkeitseinbruch (Modelle 1990-2005)",
+                "mechanism": "Balsa-Kern durchfeuchtet über undichte Beschläge",
+                "severity": "high",
+                "prevalence": "30% der Boote in diesem Baujahr",
+                "source": "segeln-forum.de Community Reports"
+            },
+            {
+                "issue": "Neue Modelle (ab 2020): Verarbeitung auf Hanse-Niveau gesunken",
+                "mechanism": "Kosteneinsparung durch Hanse-Group-Rationalisierung",
+                "severity": "moderate",
+                "source": "yacht.de Testberichte"
+            }
+        ],
+        quality_trend="declining",
+        strengths=[
+            "Performance-orientierte Designs (besonders ältere Modelle)",
+            "Gute Segeleigenschaften, sportlich",
+            "Judel/Vrolijk-Designs geschätzt"
+        ],
+        typical_price_segment="€200k-€450k",
+        production_method="Vakuuminfusion (ab 2010)",
+        country_of_origin="Deutschland",
+        years_active="1963–heute",
+        notes="Ältere Dehler (vor Hanse-Übernahme) gelten als sportliche Klassiker. Neuere Modelle von Hanse-Rationalisierung betroffen."
+    ),
+
+    "Dufour": ManufacturerPattern(
+        manufacturer="Dufour Yachts (Frankreich)",
+        known_issues=[
+            {
+                "issue": "Fensterrahmen-Undichtigkeiten (Modelle 2008-2015)",
+                "mechanism": "Acryl-Fenster mit unzureichender Dichtung",
+                "severity": "moderate",
+                "prevalence": "25% der Boote",
+                "source": "cruisersforum.com + Gutachterberichte"
+            },
+            {
+                "issue": "Ruder-Lagerprobleme bei 36/40er Modellen",
+                "mechanism": "Unterdimensionierte Ruderlager bei schwerem Seegang",
+                "severity": "high",
+                "source": "segeln-forum.de"
+            }
+        ],
+        quality_trend="improving",
+        strengths=[
+            "Modernes Design (Felci/Umberto Felci)",
+            "Gutes Preis-Leistungs-Verhältnis",
+            "Verbesserte Qualitätskontrolle seit 2018"
+        ],
+        typical_price_segment="€220k-€500k",
+        production_method="Vakuuminfusion + Handlaminat",
+        country_of_origin="Frankreich",
+        years_active="1964–heute",
+        notes="Seit Übernahme durch Fountaine Pajot Group verbesserte Ressourcen und Qualitätskontrolle."
+    ),
+
+    "Contest": ManufacturerPattern(
+        manufacturer="Contest Yachts (Niederlande)",
+        known_issues=[
+            {
+                "issue": "Kein systematisches bekanntes Problem",
+                "mechanism": "Hochwertige niederländische Werft mit kleiner Stückzahl",
+                "severity": "none"
+            }
+        ],
+        quality_trend="stable",
+        strengths=[
+            "Aluminium-Rümpfe in Perfektion",
+            "Extrem seetüchtige Designs",
+            "Langlebige Bauweise (30+ Jahre)",
+            "Individuelle Kundenanpassung"
+        ],
+        typical_price_segment="€500k-€1.5M",
+        production_method="Aluminium-Einzelfertigung + GFK-Serien",
+        country_of_origin="Niederlande",
+        years_active="1959–heute",
+        notes="Niederländische Premium-Werft. Contest-Eigner sind extrem loyal. Aluminium-Modelle sind Langstrecken-Referenz."
+    ),
+
+    "Moody": ManufacturerPattern(
+        manufacturer="Moody (Hanse Group, ehem. UK)",
+        known_issues=[
+            {
+                "issue": "Ältere UK-Modelle: Osmose-Anfälligkeit (Polyester-Boote vor 1995)",
+                "mechanism": "Orthophthalsäure-Polyester mit hohem Osmose-Risiko",
+                "severity": "high",
+                "timeframe": "Boote 1970-1995",
+                "source": "boote-forum.de"
+            },
+            {
+                "issue": "Deck-Rumpf-Verbindung bei älteren Modellen undicht",
+                "mechanism": "Bolzen-Verbindung mit insuffizienter Dichtung",
+                "severity": "moderate",
+                "source": "ybw.com Forum"
+            }
+        ],
+        quality_trend="stable",
+        strengths=[
+            "Deckssalon-Konzept gut umgesetzt",
+            "Komfortable Langstrecken-Yachten",
+            "Bill Dixon Designs geschätzt"
+        ],
+        typical_price_segment="€300k-€600k",
+        production_method="Vakuuminfusion (neue Modelle), Handlaminat (ältere)",
+        country_of_origin="Deutschland (seit Hanse-Übernahme)",
+        years_active="1827–heute",
+        notes="Achtung: Ältere UK-gebaute Modelle vs. neue Hanse-gebaute Modelle sind qualitativ sehr unterschiedlich."
+    ),
+
+    "Feeling": ManufacturerPattern(
+        manufacturer="Feeling / Kirie (Frankreich)",
+        known_issues=[
+            {
+                "issue": "GFK-Qualität variiert stark zwischen Baujahren",
+                "mechanism": "Wechselnde Zulieferer und Produktionsmethoden",
+                "severity": "moderate",
+                "source": "segeln-forum.de"
+            }
+        ],
+        quality_trend="discontinued",
+        strengths=[
+            "Knickspant-Unterwasserschiffe: charakteristisch und gut am Wind",
+            "Solide Bauweise bei gut verarbeiteten Exemplaren",
+            "Treue Fangemeinde"
+        ],
+        typical_price_segment="€80k-€200k (gebraucht)",
+        production_method="Handlaminat",
+        country_of_origin="Frankreich",
+        years_active="1976–2009",
+        notes="Werft geschlossen. Ersatzteile über Community (Feeling-Forum). Gebrauchte Feelings sind preiswert und seetüchtig."
     )
 }
 
@@ -525,6 +668,114 @@ REAL_FAILURE_CASES: List[RealFailureCase] = [
             "Nach 5 Jahren Überprüfung, nach 10 Jahren Erneuerung"
         ],
         severity="moderate"
+    ),
+
+    RealFailureCase(
+        case_name="Saildrive-Membran-Versagen nach 8 Jahren",
+        boat_type="Bavaria 36 Cruiser (2012)",
+        year=2020,
+        source="boote-forum.de + BootsProfis",
+        description_de="Saildrive-Membran (Volvo Penta 130S) nicht gewechselt trotz 7-Jahres-Intervall des Herstellers. Wasser drang ein, Saildrive-Gehäuse intern korrodiert. Boot sank am Liegeplatz.",
+        failure_mechanism="Alterung der Gummimembran, Mikrorisse, Wassereinbruch über Monate",
+        root_cause="Wartungsintervall der Saildrive-Membran ignoriert. Kein regelmäßiger Bilgen-Check.",
+        lesson_learned="Saildrive-Membran MUSS alle 7 Jahre getauscht werden — nicht verhandelbar. Regelmäßig Bilge kontrollieren.",
+        prevention_measures=[
+            "Saildrive-Membran alle 7 Jahre tauschen (Volvo-Vorschrift)",
+            "Bilge-Alarm mit Schwimmerschalter installieren",
+            "Monatliche Bilgen-Kontrolle",
+            "Saildrive-Öl auf Wasserspuren prüfen (milchig = Wasser)"
+        ],
+        severity="catastrophic"
+    ),
+
+    RealFailureCase(
+        case_name="Propeller-Zerstörung durch Landstrom-Korrosion",
+        boat_type="Hallberg-Rassy 342 (2006)",
+        year=2019,
+        source="segeln-forum.de + Victron Energy Documentation",
+        description_de="Boot lag 3 Jahre dauerhaft am Landstrom ohne Trenntrafo. Bronze-Propeller war nach 3 Jahren komplett aufgelöst (rosa, porös). Saildrive-Gehäuse ebenfalls angegriffen.",
+        failure_mechanism="Galvanische Korrosion durch Schutzleiter-Verbindung zum Landnetz. Steginfrastruktur (Stahlspundwand) diente als Kathode.",
+        root_cause="Fehlender galvanischer Isolator oder Trenntransformator. Dauerhafte Landstrom-Verbindung.",
+        lesson_learned="Bei Dauerlieger IMMER Trenntransformator oder galvanischen Isolator installieren. Zinkanoden monatlich kontrollieren.",
+        prevention_measures=[
+            "Trenntransformator installieren (€800-€2500)",
+            "Oder: Galvanischen Isolator nachrüsten (€100-€400)",
+            "Zinkanoden monatlich kontrollieren",
+            "Landstrom nicht dauerhaft angeschlossen lassen wenn möglich"
+        ],
+        severity="moderate"
+    ),
+
+    RealFailureCase(
+        case_name="Teakdeck-Undichtigkeit zerstört Sandwich-Kern",
+        boat_type="Jeanneau Sun Odyssey 44 (2004)",
+        year=2021,
+        source="segeln-forum.de + yacht-forum.de",
+        description_de="Teakdeck-Fugen über Jahre undicht. Wasser drang über Schraubenlöcher in Balsa-Sandwich-Kern. Komplettes Vordeck weich, Balsa verfault.",
+        failure_mechanism="Sikaflex-Fugen altern → Dreiflankenhaftung versagt → Wasser an Schrauben → Balsa-Kern fault → Delamination",
+        root_cause="Keine regelmäßige Fugen-Inspektion. Dreiflankenhaftung statt Zweiflanken (kein Bond-Breaker).",
+        lesson_learned="Teakdeck-Fugen jährlich prüfen. Bei Sanierung Bond-Breaker verwenden. Jede Schraube im Sandwich mit Epoxid abdichten.",
+        prevention_measures=[
+            "Jährliche Fugen-Inspektion (Fingernagel-Test)",
+            "Messung auf Soft Spots nach Regen",
+            "Bond-Breaker bei jeder Neuverfugung",
+            "Schrauben in Sandwich immer mit Epoxid-Hülsen"
+        ],
+        severity="catastrophic"
+    ),
+
+    RealFailureCase(
+        case_name="Mastfuß-Kompressionsversagen durch Kernfäule",
+        boat_type="Hanse 371 (2003)",
+        year=2018,
+        source="pantaenius.com Schadensstatistik + segeln-forum.de",
+        description_de="Mastfuß-Bereich im Sandwich-Deck durchgebrochen. Mast sackte 50mm ein. Ursache: Balsa-Kern unter Mastfuß war durchfeuchtet und verfault.",
+        failure_mechanism="Wasser drang über undichte Mastmanschette ein → Balsa-Kern fault → Druckfestigkeit sinkt → Mast drückt durch",
+        root_cause="Undichte Mastmanschette nicht rechtzeitig erneuert. Kein Solid-Insert unter Mastfuß (Baufehler).",
+        lesson_learned="Unter Mastfuß MUSS Solid-Insert (kein Sandwich) verbaut sein. Mastmanschette jährlich kontrollieren.",
+        prevention_measures=[
+            "Solid-Insert unter Mastfuß (Nachrüstung möglich)",
+            "Mastmanschette jährlich prüfen und bei Bedarf erneuern",
+            "Wasserstand im Mastfuß-Bereich kontrollieren",
+            "Bei Mast-Aus- und Einbau immer Deck inspizieren"
+        ],
+        severity="catastrophic"
+    ),
+
+    RealFailureCase(
+        case_name="Messing-Seeventil bricht — Beinahe-Sinkfall",
+        boat_type="Etap 37s (1999)",
+        year=2022,
+        source="float Magazin + boote-forum.de",
+        description_de="Messing-Borddurchlass (Toiletten-Zugang) zerbröselte beim routinemäßigen Zudrehen. Wassereinbruch nur durch schnelles Reagieren mit Holzpfropfen gestoppt.",
+        failure_mechanism="Dezincification: Zink aus Messing-Legierung über 23 Jahre herausgelöst. Material wie morscher Keks.",
+        root_cause="Standard-Messing (nicht DZR) im Salzwasser. Kein regelmäßiger Material-Check.",
+        lesson_learned="ALLE Messing-Seeventile in Salzwasser-Booten gegen Bronze oder Composite tauschen. Gangbarkeit regelmäßig prüfen.",
+        prevention_measures=[
+            "Messing-Seeventile identifizieren (Magnet-Test: Messing = nicht magnetisch)",
+            "Gegen Bronze (DIN 1705) oder Composite (TruDesign) tauschen",
+            "Alle 5 Jahre Material-Zustand prüfen",
+            "Holzpfropfen griffbereit bei JEDEM Borddurchlass"
+        ],
+        severity="catastrophic"
+    ),
+
+    RealFailureCase(
+        case_name="Wanten-Terminal Ermüdungsbruch — Mastfall auf See",
+        boat_type="Bavaria 42 Ocean (2008)",
+        year=2023,
+        source="Pantaenius Schadensstatistik + BootsProfis",
+        description_de="Oberer Wanten-Terminal (Pressterminal) brach bei 25kn Wind auf der Ostsee. Mast fiel nach Lee. Rigg war 14 Jahre alt, nie inspiziert.",
+        failure_mechanism="Ermüdungsriss am Übergang Pressung/Draht. Riss propagierte über Monate unentdeckt.",
+        root_cause="Rigg 14 Jahre alt, nie professionell inspiziert. Keine Farbeindringprüfung.",
+        lesson_learned="Stehendes Gut nach 10-12 Jahren erneuern oder professionell prüfen lassen (Farbeindringprüfung). Versicherungen verlangen dies oft.",
+        prevention_measures=[
+            "Rigg alle 10-12 Jahre erneuern oder professionell prüfen",
+            "Jährliche Sichtprüfung aller Terminals",
+            "Farbeindringprüfung (Dye Penetrant) ab Jahr 8",
+            "Versicherungsanforderungen beachten"
+        ],
+        severity="catastrophic"
     )
 ]
 

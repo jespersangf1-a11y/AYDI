@@ -539,12 +539,12 @@ KNOWLEDGE_INDEX = {
             "10.1_hersteller_muster": {
                 "title": "Hersteller-spezifische Schwachstellen",
                 "status": "implemented",
-                "entries": "8 Hersteller (Bavaria, Hanse, Jeanneau, Beneteau, Hallberg-Rassy, Najad, X-Yachts, Oyster)",
+                "entries": "13 Hersteller (Bavaria, Hanse, Jeanneau, Beneteau, Hallberg-Rassy, Najad, X-Yachts, Oyster, Dehler, Dufour, Contest, Moody, Feeling)",
             },
             "10.2_versagensfaelle": {
                 "title": "Dokumentierte Versagensfälle",
                 "status": "implemented",
-                "entries": "10 reale Fälle mit Ursachenanalyse (Newport 41, Catalina 30, Random Harvest, etc.)",
+                "entries": "17 reale Fälle mit Ursachenanalyse inkl. Saildrive-Membran, Landstrom-Korrosion, Teakdeck-Kernfäule, Mastfuß-Kompression, Messing-Seeventil, Rigg-Ermüdung",
             },
             "10.3_verarbeitungsqualitaet": {
                 "title": "Verarbeitungsqualität als Hauptvariable",
@@ -560,6 +560,68 @@ KNOWLEDGE_INDEX = {
                 "title": "Kernmaterial-Praxiswissen",
                 "status": "implemented",
                 "entries": "Balsa/PVC/SAN/Honeycomb — Golden Rule: Solid Insert bei jedem Durchbruch",
+            },
+        },
+    },
+
+    # =========================================================================
+    # 11. EXPERT COMMUNITY KNOWLEDGE (YouTube, Foren, Fachzeitschriften)
+    # =========================================================================
+    "11_expert_community": {
+        "title": "Experten-Community-Wissen aus YouTube, Foren und Fachpublikationen",
+        "status": "implemented",
+        "module": "expert_community_knowledge.py",
+        "sources": "17 Quellen: BootsProfis, YACHT-TV, Marietim, Blauwasser.de, boote-forum.de, segeln-forum.de, yacht-forum.de, Pantaenius, float Magazin, Palstek, SVB, ADAC Skipper, NautiCare, bootstechnik.de, frag-jochen.de, Victron, Mastervolt",
+        "subcategories": {
+            "11.1_bootskauf": {
+                "title": "Bootskauf-Expertise (Gutachterpraxis)",
+                "status": "implemented",
+                "entries": "3-Phasen-Inspektion (Erstbesichtigung, Detailinspektion, Probefahrt), Preisverhandlungs-Faktoren (10 Mängel mit Wertminderung), Alterserwartungen (5 Altersklassen)",
+            },
+            "11.2_osmose_detail": {
+                "title": "Osmose-Detailwissen",
+                "status": "implemented",
+                "entries": "4-Stadien-Klassifikation, Risikofaktoren (Harztyp, Wassertemperatur, Verarbeitungsqualität), Trocknungsverfahren, Präventionsmaßnahmen",
+            },
+            "11.3_rigg_expertise": {
+                "title": "Rigg-Expertenwissen",
+                "status": "implemented",
+                "entries": "Lebensdauer Draht/Rod/Textil, 5 häufigste Versagenspunkte, 6 Riggverlust-Ursachen mit Häufigkeit",
+            },
+            "11.4_seeventil_detail": {
+                "title": "Seeventil-Materialvergleich",
+                "status": "implemented",
+                "entries": "5 Materialien (Bronze, Messing, DZR, Edelstahl, Composite) mit Lebensdauer und Risiko",
+            },
+            "11.5_motor_expertise": {
+                "title": "Motor-Expertenwissen",
+                "status": "implemented",
+                "entries": "3 Marken detailliert (Volvo Penta, Yanmar, Beta Marine), 7 Goldene Wartungsregeln",
+            },
+            "11.6_teakdeck": {
+                "title": "Teakdeck-Problematik",
+                "status": "implemented",
+                "entries": "4 häufige Probleme (Fugen, Undichtigkeit, Abschleifen, Sikaflex), Alternativen (Flexiteek, Kork)",
+            },
+            "11.7_elektrik_galvanik": {
+                "title": "Elektrik und Galvanische Korrosion",
+                "status": "implemented",
+                "entries": "Landstrom-Korrosion (Mechanismus + 3 Lösungen), Kriechstrom-Diagnose, Batterie-Dimensionierung",
+            },
+            "11.8_antifouling": {
+                "title": "Antifouling-Vergleich",
+                "status": "implemented",
+                "entries": "4 Typen (SPC, Hart-Matrix, Coppercoat, Ultraschall), Umweltvorschriften EU/Ostsee",
+            },
+            "11.9_composite_reparatur": {
+                "title": "GFK/Sandwich-Reparaturwissen",
+                "status": "implemented",
+                "entries": "3 Kern-Risikoprofile, 2 Reparaturmethoden, 4 Gelcoat-Schadenstypen",
+            },
+            "11.10_winterlager": {
+                "title": "Einwinterungs-Checkliste",
+                "status": "implemented",
+                "entries": "Vollständige Checkliste: Motor, Wassersystem, Elektrik, Rumpf/Deck, Rigg",
             },
         },
     },

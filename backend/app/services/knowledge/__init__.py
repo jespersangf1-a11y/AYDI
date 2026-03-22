@@ -18,6 +18,7 @@ Provides comprehensive domain knowledge across all craftsmanship disciplines:
 - Forensic failure analysis and degradation cycles
 - Inspection methods and condition assessment
 - Practical owner experience and manufacturer patterns
+- Expert community knowledge from YouTube, forums, and maritime publications
 """
 
 from .construction_weakpoints import (
@@ -179,4 +180,19 @@ from .practical_experience import (
     SEACOCK_KNOWLEDGE,
     CORE_MATERIAL_KNOWLEDGE,
     assess_manufacturer_risk,
+)
+
+from .expert_community_knowledge import (
+    PURCHASE_EXPERTISE,
+    OSMOSIS_EXPERT_KNOWLEDGE,
+    RIGGING_EXPERT_KNOWLEDGE,
+    SEACOCK_EXPERT_KNOWLEDGE,
+    ENGINE_EXPERT_KNOWLEDGE,
+    TEAK_DECK_EXPERT_KNOWLEDGE,
+    ELECTRICAL_EXPERT_KNOWLEDGE,
+    ANTIFOULING_EXPERT_KNOWLEDGE,
+    COMPOSITE_EXPERT_KNOWLEDGE,
+    WINTERIZATION_EXPERT_KNOWLEDGE,
+    get_expert_knowledge_for_topic,
+    get_all_expert_sources,
 )
