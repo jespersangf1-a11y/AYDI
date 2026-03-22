@@ -9,7 +9,6 @@ const UNSPLASH_BASE = 'https://images.unsplash.com'
 // Quality presets
 const hero = (id: string) => `${UNSPLASH_BASE}/${id}?auto=format&fit=crop&w=1920&q=80`
 const section = (id: string) => `${UNSPLASH_BASE}/${id}?auto=format&fit=crop&w=1200&q=80`
-const thumb = (id: string) => `${UNSPLASH_BASE}/${id}?auto=format&fit=crop&w=600&q=75`
 
 export const MEDIA = {
   // General / Hero backgrounds

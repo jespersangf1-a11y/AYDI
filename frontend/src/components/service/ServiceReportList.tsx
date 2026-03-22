@@ -1,10 +1,58 @@
 import { useEffect, useState } from 'react'
-import { AlertCircle, AlertTriangle, Info, CheckCircle } from 'lucide-react'
+import { AlertCircle, AlertTriangle, Info, CheckCircle, ChevronDown } from 'lucide-react'
 import { getServiceReports } from '../../services/api'
 import type { ServiceReport, Severity } from '../../types'
 import { BOAT_CLASS_LABELS } from '../../types'
 import { MEDIA } from '../../config/media'
 import HeroSection from '../layout/HeroSection'
+
+// Premium animations CSS
+const ANIMATIONS = `
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      max-height: 0;
+      overflow: hidden;
+    }
+    to {
+      opacity: 1;
+      max-height: 500px;
+      overflow: visible;
+    }
+  }
+
+  @keyframes borderGlow {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  .animate-fade-up {
+    animation: fadeInUp 0.6s ease-out forwards;
+  }
+
+  .animate-slide-down {
+    animation: slideDown 0.3s ease-out forwards;
+  }
+
+  .animate-border-glow {
+    animation: borderGlow 2s ease-in-out infinite;
+  }
+`
 
 const SEVERITY_CONFIG: Record<
   Severity,
@@ -52,7 +100,8 @@ function SeverityBadge({ severity }: { severity: Severity }) {
   const cfg = SEVERITY_CONFIG[severity]
   return (
     <span
-      className={`inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-md border border-navy-600/30 ${cfg.text}`}
+      className={`inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-md border border-navy-600/30 ${cfg.text} transition-all duration-300 hover:scale-105`}
+      aria-label={`Schweregrad: ${cfg.label}`}
     >
       <cfg.icon className="w-3 h-3" />
       {cfg.label}
@@ -76,6 +125,7 @@ export default function ServiceReportList() {
   const [categoryFilter, setCategoryFilter] = useState('')
   const [severityFilter, setSeverityFilter] = useState('')
   const [categories, setCategories] = useState<string[]>([])
+  const [expandedReportId, setExpandedReportId] = useState<string | null>(null)
 
   const fetchReports = (cat?: string, sev?: string) => {
     setLoading(true)
@@ -107,6 +157,7 @@ export default function ServiceReportList() {
 
   return (
     <div>
+      <style>{ANIMATIONS}</style>
       <HeroSection
         backgroundImage={MEDIA.structure.hull_drydock}
         title="Serviceberichte"
@@ -114,16 +165,17 @@ export default function ServiceReportList() {
         label="Service"
       />
 
-      <div className="space-y-8 px-10 py-12">
+      <div className="space-y-8 px-4 sm:px-10 py-12">
         {/* Controls */}
-        <div className="flex items-center justify-between gap-6">
-          <div className="flex items-center gap-4">
-            <div>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full sm:w-auto">
+            <div className="w-full sm:w-auto">
               <p className="label-premium mb-2">KATEGORIE</p>
               <select
                 value={categoryFilter}
                 onChange={(e) => handleCategoryChange(e.target.value)}
-                className="bg-navy-800/60 border border-navy-600/40 rounded-lg px-4 py-2.5 text-navy-100 text-sm focus:outline-none focus:border-ocean-500/60 transition-colors duration-200"
+                aria-label="Kategorie filtern"
+                className="w-full sm:w-auto bg-navy-800/60 border border-navy-600/40 rounded-lg px-4 py-2.5 text-navy-100 text-sm focus:outline-none focus:border-ocean-500/60 focus:ring-2 focus:ring-ocean-500/20 transition-all duration-200"
               >
                 <option value="">Alle Kategorien</option>
                 {categories.map((c) => (
@@ -134,12 +186,13 @@ export default function ServiceReportList() {
               </select>
             </div>
 
-            <div>
+            <div className="w-full sm:w-auto">
               <p className="label-premium mb-2">SCHWEREGARD</p>
               <select
                 value={severityFilter}
                 onChange={(e) => handleSeverityChange(e.target.value)}
-                className="bg-navy-800/60 border border-navy-600/40 rounded-lg px-4 py-2.5 text-navy-100 text-sm focus:outline-none focus:border-ocean-500/60 transition-colors duration-200"
+                aria-label="Schweregrad filtern"
+                className="w-full sm:w-auto bg-navy-800/60 border border-navy-600/40 rounded-lg px-4 py-2.5 text-navy-100 text-sm focus:outline-none focus:border-ocean-500/60 focus:ring-2 focus:ring-ocean-500/20 transition-all duration-200"
               >
                 <option value="">Alle Schweregrade</option>
                 <option value="critical">Kritisch</option>
@@ -171,54 +224,67 @@ export default function ServiceReportList() {
 
         {!loading && !error && reports.length > 0 && (
           <div className="space-y-4">
-            {reports.map((report) => {
+            {reports.map((report, idx) => {
               const cfg = SEVERITY_CONFIG[report.severity]
+              const isExpanded = expandedReportId === report.id
               return (
-                <div
+                <button
                   key={report.id}
-                  className={`border-l-4 ${cfg.borderColor} border-r border-b border-navy-700/30 ${cfg.bgColor} rounded-lg p-6 transition-colors duration-200 hover:bg-navy-900/20`}
+                  onClick={() => setExpandedReportId(isExpanded ? null : report.id)}
+                  style={{ animation: `fadeInUp 0.6s ease-out ${idx * 60}ms forwards`, opacity: 0 }}
+                  className={`w-full text-left border-l-4 ${cfg.borderColor} border-r border-b border-navy-700/30 ${cfg.bgColor} rounded-lg p-6 transition-all duration-300 hover:shadow-lg hover:shadow-black/20 group`}
+                  aria-expanded={isExpanded}
+                  aria-label={`${report.description} - ${cfg.label}`}
                 >
                   <div className="flex items-start justify-between gap-4 mb-3">
                     <div className="flex-1">
-                      <p className="text-white font-medium text-sm leading-snug">
+                      <p className="text-white font-medium text-sm leading-snug group-hover:text-ocean-300 transition-colors">
                         {report.description}
                       </p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <SeverityBadge severity={report.severity} />
                       {report.resolution && <ResolvedBadge />}
+                      {report.root_cause && (
+                        <ChevronDown
+                          className={`w-4 h-4 text-navy-500 transition-transform duration-300 ${
+                            isExpanded ? 'rotate-180' : ''
+                          }`}
+                        />
+                      )}
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-xs text-navy-400 pt-3 border-t border-navy-700/20">
-                    <span>
+                  {/* Metadata Grid - Stacked on mobile */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-navy-400 pt-3 border-t border-navy-700/20">
+                    <div>
                       <span className="label-premium mr-1">TYP</span>
                       <span className="text-navy-300">
                         {REPORT_TYPE_LABELS[report.report_type] ?? report.report_type}
                       </span>
-                    </span>
+                    </div>
                     {report.category && (
-                      <span>
+                      <div>
                         <span className="label-premium mr-1">KATEGORIE</span>
                         <span className="text-navy-300">{report.category}</span>
-                      </span>
+                      </div>
                     )}
                     {report.zone_type && (
-                      <span>
+                      <div>
                         <span className="label-premium mr-1">ZONE</span>
                         <span className="text-navy-300">{report.zone_type}</span>
-                      </span>
+                      </div>
                     )}
                     {report.boat_class && (
-                      <span>
+                      <div>
                         <span className="label-premium mr-1">KLASSE</span>
                         <span className="text-navy-300">
                           {BOAT_CLASS_LABELS[report.boat_class]}
                         </span>
-                      </span>
+                      </div>
                     )}
                     {report.cost_eur != null && (
-                      <span>
+                      <div>
                         <span className="label-premium mr-1">KOSTEN</span>
                         <span className="font-mono text-amber-300">
                           {report.cost_eur.toLocaleString('de-DE', {
@@ -226,24 +292,31 @@ export default function ServiceReportList() {
                             currency: 'EUR',
                           })}
                         </span>
-                      </span>
+                      </div>
                     )}
                     {report.boat_age_months != null && (
-                      <span>
+                      <div>
                         <span className="label-premium mr-1">BOOTSALTER</span>
                         <span className="font-mono text-navy-300">
                           {report.boat_age_months} Monate
                         </span>
-                      </span>
+                      </div>
                     )}
                   </div>
 
-                  {report.root_cause && (
-                    <p className="mt-3 pt-3 border-t border-navy-700/20 text-xs text-navy-300">
-                      <span className="label-premium">URSACHE</span> {report.root_cause}
-                    </p>
+                  {/* Expandable Root Cause */}
+                  {report.root_cause && isExpanded && (
+                    <div className="mt-4 pt-4 border-t border-navy-700/20 animate-slide-down">
+                      <div className="flex items-start gap-2">
+                        <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                          <p className="label-premium mb-2">URSACHE</p>
+                          <p className="text-xs text-navy-200 leading-relaxed">{report.root_cause}</p>
+                        </div>
+                      </div>
+                    </div>
                   )}
-                </div>
+                </button>
               )
             })}
           </div>

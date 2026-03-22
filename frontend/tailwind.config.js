@@ -65,6 +65,14 @@ export default {
       animation: {
         'fade-in': 'fadeIn 0.6s ease-out',
         'slide-up': 'slideUp 0.5s ease-out',
+        'fade-in-up': 'fade-in-up 0.5s ease-out both',
+        'fade-in-scale': 'fade-in-scale 0.4s ease-out both',
+        'slide-in-right': 'slide-in-right 0.5s ease-out both',
+        'slide-in-left': 'slide-in-left 0.4s ease-out both',
+        'shimmer': 'shimmer 1.5s ease-in-out infinite',
+        'pulse-glow': 'pulse-glow 2s ease-in-out infinite',
+        'draw-circle': 'draw-circle 1s ease-out both',
+        'fill-bar': 'fill-bar 0.8s ease-out both',
       },
       keyframes: {
         fadeIn: {
@@ -75,6 +83,53 @@ export default {
           '0%': { opacity: '0', transform: 'translateY(12px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
+        'fade-in-up': {
+          'from': { opacity: '0', transform: 'translateY(16px)' },
+          'to': { opacity: '1', transform: 'translateY(0)' },
+        },
+        'fade-in-scale': {
+          'from': { opacity: '0', transform: 'scale(0.95)' },
+          'to': { opacity: '1', transform: 'scale(1)' },
+        },
+        'slide-in-right': {
+          'from': { opacity: '0', transform: 'translateX(24px)' },
+          'to': { opacity: '1', transform: 'translateX(0)' },
+        },
+        'slide-in-left': {
+          'from': { opacity: '0', transform: 'translateX(-24px)' },
+          'to': { opacity: '1', transform: 'translateX(0)' },
+        },
+        'count-up': {
+          'from': { '--num': '0' },
+        },
+        'shimmer': {
+          '0%': { 'background-position': '-200% 0' },
+          '100%': { 'background-position': '200% 0' },
+        },
+        'pulse-glow': {
+          '0%, 100%': { 'box-shadow': '0 0 0 0 rgba(45, 139, 168, 0)' },
+          '50%': { 'box-shadow': '0 0 20px 4px rgba(45, 139, 168, 0.15)' },
+        },
+        'draw-circle': {
+          'from': { 'stroke-dashoffset': 'var(--circumference, 283)' },
+        },
+        'fill-bar': {
+          'from': { 'width': '0%' },
+        },
+      },
+      transitionDuration: {
+        '400': '400ms',
+        '600': '600ms',
+        '800': '800ms',
+      },
+      backdropBlur: {
+        'xs': '2px',
+      },
+      boxShadow: {
+        'glow-ocean': '0 0 20px 0 rgba(45, 139, 168, 0.15)',
+        'glow-ocean-lg': '0 0 40px 0 rgba(45, 139, 168, 0.2)',
+        'inner-ocean': 'inset 0 1px 2px rgba(45, 139, 168, 0.1)',
+        'card-hover': '0 8px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(45, 139, 168, 0.1)',
       },
     },
   },

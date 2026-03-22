@@ -2,6 +2,54 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Comprehensive animation system */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in-scale {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(24px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slide-in-left {
+  from { opacity: 0; transform: translateX(-24px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Smooth counter animation for scores */
+@keyframes count-up {
+  from { --num: 0; }
+}
+
+/* Skeleton loading shimmer */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Pulse glow for active/important elements */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(45, 139, 168, 0); }
+  50% { box-shadow: 0 0 20px 4px rgba(45, 139, 168, 0.15); }
+}
+
+/* Score gauge draw animation */
+@keyframes draw-circle {
+  from { stroke-dashoffset: var(--circumference, 283); }
+}
+
+/* Progress bar fill */
+@keyframes fill-bar {
+  from { width: 0%; }
+}
+
 @layer base {
   body {
     @apply min-h-screen bg-slate-950;
@@ -13,16 +61,30 @@
   /* Premium scrollbar */
   ::-webkit-scrollbar {
     width: 6px;
+    height: 6px;
   }
   ::-webkit-scrollbar-track {
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: rgba(78, 103, 132, 0.3);
+    background: rgba(45, 139, 168, 0.2);
     border-radius: 3px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: rgba(78, 103, 132, 0.5);
+    background: rgba(45, 139, 168, 0.35);
+  }
+
+  /* Focus visible for accessibility */
+  *:focus-visible {
+    outline: 2px solid rgba(75, 167, 195, 0.6);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* Better text selection */
+  ::selection {
+    background: rgba(45, 139, 168, 0.3);
+    color: #d4dae6;
   }
 }
 
@@ -62,4 +124,45 @@
   .score-acceptable { color: #fbbf24; }
   .score-poor { color: #f97316; }
   .score-critical { color: #ef4444; }
+
+  /* Animation utility classes */
+  .animate-fade-in-up { animation: fade-in-up 0.5s ease-out both; }
+  .animate-fade-in-scale { animation: fade-in-scale 0.4s ease-out both; }
+  .animate-slide-in-right { animation: slide-in-right 0.5s ease-out both; }
+  .animate-slide-in-left { animation: slide-in-left 0.4s ease-out both; }
+
+  .animate-shimmer {
+    background: linear-gradient(90deg, transparent 0%, rgba(45, 139, 168, 0.06) 50%, transparent 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+  }
+
+  .animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+  .animate-draw-circle { animation: draw-circle 1s ease-out both; }
+  .animate-fill-bar { animation: fill-bar 0.8s ease-out both; }
+
+  /* Stagger delay utilities */
+  .stagger-1 { animation-delay: 50ms; }
+  .stagger-2 { animation-delay: 100ms; }
+  .stagger-3 { animation-delay: 150ms; }
+  .stagger-4 { animation-delay: 200ms; }
+  .stagger-5 { animation-delay: 250ms; }
+  .stagger-6 { animation-delay: 300ms; }
+  .stagger-7 { animation-delay: 350ms; }
+  .stagger-8 { animation-delay: 400ms; }
+
+  /* Skeleton loading base */
+  .skeleton {
+    background: linear-gradient(90deg, rgba(30, 45, 74, 0.4) 0%, rgba(45, 139, 168, 0.08) 50%, rgba(30, 45, 74, 0.4) 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+    border-radius: 0.5rem;
+  }
+
+  /* Smooth page transitions */
+  .page-enter { opacity: 0; transform: translateY(8px); }
+  .page-enter-active {
+    opacity: 1; transform: translateY(0);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
 }

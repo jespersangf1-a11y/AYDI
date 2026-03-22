@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ArrowLeft, Play, Ship, Zap, Clock, Layers } from 'lucide-react'
+import { ArrowLeft, Play, Ship, Zap, Clock, Layers, Calendar } from 'lucide-react'
 import { getProject, listLayouts, listAnalyses, runAnalysis, runFullAnalysis, getLayoutVersions } from '../../services/api'
 import HeroSection from '../layout/HeroSection'
 import { MEDIA } from '../../config/media'
@@ -9,6 +9,52 @@ import ScoreGauge from '../analysis/ScoreGauge'
 import SubScoreBars from '../analysis/SubScoreBars'
 import WarningList from '../analysis/WarningList'
 import LayoutViewer from '../analysis/LayoutViewer'
+
+// Premium animations CSS
+const ANIMATIONS = `
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slideInLeft {
+    from {
+      opacity: 0;
+      transform: translateX(-12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes slideUnderline {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+
+  .animate-fade-up {
+    animation: fadeInUp 0.6s ease-out forwards;
+  }
+
+  .animate-slide-in-left {
+    animation: slideInLeft 0.4s ease-out forwards;
+  }
+
+  .slide-underline {
+    animation: slideUnderline 0.3s ease-out;
+  }
+`
 
 interface ProjectDetailProps {
   projectId: string
@@ -128,6 +174,7 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
 
   return (
     <div>
+      <style>{ANIMATIONS}</style>
       <HeroSection
         backgroundImage={MEDIA.hero.deck_detail}
         title={project.name}
@@ -135,7 +182,7 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
         label="Projektdetails"
       />
 
-      <div className="px-10 py-8">
+      <div className="px-4 sm:px-10 py-8">
         {/* Back Button */}
         <button
           onClick={onBack}
@@ -169,43 +216,53 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
           )}
         </div>
 
-        {/* Tab Navigation */}
-        <div className="border-b border-navy-700/40 mb-8 flex gap-8">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 pb-4 font-medium text-sm transition-colors duration-200 ${
-                activeTab === tab.id
-                  ? 'text-ocean-300 border-b-2 border-ocean-500'
-                  : 'text-navy-400 hover:text-navy-300'
-              }`}
-            >
-              {tab.icon}
-              {tab.label}
-            </button>
-          ))}
+        {/* Tab Navigation with Sliding Indicator */}
+        <div className="border-b border-navy-700/40 mb-8 flex gap-4 sm:gap-8 overflow-x-auto scrollbar-hide">
+          <div className="relative flex gap-4 sm:gap-8 min-w-full">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 pb-4 font-medium text-sm transition-colors duration-200 relative whitespace-nowrap ${
+                  activeTab === tab.id
+                    ? 'text-ocean-300'
+                    : 'text-navy-400 hover:text-navy-300'
+                }`}
+                aria-selected={activeTab === tab.id}
+                aria-label={tab.label}
+              >
+                {tab.icon}
+                {tab.label}
+                {activeTab === tab.id && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-ocean-500 to-ocean-400 slide-underline" />
+                )}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Tab Content */}
+        {/* Tab Content with Smooth Transitions */}
         {activeTab === 'layouts' && (
-          <div className="space-y-8">
+          <div className="space-y-8 animate-fade-up">
             {/* Layout Selector */}
             {layouts.length > 0 && (
               <div>
                 <p className="label-premium mb-4">Verfügbare Layouts</p>
                 <div className="grid gap-4 md:grid-cols-2">
-                  {layouts.map((layout) => (
+                  {layouts.map((layout, idx) => (
                     <button
                       key={layout.id}
                       onClick={() => setSelectedLayout(layout)}
-                      className={`card-premium px-6 py-5 text-left transition-all duration-200 ${
+                      style={{ animation: `fadeInUp 0.6s ease-out ${idx * 100}ms forwards`, opacity: 0 }}
+                      className={`card-premium px-6 py-5 text-left transition-all duration-300 hover:shadow-lg hover:shadow-ocean-500/10 group ${
                         selectedLayout?.id === layout.id
                           ? 'bg-ocean-900/40 border-ocean-600/60'
                           : 'hover:bg-navy-900/60 hover:border-navy-600/40'
                       }`}
+                      aria-selected={selectedLayout?.id === layout.id}
+                      aria-label={`Layout ${layout.name}`}
                     >
-                      <div className="font-serif text-lg font-medium text-white mb-1">
+                      <div className="font-serif text-lg font-medium text-white mb-1 group-hover:text-ocean-300 transition-colors">
                         {layout.name}
                       </div>
                       <div className="text-xs text-navy-400">
@@ -234,11 +291,11 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
         )}
 
         {activeTab === 'analysis' && (
-          <div className="space-y-8">
+          <div className="space-y-8 animate-fade-up">
             {/* Full Analysis */}
             {selectedLayout && (
-              <div className="card-premium px-8 py-6 bg-gradient-to-br from-ocean-900/40 to-navy-900/40 border-ocean-600/40">
-                <div className="flex items-center justify-between">
+              <div className="card-premium px-8 py-6 bg-gradient-to-br from-ocean-900/40 to-navy-900/40 border-ocean-600/40 hover:shadow-lg hover:shadow-ocean-500/10 transition-all duration-300">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div>
                     <p className="label-premium mb-2">Umfassende Analyse</p>
                     <p className="text-white font-serif text-lg">
@@ -248,7 +305,8 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
                   <button
                     onClick={handleRunFullAnalysis}
                     disabled={fullAnalyzing || !selectedLayout}
-                    className="flex items-center gap-2 bg-ocean-700 hover:bg-ocean-600 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg font-medium transition-colors duration-200"
+                    className="flex items-center gap-2 bg-ocean-700 hover:bg-ocean-600 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 hover:shadow-lg hover:shadow-ocean-700/30"
+                    aria-label="Vollständige Analyse starten"
                   >
                     {fullAnalyzing ? (
                       <>
@@ -271,17 +329,19 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
               <div>
                 <p className="label-premium mb-4">Modul-Analyse</p>
                 <div className="grid gap-3">
-                  {['ergonomics', 'volume_storage'].map((module) => (
+                  {['ergonomics', 'volume_storage'].map((module, idx) => (
                     <button
                       key={module}
                       onClick={() => handleRunAnalysis(module)}
                       disabled={analyzing}
-                      className="card-premium px-6 py-4 flex items-center justify-between hover:bg-navy-900/60 hover:border-navy-600/40 disabled:opacity-50 transition-all duration-200"
+                      style={{ animation: `fadeInUp 0.6s ease-out ${idx * 100}ms forwards`, opacity: 0 }}
+                      className="card-premium px-6 py-4 flex items-center justify-between hover:bg-navy-900/60 hover:border-navy-600/40 hover:shadow-lg hover:shadow-ocean-500/10 disabled:opacity-50 transition-all duration-200 group"
+                      aria-label={`${MODULE_LABELS[module]} analysieren`}
                     >
-                      <span className="text-white font-medium">
+                      <span className="text-white font-medium group-hover:text-ocean-300 transition-colors">
                         {MODULE_LABELS[module]}
                       </span>
-                      <Play className="w-4 h-4 text-ocean-500" />
+                      <Play className="w-4 h-4 text-ocean-500 group-hover:scale-110 transition-transform" />
                     </button>
                   ))}
                 </div>
@@ -291,12 +351,12 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
             {/* Analysis Results */}
             {selectedAnalysis && (
               <div className="space-y-8">
-                <div>
+                <div style={{ animation: `fadeInUp 0.6s ease-out forwards` }}>
                   <p className="label-premium mb-4">Analyseergebnisse</p>
                   <p className="text-white font-serif text-lg mb-6">
                     {MODULE_LABELS[selectedAnalysis.module] || selectedAnalysis.module}
                   </p>
-                  <div className="card-premium px-8 py-8 flex items-center justify-center">
+                  <div className="card-premium px-8 py-8 flex items-center justify-center hover:shadow-lg hover:shadow-ocean-500/10 transition-all duration-300">
                     <ScoreGauge
                       score={selectedAnalysis.overall_score}
                       label="Gesamtbewertung"
@@ -304,13 +364,13 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
                   </div>
                 </div>
 
-                <div className="card-premium px-8 py-6">
+                <div style={{ animation: `fadeInUp 0.6s ease-out 100ms forwards`, opacity: 0 }} className="card-premium px-8 py-6 hover:shadow-lg hover:shadow-ocean-500/10 transition-all duration-300">
                   <p className="label-premium mb-4">Teilbewertungen</p>
                   <SubScoreBars subScores={selectedAnalysis.sub_scores} />
                 </div>
 
                 {selectedAnalysis.warnings.length > 0 && (
-                  <div className="card-premium px-8 py-6">
+                  <div style={{ animation: `fadeInUp 0.6s ease-out 200ms forwards`, opacity: 0 }} className="card-premium px-8 py-6 hover:shadow-lg hover:shadow-orange-500/10 transition-all duration-300">
                     <p className="label-premium mb-4">
                       Warnungen ({selectedAnalysis.warnings.length})
                     </p>
@@ -322,20 +382,23 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
 
             {/* Analysis History */}
             {analyses.length > 1 && (
-              <div>
+              <div className="animate-fade-up">
                 <p className="label-premium mb-4">Analysehistorie</p>
                 <div className="space-y-2">
-                  {analyses.map((a) => (
+                  {analyses.map((a, idx) => (
                     <button
                       key={a.id}
                       onClick={() => setSelectedAnalysis(a)}
-                      className={`card-premium px-6 py-4 text-left flex items-center justify-between transition-all duration-200 ${
+                      style={{ animation: `fadeInUp 0.6s ease-out ${idx * 80}ms forwards`, opacity: 0 }}
+                      className={`card-premium px-6 py-4 text-left flex items-center justify-between transition-all duration-200 hover:shadow-lg hover:shadow-ocean-500/10 group ${
                         selectedAnalysis?.id === a.id
                           ? 'bg-ocean-900/40 border-ocean-600/60'
                           : 'hover:bg-navy-900/60 hover:border-navy-600/40'
                       }`}
+                      aria-selected={selectedAnalysis?.id === a.id}
+                      aria-label={`${MODULE_LABELS[a.module] || a.module} - ${Math.round(a.overall_score)} von 100`}
                     >
-                      <span className="text-white font-medium">
+                      <span className="text-white font-medium group-hover:text-ocean-300 transition-colors">
                         {MODULE_LABELS[a.module] || a.module}
                       </span>
                       <span className="text-ocean-300 font-mono text-sm font-semibold">
@@ -350,22 +413,28 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
         )}
 
         {activeTab === 'history' && (
-          <div>
+          <div className="animate-fade-up">
             <p className="label-premium mb-4">Versionshistorie</p>
             {versions.length > 0 ? (
               <div className="space-y-3">
-                {versions.map((version) => (
+                {versions.map((version, idx) => (
                   <button
                     key={version.id}
                     onClick={() => handleSelectVersion(version)}
-                    className="card-premium px-6 py-5 text-left hover:bg-navy-900/60 hover:border-navy-600/40 transition-all duration-200 group"
+                    style={{ animation: `fadeInUp 0.6s ease-out ${idx * 80}ms forwards`, opacity: 0 }}
+                    className="card-premium px-6 py-5 text-left hover:bg-navy-900/60 hover:border-navy-600/40 hover:shadow-lg hover:shadow-ocean-500/10 transition-all duration-200 group relative"
+                    aria-label={`Version ${version.version_number}`}
                   >
+                    {/* Timeline indicator */}
+                    <div className="absolute left-0 top-1/2 w-3 h-3 -translate-x-5 -translate-y-1/2 rounded-full bg-ocean-500 border-2 border-navy-900 group-hover:scale-125 transition-transform" />
+
                     <div className="flex items-start justify-between">
                       <div>
-                        <div className="font-mono text-ocean-300 font-semibold mb-1">
+                        <div className="font-mono text-ocean-300 font-semibold mb-1 group-hover:text-ocean-200 transition-colors">
                           Version {version.version_number}
                         </div>
-                        <div className="text-sm text-navy-400">
+                        <div className="flex items-center gap-2 text-sm text-navy-400">
+                          <Calendar className="w-3 h-3" />
                           {new Date(version.created_at).toLocaleString('de-DE')}
                         </div>
                         {version.change_summary && (
@@ -381,7 +450,8 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
             ) : (
               <button
                 onClick={handleLoadVersions}
-                className="card-premium px-8 py-6 text-center hover:bg-navy-900/60 hover:border-navy-600/40 transition-all duration-200 w-full"
+                className="card-premium px-8 py-6 text-center hover:bg-navy-900/60 hover:border-navy-600/40 hover:shadow-lg hover:shadow-ocean-500/10 transition-all duration-200 w-full"
+                aria-label="Versionshistorie laden"
               >
                 <p className="text-navy-400">Versionshistorie laden</p>
               </button>

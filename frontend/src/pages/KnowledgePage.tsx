@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Search, ChevronDown, Package, AlertTriangle, Zap, BookOpen, TrendingUp, Eye } from 'lucide-react'
 import HeroSection from '../components/layout/HeroSection'
 import KnowledgeDetailPanel from '../components/knowledge/KnowledgeDetail'
@@ -9,6 +9,67 @@ import {
 } from '../services/knowledge-api'
 import type { KnowledgeCategory, KnowledgeDetail } from '../types'
 import { MEDIA } from '../config/media'
+
+// Premium animations CSS
+const ANIMATIONS = `
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      max-height: 0;
+      overflow: hidden;
+    }
+    to {
+      opacity: 1;
+      max-height: 500px;
+      overflow: visible;
+    }
+  }
+
+  @keyframes ocnglow {
+    0%, 100% {
+      box-shadow: 0 0 20px rgba(6, 182, 212, 0.1);
+    }
+    50% {
+      box-shadow: 0 0 30px rgba(6, 182, 212, 0.2);
+    }
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.7;
+    }
+  }
+
+  .animate-fade-up {
+    animation: fadeInUp 0.6s ease-out forwards;
+  }
+
+  .animate-slide-down {
+    animation: slideDown 0.3s ease-out forwards;
+  }
+
+  .hover-ocean-glow:hover {
+    animation: ocnglow 2s ease-in-out;
+  }
+
+  .animate-pulse-badge {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+`
 
 export default function KnowledgePage() {
   const [categories, setCategories] = useState<KnowledgeCategory[]>([])
@@ -36,7 +97,9 @@ export default function KnowledgePage() {
       .finally(() => setLoading(false))
   }, [])
 
-  // Handle search
+  // Handle search with debounce
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   const handleSearch = async (query: string) => {
     setSearchQuery(query)
     if (query.trim().length < 2) {
@@ -45,17 +108,23 @@ export default function KnowledgePage() {
       return
     }
 
-    setIsSearching(true)
-    try {
-      const results = await searchKnowledge({ query, limit: 20 })
-      setSearchResults(results)
-      setShowSearchResults(true)
-    } catch (e) {
-      console.error('Search error:', e)
-      setShowSearchResults(false)
-    } finally {
-      setIsSearching(false)
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current)
     }
+
+    setIsSearching(true)
+    searchTimeoutRef.current = setTimeout(async () => {
+      try {
+        const results = await searchKnowledge({ query, limit: 20 })
+        setSearchResults(results)
+        setShowSearchResults(true)
+      } catch (e) {
+        console.error('Search error:', e)
+        setShowSearchResults(false)
+      } finally {
+        setIsSearching(false)
+      }
+    }, 300)
   }
 
   const handleCategoryClick = async (categoryId: string) => {
@@ -118,6 +187,7 @@ export default function KnowledgePage() {
 
   return (
     <div>
+      <style>{ANIMATIONS}</style>
       <HeroSection
         backgroundImage={MEDIA.overview.blueprint}
         title="Wissensdatenbank"
@@ -125,17 +195,18 @@ export default function KnowledgePage() {
         label="Wissen"
       />
 
-      <div className="space-y-8 px-10 py-12">
+      <div className="space-y-8 px-4 sm:px-10 py-12">
         {/* Search Bar */}
         <div className="max-w-3xl mx-auto">
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-navy-500" />
+          <div className="relative group">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-navy-400 group-focus-within:text-ocean-400 transition-colors duration-200" />
             <input
               type="text"
               placeholder="Suchen Sie in der Wissensdatenbank..."
               value={searchQuery}
               onChange={(e) => handleSearch(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-navy-800/60 border border-navy-600/40 rounded-lg text-white placeholder-navy-500 focus:outline-none focus:border-ocean-500/60 transition-colors duration-200"
+              aria-label="Wissensdatenbank durchsuchen"
+              className="w-full pl-12 pr-12 py-3 bg-navy-800/60 border border-navy-600/40 rounded-lg text-white placeholder-navy-500 focus:outline-none focus:border-ocean-500/60 focus:ring-2 focus:ring-ocean-500/20 transition-all duration-200"
             />
             {isSearching && (
               <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
@@ -146,7 +217,11 @@ export default function KnowledgePage() {
             )}
           </div>
           {showSearchResults && searchResults.length === 0 && !isSearching && searchQuery.length > 1 && (
-            <p className="text-center text-navy-400 text-sm mt-3">Keine Ergebnisse für "{searchQuery}"</p>
+            <div className="text-center mt-8 py-12 animate-fade-up">
+              <Eye className="w-12 h-12 text-navy-600 mx-auto mb-4" />
+              <p className="text-navy-400 text-sm">Keine Ergebnisse für "{searchQuery}"</p>
+              <p className="text-navy-500 text-xs mt-2">Versuchen Sie andere Suchbegriffe</p>
+            </div>
           )}
         </div>
 
@@ -174,24 +249,30 @@ export default function KnowledgePage() {
 
         {/* Search Results */}
         {showSearchResults && searchResults.length > 0 && (
-          <div>
+          <div className="animate-fade-up">
             <p className="label-premium mb-6">
               SUCHERGEBNISSE ({searchResults.length})
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {searchResults.map((result) => (
+              {searchResults.map((result, idx) => (
                 <button
                   key={result.id}
                   onClick={() => setSelectedDetail(result)}
-                  className="card-premium p-6 text-left hover:bg-navy-800/50 transition-all duration-200"
+                  style={{ animation: `fadeInUp 0.6s ease-out ${idx * 80}ms forwards`, opacity: 0 }}
+                  className="card-premium p-6 text-left hover:bg-navy-800/50 hover:shadow-lg hover:shadow-ocean-500/10 transition-all duration-200 group"
+                  aria-label={`${result.title} öffnen`}
                 >
                   <div className="flex items-start gap-3 mb-3">
-                    {getCategoryIcon(result.category_name)}
+                    <span className="text-ocean-400 group-hover:scale-110 group-hover:text-ocean-300 transition-all duration-200">
+                      {getCategoryIcon(result.category_name)}
+                    </span>
                     <div className="flex-1">
                       <p className="text-xs font-medium text-navy-400 uppercase tracking-wide">
                         {result.category_name}
                       </p>
-                      <h3 className="font-serif font-medium text-white mt-1">{result.title}</h3>
+                      <h3 className="font-serif font-medium text-white mt-1 group-hover:text-ocean-300 transition-colors">
+                        {result.title}
+                      </h3>
                     </div>
                   </div>
                   <p className="text-sm text-navy-300 line-clamp-2">{result.description}</p>
@@ -204,25 +285,32 @@ export default function KnowledgePage() {
         {/* Categories Grid */}
         {!showSearchResults && (
           <div className="space-y-4">
-            {displayedCategories.map((category) => (
+            {displayedCategories.map((category, catIdx) => (
               <div key={category.id} className="space-y-2">
                 {/* Category Card */}
                 <button
                   onClick={() => handleCategoryClick(category.id)}
-                  className="w-full card-premium p-6 text-left hover:bg-navy-800/50 transition-all duration-200"
+                  style={{ animation: `fadeInUp 0.6s ease-out ${catIdx * 80}ms forwards`, opacity: 0 }}
+                  className="w-full card-premium p-6 text-left hover:bg-navy-800/50 hover-ocean-glow transition-all duration-200 group"
+                  aria-expanded={expandedCategoryId === category.id}
+                  aria-label={`${category.name} - ${expandedCategoryId === category.id ? 'Eingeklappt' : 'Ausgeklappt'}`}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-start gap-4 flex-1">
-                      <div className="flex-shrink-0 text-ocean-400 mt-1">
+                      <div className="flex-shrink-0 text-ocean-400 mt-1 group-hover:scale-110 group-hover:text-ocean-300 transition-all duration-200">
                         {getCategoryIcon(category.name)}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="font-serif text-lg font-medium text-white">{category.name}</h3>
+                        <div className="flex items-center gap-3 mb-2 flex-wrap">
+                          <h3 className="font-serif text-lg font-medium text-white group-hover:text-ocean-300 transition-colors">
+                            {category.name}
+                          </h3>
                           <span
-                            className={`px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap border ${getStatusColor(
-                              category.implementation_status,
-                            )}`}
+                            className={`px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap border transition-all duration-200 ${
+                              category.implementation_status === 'planned' && expandedCategoryId === category.id
+                                ? 'animate-pulse-badge'
+                                : ''
+                            } ${getStatusColor(category.implementation_status)}`}
                           >
                             {getStatusLabel(category.implementation_status)}
                           </span>
@@ -241,7 +329,7 @@ export default function KnowledgePage() {
                       </div>
                     </div>
                     <ChevronDown
-                      className={`w-5 h-5 text-navy-500 flex-shrink-0 transition-transform duration-200 ${
+                      className={`w-5 h-5 text-navy-500 flex-shrink-0 group-hover:text-ocean-400 transition-all duration-300 ${
                         expandedCategoryId === category.id ? 'rotate-180' : ''
                       }`}
                     />
@@ -250,13 +338,15 @@ export default function KnowledgePage() {
 
                 {/* Expanded Subcategories */}
                 {expandedCategoryId === category.id && (
-                  <div className="pl-6 space-y-2 animate-fade-in">
+                  <div className="pl-0 sm:pl-6 space-y-2 animate-slide-down">
                     {category.subcategories && category.subcategories.length > 0 ? (
-                      category.subcategories.map((sub) => (
+                      category.subcategories.map((sub, subIdx) => (
                         <button
                           key={sub.id}
                           onClick={() => handleViewDetail(sub.id)}
-                          className="w-full card-premium p-4 text-left hover:bg-navy-800/40 transition-all duration-200 border-l-2 border-ocean-700/40 hover:border-ocean-600 group"
+                          style={{ animation: `fadeInUp 0.4s ease-out ${subIdx * 60}ms forwards`, opacity: 0 }}
+                          className="w-full card-premium p-4 text-left hover:bg-navy-800/40 hover:translate-x-1 transition-all duration-200 border-l-2 border-ocean-700/40 hover:border-ocean-500 group"
+                          aria-label={`Öffne ${sub.name}`}
                         >
                           <h4 className="font-medium text-white mb-1 group-hover:text-ocean-300 transition-colors">
                             {sub.name}
