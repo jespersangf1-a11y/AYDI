@@ -10,51 +10,6 @@ import SubScoreBars from '../analysis/SubScoreBars'
 import WarningList from '../analysis/WarningList'
 import LayoutViewer from '../analysis/LayoutViewer'
 
-// Premium animations CSS
-const ANIMATIONS = `
-  @keyframes fadeInUp {
-    from {
-      opacity: 0;
-      transform: translateY(12px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  @keyframes slideInLeft {
-    from {
-      opacity: 0;
-      transform: translateX(-12px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
-
-  @keyframes slideUnderline {
-    from {
-      transform: translateX(-100%);
-    }
-    to {
-      transform: translateX(0);
-    }
-  }
-
-  .animate-fade-up {
-    animation: fadeInUp 0.6s ease-out forwards;
-  }
-
-  .animate-slide-in-left {
-    animation: slideInLeft 0.4s ease-out forwards;
-  }
-
-  .slide-underline {
-    animation: slideUnderline 0.3s ease-out;
-  }
-`
 
 interface ProjectDetailProps {
   projectId: string
@@ -174,7 +129,6 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
 
   return (
     <div>
-      <style>{ANIMATIONS}</style>
       <HeroSection
         backgroundImage={MEDIA.hero.deck_detail}
         title={project.name}
@@ -234,7 +188,7 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
                 {tab.icon}
                 {tab.label}
                 {activeTab === tab.id && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-ocean-500 to-ocean-400 slide-underline" />
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-ocean-500 to-ocean-400 transition-all duration-300" />
                 )}
               </button>
             ))}
@@ -243,7 +197,7 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
 
         {/* Tab Content with Smooth Transitions */}
         {activeTab === 'layouts' && (
-          <div className="space-y-8 animate-fade-up">
+          <div className="space-y-8 animate-fade-in-up">
             {/* Layout Selector */}
             {layouts.length > 0 && (
               <div>
@@ -253,8 +207,8 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
                     <button
                       key={layout.id}
                       onClick={() => setSelectedLayout(layout)}
-                      style={{ animation: `fadeInUp 0.6s ease-out ${idx * 100}ms forwards`, opacity: 0 }}
-                      className={`card-premium px-6 py-5 text-left transition-all duration-300 hover:shadow-lg hover:shadow-ocean-500/10 group ${
+                      style={{ animationDelay: `${idx * 100}ms` }}
+                      className={`animate-fade-in-up card-premium px-6 py-5 text-left transition-all duration-300 hover:shadow-lg hover:shadow-ocean-500/10 group ${
                         selectedLayout?.id === layout.id
                           ? 'bg-ocean-900/40 border-ocean-600/60'
                           : 'hover:bg-navy-900/60 hover:border-sand-200'
@@ -291,7 +245,7 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
         )}
 
         {activeTab === 'analysis' && (
-          <div className="space-y-8 animate-fade-up">
+          <div className="space-y-8 animate-fade-in-up">
             {/* Full Analysis */}
             {selectedLayout && (
               <div className="card-premium px-8 py-6 bg-gradient-to-br from-ocean-900/40 to-navy-900/40 border-ocean-600/40 hover:shadow-lg hover:shadow-ocean-500/10 transition-all duration-300">
@@ -334,8 +288,8 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
                       key={module}
                       onClick={() => handleRunAnalysis(module)}
                       disabled={analyzing}
-                      style={{ animation: `fadeInUp 0.6s ease-out ${idx * 100}ms forwards`, opacity: 0 }}
-                      className="card-premium px-6 py-4 flex items-center justify-between hover:bg-navy-900/60 hover:border-sand-200 hover:shadow-lg hover:shadow-ocean-500/10 disabled:opacity-50 transition-all duration-200 group"
+                      style={{ animationDelay: `${idx * 100}ms` }}
+                      className="animate-fade-in-up card-premium px-6 py-4 flex items-center justify-between hover:bg-navy-900/60 hover:border-sand-200 hover:shadow-lg hover:shadow-ocean-500/10 disabled:opacity-50 transition-all duration-200 group"
                       aria-label={`${MODULE_LABELS[module]} analysieren`}
                     >
                       <span className="text-navy-900 font-medium group-hover:text-ocean-700 transition-colors">
@@ -351,7 +305,7 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
             {/* Analysis Results */}
             {selectedAnalysis && (
               <div className="space-y-8">
-                <div style={{ animation: `fadeInUp 0.6s ease-out forwards` }}>
+                <div className="animate-fade-in-up">
                   <p className="label-premium mb-4">Analyseergebnisse</p>
                   <p className="text-navy-900 font-serif text-lg mb-6">
                     {MODULE_LABELS[selectedAnalysis.module] || selectedAnalysis.module}
@@ -364,13 +318,13 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
                   </div>
                 </div>
 
-                <div style={{ animation: `fadeInUp 0.6s ease-out 100ms forwards`, opacity: 0 }} className="card-premium px-8 py-6 hover:shadow-lg hover:shadow-ocean-500/10 transition-all duration-300">
+                <div className="animate-fade-in-up card-premium px-8 py-6 hover:shadow-lg hover:shadow-ocean-500/10 transition-all duration-300" style={{ animationDelay: '100ms' }}>
                   <p className="label-premium mb-4">Teilbewertungen</p>
                   <SubScoreBars subScores={selectedAnalysis.sub_scores} />
                 </div>
 
                 {selectedAnalysis.warnings.length > 0 && (
-                  <div style={{ animation: `fadeInUp 0.6s ease-out 200ms forwards`, opacity: 0 }} className="card-premium px-8 py-6 hover:shadow-lg hover:shadow-orange-500/10 transition-all duration-300">
+                  <div className="animate-fade-in-up card-premium px-8 py-6 hover:shadow-lg hover:shadow-orange-500/10 transition-all duration-300" style={{ animationDelay: '200ms' }}>
                     <p className="label-premium mb-4">
                       Warnungen ({selectedAnalysis.warnings.length})
                     </p>
@@ -382,15 +336,15 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
 
             {/* Analysis History */}
             {analyses.length > 1 && (
-              <div className="animate-fade-up">
+              <div className="animate-fade-in-up">
                 <p className="label-premium mb-4">Analysehistorie</p>
                 <div className="space-y-2">
                   {analyses.map((a, idx) => (
                     <button
                       key={a.id}
                       onClick={() => setSelectedAnalysis(a)}
-                      style={{ animation: `fadeInUp 0.6s ease-out ${idx * 80}ms forwards`, opacity: 0 }}
-                      className={`card-premium px-6 py-4 text-left flex items-center justify-between transition-all duration-200 hover:shadow-lg hover:shadow-ocean-500/10 group ${
+                      style={{ animationDelay: `${idx * 80}ms` }}
+                      className={`animate-fade-in-up card-premium px-6 py-4 text-left flex items-center justify-between transition-all duration-200 hover:shadow-lg hover:shadow-ocean-500/10 group ${
                         selectedAnalysis?.id === a.id
                           ? 'bg-ocean-900/40 border-ocean-600/60'
                           : 'hover:bg-navy-900/60 hover:border-sand-200'
@@ -413,7 +367,7 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
         )}
 
         {activeTab === 'history' && (
-          <div className="animate-fade-up">
+          <div className="animate-fade-in-up">
             <p className="label-premium mb-4">Versionshistorie</p>
             {versions.length > 0 ? (
               <div className="space-y-3">
@@ -421,8 +375,8 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
                   <button
                     key={version.id}
                     onClick={() => handleSelectVersion(version)}
-                    style={{ animation: `fadeInUp 0.6s ease-out ${idx * 80}ms forwards`, opacity: 0 }}
-                    className="card-premium px-6 py-5 text-left hover:bg-navy-900/60 hover:border-sand-200 hover:shadow-lg hover:shadow-ocean-500/10 transition-all duration-200 group relative"
+                    style={{ animationDelay: `${idx * 80}ms` }}
+                    className="animate-fade-in-up card-premium px-6 py-5 text-left hover:bg-navy-900/60 hover:border-sand-200 hover:shadow-lg hover:shadow-ocean-500/10 transition-all duration-200 group relative"
                     aria-label={`Version ${version.version_number}`}
                   >
                     {/* Timeline indicator */}

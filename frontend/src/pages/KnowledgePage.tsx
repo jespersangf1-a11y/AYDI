@@ -10,66 +10,6 @@ import {
 import type { KnowledgeCategory, KnowledgeDetail } from '../types'
 import { MEDIA } from '../config/media'
 
-// Premium animations CSS
-const ANIMATIONS = `
-  @keyframes fadeInUp {
-    from {
-      opacity: 0;
-      transform: translateY(12px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  @keyframes slideDown {
-    from {
-      opacity: 0;
-      max-height: 0;
-      overflow: hidden;
-    }
-    to {
-      opacity: 1;
-      max-height: 500px;
-      overflow: visible;
-    }
-  }
-
-  @keyframes ocnglow {
-    0%, 100% {
-      box-shadow: 0 0 20px rgba(6, 182, 212, 0.1);
-    }
-    50% {
-      box-shadow: 0 0 30px rgba(6, 182, 212, 0.2);
-    }
-  }
-
-  @keyframes pulse-glow {
-    0%, 100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.7;
-    }
-  }
-
-  .animate-fade-up {
-    animation: fadeInUp 0.6s ease-out forwards;
-  }
-
-  .animate-slide-down {
-    animation: slideDown 0.3s ease-out forwards;
-  }
-
-  .hover-ocean-glow:hover {
-    animation: ocnglow 2s ease-in-out;
-  }
-
-  .animate-pulse-badge {
-    animation: pulse-glow 2s ease-in-out infinite;
-  }
-`
 
 export default function KnowledgePage() {
   const [categories, setCategories] = useState<KnowledgeCategory[]>([])
@@ -187,7 +127,6 @@ export default function KnowledgePage() {
 
   return (
     <div>
-      <style>{ANIMATIONS}</style>
       <HeroSection
         backgroundVideo={MEDIA.video.ocean_waves}
         backgroundImage={MEDIA.overview.blueprint}
@@ -218,7 +157,7 @@ export default function KnowledgePage() {
             )}
           </div>
           {showSearchResults && searchResults.length === 0 && !isSearching && searchQuery.length > 1 && (
-            <div className="text-center mt-8 py-12 animate-fade-up">
+            <div className="text-center mt-8 py-12 animate-fade-in-up">
               <Eye className="w-12 h-12 text-navy-600 mx-auto mb-4" />
               <p className="text-navy-700 text-sm">Keine Ergebnisse für "{searchQuery}"</p>
               <p className="text-navy-600 text-xs mt-2">Versuchen Sie andere Suchbegriffe</p>
@@ -250,7 +189,7 @@ export default function KnowledgePage() {
 
         {/* Search Results */}
         {showSearchResults && searchResults.length > 0 && (
-          <div className="animate-fade-up">
+          <div className="animate-fade-in-up">
             <p className="label-premium mb-6">
               SUCHERGEBNISSE ({searchResults.length})
             </p>
@@ -259,8 +198,8 @@ export default function KnowledgePage() {
                 <button
                   key={result.id}
                   onClick={() => setSelectedDetail(result)}
-                  style={{ animation: `fadeInUp 0.6s ease-out ${idx * 80}ms forwards`, opacity: 0 }}
-                  className="card-premium p-6 text-left hover:bg-sand-50 hover:shadow-lg hover:shadow-ocean-500/10 transition-all duration-200 group"
+                  style={{ animationDelay: `${idx * 80}ms` }}
+                  className="animate-fade-in-up card-premium p-6 text-left hover:bg-sand-50 hover:shadow-lg hover:shadow-ocean-500/10 transition-all duration-200 group"
                   aria-label={`${result.title} öffnen`}
                 >
                   <div className="flex items-start gap-3 mb-3">
@@ -291,8 +230,8 @@ export default function KnowledgePage() {
                 {/* Category Card */}
                 <button
                   onClick={() => handleCategoryClick(category.id)}
-                  style={{ animation: `fadeInUp 0.6s ease-out ${catIdx * 80}ms forwards`, opacity: 0 }}
-                  className="w-full card-premium p-6 text-left hover:bg-sand-50 hover-ocean-glow transition-all duration-200 group"
+                  style={{ animationDelay: `${catIdx * 80}ms` }}
+                  className="animate-fade-in-up w-full card-premium p-6 text-left hover:bg-sand-50 transition-all duration-200 group"
                   aria-expanded={expandedCategoryId === category.id}
                   aria-label={`${category.name} - ${expandedCategoryId === category.id ? 'Eingeklappt' : 'Ausgeklappt'}`}
                 >
@@ -309,7 +248,7 @@ export default function KnowledgePage() {
                           <span
                             className={`px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap border transition-all duration-200 ${
                               category.implementation_status === 'planned' && expandedCategoryId === category.id
-                                ? 'animate-pulse-badge'
+                                ? 'animate-pulse-glow'
                                 : ''
                             } ${getStatusColor(category.implementation_status)}`}
                           >
@@ -345,8 +284,8 @@ export default function KnowledgePage() {
                         <button
                           key={sub.id}
                           onClick={() => handleViewDetail(sub.id)}
-                          style={{ animation: `fadeInUp 0.4s ease-out ${subIdx * 60}ms forwards`, opacity: 0 }}
-                          className="w-full card-premium p-4 text-left hover:bg-sand-50 hover:translate-x-1 transition-all duration-200 border-l-2 border-ocean-500/40 hover:border-ocean-500 group"
+                          style={{ animationDelay: `${subIdx * 60}ms` }}
+                          className="animate-fade-in-up w-full card-premium p-4 text-left hover:bg-sand-50 hover:translate-x-1 transition-all duration-200 border-l-2 border-ocean-500/40 hover:border-ocean-500 group"
                           aria-label={`Öffne ${sub.name}`}
                         >
                           <h4 className="font-medium text-navy-900 mb-1 group-hover:text-ocean-600 transition-colors">

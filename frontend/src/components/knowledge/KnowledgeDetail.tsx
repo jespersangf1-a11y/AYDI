@@ -1,85 +1,6 @@
 import { AlertTriangle, AlertCircle, Info, CheckCircle, TrendingDown, Wrench, X } from 'lucide-react'
 import type { KnowledgeDetail } from '../../types'
 
-// Premium animations CSS
-const ANIMATIONS = `
-  @keyframes slideInRight {
-    from {
-      opacity: 0;
-      transform: translateX(24px);
-    }
-    to {
-      opacity: 1;
-      transform: translateX(0);
-    }
-  }
-
-  @keyframes slideOutRight {
-    from {
-      opacity: 1;
-      transform: translateX(0);
-    }
-    to {
-      opacity: 0;
-      transform: translateX(24px);
-    }
-  }
-
-  @keyframes backdropFade {
-    from {
-      opacity: 0;
-      backdrop-filter: blur(0px);
-    }
-    to {
-      opacity: 1;
-      backdrop-filter: blur(3px);
-    }
-  }
-
-  @keyframes fadeInUp {
-    from {
-      opacity: 0;
-      transform: translateY(12px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  .animate-slide-in-right {
-    animation: slideInRight 0.4s ease-out forwards;
-  }
-
-  .animate-slide-out-right {
-    animation: slideOutRight 0.3s ease-out forwards;
-  }
-
-  .animate-backdrop-fade {
-    animation: backdropFade 0.3s ease-out forwards;
-  }
-
-  .animate-fade-up {
-    animation: fadeInUp 0.6s ease-out forwards;
-  }
-
-  .prose-custom table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-
-  .prose-custom thead {
-    position: sticky;
-    top: 0;
-    background: rgba(15, 23, 42, 0.95);
-    backdrop-filter: blur(4px);
-    z-index: 10;
-  }
-
-  .prose-custom tbody tr:hover {
-    background-color: rgba(6, 182, 212, 0.05);
-  }
-`
 
 interface KnowledgeDetailProps {
   data: KnowledgeDetail
@@ -115,7 +36,11 @@ export default function KnowledgeDetailPanel({ data, onClose }: KnowledgeDetailP
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-end sm:justify-center animate-backdrop-fade">
-      <style>{ANIMATIONS}</style>
+      <style>{`
+        .prose-custom table { width: 100%; border-collapse: collapse; }
+        .prose-custom thead { position: sticky; top: 0; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(4px); z-index: 10; }
+        .prose-custom tbody tr:hover { background-color: rgba(45, 139, 168, 0.05); }
+      `}</style>
       <div className="bg-black/50" onClick={onClose} style={{ position: 'absolute', inset: 0 }} aria-hidden="true" />
       <div className="relative w-full max-w-2xl mx-4 max-h-[90vh] sm:max-h-[90vh] bg-navy-900/95 border border-sand-200 rounded-t-xl sm:rounded-xl shadow-2xl overflow-hidden flex flex-col animate-slide-in-right"
         role="dialog"
@@ -123,7 +48,7 @@ export default function KnowledgeDetailPanel({ data, onClose }: KnowledgeDetailP
         aria-labelledby="knowledge-title"
       >
         {/* Header */}
-        <div className="flex items-start justify-between p-6 sm:p-8 border-b border-navy-700/30 animate-fade-up">
+        <div className="flex items-start justify-between p-6 sm:p-8 border-b border-navy-700/30 animate-fade-in-up">
           <div className="flex-1 pr-4">
             <p className="label-premium mb-2">
               {data.category_name}
@@ -143,14 +68,14 @@ export default function KnowledgeDetailPanel({ data, onClose }: KnowledgeDetailP
         {/* Content */}
         <div className="flex-1 overflow-y-auto px-6 sm:px-8 py-6 space-y-8 prose-custom">
           {/* Description */}
-          <div style={{ animation: `fadeInUp 0.6s ease-out forwards` }}>
+          <div className="animate-fade-in-up">
             <h3 className="label-premium mb-3">ÜBERSICHT</h3>
             <p className="text-navy-600 leading-relaxed">{data.description}</p>
           </div>
 
           {/* HTML Content */}
           {data.content_html && (
-            <div style={{ animation: `fadeInUp 0.6s ease-out 100ms forwards`, opacity: 0 }} className="prose prose-invert max-w-none">
+            <div className="animate-fade-in-up prose prose-invert max-w-none" style={{ animationDelay: '100ms' }}>
               <div
                 className="text-navy-600 space-y-4"
                 dangerouslySetInnerHTML={{ __html: data.content_html }}
@@ -160,7 +85,7 @@ export default function KnowledgeDetailPanel({ data, onClose }: KnowledgeDetailP
 
           {/* Material Properties */}
           {data.material_properties && data.material_properties.length > 0 && (
-            <div style={{ animation: `fadeInUp 0.6s ease-out 200ms forwards`, opacity: 0 }}>
+            <div className="animate-fade-in-up" style={{ animationDelay: '200ms' }}>
               <h3 className="label-premium mb-4">MATERIALEIGENSCHAFTEN</h3>
               <div className="overflow-x-auto rounded-lg border border-navy-700/30">
                 <table className="w-full text-sm">
@@ -259,14 +184,14 @@ export default function KnowledgeDetailPanel({ data, onClose }: KnowledgeDetailP
 
           {/* Known Issues */}
           {data.related_issues && data.related_issues.length > 0 && (
-            <div style={{ animation: `fadeInUp 0.6s ease-out 300ms forwards`, opacity: 0 }}>
+            <div className="animate-fade-in-up" style={{ animationDelay: '300ms' }}>
               <div className="flex items-center gap-2 mb-4">
                 <AlertTriangle className="w-5 h-5 text-red-400" />
                 <h3 className="label-premium">BEKANNTE PROBLEME</h3>
               </div>
               <div className="space-y-3">
                 {data.related_issues.map((issue, idx) => (
-                  <div key={idx} style={{ animation: `fadeInUp 0.4s ease-out ${idx * 50}ms forwards`, opacity: 0 }} className={`card-premium border p-4 transition-all duration-200 hover:shadow-lg hover:shadow-black/20 ${getSeverityColor(issue.severity)}`}>
+                  <div key={idx} style={{ animationDelay: `${idx * 50}ms` }} className={`animate-fade-in-up card-premium border p-4 transition-all duration-200 hover:shadow-lg hover:shadow-black/20 ${getSeverityColor(issue.severity)}`}>
                     <div className="flex items-start gap-3 mb-2">
                       {getSeverityIcon(issue.severity)}
                       <h4 className="font-medium text-navy-900 flex-1">{issue.title}</h4>
@@ -341,7 +266,7 @@ export default function KnowledgeDetailPanel({ data, onClose }: KnowledgeDetailP
         </div>
 
         {/* Footer */}
-        <div className="px-6 sm:px-8 py-4 border-t border-navy-700/30 bg-navy-900/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-up">
+        <div className="px-6 sm:px-8 py-4 border-t border-navy-700/30 bg-navy-900/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-in-up">
           <p className="text-xs text-navy-500">
             Aktualisiert am {new Date(data.updated_at).toLocaleDateString('de-DE')}
           </p>

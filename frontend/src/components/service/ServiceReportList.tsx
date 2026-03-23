@@ -6,53 +6,6 @@ import { BOAT_CLASS_LABELS } from '../../types'
 import { MEDIA } from '../../config/media'
 import HeroSection from '../layout/HeroSection'
 
-// Premium animations CSS
-const ANIMATIONS = `
-  @keyframes fadeInUp {
-    from {
-      opacity: 0;
-      transform: translateY(12px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  @keyframes slideDown {
-    from {
-      opacity: 0;
-      max-height: 0;
-      overflow: hidden;
-    }
-    to {
-      opacity: 1;
-      max-height: 500px;
-      overflow: visible;
-    }
-  }
-
-  @keyframes borderGlow {
-    0%, 100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.5;
-    }
-  }
-
-  .animate-fade-up {
-    animation: fadeInUp 0.6s ease-out forwards;
-  }
-
-  .animate-slide-down {
-    animation: slideDown 0.3s ease-out forwards;
-  }
-
-  .animate-border-glow {
-    animation: borderGlow 2s ease-in-out infinite;
-  }
-`
 
 const SEVERITY_CONFIG: Record<
   Severity,
@@ -157,7 +110,6 @@ export default function ServiceReportList() {
 
   return (
     <div>
-      <style>{ANIMATIONS}</style>
       <HeroSection
         backgroundImage={MEDIA.structure.hull_drydock}
         title="Serviceberichte"
@@ -231,8 +183,8 @@ export default function ServiceReportList() {
                 <button
                   key={report.id}
                   onClick={() => setExpandedReportId(isExpanded ? null : report.id)}
-                  style={{ animation: `fadeInUp 0.6s ease-out ${idx * 60}ms forwards`, opacity: 0 }}
-                  className={`w-full text-left border-l-4 ${cfg.borderColor} border border-sand-200 ${cfg.bgColor} rounded-lg p-6 transition-all duration-300 hover:shadow-lg hover:shadow-sand-200/50 group`}
+                  style={{ animationDelay: `${idx * 60}ms` }}
+                  className={`animate-fade-in-up w-full text-left border-l-4 ${cfg.borderColor} border border-sand-200 ${cfg.bgColor} rounded-lg p-6 transition-all duration-300 hover:shadow-lg hover:shadow-sand-200/50 group`}
                   aria-expanded={isExpanded}
                   aria-label={`${report.description} - ${cfg.label}`}
                 >

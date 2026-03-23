@@ -150,6 +150,7 @@ export default function HeroCarousel({
       {nextSlide && renderSlide(nextSlide, isFading)}
 
       {/* === Gradient Overlays === */}
+      <div className={`absolute inset-0 ${currentSlide?.type === 'video' ? 'bg-navy-950/70' : 'bg-navy-950/50'}`} />
       <div className="absolute inset-0" style={{
         background: 'linear-gradient(180deg, rgba(6,10,20,0.3) 0%, rgba(6,10,20,0.6) 60%, rgba(6,10,20,0.85) 100%)',
       }} />
@@ -161,11 +162,8 @@ export default function HeroCarousel({
       <div className="w-full px-6 md:px-10 pb-8 pt-20 relative z-10">
         {/* Domain label */}
         {showDomainLabel && domainLabel && (
-          <div
-            className="mb-4 transition-all duration-400"
-            style={{ opacity: domainFading ? 0 : 0.9, transform: domainFading ? 'translateY(-4px)' : 'translateY(0)' }}
-          >
-            <span className="inline-block px-3 py-1 text-[10px] font-sans uppercase tracking-[0.2em] text-white border border-white/40 rounded-full backdrop-blur-sm bg-white/15">
+          <div className="mb-4">
+            <span className={`inline-block px-3 py-1 text-[10px] font-sans uppercase tracking-[0.2em] text-white border border-white/40 rounded-full backdrop-blur-sm bg-white/15 transition-opacity duration-500 ${domainFading ? 'opacity-0' : 'opacity-90'}`}>
               {domainLabel}
             </span>
           </div>
@@ -173,15 +171,15 @@ export default function HeroCarousel({
 
         {/* Label */}
         {label && (
-          <p className="label-premium mb-3" style={{ animation: 'fadeInUp 600ms ease-out forwards' }}>
+          <p className="label-premium mb-3 animate-fade-in-up">
             {label}
           </p>
         )}
 
         {/* Title */}
         <h1
-          className="font-serif text-3xl md:text-display lg:text-hero font-medium text-white mb-1 opacity-0"
-          style={{ animation: 'fadeInUp 600ms ease-out 100ms forwards' }}
+          className="font-serif text-3xl md:text-display lg:text-hero font-medium text-white mb-1 animate-fade-in-up"
+          style={{ animationDelay: '100ms' }}
         >
           {title}
         </h1>
@@ -189,8 +187,8 @@ export default function HeroCarousel({
         {/* Subtitle */}
         {subtitle && (
           <p
-            className="font-sans text-[15px] text-white max-w-2xl leading-relaxed mt-2 opacity-0"
-            style={{ animation: 'fadeInUp 600ms ease-out 200ms forwards' }}
+            className="font-sans text-[15px] text-white max-w-2xl leading-relaxed mt-2 animate-fade-in-up"
+            style={{ animationDelay: '200ms' }}
           >
             {subtitle}
           </p>
@@ -199,8 +197,8 @@ export default function HeroCarousel({
         {/* Children */}
         {children && (
           <div
-            className="mt-6 opacity-0"
-            style={{ animation: 'fadeInUp 600ms ease-out 300ms forwards' }}
+            className="mt-6 animate-fade-in-up"
+            style={{ animationDelay: '300ms' }}
           >
             {children}
           </div>
@@ -223,13 +221,6 @@ export default function HeroCarousel({
         </div>
       </div>
 
-      {/* Keyframes */}
-      <style>{`
-        @keyframes fadeInUp {
-          from { opacity: 0; transform: translateY(12px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
     </div>
   )
 }

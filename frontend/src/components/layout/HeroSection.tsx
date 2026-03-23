@@ -86,55 +86,34 @@ export default function HeroSection({
       {/* Content */}
       <div className="w-full px-6 md:px-10 pb-8 pt-16 relative z-10">
         {label && (
-          <p className="label-premium mb-3 animate-fade-in" style={{ animationDelay: '0ms' }}>
+          <p className="label-premium mb-3 animate-fade-in-up">
             {label}
           </p>
         )}
         <h1
-          className="font-serif text-display font-medium text-white mb-1 opacity-0 animate-fade-in"
-          style={{
-            animation: 'fadeInUp 600ms ease-out forwards',
-            animationDelay: '100ms',
-          }}
+          className="font-serif text-display font-medium text-white mb-1 animate-fade-in-up"
+          style={{ animationDelay: '100ms' }}
         >
           {title}
         </h1>
         {subtitle && (
           <p
-            className="font-sans text-[15px] text-navy-900 max-w-2xl leading-relaxed mt-2 opacity-0 animate-fade-in"
-            style={{
-              animation: 'fadeInUp 600ms ease-out forwards',
-              animationDelay: '200ms',
-            }}
+            className="font-sans text-[15px] text-navy-900 max-w-2xl leading-relaxed mt-2 animate-fade-in-up"
+            style={{ animationDelay: '200ms' }}
           >
             {subtitle}
           </p>
         )}
         {children && (
           <div
-            className="mt-6 opacity-0 animate-fade-in"
-            style={{
-              animation: 'fadeInUp 600ms ease-out forwards',
-              animationDelay: '300ms',
-            }}
+            className="mt-6 animate-fade-in-up backdrop-blur-sm border border-white/20"
+            style={{ animationDelay: '300ms' }}
           >
             {children}
           </div>
         )}
       </div>
 
-      <style>{`
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(12px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-      `}</style>
     </div>
   )
 }
