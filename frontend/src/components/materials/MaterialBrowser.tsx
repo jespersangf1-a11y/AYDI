@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { X } from 'lucide-react'
 import { getMaterials } from '../../services/api'
 import { MEDIA } from '../../config/media'
 import HeroSection from '../layout/HeroSection'
+import { useScrollReveal } from '../../hooks/useScrollReveal'
 
 interface Material {
   id: string
@@ -28,6 +29,9 @@ export default function MaterialBrowser() {
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState<string>('')
   const [isMobileDetailOpen, setIsMobileDetailOpen] = useState(false)
+  const [filterTransitioning, setFilterTransitioning] = useState(false)
+  const tableRef = useScrollReveal<HTMLDivElement>()
+  const filterTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     getMaterials()
@@ -43,14 +47,19 @@ export default function MaterialBrowser() {
   }, [])
 
   const handleCategoryChange = (cat: string) => {
-    setSelectedCategory(cat)
-    if (cat === '') {
-      setFiltered(materials)
-    } else {
-      setFiltered(materials.filter((m) => m.category === cat))
-    }
-    setSelectedMaterial(null)
-    setSearchTerm('')
+    setFilterTransitioning(true)
+    if (filterTimerRef.current) clearTimeout(filterTimerRef.current)
+    filterTimerRef.current = setTimeout(() => {
+      setSelectedCategory(cat)
+      if (cat === '') {
+        setFiltered(materials)
+      } else {
+        setFiltered(materials.filter((m) => m.category === cat))
+      }
+      setSelectedMaterial(null)
+      setSearchTerm('')
+      setFilterTransitioning(false)
+    }, 150)
   }
 
   const handleSearchChange = (term: string) => {
@@ -141,7 +150,7 @@ export default function MaterialBrowser() {
           )}
 
           {!loading && !error && (
-            <div className="flex flex-col lg:flex-row gap-8">
+            <div ref={tableRef} className={`flex flex-col lg:flex-row gap-8 transition-opacity ${filterTransitioning ? 'opacity-0 duration-150' : 'opacity-100 duration-300'}`}>
               {/* Table */}
               <div className="flex-1 overflow-hidden">
                 {filtered.length === 0 ? (

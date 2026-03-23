@@ -5,6 +5,7 @@ import HeroSection from '../layout/HeroSection'
 import { MEDIA } from '../../config/media'
 import type { Project } from '../../types'
 import { BOAT_CLASS_LABELS, STATUS_LABELS } from '../../types'
+import { useScrollReveal } from '../../hooks/useScrollReveal'
 
 interface DashboardProps {
   onSelectProject: (id: string) => void
@@ -21,6 +22,7 @@ export default function Dashboard({ onSelectProject }: DashboardProps) {
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const gridRef = useScrollReveal<HTMLDivElement>()
 
   useEffect(() => {
     listProjects()
@@ -88,7 +90,7 @@ export default function Dashboard({ onSelectProject }: DashboardProps) {
               <p className="text-navy-600 text-sm mt-2">Erstellen Sie Ihr erstes Yacht-Design-Projekt</p>
             </div>
           ) : (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div ref={gridRef} className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {projects.map((project, idx) => (
                 <button
                   key={project.id}
