@@ -79,7 +79,7 @@ export default function HeroSection({
       <div className="absolute inset-0 bg-gradient-premium" />
       <div className="absolute inset-0 bg-radial-gradient opacity-40"
         style={{
-          background: 'radial-gradient(circle at 50% 100%, rgba(6, 182, 212, 0.15) 0%, transparent 70%)',
+          background: 'radial-gradient(circle at 50% 100%, rgba(45, 139, 168, 0.15) 0%, transparent 70%)',
         }}
       />
 

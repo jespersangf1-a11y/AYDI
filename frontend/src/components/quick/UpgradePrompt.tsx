@@ -14,7 +14,7 @@ export default function UpgradePrompt({ upgradePrompt, onUpgrade }: UpgradePromp
   const moduleCount = upgradePrompt.additional_modules.length
 
   return (
-    <div className="bg-white border border-sand-200 rounded-xl p-6 backdrop-blur-sm">
+    <div className="card-premium p-6">
       <div className="flex items-start gap-4">
         <div className="w-10 h-10 rounded-lg bg-sand-100 flex items-center justify-center shrink-0">
           <Layers className="w-5 h-5 text-ocean-500" />
@@ -32,7 +32,7 @@ export default function UpgradePrompt({ upgradePrompt, onUpgrade }: UpgradePromp
               {upgradePrompt.additional_modules.map((mod) => (
                 <span
                   key={mod}
-                  className="px-3 py-1.5 rounded-full bg-sand-100 border border-sand-200 text-xs text-navy-700 font-medium"
+                  className="badge-sand px-3 py-1.5 rounded-full text-xs font-medium"
                 >
                   {ANALYSIS_MODULE_LABELS[mod as AnalysisModule] ?? mod}
                 </span>
