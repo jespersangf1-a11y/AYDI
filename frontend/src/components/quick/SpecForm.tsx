@@ -13,11 +13,12 @@ interface SectionProps {
   title: string
   hint?: string
   defaultOpen?: boolean
+  highlight?: boolean
   children: React.ReactNode
 }
 
 
-function Section({ title, hint, defaultOpen = false, children }: SectionProps) {
+function Section({ title, hint, defaultOpen = false, highlight = false, children }: SectionProps) {
   const [open, setOpen] = useState(defaultOpen)
 
   const handleToggle = () => {
@@ -27,7 +28,7 @@ function Section({ title, hint, defaultOpen = false, children }: SectionProps) {
   }
 
   return (
-    <div className="bg-white border border-sand-200 rounded-xl overflow-hidden shadow-sm transition-all duration-300 hover:shadow-md group">
+    <div className={`border border-sand-200 rounded-xl overflow-hidden shadow-sm transition-all duration-300 hover:shadow-md group ${highlight ? 'bg-ocean-50/50 border-l-2 border-l-ocean-300' : 'bg-white'}`}>
       <button
         type="button"
         onClick={handleToggle}
@@ -116,7 +117,7 @@ function Field({ label, name, type = 'number', unit, placeholder, value, onChang
             <button
               type="button"
               onClick={handleDecrement}
-              className="p-1 rounded text-ocean-600 hover:text-ocean-700 hover:bg-[rgba(45,139,168,0.2)] active:scale-95 transition-all duration-200 pointer-events-auto"
+              className="min-w-[36px] min-h-[36px] p-1 flex items-center justify-center rounded text-ocean-600 hover:text-ocean-700 hover:bg-[rgba(45,139,168,0.2)] active:scale-95 transition-all duration-200 pointer-events-auto"
               aria-label={`${label} verringern`}
             >
               <Minus className="w-3.5 h-3.5" />
@@ -124,7 +125,7 @@ function Field({ label, name, type = 'number', unit, placeholder, value, onChang
             <button
               type="button"
               onClick={handleIncrement}
-              className="p-1 rounded text-ocean-600 hover:text-ocean-700 hover:bg-[rgba(45,139,168,0.2)] active:scale-95 transition-all duration-200 pointer-events-auto"
+              className="min-w-[36px] min-h-[36px] p-1 flex items-center justify-center rounded text-ocean-600 hover:text-ocean-700 hover:bg-[rgba(45,139,168,0.2)] active:scale-95 transition-all duration-200 pointer-events-auto"
               aria-label={`${label} erhöhen`}
             >
               <Plus className="w-3.5 h-3.5" />
@@ -263,7 +264,7 @@ export default function SpecForm({ boatClass, loading, onSubmit, onBack }: SpecF
   return (
       <form onSubmit={handleSubmit} className="space-y-5 group" noValidate>
         {/* Abmessungen — always open, length required */}
-        <Section title="Abmessungen" defaultOpen hint="Erforderlich">
+        <Section title="Abmessungen" defaultOpen highlight hint="Erforderlich">
           <div className="group">
             <Field
               label="Länge über alles"

@@ -178,7 +178,7 @@ export default function QuickAnalysis() {
                 {idx < steps.length - 1 && (
                   <div
                     className={`hidden md:block w-12 h-px mx-2 transition-all duration-500 ${
-                      isDone ? 'bg-emerald-600/60' : isActive ? 'bg-ocean-500/50' : 'bg-sand-50'
+                      isDone ? 'bg-gradient-to-r from-ocean-500 to-emerald-500' : isActive ? 'bg-ocean-500' : 'bg-sand-200'
                     }`}
                   />
                 )}

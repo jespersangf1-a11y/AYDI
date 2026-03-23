@@ -9,17 +9,17 @@ interface FusedScoreCardProps {
 }
 
 function scoreColor(score: number): string {
-  if (score >= 80) return 'text-emerald-400'
-  if (score >= 60) return 'text-amber-400'
-  if (score >= 40) return 'text-orange-400'
-  return 'text-red-400'
+  if (score >= 80) return 'text-emerald-600'
+  if (score >= 60) return 'text-amber-600'
+  if (score >= 40) return 'text-orange-600'
+  return 'text-red-600'
 }
 
 function scoreBgColor(score: number): string {
-  if (score >= 80) return 'bg-emerald-400/10 border-emerald-400/20'
-  if (score >= 60) return 'bg-amber-400/10 border-amber-400/20'
-  if (score >= 40) return 'bg-orange-400/10 border-orange-400/20'
-  return 'bg-red-400/10 border-red-400/20'
+  if (score >= 80) return 'bg-emerald-600/10 border-emerald-600/20'
+  if (score >= 60) return 'bg-amber-600/10 border-amber-600/20'
+  if (score >= 40) return 'bg-orange-600/10 border-orange-600/20'
+  return 'bg-red-600/10 border-red-600/20'
 }
 
 export default function FusedScoreCard({
@@ -50,7 +50,7 @@ export default function FusedScoreCard({
         <div
           className={`flex items-center justify-center rounded-lg border px-6 py-6 transition-all duration-200 ${scoreBgColor(mainScore)}`}
         >
-          <span className={`font-mono text-5xl font-bold ${scoreColor(mainScore)}`}>
+          <span className={`font-mono tabular-nums text-5xl font-bold ${scoreColor(mainScore)}`}>
             {Math.round(mainScore)}
           </span>
           <span className="ml-2 text-sm text-navy-600">/100</span>
@@ -63,7 +63,7 @@ export default function FusedScoreCard({
           <div className="rounded-lg border border-navy-700/30 bg-navy-900/20 p-4 text-center transition-colors duration-200 hover:bg-white">
             <p className="label-premium mb-2">Strukturiert</p>
             <p
-              className={`font-mono text-2xl font-bold ${scoreColor(fusedScore.structured_score)}`}
+              className={`font-mono tabular-nums text-2xl font-bold ${scoreColor(fusedScore.structured_score)}`}
             >
               {Math.round(fusedScore.structured_score)}
             </p>
@@ -76,7 +76,7 @@ export default function FusedScoreCard({
           <div className="rounded-lg border border-navy-700/30 bg-navy-900/20 p-4 text-center transition-colors duration-200 hover:bg-white">
             <p className="label-premium mb-2">Visuell</p>
             <p
-              className={`font-mono text-2xl font-bold ${scoreColor(fusedScore.visual_score)}`}
+              className={`font-mono tabular-nums text-2xl font-bold ${scoreColor(fusedScore.visual_score)}`}
             >
               {Math.round(fusedScore.visual_score)}
             </p>

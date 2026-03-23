@@ -41,12 +41,12 @@ function ModuleCard({ name, result, index = 0 }: { name: string; result: QuickMo
   const scoreColor =
     result.score != null
       ? result.score >= 80
-        ? 'text-emerald-400'
+        ? 'text-emerald-600'
         : result.score >= 60
-        ? 'text-amber-400'
+        ? 'text-amber-600'
         : result.score >= 40
-        ? 'text-orange-400'
-        : 'text-red-400'
+        ? 'text-orange-600'
+        : 'text-red-600'
       : 'text-navy-500'
 
   if (!result.available) {
@@ -74,7 +74,7 @@ function ModuleCard({ name, result, index = 0 }: { name: string; result: QuickMo
       <div className="flex items-start justify-between mb-4">
         <span className="text-sm font-semibold text-navy-900">{label}</span>
         {result.score != null && (
-          <span className={`font-mono font-bold text-lg ${scoreColor}`}>
+          <span className={`font-mono tabular-nums font-bold text-lg ${scoreColor}`}>
             {Math.round(result.score)}
           </span>
         )}
@@ -86,12 +86,12 @@ function ModuleCard({ name, result, index = 0 }: { name: string; result: QuickMo
           <div
             className={`h-full rounded-full transition-all duration-1000 ease-out ${
               result.score >= 80
-                ? 'bg-emerald-400'
+                ? 'bg-emerald-600'
                 : result.score >= 60
-                ? 'bg-amber-400'
+                ? 'bg-amber-600'
                 : result.score >= 40
-                ? 'bg-orange-400'
-                : 'bg-red-400'
+                ? 'bg-orange-600'
+                : 'bg-red-600'
             }`}
             style={{
               width: `${result.score}%`,
@@ -188,40 +188,41 @@ export default function QuickResults({ result, onNewAnalysis }: QuickResultsProp
           </button>
         </div>
 
-        {/* Overall score */}
-        <div className="bg-white border border-sand-200 rounded-xl p-6 md:p-8 shadow-sm animate-fade-in-up" style={{ animationDelay: '100ms' }}>
-          <div className="flex flex-col md:flex-row md:items-center gap-6 md:gap-8">
-            <div className="flex-shrink-0">
-              <ScoreGauge score={displayedScore} label="Gesamtbewertung" size={140} />
-            </div>
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-3">
-                <span
-                  className={`text-xs px-2.5 py-1 rounded-full border ${
-                    CONFIDENCE_STYLES[overall_assessment.confidence] ?? CONFIDENCE_STYLES.benchmark
-                  }`}
-                >
-                  {CONFIDENCE_LABELS[overall_assessment.confidence] ?? overall_assessment.confidence}
-                </span>
+        {/* Overall score + Available modules in shared grid */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {/* Overall score — spans 2 columns on md+ */}
+          <div className="md:col-span-2 lg:col-span-2 bg-white border border-sand-200 rounded-xl p-6 md:p-8 shadow-sm animate-fade-in-up" style={{ animationDelay: '100ms' }}>
+            <div className="flex flex-col md:flex-row md:items-center gap-6 md:gap-8">
+              <div className="flex-shrink-0">
+                <ScoreGauge score={displayedScore} label="Gesamtbewertung" size={140} />
               </div>
-              <p className="text-navy-700 text-sm leading-relaxed">{overall_assessment.summary}</p>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-3">
+                  <span
+                    className={`text-xs px-2.5 py-1 rounded-full border ${
+                      CONFIDENCE_STYLES[overall_assessment.confidence] ?? CONFIDENCE_STYLES.benchmark
+                    }`}
+                  >
+                    {CONFIDENCE_LABELS[overall_assessment.confidence] ?? overall_assessment.confidence}
+                  </span>
+                </div>
+                <p className="text-navy-700 text-sm leading-relaxed">{overall_assessment.summary}</p>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Available modules */}
-        {availableModules.length > 0 && (
-          <div className="animate-fade-in-up" style={{ animationDelay: '200ms' }}>
-            <p className="text-xs font-semibold tracking-wider-premium uppercase text-navy-600 mb-4">
+          {/* Module section header */}
+          {availableModules.length > 0 && (
+            <p className="sm:col-span-2 lg:col-span-3 text-xs font-semibold tracking-wider-premium uppercase text-navy-600 mt-4 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
               Analysierte Module
             </p>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {availableModules.map(([name, mod], idx) => (
-                <ModuleCard key={name} name={name} result={mod} index={idx} />
-              ))}
-            </div>
-          </div>
-        )}
+          )}
+
+          {/* Available module cards */}
+          {availableModules.map(([name, mod], idx) => (
+            <ModuleCard key={name} name={name} result={mod} index={idx} />
+          ))}
+        </div>
 
         {/* Unavailable modules */}
         {unavailableModules.length > 0 && (

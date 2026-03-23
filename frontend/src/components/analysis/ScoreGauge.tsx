@@ -143,7 +143,7 @@ export default function ScoreGauge({ score, label, size = 'md' }: ScoreGaugeProp
         {/* Score number display */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <span
-            className={`font-mono font-bold ${color} ${!hasAnimated ? 'animate-fade-in-scale stagger-2' : ''}`}
+            className={`font-mono tabular-nums font-bold ${color} ${!hasAnimated ? 'animate-fade-in-scale stagger-2' : ''}`}
             style={{
               fontSize: sizeValue * 0.25,
             }}
