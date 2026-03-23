@@ -12,10 +12,10 @@ interface FullAnalysisViewProps {
 }
 
 function scoreColor(score: number): string {
-  if (score >= 80) return 'text-emerald-400'
-  if (score >= 60) return 'text-amber-400'
-  if (score >= 40) return 'text-orange-400'
-  return 'text-red-400'
+  if (score >= 80) return 'text-emerald-600'
+  if (score >= 60) return 'text-amber-600'
+  if (score >= 40) return 'text-orange-600'
+  return 'text-red-600'
 }
 
 function scoreBorderColor(score: number): string {
@@ -192,7 +192,7 @@ export default function FullAnalysisView({
   return (
     <div className="space-y-8">
       {/* Header with overall score */}
-      <div className="card-premium p-6 animate-fadeIn">
+      <div className="card-premium p-6 animate-fade-in">
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
             {result.overall_score !== null ? (
@@ -241,7 +241,7 @@ export default function FullAnalysisView({
       {/* Module cards grid */}
       {moduleEntries.length > 0 && (
         <div className="space-y-4">
-          <h3 className="label-premium animate-fadeIn">Analyseergebnisse</h3>
+          <h3 className="label-premium animate-fade-in">Analyseergebnisse</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {moduleEntries.map(([moduleName, analysisResult], index) => (
               <ModuleCardWithAnimation
@@ -263,16 +263,13 @@ export default function FullAnalysisView({
 
       {/* Skipped modules */}
       {skippedEntries.length > 0 && (
-        <div className="space-y-4 animate-fadeIn">
+        <div className="space-y-4 animate-fade-in">
           <h3 className="label-premium">Uebersprungene Module</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {skippedEntries.map(([moduleName, reason], index) => (
               <div
                 key={moduleName}
-                className="card-premium p-4 transition-all duration-300 hover:shadow-lg hover:shadow-navy-500/20 hover:-translate-y-0.5"
-                style={{
-                  animation: `slideIn 0.4s ease-out ${index * 50}ms both`,
-                }}
+                className={`card-premium p-4 transition-all duration-300 hover:shadow-lg hover:shadow-navy-500/20 hover:-translate-y-0.5 animate-slide-in-right stagger-${Math.min(index + 1, 8)}`}
               >
                 <div className="flex items-center gap-2 mb-2">
                   <SkipForward className="w-4 h-4 text-navy-500 flex-shrink-0" />
@@ -294,16 +291,13 @@ export default function FullAnalysisView({
 
       {/* Error modules */}
       {errorEntries.length > 0 && (
-        <div className="space-y-4 animate-fadeIn">
+        <div className="space-y-4 animate-fade-in">
           <h3 className="label-premium text-red-400">Fehlgeschlagene Module</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {errorEntries.map(([moduleName, errorMsg], index) => (
               <div
                 key={moduleName}
-                className="card-premium border-red-500/30 bg-red-500/5 p-4 transition-all duration-300 hover:shadow-lg hover:shadow-red-500/20 hover:-translate-y-0.5"
-                style={{
-                  animation: `slideIn 0.4s ease-out ${index * 50}ms both`,
-                }}
+                className={`card-premium border-red-500/30 bg-red-500/5 p-4 transition-all duration-300 hover:shadow-lg hover:shadow-red-500/20 hover:-translate-y-0.5 animate-slide-in-right stagger-${Math.min(index + 1, 8)}`}
               >
                 <div className="flex items-center gap-2 mb-2">
                   <XCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
@@ -318,31 +312,6 @@ export default function FullAnalysisView({
         </div>
       )}
 
-      <style>{`
-        @keyframes slideIn {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
-        }
-
-        .animate-fadeIn {
-          animation: fadeIn 0.5s ease-out;
-        }
-      `}</style>
     </div>
   )
 }

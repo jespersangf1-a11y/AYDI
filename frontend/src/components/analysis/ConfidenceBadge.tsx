@@ -82,7 +82,8 @@ export default function ConfidenceBadge({
       <span
         className={`inline-flex items-center gap-1.5 rounded-full font-medium border ${colors.bg} ${colors.text} ${textSize} ${padding} ${colors.border} transition-all duration-300 ${
           isPulsing && hasAnimated ? 'animate-pulse' : ''
-        } ${hasAnimated ? 'animate-fadeInScale' : 'opacity-0'}`}
+        } ${hasAnimated ? 'animate-fade-in-scale' : 'opacity-0'}`}
+        aria-label={`Konfidenz: ${cfg.label}`}
         onMouseEnter={() => setShowTooltip(true)}
         onMouseLeave={() => setShowTooltip(false)}
       >
@@ -91,27 +92,11 @@ export default function ConfidenceBadge({
       </span>
 
       {showTooltip && (
-        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-navy-800 text-xs rounded whitespace-nowrap z-20 border border-sand-200 shadow-lg animate-fadeInScale">
+        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-white text-navy-800 text-xs rounded whitespace-nowrap z-20 border border-sand-200 shadow-lg animate-fade-in-scale">
           {cfg.tooltip}
         </div>
       )}
 
-      <style>{`
-        @keyframes fadeInScale {
-          from {
-            opacity: 0;
-            transform: scale(0.95);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1);
-          }
-        }
-
-        .animate-fadeInScale {
-          animation: fadeInScale 0.3s ease-out;
-        }
-      `}</style>
     </div>
   )
 }

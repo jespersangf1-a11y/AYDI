@@ -24,13 +24,13 @@ export default function ScoreGauge({ score, label, size = 'md' }: ScoreGaugeProp
   const targetOffset = circumference - (score / 100) * circumference
 
   const color =
-    score >= 80 ? 'text-emerald-400' : score >= 60 ? 'text-amber-400' : score >= 40 ? 'text-orange-400' : 'text-red-400'
+    score >= 80 ? 'text-emerald-600' : score >= 60 ? 'text-amber-600' : score >= 40 ? 'text-orange-600' : 'text-red-600'
 
   // Color gradient stops
   const strokeStartColor =
-    score >= 80 ? '#4ade80' : score >= 60 ? '#fbbf24' : score >= 40 ? '#fb923c' : '#f87171'
+    score >= 80 ? '#059669' : score >= 60 ? '#d97706' : score >= 40 ? '#ea580c' : '#dc2626'
   const strokeEndColor =
-    score >= 80 ? '#86efac' : score >= 60 ? '#fcd34d' : score >= 40 ? '#fdba74' : '#fca5a5'
+    score >= 80 ? '#34d399' : score >= 60 ? '#fbbf24' : score >= 40 ? '#fb923c' : '#f87171'
 
   // Animate number count-up on mount
   useEffect(() => {
@@ -71,7 +71,7 @@ export default function ScoreGauge({ score, label, size = 'md' }: ScoreGaugeProp
   }, [hasAnimated, circumference, targetOffset])
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center" aria-label={`Gesamtbewertung: ${score} von 100`}>
       <div className="relative" style={{ width: sizeValue, height: sizeValue }}>
         <svg
           className="transform -rotate-90"
@@ -143,19 +143,17 @@ export default function ScoreGauge({ score, label, size = 'md' }: ScoreGaugeProp
         {/* Score number display */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <span
-            className={`font-mono font-bold ${color}`}
+            className={`font-mono font-bold ${color} ${!hasAnimated ? 'animate-fade-in-scale stagger-2' : ''}`}
             style={{
               fontSize: sizeValue * 0.25,
-              animation: hasAnimated ? 'none' : 'fadeIn 0.5s ease-out 0.2s both',
             }}
           >
             {animatedScore}
           </span>
           <span
-            className="text-navy-600"
+            className={`text-navy-600 ${!hasAnimated ? 'animate-fade-in-scale stagger-4' : ''}`}
             style={{
               fontSize: sizeValue * 0.08,
-              animation: hasAnimated ? 'none' : 'fadeIn 0.5s ease-out 0.4s both',
             }}
           >
             / 100
@@ -167,18 +165,6 @@ export default function ScoreGauge({ score, label, size = 'md' }: ScoreGaugeProp
         {label}
       </span>
 
-      <style>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: scale(0.8);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1);
-          }
-        }
-      `}</style>
     </div>
   )
 }

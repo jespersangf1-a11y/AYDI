@@ -74,10 +74,9 @@ function BarItem({ label, value, index }: BarItemProps) {
         onMouseLeave={() => setShowTooltip(false)}
       >
         <div
-          className={`h-full rounded-full bg-gradient-to-r ${gradientColor}`}
+          className={`h-full rounded-full bg-gradient-to-r ${gradientColor} animate-fill-bar stagger-${Math.min(index + 1, 8)}`}
           style={{
             width: `${value}%`,
-            animation: `slideIn 0.8s ease-out ${index * 80}ms both`,
           }}
         />
       </div>
@@ -97,18 +96,6 @@ export default function SubScoreBars({ subScores }: SubScoreBarsProps) {
         />
       ))}
 
-      <style>{`
-        @keyframes slideIn {
-          from {
-            width: 0;
-            opacity: 0;
-          }
-          to {
-            width: var(--target-width);
-            opacity: 1;
-          }
-        }
-      `}</style>
     </div>
   )
 }

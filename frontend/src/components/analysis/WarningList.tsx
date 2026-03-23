@@ -24,10 +24,7 @@ function WarningCard({ warning, index }: WarningCardProps) {
 
   return (
     <div
-      className={`${config.bg} border border-sand-200 ${config.leftBorder} rounded-lg backdrop-blur-sm transition-all duration-200 hover:shadow-lg hover:shadow-navy-900/20 hover:-translate-y-0.5 overflow-hidden`}
-      style={{
-        animation: `slideIn 0.4s ease-out ${index * 100}ms both`,
-      }}
+      className={`${config.bg} border border-sand-200 ${config.leftBorder} rounded-lg backdrop-blur-sm transition-all duration-200 hover:shadow-lg hover:shadow-navy-900/20 hover:-translate-y-0.5 overflow-hidden animate-slide-in-right stagger-${Math.min(index + 1, 8)}`}
     >
       <button
         onClick={() => setIsExpanded(!isExpanded)}
@@ -50,7 +47,7 @@ function WarningCard({ warning, index }: WarningCardProps) {
       </button>
 
       {isExpanded && (
-        <div className="px-4 pb-4 border-t border-navy-700/20 animate-slideDown">
+        <div className="px-4 pb-4 border-t border-navy-700/20 animate-slide-down">
           <p className="text-xs text-navy-700 leading-relaxed">{warning.suggestion}</p>
         </div>
       )}
@@ -73,40 +70,6 @@ export default function WarningList({ warnings }: WarningListProps) {
         <WarningCard key={i} warning={w} index={i} />
       ))}
 
-      <style>{`
-        @keyframes slideIn {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        @keyframes slideDown {
-          from {
-            opacity: 0;
-            max-height: 0;
-          }
-          to {
-            opacity: 1;
-            max-height: 500px;
-          }
-        }
-
-        .animate-slideDown {
-          animation: slideDown 0.2s ease-out;
-        }
-
-        .line-clamp-1 {
-          display: -webkit-box;
-          -webkit-line-clamp: 1;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
-        }
-      `}</style>
     </div>
   )
 }
