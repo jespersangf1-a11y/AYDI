@@ -120,9 +120,17 @@ export default function MaterialBrowser() {
           </div>
 
           {loading && (
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ocean-500 mx-auto mb-4" />
-              <p className="text-navy-600">Materialien werden geladen...</p>
+            <div className="space-y-2">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-4 px-6 py-4">
+                  <div className="skeleton w-1/4 h-4 rounded" />
+                  <div className="skeleton w-1/5 h-4 rounded hidden sm:block" />
+                  <div className="skeleton w-1/5 h-4 rounded hidden md:block" />
+                  <div className="skeleton w-16 h-4 rounded ml-auto" />
+                  <div className="skeleton w-12 h-4 rounded hidden sm:block" />
+                  <div className="skeleton w-12 h-4 rounded hidden lg:block" />
+                </div>
+              ))}
             </div>
           )}
 
@@ -154,23 +162,29 @@ export default function MaterialBrowser() {
                         </tr>
                       </thead>
                       <tbody>
-                        {filtered.map((m, idx) => (
+                        {filtered.map((m) => (
                           <tr
                             key={m.id}
                             onClick={() => handleSelectMaterial(m)}
-                            className={`hover:bg-[rgba(45,139,168,0.1)] hover:pl-2 transition-all duration-300 border-b border-navy-700/20 cursor-pointer ${
-                              idx % 2 === 0 ? 'bg-navy-900/20' : 'bg-transparent'
-                            } ${
+                            className={`hover:bg-[rgba(45,139,168,0.1)] hover:pl-2 transition-all duration-300 border-b border-navy-700/20 cursor-pointer even:bg-sand-50/50 focus-visible:outline-2 focus-visible:outline-ocean-400 focus-visible:outline-offset-[-2px] ${
                               selectedMaterial?.id === m.id
                                 ? 'bg-ocean-700/15 border-ocean-600/40'
                                 : ''
                             }`}
-                            role="button"
+                            role="row"
                             tabIndex={0}
                             onKeyDown={(e) => {
                               if (e.key === 'Enter' || e.key === ' ') {
                                 e.preventDefault()
                                 handleSelectMaterial(m)
+                              } else if (e.key === 'ArrowDown') {
+                                e.preventDefault()
+                                const next = (e.currentTarget as HTMLElement).nextElementSibling as HTMLElement | null
+                                next?.focus()
+                              } else if (e.key === 'ArrowUp') {
+                                e.preventDefault()
+                                const prev = (e.currentTarget as HTMLElement).previousElementSibling as HTMLElement | null
+                                prev?.focus()
                               }
                             }}
                             aria-label={`Material: ${m.name}, Kategorie: ${m.category}`}

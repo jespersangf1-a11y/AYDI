@@ -242,7 +242,7 @@ export default function KnowledgePage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-3 mb-2 flex-wrap">
-                          <h3 className="font-serif text-lg font-medium text-navy-900 group-hover:text-ocean-600 transition-colors">
+                          <h3 className="font-serif text-subtitle font-medium text-navy-800 group-hover:text-ocean-600 transition-colors">
                             {category.name}
                           </h3>
                           <span
@@ -314,7 +314,7 @@ export default function KnowledgePage() {
             <div className="flex gap-4">
               <BookOpen className="w-6 h-6 text-ocean-600 flex-shrink-0 mt-1" />
               <div>
-                <h3 className="font-medium text-navy-900 mb-2">Über diese Wissensdatenbank</h3>
+                <h3 className="font-serif text-base font-medium text-navy-900 mb-2">Über diese Wissensdatenbank</h3>
                 <p className="text-sm text-navy-700 leading-relaxed">
                   Diese Wissensdatenbank ist Ihr digitales Nachschlagewerk für alle Aspekte des Yachtdesigns.
                   Ähnlich wie Nigel Calders klassisches Bootsbesitzer-Nachschlagewerk bietet es autorisierte,

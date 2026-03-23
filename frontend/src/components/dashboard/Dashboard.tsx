@@ -31,9 +31,29 @@ export default function Dashboard({ onSelectProject }: DashboardProps) {
 
   if (loading) {
     return (
-      <div className="text-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ocean-500 mx-auto mb-4" />
-        <p className="text-navy-600">Projekte werden geladen...</p>
+      <div className="px-6 md:px-10 py-12">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="card-premium px-8 py-6 space-y-4">
+              <div className="flex items-start justify-between">
+                <div className="skeleton w-6 h-6 rounded" />
+                <div className="skeleton w-16 h-6 rounded-md" />
+              </div>
+              <div className="skeleton w-3/4 h-5 rounded" />
+              <div className="skeleton w-full h-4 rounded" />
+              <div className="border-t border-sand-200 pt-4 space-y-3">
+                <div className="flex justify-between">
+                  <div className="skeleton w-20 h-3 rounded" />
+                  <div className="skeleton w-24 h-3 rounded" />
+                </div>
+                <div className="flex justify-between">
+                  <div className="skeleton w-20 h-3 rounded" />
+                  <div className="skeleton w-24 h-3 rounded" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     )
   }
@@ -73,7 +93,9 @@ export default function Dashboard({ onSelectProject }: DashboardProps) {
                 <button
                   key={project.id}
                   onClick={() => onSelectProject(project.id)}
-                  className="card-premium group text-left px-8 py-6 animate-fade-in-up"
+                  className={`card-premium group text-left px-8 py-6 animate-fade-in-up focus-visible:ring-2 focus-visible:ring-ocean-300 ${
+                    project.status === 'archived' ? 'opacity-75 grayscale-[30%]' : ''
+                  }`}
                   style={{ animationDelay: `${idx * 100}ms` }}
                   aria-label={`Projekt ${project.name}, Status: ${STATUS_LABELS[project.status]}`}
                 >
