@@ -60,7 +60,7 @@ export default function AppShell({ currentView, onNavigate, children, breadcrumb
             </div>
             {!sidebarCollapsed && (
               <div className="animate-fade-in transition-opacity duration-200">
-                <h1 className="font-serif text-lg font-medium text-navy-900 tracking-wide-premium">
+                <h1 className="font-serif text-lg font-medium text-navy-900 tracking-[0.12em]">
                   AYDI
                 </h1>
                 <p className="text-[10px] font-sans font-medium tracking-wider-premium uppercase text-navy-600">
@@ -74,7 +74,7 @@ export default function AppShell({ currentView, onNavigate, children, breadcrumb
         {/* Collapse toggle */}
         <button
           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-          className="mx-3 mt-4 mb-2 p-2 rounded-lg text-navy-600 hover:text-ocean-600 hover:bg-sand-100 transition-colors self-end"
+          className="mx-3 mt-4 mb-2 p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-navy-600 hover:text-ocean-600 hover:bg-sand-100 transition-colors self-end"
           aria-label={sidebarCollapsed ? 'Sidebar erweitern' : 'Sidebar minimieren'}
         >
           {sidebarCollapsed ? <Menu className="w-4 h-4" /> : <X className="w-4 h-4" />}
@@ -92,7 +92,7 @@ export default function AppShell({ currentView, onNavigate, children, breadcrumb
                 aria-label={item.label}
                 aria-current={active ? 'page' : undefined}
                 title={sidebarCollapsed ? item.label : undefined}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-sans font-medium relative group transition-all duration-200 hover:scale-[1.02] ${
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-sans font-medium relative group transition-all duration-200 hover:scale-[1.02] focus-visible:bg-ocean-50 focus-visible:ring-0 focus-visible:outline-none ${
                   active
                     ? 'bg-ocean-100 text-ocean-700'
                     : 'text-navy-600 hover:text-ocean-600'
@@ -102,7 +102,7 @@ export default function AppShell({ currentView, onNavigate, children, breadcrumb
                 {active && (
                   <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-ocean-600 rounded-r-sm" />
                 )}
-                <Icon className={`w-[18px] h-[18px] flex-shrink-0 transition-colors duration-200 ${
+                <Icon className={`w-[18px] h-[18px] flex-shrink-0 transition-all duration-200 group-hover:scale-110 ${
                   active ? 'text-ocean-600' : 'group-hover:text-ocean-600'
                 }`} strokeWidth={1.5} />
                 {!sidebarCollapsed && (
@@ -127,7 +127,7 @@ export default function AppShell({ currentView, onNavigate, children, breadcrumb
       {/* Mobile Bottom Navigation Bar */}
       {isMobile && (
         <div className="fixed bottom-0 left-0 right-0 z-50">
-          <nav className="bg-white backdrop-blur-lg border-t border-sand-200 flex justify-around items-end pb-safe shadow-lg">
+          <nav className="bg-white backdrop-blur-lg border-t border-sand-200 flex justify-around items-end pb-safe shadow-lg gap-1">
             {navItems.map((item) => {
               const Icon = item.icon
               const active = currentView === item.id
@@ -137,7 +137,7 @@ export default function AppShell({ currentView, onNavigate, children, breadcrumb
                   onClick={() => onNavigate(item.id)}
                   aria-label={item.label}
                   aria-current={active ? 'page' : undefined}
-                  className={`flex flex-col items-center justify-center py-3 px-2 transition-all duration-200 ${
+                  className={`flex flex-col items-center justify-center py-3 px-2 min-w-[48px] min-h-[48px] transition-all duration-200 ${
                     active ? 'text-ocean-600' : 'text-navy-600'
                   }`}
                 >
@@ -149,6 +149,7 @@ export default function AppShell({ currentView, onNavigate, children, breadcrumb
                   }`}>
                     {item.label.split(' ')[0]}
                   </span>
+                  {active && <div className="w-1 h-1 rounded-full bg-ocean-500 mt-0.5" />}
                 </button>
               )
             })}
@@ -169,7 +170,7 @@ export default function AppShell({ currentView, onNavigate, children, breadcrumb
             </button>
             {breadcrumbs.map((crumb, index) => (
               <div key={index} className="flex items-center gap-2">
-                <ChevronRight className="w-3.5 h-3.5 text-navy-600 flex-shrink-0" strokeWidth={1.5} />
+                <ChevronRight className="w-3.5 h-3.5 text-sand-300 flex-shrink-0" strokeWidth={1.5} />
                 {crumb.onClick ? (
                   <button
                     onClick={crumb.onClick}
