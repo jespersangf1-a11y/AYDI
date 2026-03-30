@@ -1275,6 +1275,9 @@ SLUG_TO_RETRIEVAL_CONTEXT = {
     "pu_dichtstoffe_permanent_strukturell": [
         "materials", "structural", "compliance", "service_patterns"
     ],
+    "teakdeck_fugenmasse": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
     # 06_xx = Systems
     "kuehlwasserschlaeuche": ["service_patterns", "materials"],
 }
