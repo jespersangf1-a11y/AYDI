@@ -1287,6 +1287,9 @@ SLUG_TO_RETRIEVAL_CONTEXT = {
     "butylband": [
         "materials", "structural", "compliance", "service_patterns"
     ],
+    "epoxid_kleber": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
     # 06_xx = Systems
     "kuehlwasserschlaeuche": ["service_patterns", "materials"],
 }
