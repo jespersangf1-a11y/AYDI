@@ -1293,6 +1293,9 @@ SLUG_TO_RETRIEVAL_CONTEXT = {
     "acrylat_kleber": [
         "materials", "structural", "compliance", "service_patterns"
     ],
+    "sekundenkleber_marine": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
     # 06_xx = Systems
     "kuehlwasserschlaeuche": ["service_patterns", "materials"],
 }
