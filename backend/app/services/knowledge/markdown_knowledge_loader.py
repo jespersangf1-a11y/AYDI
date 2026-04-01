@@ -1278,6 +1278,9 @@ SLUG_TO_RETRIEVAL_CONTEXT = {
     "teakdeck_fugenmasse": [
         "materials", "structural", "compliance", "service_patterns"
     ],
+    "silikon_dichtstoffe": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
     # 06_xx = Systems
     "kuehlwasserschlaeuche": ["service_patterns", "materials"],
 }
