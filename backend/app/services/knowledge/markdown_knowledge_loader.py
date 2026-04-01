@@ -1281,6 +1281,9 @@ SLUG_TO_RETRIEVAL_CONTEXT = {
     "silikon_dichtstoffe": [
         "materials", "structural", "compliance", "service_patterns"
     ],
+    "polysulfid_dichtstoffe": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
     # 06_xx = Systems
     "kuehlwasserschlaeuche": ["service_patterns", "materials"],
 }
