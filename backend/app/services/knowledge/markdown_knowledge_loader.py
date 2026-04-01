@@ -1284,6 +1284,9 @@ SLUG_TO_RETRIEVAL_CONTEXT = {
     "polysulfid_dichtstoffe": [
         "materials", "structural", "compliance", "service_patterns"
     ],
+    "butylband": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
     # 06_xx = Systems
     "kuehlwasserschlaeuche": ["service_patterns", "materials"],
 }
