@@ -1299,6 +1299,9 @@ SLUG_TO_RETRIEVAL_CONTEXT = {
     "kontaktkleber": [
         "materials", "structural", "compliance", "service_patterns"
     ],
+    "primer_fuer_dichtstoffe": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
     # 06_xx = Systems
     "kuehlwasserschlaeuche": ["service_patterns", "materials"],
 }
