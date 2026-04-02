@@ -1327,6 +1327,9 @@ SLUG_TO_RETRIEVAL_CONTEXT = {
     "unterwasser_primer": [
         "materials", "structural", "compliance", "service_patterns"
     ],
+    "epoxid_barrier_coat_osmoseschutz": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
     # 06_xx = Systems
     "kuehlwasserschlaeuche": ["service_patterns", "materials"],
 }
