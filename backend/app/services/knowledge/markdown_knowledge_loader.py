@@ -1305,6 +1305,9 @@ SLUG_TO_RETRIEVAL_CONTEXT = {
     "reiniger_und_entfetter": [
         "materials", "structural", "compliance", "service_patterns"
     ],
+    "anti_seize_pasten": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
     # 06_xx = Systems
     "kuehlwasserschlaeuche": ["service_patterns", "materials"],
 }
