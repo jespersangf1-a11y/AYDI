@@ -1302,6 +1302,9 @@ SLUG_TO_RETRIEVAL_CONTEXT = {
     "primer_fuer_dichtstoffe": [
         "materials", "structural", "compliance", "service_patterns"
     ],
+    "reiniger_und_entfetter": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
     # 06_xx = Systems
     "kuehlwasserschlaeuche": ["service_patterns", "materials"],
 }
