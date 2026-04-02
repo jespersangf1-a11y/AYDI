@@ -1296,6 +1296,9 @@ SLUG_TO_RETRIEVAL_CONTEXT = {
     "sekundenkleber_marine": [
         "materials", "structural", "compliance", "service_patterns"
     ],
+    "kontaktkleber": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
     # 06_xx = Systems
     "kuehlwasserschlaeuche": ["service_patterns", "materials"],
 }
