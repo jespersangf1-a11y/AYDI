@@ -1336,6 +1336,9 @@ SLUG_TO_RETRIEVAL_CONTEXT = {
     "topside_lack_1k": [
         "materials", "production", "compliance", "service_patterns"
     ],
+    "klarlack_fuer_holz": [
+        "materials", "production", "compliance", "service_patterns"
+    ],
     # 06_xx = Systems
     "kuehlwasserschlaeuche": ["service_patterns", "materials"],
 }
