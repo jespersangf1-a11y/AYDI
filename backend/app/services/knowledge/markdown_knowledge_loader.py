@@ -1324,6 +1324,9 @@ SLUG_TO_RETRIEVAL_CONTEXT = {
     "antifouling_coppercoat_permanentsysteme": [
         "materials", "structural", "compliance", "service_patterns"
     ],
+    "unterwasser_primer": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
     # 06_xx = Systems
     "kuehlwasserschlaeuche": ["service_patterns", "materials"],
 }
