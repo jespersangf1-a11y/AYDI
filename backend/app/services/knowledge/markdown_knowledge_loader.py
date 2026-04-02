@@ -1330,6 +1330,9 @@ SLUG_TO_RETRIEVAL_CONTEXT = {
     "epoxid_barrier_coat_osmoseschutz": [
         "materials", "structural", "compliance", "service_patterns"
     ],
+    "topside_lack_2k_polyurethan": [
+        "materials", "production", "compliance", "service_patterns"
+    ],
     # 06_xx = Systems
     "kuehlwasserschlaeuche": ["service_patterns", "materials"],
 }
