@@ -1342,6 +1342,9 @@ SLUG_TO_RETRIEVAL_CONTEXT = {
     "teak_oel_und_pflege": [
         "materials", "production", "compliance", "service_patterns"
     ],
+    "gelcoat_reparaturmaterial": [
+        "materials", "production", "compliance", "service_patterns"
+    ],
     # 06_xx = Systems
     "kuehlwasserschlaeuche": ["service_patterns", "materials"],
 }
