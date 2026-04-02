@@ -1308,6 +1308,10 @@ SLUG_TO_RETRIEVAL_CONTEXT = {
     "anti_seize_pasten": [
         "materials", "structural", "compliance", "service_patterns"
     ],
+    # 03_xx = Beschichtungen & Farben
+    "antifouling_selbstpolierend": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
     # 06_xx = Systems
     "kuehlwasserschlaeuche": ["service_patterns", "materials"],
 }
