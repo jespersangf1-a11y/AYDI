@@ -1315,6 +1315,9 @@ SLUG_TO_RETRIEVAL_CONTEXT = {
     "antifouling_hart": [
         "materials", "structural", "compliance", "service_patterns"
     ],
+    "antifouling_kupferfrei": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
     # 06_xx = Systems
     "kuehlwasserschlaeuche": ["service_patterns", "materials"],
 }
