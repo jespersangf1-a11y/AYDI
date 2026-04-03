@@ -1351,6 +1351,9 @@ SLUG_TO_RETRIEVAL_CONTEXT = {
     "edelstahl_pflegemittel_und_passivierung": [
         "materials", "production", "compliance", "service_patterns"
     ],
+    "aluminium_beschichtungssysteme": [
+        "materials", "production", "compliance", "service_patterns"
+    ],
     # 06_xx = Systems
     "kuehlwasserschlaeuche": ["service_patterns", "materials"],
 }
