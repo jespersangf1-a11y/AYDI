@@ -1354,6 +1354,9 @@ SLUG_TO_RETRIEVAL_CONTEXT = {
     "aluminium_beschichtungssysteme": [
         "materials", "production", "compliance", "service_patterns"
     ],
+    "bilgenfarbe": [
+        "materials", "production", "service_patterns"
+    ],
     # 06_xx = Systems
     "kuehlwasserschlaeuche": ["service_patterns", "materials"],
 }
