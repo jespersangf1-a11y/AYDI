@@ -1370,6 +1370,9 @@ SLUG_TO_RETRIEVAL_CONTEXT = {
     "fuellstoffe_fuer_harze": [
         "materials", "structural", "production", "service_patterns"
     ],
+    "e_glas_gewebe_und_gelege": [
+        "materials", "structural", "production", "service_patterns"
+    ],
     # 06_xx = Systems
     "kuehlwasserschlaeuche": ["service_patterns", "materials"],
 }
