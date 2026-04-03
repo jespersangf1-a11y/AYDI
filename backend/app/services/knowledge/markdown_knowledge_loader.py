@@ -1357,6 +1357,10 @@ SLUG_TO_RETRIEVAL_CONTEXT = {
     "bilgenfarbe": [
         "materials", "production", "service_patterns"
     ],
+    # 04_xx = Harze/Fasern/Verbundwerkstoffe
+    "polyester_harz": [
+        "materials", "structural", "production"
+    ],
     # 06_xx = Systems
     "kuehlwasserschlaeuche": ["service_patterns", "materials"],
 }
