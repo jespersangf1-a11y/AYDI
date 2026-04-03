@@ -1373,6 +1373,9 @@ SLUG_TO_RETRIEVAL_CONTEXT = {
     "e_glas_gewebe_und_gelege": [
         "materials", "structural", "production", "service_patterns"
     ],
+    "s_glas": [
+        "materials", "structural", "production", "service_patterns"
+    ],
     # 06_xx = Systems
     "kuehlwasserschlaeuche": ["service_patterns", "materials"],
 }
