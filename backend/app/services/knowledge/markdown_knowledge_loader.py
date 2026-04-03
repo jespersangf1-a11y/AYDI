@@ -1361,6 +1361,9 @@ SLUG_TO_RETRIEVAL_CONTEXT = {
     "polyester_harz": [
         "materials", "structural", "production"
     ],
+    "vinylester_harz": [
+        "materials", "structural", "production", "service_patterns"
+    ],
     # 06_xx = Systems
     "kuehlwasserschlaeuche": ["service_patterns", "materials"],
 }
