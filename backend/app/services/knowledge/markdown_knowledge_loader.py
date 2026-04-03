@@ -1345,6 +1345,9 @@ SLUG_TO_RETRIEVAL_CONTEXT = {
     "gelcoat_reparaturmaterial": [
         "materials", "production", "compliance", "service_patterns"
     ],
+    "fairing_compounds_spachtel": [
+        "materials", "production", "compliance", "service_patterns"
+    ],
     # 06_xx = Systems
     "kuehlwasserschlaeuche": ["service_patterns", "materials"],
 }
