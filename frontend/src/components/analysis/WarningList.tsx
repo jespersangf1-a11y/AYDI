@@ -24,11 +24,13 @@ function WarningCard({ warning, index }: WarningCardProps) {
 
   return (
     <div
-      className={`${config.bg} border border-sand-200 ${config.leftBorder} rounded-lg backdrop-blur-sm transition-all duration-200 hover:shadow-lg hover:shadow-navy-900/20 hover:-translate-y-0.5 overflow-hidden animate-slide-in-right stagger-${Math.min(index + 1, 8)}`}
+      className={`${config.bg} border border-sand-200 ${config.leftBorder} rounded-lg backdrop-blur-sm transition-all duration-200 hover:shadow-lg hover:shadow-navy-900/20 hover:-translate-y-0.5 overflow-hidden animate-slide-in-right`}
+      style={{ animationDelay: `${Math.min(index, 7) * 60}ms` }}
     >
       <button
         onClick={() => setIsExpanded(!isExpanded)}
         className="w-full p-4 text-left"
+        aria-expanded={isExpanded}
       >
         <div className="flex items-start gap-3">
           <Icon className={`w-4 h-4 mt-0.5 flex-shrink-0 ${config.text}`} />
@@ -67,7 +69,7 @@ export default function WarningList({ warnings }: WarningListProps) {
   return (
     <div className="space-y-3">
       {warnings.map((w, i) => (
-        <WarningCard key={i} warning={w} index={i} />
+        <WarningCard key={`${w.severity}-${w.code ?? ''}-${w.message.slice(0, 30)}-${i}`} warning={w} index={i} />
       ))}
 
     </div>

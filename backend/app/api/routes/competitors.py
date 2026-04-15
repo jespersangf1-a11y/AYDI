@@ -5,8 +5,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.permissions import get_current_user
 from app.db.database import get_db
-from app.models.models import BrandReferenceModel, CompetitorModel
+from app.models.models import BrandReferenceModel, CompetitorModel, User
 from app.schemas.competitors import (
     BrandReferenceCreate,
     BrandReferenceResponse,
@@ -40,6 +41,7 @@ async def list_competitors(
 async def create_competitor(
     data: CompetitorCreate,
     db: AsyncSession = Depends(get_db),
+    _user: User = Depends(get_current_user),
 ):
     competitor = CompetitorModel(**data.model_dump())
     db.add(competitor)
@@ -109,6 +111,7 @@ async def update_competitor(
     competitor_id: UUID,
     data: CompetitorUpdate,
     db: AsyncSession = Depends(get_db),
+    _user: User = Depends(get_current_user),
 ):
     result = await db.execute(
         select(CompetitorModel).where(CompetitorModel.id == competitor_id)
@@ -129,6 +132,7 @@ async def update_competitor(
 async def delete_competitor(
     competitor_id: UUID,
     db: AsyncSession = Depends(get_db),
+    _user: User = Depends(get_current_user),
 ):
     result = await db.execute(
         select(CompetitorModel).where(CompetitorModel.id == competitor_id)
@@ -164,6 +168,7 @@ async def list_brand_references(
 async def create_brand_reference(
     data: BrandReferenceCreate,
     db: AsyncSession = Depends(get_db),
+    _user: User = Depends(get_current_user),
 ):
     ref = BrandReferenceModel(**data.model_dump())
     db.add(ref)
@@ -190,6 +195,7 @@ async def get_brand_reference(
 async def delete_brand_reference(
     ref_id: UUID,
     db: AsyncSession = Depends(get_db),
+    _user: User = Depends(get_current_user),
 ):
     result = await db.execute(
         select(BrandReferenceModel).where(BrandReferenceModel.id == ref_id)

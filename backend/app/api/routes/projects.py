@@ -4,8 +4,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.permissions import get_current_user
 from app.db.database import get_db
-from app.models.models import Project
+from app.models.models import Project, User
 from app.schemas.schemas import ProjectCreate, ProjectResponse, ProjectStatus, ProjectUpdate
 
 router = APIRouter(prefix="/projects", tags=["projects"])
@@ -27,6 +28,7 @@ async def list_projects(
 @router.post("", response_model=ProjectResponse, status_code=201)
 async def create_project(
     data: ProjectCreate,
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     project = Project(**data.model_dump())
@@ -52,6 +54,7 @@ async def get_project(
 async def update_project(
     project_id: UUID,
     data: ProjectUpdate,
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(select(Project).where(Project.id == project_id))
@@ -73,6 +76,7 @@ async def update_project(
 @router.delete("/{project_id}", status_code=204)
 async def delete_project(
     project_id: UUID,
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(select(Project).where(Project.id == project_id))

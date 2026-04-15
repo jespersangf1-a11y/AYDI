@@ -36,7 +36,7 @@ type CameraPreset = 'top' | 'side' | 'front' | 'perspective'
 
 /** Compute the bounding box center of all zone polygons (in Three.js units). */
 function computeSceneCenter(allZones: ZoneData[]): THREE.Vector3 {
-  const pts = allZones.flatMap((z) => z.polygon)
+  const pts = allZones.flatMap((z) => (Array.isArray(z.polygon) ? z.polygon : []))
   if (pts.length === 0) return new THREE.Vector3(0, 0, 0)
   const minX = Math.min(...pts.map((p) => p[0]))
   const maxX = Math.max(...pts.map((p) => p[0]))
@@ -51,7 +51,7 @@ function computeSceneCenter(allZones: ZoneData[]): THREE.Vector3 {
 
 /** Compute camera distance based on scene extent. */
 function computeCameraDistance(allZones: ZoneData[]): number {
-  const pts = allZones.flatMap((z) => z.polygon)
+  const pts = allZones.flatMap((z) => (Array.isArray(z.polygon) ? z.polygon : []))
   if (pts.length === 0) return 15
   const minX = Math.min(...pts.map((p) => p[0]))
   const maxX = Math.max(...pts.map((p) => p[0]))

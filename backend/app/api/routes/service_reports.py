@@ -5,8 +5,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.permissions import get_current_user
 from app.db.database import get_db
-from app.models.models import ServiceReport
+from app.models.models import ServiceReport, User
 from app.schemas.service import ServiceReportCreate, ServiceReportResponse, ServiceReportUpdate
 
 router = APIRouter(tags=["service-reports"])
@@ -36,6 +37,7 @@ async def list_service_reports(
 @router.post("/service-reports", response_model=ServiceReportResponse, status_code=201)
 async def create_service_report(
     data: ServiceReportCreate,
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     report = ServiceReport(**data.model_dump())
@@ -61,6 +63,7 @@ async def get_service_report(
 async def update_service_report(
     report_id: UUID,
     data: ServiceReportUpdate,
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(select(ServiceReport).where(ServiceReport.id == report_id))
@@ -79,6 +82,7 @@ async def update_service_report(
 @router.delete("/service-reports/{report_id}", status_code=204)
 async def delete_service_report(
     report_id: UUID,
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(select(ServiceReport).where(ServiceReport.id == report_id))

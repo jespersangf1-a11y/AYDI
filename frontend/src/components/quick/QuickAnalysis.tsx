@@ -194,7 +194,8 @@ export default function QuickAnalysis() {
               <button
                 key={bc}
                 onClick={() => handleSelectClass(bc)}
-                className={`text-left card-premium p-6 group overflow-hidden animate-fade-in-up stagger-${idx + 1}`}
+                className="text-left card-premium p-6 group overflow-hidden animate-fade-in-up"
+                style={{ animationDelay: `${idx * 80}ms` }}
                 aria-label={`${BOAT_CLASS_LABELS[bc]}: ${BOAT_CLASS_DESCRIPTIONS[bc] || ''}`}
               >
                 <h3 className="font-serif text-lg font-medium text-navy-900 mb-1.5 group-hover:text-ocean-600 transition-colors duration-200">

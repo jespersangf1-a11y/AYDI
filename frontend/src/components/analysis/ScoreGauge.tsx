@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useId } from 'react'
 
 interface ScoreGaugeProps {
   score: number
@@ -13,6 +13,7 @@ const SIZE_MAP: Record<'sm' | 'md' | 'lg', number> = {
 }
 
 export default function ScoreGauge({ score, label, size = 'md' }: ScoreGaugeProps) {
+  const uniqueId = useId()
   const sizeValue = typeof size === 'string' ? SIZE_MAP[size] : size
   const [animatedScore, setAnimatedScore] = useState(0)
   const [hasAnimated, setHasAnimated] = useState(false)
@@ -81,11 +82,11 @@ export default function ScoreGauge({ score, label, size = 'md' }: ScoreGaugeProp
           aria-label={`${label}: ${Math.round(score)} von 100 Punkten`}
         >
           <defs>
-            <linearGradient id={`gradient-${label}`} x1="0%" y1="0%" x2="100%" y2="100%">
+            <linearGradient id={`gradient-${uniqueId}`} x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor={strokeStartColor} />
               <stop offset="100%" stopColor={strokeEndColor} />
             </linearGradient>
-            <filter id={`glow-${label}`} x="-50%" y="-50%" width="200%" height="200%">
+            <filter id={`glow-${uniqueId}`} x="-50%" y="-50%" width="200%" height="200%">
               <feGaussianBlur stdDeviation="2" result="coloredBlur" />
               <feMerge>
                 <feMergeNode in="coloredBlur" />
@@ -106,7 +107,7 @@ export default function ScoreGauge({ score, label, size = 'md' }: ScoreGaugeProp
             strokeDashoffset={offset ?? circumference}
             strokeLinecap="round"
             opacity="0.2"
-            filter={`url(#glow-${label})`}
+            filter={`url(#glow-${uniqueId})`}
             style={{
               transition: `stroke-dashoffset 1s ease-out`,
             }}
@@ -129,7 +130,7 @@ export default function ScoreGauge({ score, label, size = 'md' }: ScoreGaugeProp
             cy={sizeValue / 2}
             r={radius}
             fill="none"
-            stroke={`url(#gradient-${label})`}
+            stroke={`url(#gradient-${uniqueId})`}
             strokeWidth={3}
             strokeDasharray={circumference}
             strokeDashoffset={offset ?? circumference}

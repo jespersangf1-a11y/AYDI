@@ -1,6 +1,6 @@
 import { AlertTriangle, CheckCircle, Clock, SkipForward, XCircle } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
-import type { FullAnalysisResult, AnalysisModule } from '../../types'
+import type { FullAnalysisResult, AnalysisModule, AnalysisResult } from '../../types'
 import { ANALYSIS_MODULE_LABELS } from '../../types'
 import ConfidenceBadge from './ConfidenceBadge'
 import ScoreGauge from './ScoreGauge'
@@ -97,7 +97,7 @@ function ModuleCardWithAnimation({
   index,
 }: {
   moduleName: string
-  analysisResult: any
+  analysisResult: AnalysisResult
   onModuleClick?: (module: string) => void
   index: number
 }) {
@@ -133,7 +133,7 @@ function ModuleCardWithAnimation({
     'calculated'
   const warningCount = analysisResult.warnings?.length ?? 0
   const criticalCount =
-    analysisResult.warnings?.filter((w: any) => w.severity === 'critical').length ?? 0
+    analysisResult.warnings?.filter((w) => w.severity === 'critical').length ?? 0
 
   return (
     <button
@@ -225,7 +225,7 @@ export default function FullAnalysisView({
             {result.skipped_count > 0 && (
               <div className="flex items-center gap-2 text-navy-600">
                 <SkipForward className="w-4 h-4 text-navy-500 flex-shrink-0" />
-                <span>{result.skipped_count} uebersprungen</span>
+                <span>{result.skipped_count} übersprungen</span>
               </div>
             )}
             {result.error_count > 0 && (
@@ -264,12 +264,13 @@ export default function FullAnalysisView({
       {/* Skipped modules */}
       {skippedEntries.length > 0 && (
         <div className="space-y-4 animate-fade-in">
-          <h3 className="label-premium">Uebersprungene Module</h3>
+          <h3 className="label-premium">Übersprungene Module</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {skippedEntries.map(([moduleName, reason], index) => (
               <div
                 key={moduleName}
-                className={`card-premium p-4 transition-all duration-300 hover:shadow-lg hover:shadow-navy-500/20 hover:-translate-y-0.5 animate-slide-in-right stagger-${Math.min(index + 1, 8)}`}
+                className="card-premium p-4 transition-all duration-300 hover:shadow-lg hover:shadow-navy-500/20 hover:-translate-y-0.5 animate-slide-in-right"
+                style={{ animationDelay: `${Math.min(index, 7) * 80}ms` }}
               >
                 <div className="flex items-center gap-2 mb-2">
                   <SkipForward className="w-4 h-4 text-navy-500 flex-shrink-0" />
@@ -297,7 +298,8 @@ export default function FullAnalysisView({
             {errorEntries.map(([moduleName, errorMsg], index) => (
               <div
                 key={moduleName}
-                className={`card-premium border-red-500/30 bg-red-500/5 p-4 transition-all duration-300 hover:shadow-lg hover:shadow-red-500/20 hover:-translate-y-0.5 animate-slide-in-right stagger-${Math.min(index + 1, 8)}`}
+                className="card-premium border-red-500/30 bg-red-500/5 p-4 transition-all duration-300 hover:shadow-lg hover:shadow-red-500/20 hover:-translate-y-0.5 animate-slide-in-right"
+                style={{ animationDelay: `${Math.min(index, 7) * 80}ms` }}
               >
                 <div className="flex items-center gap-2 mb-2">
                   <XCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
@@ -305,7 +307,9 @@ export default function FullAnalysisView({
                     {getModuleLabel(moduleName)}
                   </h4>
                 </div>
-                <p className="text-xs text-red-400">{errorMsg}</p>
+                <p className="text-xs text-red-400">
+                  {typeof errorMsg === 'string' ? errorMsg : (errorMsg as any)?.error ?? 'Unbekannter Fehler'}
+                </p>
               </div>
             ))}
           </div>

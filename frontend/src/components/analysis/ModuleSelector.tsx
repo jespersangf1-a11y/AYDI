@@ -7,9 +7,6 @@ interface ModuleSelectorProps {
   availableModules?: AnalysisModule[]
 }
 
-// Modules that can be run without additional data
-const ALWAYS_AVAILABLE: AnalysisModule[] = ['ergonomics', 'volume_storage']
-
 // Modules that require extra inputs
 const REQUIRES_EXTRA: Partial<Record<AnalysisModule, string>> = {
   materials: 'Materialdaten benötigt',
@@ -41,13 +38,18 @@ export default function ModuleSelector({
   const allModules = Object.keys(ANALYSIS_MODULE_LABELS) as AnalysisModule[]
 
   const isAvailable = (mod: AnalysisModule): boolean => {
+    // When availableModules is explicitly provided, respect it
     if (availableModules) return availableModules.includes(mod)
-    return ALWAYS_AVAILABLE.includes(mod) || !REQUIRES_EXTRA[mod]
+    // Otherwise ALL modules are available — the backend handles
+    // graceful degradation when optional data is missing
+    return true
   }
 
   const getDisabledReason = (mod: AnalysisModule): string | undefined => {
     if (availableModules && !availableModules.includes(mod)) return 'Nicht verfügbar'
-    return REQUIRES_EXTRA[mod]
+    // Show hints for modules that benefit from extra data, but don't disable them
+    if (REQUIRES_EXTRA[mod]) return undefined
+    return undefined
   }
 
   return (
@@ -97,6 +99,11 @@ export default function ModuleSelector({
                   }`}
                 >
                   {MODULE_DESCRIPTIONS[mod]}
+                </p>
+              )}
+              {available && REQUIRES_EXTRA[mod] && !isSelected && (
+                <p className="text-[10px] text-navy-500 mt-1.5 italic">
+                  Hinweis: {REQUIRES_EXTRA[mod]}
                 </p>
               )}
             </button>

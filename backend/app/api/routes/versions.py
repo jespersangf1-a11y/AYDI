@@ -5,8 +5,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.permissions import get_current_user
 from app.db.database import get_db
-from app.models.models import Layout, LayoutVersion
+from app.models.models import Layout, LayoutVersion, User
 from app.schemas.versions import LayoutVersionCreate, LayoutVersionResponse
 from app.services.diff.layout_diff import compute_layout_diff
 
@@ -57,6 +58,7 @@ async def create_version(
     layout_id: UUID,
     data: LayoutVersionCreate,
     db: AsyncSession = Depends(get_db),
+    _user: User = Depends(get_current_user),
 ):
     await _get_layout_or_404(project_id, layout_id, db)
 

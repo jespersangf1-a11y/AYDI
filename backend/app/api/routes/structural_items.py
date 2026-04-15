@@ -5,8 +5,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.permissions import get_current_user
 from app.db.database import get_db
-from app.models.models import Layout, StructuralItem
+from app.models.models import Layout, StructuralItem, User
 from app.schemas.structural import (
     StructuralItemCreate,
     StructuralItemResponse,
@@ -49,6 +50,7 @@ async def create_structural_item(
     layout_id: UUID,
     data: StructuralItemCreate,
     db: AsyncSession = Depends(get_db),
+    _user: User = Depends(get_current_user),
 ):
     result = await db.execute(
         select(Layout).where(Layout.id == layout_id, Layout.project_id == project_id)
@@ -101,6 +103,7 @@ async def update_structural_item(
     item_id: UUID,
     data: StructuralItemUpdate,
     db: AsyncSession = Depends(get_db),
+    _user: User = Depends(get_current_user),
 ):
     result = await db.execute(
         select(Layout).where(Layout.id == layout_id, Layout.project_id == project_id)
@@ -135,6 +138,7 @@ async def delete_structural_item(
     layout_id: UUID,
     item_id: UUID,
     db: AsyncSession = Depends(get_db),
+    _user: User = Depends(get_current_user),
 ):
     result = await db.execute(
         select(Layout).where(Layout.id == layout_id, Layout.project_id == project_id)

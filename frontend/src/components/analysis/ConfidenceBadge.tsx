@@ -32,12 +32,12 @@ const CONFIDENCE_CONFIG: Record<string, { label: string; color: string; icon: ty
   insufficient: { label: 'Nicht auswertbar', color: 'gray', icon: XCircle, tooltip: 'Nicht genug Daten für eine zuverlässige Analyse.' },
   visual_insufficient: { label: 'Nicht auswertbar', color: 'gray', icon: XCircle, tooltip: 'Nicht genug visuellen Daten verfügbar.' },
   // Other
-  estimated: { label: 'Geschaetzt', color: 'gray', icon: HelpCircle, tooltip: 'Wert wurde geschaetzt.' },
+  estimated: { label: 'Geschätzt', color: 'gray', icon: HelpCircle, tooltip: 'Wert wurde geschätzt.' },
   benchmark: { label: 'Benchmark', color: 'gray', icon: BarChart, tooltip: 'Wert basiert auf Benchmark-Daten.' },
   documented: { label: 'Dokumentiert', color: 'blue', icon: FileText, tooltip: 'Wert aus Dokumentation.' },
   discrepant: { label: 'Abweichung', color: 'orange', icon: AlertOctagon, tooltip: 'Widerspruch in den Daten erkannt.' },
   'measured+visual': { label: 'Gemessen + Visuell', color: 'green', icon: CheckCircle, tooltip: 'Kombiniert Messung und visuelle Analyse.' },
-  visual_only: { label: 'Nur visuell', color: 'amber', icon: Eye, tooltip: 'Ausschliesslich visuelle Bewertung.' },
+  visual_only: { label: 'Nur visuell', color: 'amber', icon: Eye, tooltip: 'Ausschließlich visuelle Bewertung.' },
 }
 
 const COLOR_CLASSES: Record<string, { bg: string; text: string; border: string }> = {

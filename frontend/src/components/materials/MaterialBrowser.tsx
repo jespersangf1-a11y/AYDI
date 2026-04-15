@@ -36,7 +36,7 @@ export default function MaterialBrowser() {
   useEffect(() => {
     getMaterials()
       .then((data) => {
-        const mats = data as Material[]
+        const mats = data as unknown as Material[]
         setMaterials(mats)
         setFiltered(mats)
         const cats = Array.from(new Set(mats.map((m) => m.category))).sort()

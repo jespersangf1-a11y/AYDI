@@ -153,6 +153,14 @@ export default function DiffViewer({ diff }: DiffViewerProps) {
             </div>
           ))}
 
+          {diff.zones.added.length === 0 &&
+            diff.zones.removed.length === 0 &&
+            diff.zones.modified.length === 0 && (
+              <div className="card-premium bg-navy-900/20 p-4 text-center">
+                <p className="text-xs text-navy-500">Keine Änderungen an Zonen</p>
+              </div>
+            )}
+
           {diff.zones.unchanged.length > 0 && (
             <div className="card-premium bg-navy-900/20 p-4">
               <p className="text-xs text-navy-500">

@@ -5,11 +5,13 @@ from typing import Optional
 import jwt
 from passlib.context import CryptContext
 
-# Use HS256 for simplicity
-SECRET_KEY = "aydi-secret-key-change-in-production"  # TODO: move to env
+from app.core.config import settings
+
+# Read secrets from settings (environment variable or .env file)
+SECRET_KEY = settings.SECRET_KEY
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60
-REFRESH_TOKEN_EXPIRE_DAYS = 7
+ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
+REFRESH_TOKEN_EXPIRE_DAYS = settings.REFRESH_TOKEN_EXPIRE_DAYS
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 

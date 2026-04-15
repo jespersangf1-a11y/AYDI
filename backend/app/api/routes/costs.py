@@ -5,8 +5,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.permissions import get_current_user
 from app.db.database import get_db
-from app.models.models import CostItem, Layout
+from app.models.models import CostItem, Layout, User
 from app.schemas.costs import CostItemCreate, CostItemResponse, CostItemUpdate
 
 router = APIRouter(prefix="/projects/{project_id}", tags=["costs"])
@@ -57,6 +58,7 @@ async def create_cost_item(
     project_id: UUID,
     layout_id: UUID,
     data: CostItemCreate,
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Create a new cost item for a layout."""
@@ -143,6 +145,7 @@ async def update_cost_item(
     layout_id: UUID,
     cost_item_id: UUID,
     data: CostItemUpdate,
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Partially update a cost item."""
@@ -174,6 +177,7 @@ async def delete_cost_item(
     project_id: UUID,
     layout_id: UUID,
     cost_item_id: UUID,
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Delete a cost item."""

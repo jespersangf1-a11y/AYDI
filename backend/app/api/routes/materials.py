@@ -5,8 +5,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.permissions import get_current_user
 from app.db.database import get_db
-from app.models.models import Layout, Material, ZoneMaterial
+from app.models.models import Layout, Material, User, ZoneMaterial
 from app.schemas.materials import (
     MaterialCreate,
     MaterialResponse,
@@ -39,6 +40,7 @@ async def list_materials(
 @router.post("/materials", response_model=MaterialResponse, status_code=201)
 async def create_material(
     data: MaterialCreate,
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     material = Material(**data.model_dump())
@@ -64,6 +66,7 @@ async def get_material(
 async def update_material(
     material_id: UUID,
     data: MaterialUpdate,
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(select(Material).where(Material.id == material_id))
@@ -82,6 +85,7 @@ async def update_material(
 @router.delete("/materials/{material_id}", status_code=204)
 async def delete_material(
     material_id: UUID,
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(select(Material).where(Material.id == material_id))
@@ -125,6 +129,7 @@ async def assign_zone_material(
     project_id: UUID,
     layout_id: UUID,
     data: ZoneMaterialCreate,
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
@@ -162,6 +167,7 @@ async def delete_zone_material(
     project_id: UUID,
     layout_id: UUID,
     zone_material_id: UUID,
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(

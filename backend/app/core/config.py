@@ -12,6 +12,9 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "INFO"
     MAX_IMAGE_SIZE_MB: int = 20
     UPLOAD_DIR: str = "uploads"
+    SECRET_KEY: str = "aydi-secret-key-change-in-production"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
     model_config = SettingsConfigDict(env_file=".env")
 

@@ -57,13 +57,22 @@ export default function CostOverview({ projectId, layoutId }: CostOverviewProps)
   const [summary, setSummary] = useState<CostSummary | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isEmpty, setIsEmpty] = useState(false)
   const [activeTab, setActiveTab] = useState<'category' | 'zone'>('category')
 
   useEffect(() => {
     setLoading(true)
+    setError(null)
+    setIsEmpty(false)
     getCostSummary(projectId, layoutId)
       .then(setSummary)
-      .catch((e) => setError(e.message))
+      .catch((e: Error & { status?: number }) => {
+        if (e.status === 404) {
+          setIsEmpty(true)
+        } else {
+          setError(e.message)
+        }
+      })
       .finally(() => setLoading(false))
   }, [projectId, layoutId])
 
@@ -84,7 +93,19 @@ export default function CostOverview({ projectId, layoutId }: CostOverviewProps)
     )
   }
 
-  if (!summary) return null
+  if (isEmpty || !summary) {
+    return (
+      <div className="card-premium p-8 text-center space-y-3">
+        <div className="w-12 h-12 rounded-full bg-navy-800/30 flex items-center justify-center mx-auto">
+          <span className="text-2xl">💰</span>
+        </div>
+        <p className="text-navy-600 text-sm font-medium">Noch keine Kostendaten vorhanden</p>
+        <p className="text-navy-500 text-xs max-w-sm mx-auto">
+          Kostendaten werden nach einer Vollanalyse oder manueller Kosteneingabe hier angezeigt.
+        </p>
+      </div>
+    )
+  }
 
   const categoryEntries = Object.entries(summary.breakdown_by_category).sort(
     ([, a], [, b]) => b - a

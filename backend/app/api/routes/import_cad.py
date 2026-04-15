@@ -11,8 +11,9 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.permissions import get_current_user
 from app.db.database import get_db
-from app.models.models import Project
+from app.models.models import Project, User
 from app.schemas.schemas import CadImportResponse
 from app.services.cad_import.step_parser import parse_step, parse_iges
 
@@ -56,6 +57,7 @@ async def import_step_file(
     project_id: UUID,
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
+    _user: User = Depends(get_current_user),
 ):
     """Import a STEP file and return parsed zones/passages for review.
 
@@ -91,6 +93,7 @@ async def import_iges_file(
     project_id: UUID,
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
+    _user: User = Depends(get_current_user),
 ):
     """Import an IGES file and return parsed zones/passages for review.
 

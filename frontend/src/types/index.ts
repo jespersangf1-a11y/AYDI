@@ -1,4 +1,17 @@
-export type BoatClass = 'small_sail' | 'cruising_sail' | 'large_motor' | 'superyacht'
+export type BoatClass =
+  | 'small_sail'
+  | 'cruising_sail'
+  | 'racing_sail'
+  | 'daysailer'
+  | 'motorsailer'
+  | 'catamaran_sail'
+  | 'catamaran_motor'
+  | 'small_motor'
+  | 'large_motor'
+  | 'sport_cruiser'
+  | 'trawler'
+  | 'explorer'
+  | 'superyacht'
 export type ProjectStatus = 'draft' | 'active' | 'review' | 'archived'
 
 export interface ZoneData {
@@ -495,7 +508,16 @@ export interface FusedScore {
 export const BOAT_CLASS_LABELS: Record<BoatClass, string> = {
   small_sail: 'Kleine Segelyacht',
   cruising_sail: 'Fahrtensegler',
+  racing_sail: 'Regattayacht',
+  daysailer: 'Daysailer',
+  motorsailer: 'Motorsailer',
+  catamaran_sail: 'Segel-Katamaran',
+  catamaran_motor: 'Motor-Katamaran',
+  small_motor: 'Kleine Motoryacht',
   large_motor: 'Große Motoryacht',
+  sport_cruiser: 'Sport Cruiser',
+  trawler: 'Trawler',
+  explorer: 'Explorer',
   superyacht: 'Superyacht',
 }
 
@@ -510,7 +532,7 @@ export const STATUS_LABELS: Record<ProjectStatus, string> = {
 export interface FullAnalysisResult {
   modules: Record<string, AnalysisResult>
   skipped: Record<string, string>
-  errors: Record<string, string>
+  errors: Record<string, string | { error: string; type: string }>
   overall_score: number | null
   overall_confidence: string
   module_count: number
@@ -540,7 +562,7 @@ export const CONFIDENCE_LABELS: Record<DetailedConfidence, string> = {
   visual_medium: 'Visuell (mittel)',
   visual_low: 'Visuell (niedrig)',
   visual_insufficient: 'Nicht auswertbar',
-  estimated: 'Geschaetzt',
+  estimated: 'Geschätzt',
   benchmark: 'Benchmark',
   documented: 'Dokumentiert',
   discrepant: 'Abweichung',
