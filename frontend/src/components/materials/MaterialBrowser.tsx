@@ -154,7 +154,7 @@ export default function MaterialBrowser() {
               {/* Table */}
               <div className="flex-1 overflow-hidden">
                 {filtered.length === 0 ? (
-                  <div className="card-premium px-8 md:px-10 py-12 text-center text-navy-600">
+                  <div className="card-premium px-8 md:px-10 py-12 text-center text-navy-600 animate-fade-in">
                     Keine Materialien gefunden
                   </div>
                 ) : (

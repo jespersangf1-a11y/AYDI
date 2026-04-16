@@ -6,8 +6,9 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.permissions import get_current_user
 from app.db.database import get_db
-from app.models.models import AnalysisResult, Layout, Project
+from app.models.models import AnalysisResult, Layout, Project, User
 from app.schemas.schemas import (
     AnalysisRequest,
     AnalysisResponse,
@@ -50,8 +51,10 @@ ANALYSIS_MODULES = {
 }
 
 
-async def _get_project(project_id: UUID, db: AsyncSession) -> Project:
-    result = await db.execute(select(Project).where(Project.id == project_id))
+async def _get_project(project_id: UUID, user: User, db: AsyncSession) -> Project:
+    result = await db.execute(
+        select(Project).where(Project.id == project_id, Project.user_id == user.id)
+    )
     project = result.scalar_one_or_none()
     if not project:
         raise HTTPException(status_code=404, detail="Projekt nicht gefunden")
@@ -61,9 +64,10 @@ async def _get_project(project_id: UUID, db: AsyncSession) -> Project:
 @router.get("/layouts", response_model=list[LayoutResponse])
 async def list_layouts(
     project_id: UUID,
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    await _get_project(project_id, db)
+    await _get_project(project_id, _user, db)
     result = await db.execute(
         select(Layout).where(Layout.project_id == project_id).order_by(Layout.created_at.desc())
     )
@@ -74,9 +78,10 @@ async def list_layouts(
 async def create_layout(
     project_id: UUID,
     data: LayoutCreate,
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    await _get_project(project_id, db)
+    await _get_project(project_id, _user, db)
     layout = Layout(
         project_id=project_id,
         name=data.name,
@@ -96,9 +101,10 @@ async def create_layout(
 async def get_layout(
     project_id: UUID,
     layout_id: UUID,
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    await _get_project(project_id, db)
+    await _get_project(project_id, _user, db)
     result = await db.execute(
         select(Layout).where(Layout.id == layout_id, Layout.project_id == project_id)
     )
@@ -115,9 +121,10 @@ async def import_dxf(
     name: str = Form(...),
     version: str = Form("v1.0"),
     layer_map: str | None = Form(None),
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    await _get_project(project_id, db)
+    await _get_project(project_id, _user, db)
 
     content = await file.read()
     if not file.filename or not file.filename.lower().endswith(".dxf"):
@@ -133,7 +140,8 @@ async def import_dxf(
     try:
         result = parse_dxf(content, layer_map=custom_layer_map)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.warning("DXF parse validation error: %s", e)
+        raise HTTPException(status_code=400, detail="Ungültige DXF-Datei. Bitte Format und Layer prüfen.")
 
     return result
 
@@ -281,9 +289,10 @@ async def _load_structural_items(layout_id: UUID, db: AsyncSession) -> list[dict
 async def run_analysis(
     project_id: UUID,
     data: AnalysisRequest,
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    project = await _get_project(project_id, db)
+    project = await _get_project(project_id, _user, db)
 
     if data.module not in ANALYSIS_MODULES:
         raise HTTPException(
@@ -344,9 +353,10 @@ async def run_analysis(
 async def list_analyses(
     project_id: UUID,
     module: str | None = None,
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    await _get_project(project_id, db)
+    await _get_project(project_id, _user, db)
     query = select(AnalysisResult).where(AnalysisResult.project_id == project_id)
     if module:
         query = query.where(AnalysisResult.module == module)
@@ -359,12 +369,13 @@ async def list_analyses(
 async def run_full_analysis_endpoint(
     project_id: UUID,
     data: FullAnalysisRequest,
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Run all applicable analysis modules on a layout."""
     from app.services.analysis.orchestrator import run_full_analysis, AnalysisContext
 
-    project = await _get_project(project_id, db)
+    project = await _get_project(project_id, _user, db)
 
     result = await db.execute(
         select(Layout).where(

@@ -12,6 +12,7 @@ import re
 from pathlib import Path
 
 from app.core.config import settings
+from app.core.retry import retry_async, get_circuit_breaker, NonRetryableError
 
 logger = logging.getLogger(__name__)
 
@@ -146,34 +147,75 @@ class VisualAnalyzer:
         model = self.MODEL_DETAILED if analysis_depth == "detailed" else self.MODEL
         max_tokens = self.MAX_TOKENS_DETAILED if analysis_depth == "detailed" else self.MAX_TOKENS
 
-        # Call Claude vision API
-        try:
-            response = self.client.messages.create(
-                model=model,
-                max_tokens=max_tokens,
-                messages=[
-                    {
-                        "role": "user",
-                        "content": [
-                            {
-                                "type": "image",
-                                "source": {
-                                    "type": "base64",
-                                    "media_type": media_type,
-                                    "data": image_data,
-                                },
-                            },
-                            {
-                                "type": "text",
-                                "text": prompt,
-                            },
-                        ],
-                    }
-                ],
+        # Call Claude vision API with retry + circuit breaker
+        breaker = get_circuit_breaker(
+            "anthropic_vision_api", failure_threshold=5, recovery_timeout=60.0
+        )
+        if breaker.is_open:
+            logger.warning("Circuit breaker OPEN for Anthropic Vision API — skipping call")
+            return self._error_result(
+                image_path, image_type,
+                "API vorübergehend nicht verfügbar (Circuit Breaker offen). Bitte später erneut versuchen.",
             )
-        except Exception:
-            logger.exception("Claude API call failed for %s", image_path)
-            return self._error_result(image_path, image_type, "API-Aufruf fehlgeschlagen")
+
+        async def _call_claude_api():
+            """Wrapper for the synchronous Anthropic SDK call."""
+            try:
+                return self.client.messages.create(
+                    model=model,
+                    max_tokens=max_tokens,
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": [
+                                {
+                                    "type": "image",
+                                    "source": {
+                                        "type": "base64",
+                                        "media_type": media_type,
+                                        "data": image_data,
+                                    },
+                                },
+                                {
+                                    "type": "text",
+                                    "text": prompt,
+                                },
+                            ],
+                        }
+                    ],
+                )
+            except Exception as e:
+                # Map known non-retryable errors
+                error_str = str(e).lower()
+                if "invalid_api_key" in error_str or "authentication" in error_str:
+                    raise NonRetryableError(f"Authentication error: {e}") from e
+                if "invalid_request" in error_str or "400" in error_str:
+                    raise NonRetryableError(f"Invalid request: {e}") from e
+                # All other errors are retryable (rate limits, timeouts, 500s)
+                raise
+
+        retry_result = await retry_async(
+            _call_claude_api,
+            max_retries=3,
+            base_delay=1.0,
+            max_delay=15.0,
+            timeout=60.0,
+            context=f"vision_api:{image_type}:{Path(image_path).name}",
+        )
+
+        if not retry_result.success:
+            breaker.record_failure()
+            error_msg = f"API-Aufruf fehlgeschlagen nach {retry_result.attempts} Versuchen"
+            if retry_result.error:
+                error_msg += f": {str(retry_result.error)[:200]}"
+            logger.error(
+                "Claude API call failed for %s after %d attempts (%.0fms): %s",
+                image_path, retry_result.attempts, retry_result.total_time_ms, retry_result.error,
+            )
+            return self._error_result(image_path, image_type, error_msg)
+
+        breaker.record_success()
+        response = retry_result.value
 
         # Extract text from response
         response_text = ""

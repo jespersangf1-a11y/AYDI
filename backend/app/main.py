@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import auth, benchmarks, collaborate, community, competitors, costs, images, import_cad, knowledge, layouts, materials, projects, quick_analysis, reports, service_reports, structural_items, versions
 from app.core.config import settings
+from app.core.middleware import register_middleware
 from app.db.database import engine
 from app.models.models import Base
 
@@ -29,18 +30,23 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="AYDI",
     description="AI Yacht Design Intelligence",
-    version="0.1.0",
+    version="0.2.0",
     lifespan=lifespan,
 )
 
+# CORS middleware (must be outermost for preflight handling)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type"],
+    allow_headers=["Authorization", "Content-Type", "Accept-Language"],
 )
 
+# Register AYDI middleware: timing, error handling, rate limiting, locale
+register_middleware(app)
+
+# --- Routes ---
 app.include_router(auth.router, prefix="/api/v1")
 app.include_router(projects.router, prefix="/api/v1")
 app.include_router(layouts.router, prefix="/api/v1")

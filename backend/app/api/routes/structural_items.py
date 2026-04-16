@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.permissions import get_current_user
 from app.db.database import get_db
-from app.models.models import Layout, StructuralItem, User
+from app.models.models import Layout, Project, StructuralItem, User
 from app.schemas.structural import (
     StructuralItemCreate,
     StructuralItemResponse,
@@ -15,6 +15,19 @@ from app.schemas.structural import (
 )
 
 router = APIRouter(prefix="/projects/{project_id}", tags=["structural"])
+
+
+async def _verify_project_ownership(
+    project_id: UUID,
+    user: User,
+    db: AsyncSession,
+) -> None:
+    """Verify the project exists and belongs to the given user."""
+    result = await db.execute(
+        select(Project).where(Project.id == project_id, Project.user_id == user.id)
+    )
+    if not result.scalar_one_or_none():
+        raise HTTPException(status_code=404, detail="Projekt nicht gefunden")
 
 
 @router.get(
@@ -25,8 +38,10 @@ async def list_structural_items(
     project_id: UUID,
     layout_id: UUID,
     item_type: str | None = None,
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    await _verify_project_ownership(project_id, _user, db)
     result = await db.execute(
         select(Layout).where(Layout.id == layout_id, Layout.project_id == project_id)
     )
@@ -52,6 +67,7 @@ async def create_structural_item(
     db: AsyncSession = Depends(get_db),
     _user: User = Depends(get_current_user),
 ):
+    await _verify_project_ownership(project_id, _user, db)
     result = await db.execute(
         select(Layout).where(Layout.id == layout_id, Layout.project_id == project_id)
     )
@@ -73,8 +89,10 @@ async def get_structural_item(
     project_id: UUID,
     layout_id: UUID,
     item_id: UUID,
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    await _verify_project_ownership(project_id, _user, db)
     result = await db.execute(
         select(Layout).where(Layout.id == layout_id, Layout.project_id == project_id)
     )
@@ -105,6 +123,7 @@ async def update_structural_item(
     db: AsyncSession = Depends(get_db),
     _user: User = Depends(get_current_user),
 ):
+    await _verify_project_ownership(project_id, _user, db)
     result = await db.execute(
         select(Layout).where(Layout.id == layout_id, Layout.project_id == project_id)
     )
@@ -140,6 +159,7 @@ async def delete_structural_item(
     db: AsyncSession = Depends(get_db),
     _user: User = Depends(get_current_user),
 ):
+    await _verify_project_ownership(project_id, _user, db)
     result = await db.execute(
         select(Layout).where(Layout.id == layout_id, Layout.project_id == project_id)
     )

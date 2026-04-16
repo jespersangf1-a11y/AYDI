@@ -17,7 +17,10 @@ Endpoints:
 
 import logging
 from typing import Optional
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
+
+from app.core.permissions import get_current_user
+from app.models.models import User
 
 from app.services.knowledge.KNOWLEDGE_INDEX import KNOWLEDGE_INDEX
 from app.services.knowledge.knowledge_retrieval import (
@@ -65,7 +68,7 @@ router = APIRouter(
 # ============================================================================
 
 @router.get("/categories", response_model=KnowledgeIndexResponse, status_code=200)
-async def get_knowledge_categories():
+async def get_knowledge_categories(_user: User = Depends(get_current_user)):
     """
     Get the KNOWLEDGE_INDEX overview with all 21 categories and their status.
 
@@ -126,6 +129,7 @@ async def get_materials_knowledge(
         None,
         description="Core material for sandwich construction (e.g., pvc_foam, balsa, airex)",
     ),
+    _user: User = Depends(get_current_user),
 ):
     """
     Get material-specific knowledge for a given composition.
@@ -211,7 +215,7 @@ async def get_materials_knowledge(
         )
 
     except Exception as e:
-        logger.error(f"Error retrieving materials knowledge: {str(e)}")
+        logger.error("Error retrieving materials knowledge: %s", e)
         raise HTTPException(
             status_code=500,
             detail="Failed to retrieve materials knowledge",
@@ -227,7 +231,7 @@ async def get_materials_knowledge(
     response_model=ManufacturerResponse,
     status_code=200,
 )
-async def get_manufacturer_profile(name: str):
+async def get_manufacturer_profile(name: str, _user: User = Depends(get_current_user)):
     """
     Get manufacturer profile from the knowledge databases.
 
@@ -278,7 +282,7 @@ async def get_manufacturer_profile(name: str):
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error retrieving manufacturer knowledge: {str(e)}")
+        logger.error("Error retrieving manufacturer knowledge: %s", e)
         raise HTTPException(
             status_code=500,
             detail="Failed to retrieve manufacturer knowledge",
@@ -297,6 +301,7 @@ async def get_manufacturer_profile(name: str):
 async def get_degradation_knowledge(
     hull_material: Optional[str] = Query(None, description="Hull material (e.g., grp, carbon)"),
     core_material: Optional[str] = Query(None, description="Core material (e.g., balsa, pvc_foam)"),
+    _user: User = Depends(get_current_user),
 ):
     """
     Get degradation patterns, cycles, and material lifespans.
@@ -375,7 +380,7 @@ async def get_degradation_knowledge(
         )
 
     except Exception as e:
-        logger.error(f"Error retrieving degradation knowledge: {str(e)}")
+        logger.error("Error retrieving degradation knowledge: %s", e)
         raise HTTPException(
             status_code=500,
             detail="Failed to retrieve degradation knowledge",
@@ -406,6 +411,7 @@ async def get_compliance_standards(
         None,
         description="Operating waters: inland, coastal, offshore",
     ),
+    _user: User = Depends(get_current_user),
 ):
     """
     Get applicable compliance standards and safety requirements.
@@ -474,7 +480,7 @@ async def get_compliance_standards(
         )
 
     except Exception as e:
-        logger.error(f"Error retrieving compliance knowledge: {str(e)}")
+        logger.error("Error retrieving compliance knowledge: %s", e)
         raise HTTPException(
             status_code=500,
             detail="Failed to retrieve compliance knowledge",
@@ -495,6 +501,7 @@ async def get_systems_knowledge(
         None,
         description="System type: engine, electrical, sanitary, rigging, steering, cooling, fuel",
     ),
+    _user: User = Depends(get_current_user),
 ):
     """
     Get system-specific knowledge for maintenance and troubleshooting.
@@ -651,7 +658,7 @@ async def get_systems_knowledge(
         )
 
     except Exception as e:
-        logger.error(f"Error retrieving systems knowledge: {str(e)}")
+        logger.error("Error retrieving systems knowledge: %s", e)
         raise HTTPException(
             status_code=500,
             detail="Failed to retrieve systems knowledge",
@@ -669,6 +676,7 @@ async def get_systems_knowledge(
 )
 async def search_knowledge(
     q: str = Query(..., min_length=2, max_length=200, description="Search query"),
+    _user: User = Depends(get_current_user),
 ):
     """
     Full-text search across all knowledge databases.
@@ -740,7 +748,7 @@ async def search_knowledge(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error searching knowledge: {str(e)}")
+        logger.error("Error searching knowledge: %s", e)
         raise HTTPException(
             status_code=500,
             detail="Failed to search knowledge databases",

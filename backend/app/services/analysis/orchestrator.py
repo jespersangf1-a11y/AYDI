@@ -1,8 +1,29 @@
-"""Full analysis orchestrator -- runs all applicable modules in dependency order."""
+"""Full analysis orchestrator -- runs all applicable modules in dependency order.
+
+Integrates:
+- 10 analysis domains (hull, rigging, propulsion, etc.)
+- Subscription tier gating (free/pro/enterprise)
+- Domain coverage tracking
+- Partial failure handling
+"""
 import asyncio
 import logging
 from datetime import datetime, timezone
 from dataclasses import dataclass, field
+
+from app.core.domains import (
+    AnalysisDomain,
+    get_domain_coverage_report,
+    get_domain_for_zone_type,
+    get_domains_for_module,
+)
+from app.core.subscription import SubscriptionTier, get_allowed_modules
+from app.core.validation import (
+    validate_boat_class,
+    validate_zones,
+    validate_passages,
+    DataValidationError,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +47,8 @@ class AnalysisContext:
     brand_references: list[dict] = field(default_factory=list)
     competitors: list[dict] = field(default_factory=list)
     community_patterns: list[dict] = field(default_factory=list)
+    # Subscription tier for gating (defaults to "pro" for backward compat)
+    tier: str = "pro"
     # Results from previous tiers (populated during execution)
     module_results: dict[str, dict] = field(default_factory=dict)
 
@@ -96,20 +119,49 @@ async def run_full_analysis(
             Defaults to 0.7.
 
     Returns:
-        Dict with per-module results, overall score, and metadata.
+        Dict with per-module results, overall score, domain coverage, and metadata.
     """
     if module_runners is None:
         module_runners = _get_module_runners()
 
+    # Centralized input validation at orchestrator boundary
+    # Validation is advisory — warnings are logged and attached but do NOT block execution.
+    # Individual modules handle unknown classes with their own fallback logic.
+    validation_warnings: list[str] = []
+    try:
+        validate_boat_class(context.boat_class)
+    except DataValidationError as e:
+        validation_warnings.append(str(e))
+        logger.warning("Boat class validation warning: %s (proceeding with fallback)", e)
+    try:
+        validate_zones(context.zones)
+    except DataValidationError as e:
+        validation_warnings.append(str(e))
+        logger.warning("Zone validation warning: %s", e)
+    try:
+        validate_passages(context.passages)
+    except DataValidationError as e:
+        validation_warnings.append(str(e))
+        logger.warning("Passage validation warning: %s", e)
+
+    # Determine allowed modules based on subscription tier
+    allowed_modules = set(get_allowed_modules(context.tier))
+
     results: dict[str, dict] = {}
     skipped: dict[str, str] = {}
     errors: dict[str, str] = {}
+    tier_gated: dict[str, str] = {}
 
     for tier_idx, tier_modules in enumerate(EXECUTION_TIERS):
         tasks: list = []
         module_names: list[str] = []
 
         for module_name in tier_modules:
+            # Subscription tier gating (server-side)
+            if module_name not in allowed_modules:
+                tier_gated[module_name] = f"Requires upgrade (current: {context.tier})"
+                continue
+
             runner = module_runners.get(module_name)
             if runner is None:
                 skipped[module_name] = "Modul nicht gefunden"
@@ -129,6 +181,10 @@ async def run_full_analysis(
                 elif isinstance(result, dict) and result.get("available") is False:
                     skipped[name] = result.get("reason", "Nicht verfuegbar")
                 elif isinstance(result, dict):
+                    # Tag result with contributing domains
+                    result["domains"] = [
+                        d.value for d in get_domains_for_module(name)
+                    ]
                     results[name] = result
                     # Store in context so later tiers can reference earlier results
                     context.module_results[name] = result
@@ -136,17 +192,32 @@ async def run_full_analysis(
     # Compute overall weighted score
     overall = _compute_overall_score(results, context.boat_class, confidence_threshold)
 
-    return {
+    # Compute domain coverage
+    available_zones = {
+        z.get("zone_type", z.get("type", "")): True
+        for z in context.zones
+        if z.get("zone_type") or z.get("type")
+    }
+    domain_coverage = get_domain_coverage_report(available_zones)
+
+    output = {
         "modules": results,
         "skipped": skipped,
         "errors": errors,
+        "tier_gated": tier_gated,
         "overall_score": overall["score"],
         "overall_confidence": overall["confidence"],
+        "domain_coverage": domain_coverage,
         "module_count": len(results),
         "skipped_count": len(skipped),
         "error_count": len(errors),
+        "tier_gated_count": len(tier_gated),
+        "tier": context.tier,
         "executed_at": datetime.now(timezone.utc).isoformat(),
     }
+    if validation_warnings:
+        output["validation_warnings"] = validation_warnings
+    return output
 
 
 def _build_module_kwargs(name: str, context: AnalysisContext) -> dict:

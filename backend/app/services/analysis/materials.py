@@ -947,7 +947,7 @@ def run_materials_analysis(
     Returns a standardized result dict matching the AYDI analysis module contract.
     """
     if boat_class not in BOAT_CLASS_DEFAULTS:
-        raise ValueError(f"Unknown boat class: {boat_class}")
+        return {"available": False, "reason": f"Unbekannte Bootsklasse: {boat_class}"}
 
     config = BOAT_CLASS_DEFAULTS[boat_class].copy()
     weights = config.pop("weights").copy()

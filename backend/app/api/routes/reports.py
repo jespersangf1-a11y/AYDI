@@ -5,16 +5,19 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.permissions import get_current_user
 from app.db.database import get_db
-from app.models.models import AnalysisResult, Layout, Project, Report
+from app.models.models import AnalysisResult, Layout, Project, Report, User
 from app.schemas.schemas import ReportRequest, ReportResponse
 from app.services.reports.pdf_generator import generate_report
 
 router = APIRouter(prefix="/projects/{project_id}", tags=["reports"])
 
 
-async def _get_project(project_id: UUID, db: AsyncSession) -> Project:
-    result = await db.execute(select(Project).where(Project.id == project_id))
+async def _get_project(project_id: UUID, user: User, db: AsyncSession) -> Project:
+    result = await db.execute(
+        select(Project).where(Project.id == project_id, Project.user_id == user.id)
+    )
     project = result.scalar_one_or_none()
     if not project:
         raise HTTPException(status_code=404, detail="Projekt nicht gefunden")
@@ -25,6 +28,7 @@ async def _get_project(project_id: UUID, db: AsyncSession) -> Project:
 async def create_report(
     project_id: UUID,
     data: ReportRequest,
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> Report:
     """
@@ -32,7 +36,7 @@ async def create_report(
 
     report_type: "full" | "summary" | "executive"
     """
-    project = await _get_project(project_id, db)
+    project = await _get_project(project_id, _user, db)
 
     # Verify layout belongs to this project
     layout_result = await db.execute(
@@ -113,10 +117,11 @@ async def create_report(
 @router.get("/reports", response_model=list[ReportResponse])
 async def list_reports(
     project_id: UUID,
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> list[Report]:
     """List all generated reports for a project, most recent first."""
-    await _get_project(project_id, db)
+    await _get_project(project_id, _user, db)
     result = await db.execute(
         select(Report)
         .where(Report.project_id == project_id)
@@ -129,10 +134,11 @@ async def list_reports(
 async def get_report(
     project_id: UUID,
     report_id: UUID,
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> Report:
     """Get a specific report by ID."""
-    await _get_project(project_id, db)
+    await _get_project(project_id, _user, db)
     result = await db.execute(
         select(Report).where(Report.id == report_id, Report.project_id == project_id)
     )

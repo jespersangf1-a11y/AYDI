@@ -19,6 +19,7 @@ class Project(Base):
     __tablename__ = "projects"
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     boat_class: Mapped[str] = mapped_column(String(20), nullable=False)
@@ -327,8 +328,11 @@ class User(Base):
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     full_name: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[str] = mapped_column(String(20), nullable=False, default="user")  # admin, user, viewer
+    tier: Mapped[str] = mapped_column(String(20), nullable=False, default="free")  # free, pro, enterprise
     shipyard_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    locale: Mapped[str] = mapped_column(String(5), nullable=False, default="de")  # de, en, es, fr
+    unit_system: Mapped[str] = mapped_column(String(10), nullable=False, default="metric")  # metric, imperial
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, onupdate=_utcnow)
 

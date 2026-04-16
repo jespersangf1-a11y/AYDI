@@ -1,13 +1,14 @@
 # backend/app/api/routes/materials.py
+import logging
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.permissions import get_current_user
 from app.db.database import get_db
-from app.models.models import Layout, Material, User, ZoneMaterial
+from app.models.models import Layout, Material, Project, User, ZoneMaterial
 from app.schemas.materials import (
     MaterialCreate,
     MaterialResponse,
@@ -16,7 +17,22 @@ from app.schemas.materials import (
     ZoneMaterialResponse,
 )
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(tags=["materials"])
+
+
+async def _verify_project_ownership(
+    project_id: UUID,
+    user: User,
+    db: AsyncSession,
+) -> None:
+    """Verify the project exists and belongs to the given user."""
+    result = await db.execute(
+        select(Project).where(Project.id == project_id, Project.user_id == user.id)
+    )
+    if not result.scalar_one_or_none():
+        raise HTTPException(status_code=404, detail="Projekt nicht gefunden")
 
 
 # --- Global material database ---
@@ -26,6 +42,9 @@ router = APIRouter(tags=["materials"])
 async def list_materials(
     category: str | None = None,
     subcategory: str | None = None,
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     query = select(Material).order_by(Material.name)
@@ -33,6 +52,7 @@ async def list_materials(
         query = query.where(Material.category == category)
     if subcategory:
         query = query.where(Material.subcategory == subcategory)
+    query = query.limit(limit).offset(offset)
     result = await db.execute(query)
     return result.scalars().all()
 
@@ -47,12 +67,14 @@ async def create_material(
     db.add(material)
     await db.commit()
     await db.refresh(material)
+    logger.info("User %s created material %s", _user.id, material.id)
     return material
 
 
 @router.get("/materials/{material_id}", response_model=MaterialResponse)
 async def get_material(
     material_id: UUID,
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(select(Material).where(Material.id == material_id))
@@ -74,11 +96,13 @@ async def update_material(
     if not material:
         raise HTTPException(status_code=404, detail="Material nicht gefunden")
 
-    for field, value in data.model_dump(exclude_unset=True).items():
+    update_data = data.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
         setattr(material, field, value)
 
     await db.commit()
     await db.refresh(material)
+    logger.info("User %s updated material %s (fields: %s)", _user.id, material_id, list(update_data.keys()))
     return material
 
 
@@ -94,6 +118,7 @@ async def delete_material(
         raise HTTPException(status_code=404, detail="Material nicht gefunden")
     await db.delete(material)
     await db.commit()
+    logger.info("User %s deleted material %s", _user.id, material_id)
 
 
 # --- Zone material assignments (per layout) ---
@@ -106,8 +131,10 @@ async def delete_material(
 async def list_zone_materials(
     project_id: UUID,
     layout_id: UUID,
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    await _verify_project_ownership(project_id, _user, db)
     result = await db.execute(
         select(Layout).where(Layout.id == layout_id, Layout.project_id == project_id)
     )
@@ -132,6 +159,7 @@ async def assign_zone_material(
     _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    await _verify_project_ownership(project_id, _user, db)
     result = await db.execute(
         select(Layout).where(Layout.id == layout_id, Layout.project_id == project_id)
     )
@@ -156,6 +184,7 @@ async def assign_zone_material(
     db.add(zone_mat)
     await db.commit()
     await db.refresh(zone_mat)
+    logger.info("User %s assigned material to zone %s (zone_material_id: %s)", _user.id, data.zone_name, zone_mat.id)
     return zone_mat
 
 
@@ -170,6 +199,7 @@ async def delete_zone_material(
     _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    await _verify_project_ownership(project_id, _user, db)
     result = await db.execute(
         select(Layout).where(Layout.id == layout_id, Layout.project_id == project_id)
     )
@@ -187,3 +217,4 @@ async def delete_zone_material(
         raise HTTPException(status_code=404, detail="Materialzuweisung nicht gefunden")
     await db.delete(zone_mat)
     await db.commit()
+    logger.info("User %s deleted zone material assignment %s", _user.id, zone_material_id)

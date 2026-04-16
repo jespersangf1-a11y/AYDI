@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import os
@@ -9,8 +10,9 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.permissions import get_current_user
 from app.db.database import get_db
-from app.models.models import ImageUpload, Project, QuickAnalysisResult
+from app.models.models import ImageUpload, Project, QuickAnalysisResult, User
 from app.schemas.images import (
     BatchAnalysisRequest,
     BatchAnalysisResponse,
@@ -74,7 +76,7 @@ async def _save_file(file: UploadFile) -> tuple[str, str, int]:
     _ensure_upload_dir()
     unique_name = f"{uuid_mod.uuid4()}.{file_type}"
     dest = UPLOAD_DIR / unique_name
-    dest.write_bytes(content)
+    await asyncio.to_thread(dest.write_bytes, content)
 
     return str(dest), file_type, file_size
 
@@ -134,8 +136,10 @@ def _try_visual_analysis(
         return None
 
 
-async def _get_project(project_id: UUID, db: AsyncSession) -> Project:
-    result = await db.execute(select(Project).where(Project.id == project_id))
+async def _get_project(project_id: UUID, user: User, db: AsyncSession) -> Project:
+    result = await db.execute(
+        select(Project).where(Project.id == project_id, Project.user_id == user.id)
+    )
     project = result.scalar_one_or_none()
     if not project:
         raise HTTPException(status_code=404, detail="Projekt nicht gefunden")
@@ -155,6 +159,7 @@ async def analyze_image_standalone(
     zone_type: str | None = Form(None),
     analysis_depth: str = Form("standard"),
     tags: str | None = Form(None),
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Upload a single image, run visual analysis, return results."""
@@ -170,7 +175,7 @@ async def analyze_image_standalone(
 
     file_path, file_type, file_size = await _save_file(file)
 
-    metadata = _extract_image_metadata(file_path)
+    metadata = await asyncio.to_thread(_extract_image_metadata, file_path)
 
     ai_result = _try_visual_analysis(
         file_path=file_path,
@@ -221,10 +226,11 @@ async def upload_project_image(
     zone_name: str | None = Form(None),
     deck_number: int | None = Form(None),
     tags: str | None = Form(None),
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Upload an image linked to a specific project."""
-    project = await _get_project(project_id, db)
+    project = await _get_project(project_id, _user, db)
 
     try:
         ImageType(image_type)
@@ -236,7 +242,7 @@ async def upload_project_image(
         )
 
     file_path, file_type, file_size = await _save_file(file)
-    metadata = _extract_image_metadata(file_path)
+    metadata = await asyncio.to_thread(_extract_image_metadata, file_path)
 
     ai_result = _try_visual_analysis(
         file_path=file_path,
@@ -283,10 +289,11 @@ async def upload_project_image(
 async def list_project_images(
     project_id: UUID,
     image_type: str | None = None,
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """List all images for a project, optionally filtered by image_type."""
-    await _get_project(project_id, db)
+    await _get_project(project_id, _user, db)
 
     query = select(ImageUpload).where(ImageUpload.project_id == project_id)
     if image_type:
@@ -308,6 +315,7 @@ async def analyze_batch(
     boat_class: str = Form(...),
     zone_type: str | None = Form(None),
     analysis_depth: str = Form("standard"),
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Upload multiple images and get a combined visual assessment."""
@@ -329,7 +337,7 @@ async def analyze_batch(
             images_rejected += 1
             continue
 
-        metadata = _extract_image_metadata(file_path)
+        metadata = await asyncio.to_thread(_extract_image_metadata, file_path)
 
         ai_result = _try_visual_analysis(
             file_path=file_path,
@@ -408,6 +416,7 @@ async def upload_quick_analysis_image(
     image_type: str = Form(...),
     zone_name: str | None = Form(None),
     tags: str | None = Form(None),
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Upload an image linked to a quick analysis result."""
@@ -428,7 +437,7 @@ async def upload_quick_analysis_image(
         )
 
     file_path, file_type, file_size = await _save_file(file)
-    metadata = _extract_image_metadata(file_path)
+    metadata = await asyncio.to_thread(_extract_image_metadata, file_path)
 
     ai_result = _try_visual_analysis(
         file_path=file_path,

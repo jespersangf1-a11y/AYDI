@@ -1,7 +1,8 @@
 # backend/app/api/routes/competitors.py
+import logging
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,6 +17,8 @@ from app.schemas.competitors import (
     CompetitorUpdate,
 )
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(tags=["competitors"])
 
 
@@ -26,6 +29,9 @@ router = APIRouter(tags=["competitors"])
 async def list_competitors(
     boat_class: str | None = None,
     brand: str | None = None,
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     query = select(CompetitorModel).order_by(CompetitorModel.brand, CompetitorModel.model_name)
@@ -33,6 +39,7 @@ async def list_competitors(
         query = query.where(CompetitorModel.boat_class == boat_class)
     if brand:
         query = query.where(CompetitorModel.brand == brand)
+    query = query.limit(limit).offset(offset)
     result = await db.execute(query)
     return result.scalars().all()
 
@@ -47,12 +54,14 @@ async def create_competitor(
     db.add(competitor)
     await db.commit()
     await db.refresh(competitor)
+    logger.info("User %s created competitor %s", _user.id, competitor.id)
     return competitor
 
 
 @router.get("/competitors/segment/{boat_class}")
 async def get_segment_statistics(
     boat_class: str,
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
@@ -95,6 +104,7 @@ async def get_segment_statistics(
 @router.get("/competitors/{competitor_id}", response_model=CompetitorResponse)
 async def get_competitor(
     competitor_id: UUID,
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
@@ -120,11 +130,13 @@ async def update_competitor(
     if not competitor:
         raise HTTPException(status_code=404, detail="Wettbewerbermodell nicht gefunden")
 
-    for field, value in data.model_dump(exclude_unset=True).items():
+    update_data = data.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
         setattr(competitor, field, value)
 
     await db.commit()
     await db.refresh(competitor)
+    logger.info("User %s updated competitor %s (fields: %s)", _user.id, competitor_id, list(update_data.keys()))
     return competitor
 
 
@@ -142,6 +154,7 @@ async def delete_competitor(
         raise HTTPException(status_code=404, detail="Wettbewerbermodell nicht gefunden")
     await db.delete(competitor)
     await db.commit()
+    logger.info("User %s deleted competitor %s", _user.id, competitor_id)
 
 
 # --- Brand reference models ---
@@ -151,6 +164,7 @@ async def delete_competitor(
 async def list_brand_references(
     boat_class: str | None = None,
     shipyard_id: str | None = None,
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     query = select(BrandReferenceModel).order_by(
@@ -174,12 +188,14 @@ async def create_brand_reference(
     db.add(ref)
     await db.commit()
     await db.refresh(ref)
+    logger.info("User %s created brand reference %s", _user.id, ref.id)
     return ref
 
 
 @router.get("/brand-references/{ref_id}", response_model=BrandReferenceResponse)
 async def get_brand_reference(
     ref_id: UUID,
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
@@ -205,3 +221,4 @@ async def delete_brand_reference(
         raise HTTPException(status_code=404, detail="Referenzmodell nicht gefunden")
     await db.delete(ref)
     await db.commit()
+    logger.info("User %s deleted brand reference %s", _user.id, ref_id)

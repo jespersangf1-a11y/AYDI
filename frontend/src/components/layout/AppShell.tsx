@@ -18,9 +18,12 @@ interface AppShellProps {
   onNavigate: (view: string) => void
   children: React.ReactNode
   breadcrumbs?: Array<{ label: string; onClick?: () => void }>
+  isAuthenticated?: boolean
+  onLogin?: () => void
+  onLogout?: () => void
 }
 
-export default function AppShell({ currentView, onNavigate, children, breadcrumbs }: AppShellProps) {
+export default function AppShell({ currentView, onNavigate, children, breadcrumbs, isAuthenticated, onLogin, onLogout }: AppShellProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
 
@@ -74,7 +77,7 @@ export default function AppShell({ currentView, onNavigate, children, breadcrumb
         {/* Collapse toggle */}
         <button
           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-          className="mx-3 mt-4 mb-2 p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-navy-600 hover:text-ocean-600 hover:bg-sand-100 transition-colors self-end"
+          className="mx-3 mt-4 mb-2 p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-navy-600 hover:text-ocean-600 hover:bg-sand-100 transition-colors self-end focus-visible:ring-2 focus-visible:ring-ocean-500 focus-visible:outline-none"
           aria-label={sidebarCollapsed ? 'Sidebar erweitern' : 'Sidebar minimieren'}
         >
           {sidebarCollapsed ? <Menu className="w-4 h-4" /> : <X className="w-4 h-4" />}
@@ -92,7 +95,7 @@ export default function AppShell({ currentView, onNavigate, children, breadcrumb
                 aria-label={item.label}
                 aria-current={active ? 'page' : undefined}
                 title={sidebarCollapsed ? item.label : undefined}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-sans font-medium relative group transition-all duration-200 hover:scale-[1.02] focus-visible:bg-ocean-50 focus-visible:ring-0 focus-visible:outline-none ${
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-sans font-medium relative group transition-all duration-200 hover:scale-[1.02] focus-visible:bg-ocean-50 focus-visible:ring-2 focus-visible:ring-ocean-500 focus-visible:outline-none ${
                   active
                     ? 'bg-ocean-100 text-ocean-700'
                     : 'text-navy-600 hover:text-ocean-600'
@@ -113,14 +116,31 @@ export default function AppShell({ currentView, onNavigate, children, breadcrumb
           })}
         </nav>
 
-        {/* Version info at bottom */}
-        {!sidebarCollapsed && (
-          <div className="px-5 py-4 border-t border-sand-200 transition-opacity duration-200">
-            <p className="text-[10px] font-sans text-navy-500 tracking-wide-premium">
-              v0.9.0 Preview
-            </p>
-          </div>
-        )}
+        {/* Auth + Version info at bottom */}
+        <div className="px-3 py-4 border-t border-sand-200 space-y-2">
+          {!sidebarCollapsed && (
+            <>
+              {isAuthenticated ? (
+                <button
+                  onClick={onLogout}
+                  className="w-full text-left px-3 py-2 text-xs font-sans text-navy-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ocean-500 focus-visible:outline-none"
+                >
+                  Abmelden
+                </button>
+              ) : (
+                <button
+                  onClick={onLogin}
+                  className="w-full text-left px-3 py-2 text-xs font-sans text-ocean-600 hover:text-ocean-700 hover:bg-ocean-50 rounded-lg transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-ocean-500 focus-visible:outline-none"
+                >
+                  Anmelden
+                </button>
+              )}
+              <p className="px-3 text-[10px] font-sans text-navy-500 tracking-wide-premium">
+                v0.9.0 Preview
+              </p>
+            </>
+          )}
+        </div>
       </aside>
       )}
 
@@ -137,7 +157,7 @@ export default function AppShell({ currentView, onNavigate, children, breadcrumb
                   onClick={() => onNavigate(item.id)}
                   aria-label={item.label}
                   aria-current={active ? 'page' : undefined}
-                  className={`flex flex-col items-center justify-center py-3 px-2 min-w-[48px] min-h-[48px] transition-all duration-200 ${
+                  className={`flex flex-col items-center justify-center py-3 px-2 min-w-[48px] min-h-[48px] transition-all duration-200 focus-visible:ring-2 focus-visible:ring-ocean-500 focus-visible:outline-none rounded-lg ${
                     active ? 'text-ocean-600' : 'text-navy-600'
                   }`}
                 >

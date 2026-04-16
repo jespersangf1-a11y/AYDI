@@ -4,8 +4,9 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.permissions import get_current_user
 from app.db.database import get_db
-from app.models.models import AnalysisResult, Layout, Project
+from app.models.models import AnalysisResult, Layout, Project, User
 
 router = APIRouter(tags=["benchmarks"])
 
@@ -43,6 +44,7 @@ def _compute_stats(values: list[float]) -> dict:
 @router.get("/class-benchmarks/{boat_class}")
 async def get_class_benchmarks(
     boat_class: str,
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Return aggregated benchmarks for a boat class from all stored layouts."""

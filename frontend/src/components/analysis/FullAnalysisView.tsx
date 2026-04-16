@@ -308,7 +308,7 @@ export default function FullAnalysisView({
                   </h4>
                 </div>
                 <p className="text-xs text-red-400">
-                  {typeof errorMsg === 'string' ? errorMsg : (errorMsg as any)?.error ?? 'Unbekannter Fehler'}
+                  {typeof errorMsg === 'string' ? errorMsg : (errorMsg as Record<string, unknown>)?.error as string ?? 'Unbekannter Fehler'}
                 </p>
               </div>
             ))}

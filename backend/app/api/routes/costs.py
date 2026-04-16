@@ -1,16 +1,32 @@
 # backend/app/api/routes/costs.py
+import logging
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
+
+logger = logging.getLogger(__name__)
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.permissions import get_current_user
 from app.db.database import get_db
-from app.models.models import CostItem, Layout, User
+from app.models.models import CostItem, Layout, Project, User
 from app.schemas.costs import CostItemCreate, CostItemResponse, CostItemUpdate
 
 router = APIRouter(prefix="/projects/{project_id}", tags=["costs"])
+
+
+async def _verify_project_ownership(
+    project_id: UUID,
+    user: User,
+    db: AsyncSession,
+) -> None:
+    """Verify the project exists and belongs to the given user."""
+    result = await db.execute(
+        select(Project).where(Project.id == project_id, Project.user_id == user.id)
+    )
+    if not result.scalar_one_or_none():
+        raise HTTPException(status_code=404, detail="Projekt nicht gefunden")
 
 
 async def _verify_layout(
@@ -34,9 +50,11 @@ async def list_cost_items(
     project_id: UUID,
     layout_id: UUID,
     category: str | None = None,
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """List all cost items for a layout, with optional category filter."""
+    await _verify_project_ownership(project_id, _user, db)
     await _verify_layout(project_id, layout_id, db)
 
     query = select(CostItem).where(CostItem.layout_id == layout_id).order_by(
@@ -62,12 +80,14 @@ async def create_cost_item(
     db: AsyncSession = Depends(get_db),
 ):
     """Create a new cost item for a layout."""
+    await _verify_project_ownership(project_id, _user, db)
     await _verify_layout(project_id, layout_id, db)
 
     cost_item = CostItem(layout_id=layout_id, **data.model_dump())
     db.add(cost_item)
     await db.commit()
     await db.refresh(cost_item)
+    logger.info("User %s created cost item %s for layout %s", _user.id, cost_item.id, layout_id)
     return cost_item
 
 
@@ -77,9 +97,11 @@ async def create_cost_item(
 async def get_cost_summary(
     project_id: UUID,
     layout_id: UUID,
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """Return aggregated cost breakdown by category and zone for a layout."""
+    await _verify_project_ownership(project_id, _user, db)
     await _verify_layout(project_id, layout_id, db)
 
     result = await db.execute(
@@ -119,9 +141,11 @@ async def get_cost_item(
     project_id: UUID,
     layout_id: UUID,
     cost_item_id: UUID,
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Get a single cost item by ID."""
+    await _verify_project_ownership(project_id, _user, db)
     await _verify_layout(project_id, layout_id, db)
 
     result = await db.execute(
@@ -149,6 +173,7 @@ async def update_cost_item(
     db: AsyncSession = Depends(get_db),
 ):
     """Partially update a cost item."""
+    await _verify_project_ownership(project_id, _user, db)
     await _verify_layout(project_id, layout_id, db)
 
     result = await db.execute(
@@ -161,11 +186,13 @@ async def update_cost_item(
     if not cost_item:
         raise HTTPException(status_code=404, detail="Kostenposition nicht gefunden")
 
-    for field, value in data.model_dump(exclude_unset=True).items():
+    update_data = data.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
         setattr(cost_item, field, value)
 
     await db.commit()
     await db.refresh(cost_item)
+    logger.info("User %s updated cost item %s (fields: %s)", _user.id, cost_item_id, list(update_data.keys()))
     return cost_item
 
 
@@ -181,6 +208,7 @@ async def delete_cost_item(
     db: AsyncSession = Depends(get_db),
 ):
     """Delete a cost item."""
+    await _verify_project_ownership(project_id, _user, db)
     await _verify_layout(project_id, layout_id, db)
 
     result = await db.execute(
@@ -195,3 +223,4 @@ async def delete_cost_item(
 
     await db.delete(cost_item)
     await db.commit()
+    logger.info("User %s deleted cost item %s from layout %s", _user.id, cost_item_id, layout_id)

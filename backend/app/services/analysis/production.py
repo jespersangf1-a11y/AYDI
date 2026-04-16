@@ -1065,7 +1065,7 @@ def run_production_analysis(
         Standardised analysis result dict.
     """
     if boat_class not in BOAT_CLASS_DEFAULTS:
-        raise ValueError(f"Unbekannte Bootsklasse: {boat_class}")
+        return {"available": False, "reason": f"Unbekannte Bootsklasse: {boat_class}"}
 
     config = BOAT_CLASS_DEFAULTS[boat_class].copy()
     weights = config.pop("weights").copy()

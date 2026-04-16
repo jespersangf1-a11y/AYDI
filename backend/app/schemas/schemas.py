@@ -3,7 +3,7 @@ from datetime import date, datetime
 from enum import Enum
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class BoatClass(str, Enum):
@@ -31,13 +31,13 @@ class ProjectStatus(str, Enum):
 
 # Zone / Passage data (JSON within Layout)
 class ZoneData(BaseModel):
-    name: str
-    zone_type: str
+    name: str = Field(..., min_length=1, max_length=100)
+    zone_type: str = Field(..., min_length=1, max_length=50)
     polygon: list[list[float]]
-    height_mm: float | None = None
+    height_mm: float | None = Field(None, ge=0, le=10000)
     is_crew_area: bool = False
     is_guest_area: bool = False
-    visibility_angle: float | None = None
+    visibility_angle: float | None = Field(None, ge=0, le=360)
     properties: dict | None = None
 
 
@@ -73,19 +73,19 @@ class PassageSchema(BaseModel):
 
 # Project schemas
 class ProjectCreate(BaseModel):
-    name: str
-    description: str | None = None
+    name: str = Field(..., min_length=1, max_length=200)
+    description: str | None = Field(None, max_length=2000)
     boat_class: BoatClass
-    length_m: float
-    beam_m: float
+    length_m: float = Field(..., gt=0, le=300, description="Bootslänge in Metern")
+    beam_m: float = Field(..., gt=0, le=50, description="Bootsbreite in Metern")
 
 
 class ProjectUpdate(BaseModel):
-    name: str | None = None
-    description: str | None = None
+    name: str | None = Field(None, min_length=1, max_length=200)
+    description: str | None = Field(None, max_length=2000)
     boat_class: BoatClass | None = None
-    length_m: float | None = None
-    beam_m: float | None = None
+    length_m: float | None = Field(None, gt=0, le=300)
+    beam_m: float | None = Field(None, gt=0, le=50)
     status: ProjectStatus | None = None
 
 
@@ -228,19 +228,19 @@ class CommunityPositive(BaseModel):
 
 
 class CommunityReportCreate(BaseModel):
-    source_forum: str
-    source_url: str | None = None
+    source_forum: str = Field(..., min_length=1, max_length=100)
+    source_url: str | None = Field(None, max_length=2000)
     source_date: date | None = None
-    boat_manufacturer: str
-    boat_model: str | None = None
-    boat_year: int | None = None
-    hull_material: str | None = None
-    hull_construction: str | None = None
-    propulsion: str | None = None
+    boat_manufacturer: str = Field(..., min_length=1, max_length=200)
+    boat_model: str | None = Field(None, max_length=200)
+    boat_year: int | None = Field(None, ge=1900, le=2100)
+    hull_material: str | None = Field(None, max_length=100)
+    hull_construction: str | None = Field(None, max_length=100)
+    propulsion: str | None = Field(None, max_length=100)
     issues: list[CommunityIssue] = []
     positives: list[CommunityPositive] = []
-    reliability: float
-    raw_text: str | None = None
+    reliability: float = Field(..., ge=0.0, le=1.0)
+    raw_text: str | None = Field(None, max_length=50000)
 
 
 class CommunityReportResponse(BaseModel):

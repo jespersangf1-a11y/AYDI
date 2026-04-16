@@ -735,7 +735,7 @@ def analyze_sightline_rays(zones: list[dict], config: dict) -> tuple[float, list
 def run_emotional_analysis(zones: list[dict], passages: list[dict], boat_class: str, config_overrides: dict | None = None, data_source: str = "measured") -> dict:
     """Orchestrator — runs all emotional design sub-analyses."""
     if boat_class not in BOAT_CLASS_DEFAULTS:
-        raise ValueError(f"Unknown boat class: {boat_class}")
+        return {"available": False, "reason": f"Unbekannte Bootsklasse: {boat_class}"}
     config = BOAT_CLASS_DEFAULTS[boat_class].copy()
     weights = config.pop("weights").copy()
 

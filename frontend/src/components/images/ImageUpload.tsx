@@ -103,9 +103,10 @@ export default function ImageUpload({
     setError(null)
     setUploadProgress(0)
 
+    let progressInterval: ReturnType<typeof setInterval> | null = null
     try {
       // Simulate progress
-      const progressInterval = setInterval(() => {
+      progressInterval = setInterval(() => {
         setUploadProgress((prev) => Math.min(prev + Math.random() * 30, 90))
       }, 200)
 
@@ -126,13 +127,13 @@ export default function ImageUpload({
         zoneType || undefined,
       )
 
-      clearInterval(progressInterval)
       setUploadProgress(100)
       setResult(analysisResult)
       onAnalysisComplete?.(analysisResult)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload fehlgeschlagen.')
     } finally {
+      if (progressInterval) clearInterval(progressInterval)
       setUploading(false)
       setTimeout(() => setUploadProgress(0), 1000)
     }

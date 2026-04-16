@@ -25,9 +25,11 @@ STEP_EXTENSIONS = {".step", ".stp"}
 IGES_EXTENSIONS = {".iges", ".igs"}
 
 
-async def _get_project(project_id: UUID, db: AsyncSession) -> Project:
-    """Load and validate project existence."""
-    result = await db.execute(select(Project).where(Project.id == project_id))
+async def _get_project(project_id: UUID, user: User, db: AsyncSession) -> Project:
+    """Load and validate project existence and ownership."""
+    result = await db.execute(
+        select(Project).where(Project.id == project_id, Project.user_id == user.id)
+    )
     project = result.scalar_one_or_none()
     if not project:
         raise HTTPException(status_code=404, detail="Projekt nicht gefunden")
@@ -64,7 +66,7 @@ async def import_step_file(
     The returned preview is not saved automatically. The user reviews
     and corrects zones, then confirms via POST to /layouts.
     """
-    await _get_project(project_id, db)
+    await _get_project(project_id, _user, db)
     _validate_file_extension(file.filename, STEP_EXTENSIONS, "STEP")
 
     content = await file.read()
@@ -77,12 +79,13 @@ async def import_step_file(
     try:
         result = parse_step(content, filename=file.filename or "model.step")
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
+        logger.warning("STEP parse validation error: %s", e)
+        raise HTTPException(status_code=400, detail="Ungültige STEP-Datei. Bitte Format prüfen.")
+    except Exception:
         logger.exception("Unexpected error parsing STEP file")
         raise HTTPException(
             status_code=500,
-            detail=f"Fehler beim Parsen der STEP-Datei: {e}",
+            detail="Interner Fehler beim Parsen der STEP-Datei. Bitte erneut versuchen.",
         )
 
     return result
@@ -100,7 +103,7 @@ async def import_iges_file(
     The returned preview is not saved automatically. The user reviews
     and corrects zones, then confirms via POST to /layouts.
     """
-    await _get_project(project_id, db)
+    await _get_project(project_id, _user, db)
     _validate_file_extension(file.filename, IGES_EXTENSIONS, "IGES")
 
     content = await file.read()
@@ -113,12 +116,13 @@ async def import_iges_file(
     try:
         result = parse_iges(content, filename=file.filename or "model.iges")
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
+        logger.warning("IGES parse validation error: %s", e)
+        raise HTTPException(status_code=400, detail="Ungültige IGES-Datei. Bitte Format prüfen.")
+    except Exception:
         logger.exception("Unexpected error parsing IGES file")
         raise HTTPException(
             status_code=500,
-            detail=f"Fehler beim Parsen der IGES-Datei: {e}",
+            detail="Interner Fehler beim Parsen der IGES-Datei. Bitte erneut versuchen.",
         )
 
     return result

@@ -223,7 +223,7 @@ def test_visual_context_generation():
     context = build_visual_context(dna)
     assert "BOOTSPROFIL" in context
     assert "QUALITÄTSSTANDARDS" in context
-    assert "BEWERTE NACH DIESEN STANDARDS" in context
+    assert "BEWERTE NACH DEN BOOT-SPEZIFISCHEN STANDARDS" in context
     assert len(context) > 100
 
 

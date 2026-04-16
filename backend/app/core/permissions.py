@@ -1,4 +1,11 @@
-"""FastAPI dependencies for authentication and authorization."""
+"""FastAPI dependencies for authentication and authorization.
+
+Provides:
+- JWT-based user authentication
+- Role-based access control (admin, user, viewer)
+- Subscription tier gating (free, pro, enterprise)
+- Optional auth for public endpoints
+"""
 from uuid import UUID
 
 from fastapi import Depends, HTTPException, status
@@ -7,6 +14,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import decode_token
+from app.core.i18n import t
+from app.core.subscription import Feature, require_feature as _require_feature
 from app.db.database import get_db
 from app.models.models import User
 
@@ -23,7 +32,7 @@ async def get_current_user(
     if credentials is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentifizierung erforderlich",
+            detail=t("auth.login_required"),
         )
 
     try:
@@ -31,25 +40,25 @@ async def get_current_user(
     except jwt.ExpiredSignatureError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token abgelaufen",
+            detail=t("auth.token_expired"),
         )
     except jwt.PyJWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Ungültiges Token",
+            detail=t("auth.invalid_credentials"),
         )
 
     if payload.get("type") != "access":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Ungültiger Token-Typ",
+            detail=t("auth.invalid_credentials"),
         )
 
     user_id = payload.get("sub")
     if not user_id:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Ungültiges Token",
+            detail=t("auth.invalid_credentials"),
         )
 
     result = await db.execute(select(User).where(User.id == UUID(user_id)))
@@ -57,7 +66,7 @@ async def get_current_user(
     if not user or not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Benutzer nicht gefunden oder deaktiviert",
+            detail=t("auth.invalid_credentials"),
         )
 
     return user
@@ -69,10 +78,60 @@ def require_role(*roles: str):
         if user.role not in roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Keine Berechtigung für diese Aktion",
+                detail=t("auth.insufficient_permissions"),
             )
         return user
     return _check_role
+
+
+def require_tier(*features: Feature):
+    """Dependency factory that checks if the user's subscription tier allows a feature.
+
+    Usage:
+        @router.get("/data", dependencies=[Depends(require_tier(Feature.FULL_ANALYSIS))])
+        async def get_data(...):
+            ...
+    """
+    async def _check_tier(user: User = Depends(get_current_user)) -> User:
+        for feature in features:
+            _require_feature(user.tier, feature)
+        return user
+    return _check_tier
+
+
+async def authenticate_websocket(
+    websocket,
+    db: AsyncSession,
+) -> User | None:
+    """Authenticate a WebSocket connection via token query parameter.
+
+    Usage in WebSocket endpoint:
+        db = async_session()  # or however you get a session
+        user = await authenticate_websocket(websocket, db)
+        if user is None:
+            await websocket.close(code=4001, reason="Nicht authentifiziert")
+            return
+    """
+    token = websocket.query_params.get("token")
+    if not token:
+        return None
+    try:
+        payload = decode_token(token)
+    except (jwt.ExpiredSignatureError, jwt.PyJWTError):
+        return None
+
+    if payload.get("type") != "access":
+        return None
+
+    user_id = payload.get("sub")
+    if not user_id:
+        return None
+
+    result = await db.execute(select(User).where(User.id == UUID(user_id)))
+    user = result.scalar_one_or_none()
+    if not user or not user.is_active:
+        return None
+    return user
 
 
 # Convenience: optional auth (returns None if no token)

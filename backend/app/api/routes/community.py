@@ -3,8 +3,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.permissions import get_current_user
 from app.db.database import get_db
-from app.models.models import CommunityReport, CommunityPattern
+from app.models.models import CommunityReport, CommunityPattern, User
 from app.schemas.schemas import (
     AggregationResultResponse,
     CommunityReportCreate,
@@ -22,6 +23,7 @@ router = APIRouter(prefix="/community", tags=["community"])
 @router.post("/reports", response_model=CommunityReportResponse, status_code=201)
 async def create_report(
     report: CommunityReportCreate,
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Create a community report."""
@@ -53,6 +55,7 @@ async def list_reports(
     hull_material: str | None = None,
     limit: int = Query(default=50, le=200),
     offset: int = Query(default=0, ge=0),
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """List community reports with optional filters."""
@@ -70,7 +73,7 @@ async def list_reports(
 
 
 @router.get("/reports/{report_id}", response_model=CommunityReportResponse)
-async def get_report(report_id: int, db: AsyncSession = Depends(get_db)):
+async def get_report(report_id: int, _user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     """Get a single community report."""
     result = await db.execute(
         select(CommunityReport).where(CommunityReport.id == report_id)
@@ -91,6 +94,7 @@ async def list_patterns(
     is_positive: bool | None = None,
     limit: int = Query(default=50, le=200),
     offset: int = Query(default=0, ge=0),
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """List community patterns with optional filters."""
@@ -110,7 +114,7 @@ async def list_patterns(
 
 
 @router.get("/patterns/{pattern_id}", response_model=CommunityPatternResponse)
-async def get_pattern(pattern_id: int, db: AsyncSession = Depends(get_db)):
+async def get_pattern(pattern_id: int, _user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     """Get a single community pattern."""
     result = await db.execute(
         select(CommunityPattern).where(CommunityPattern.id == pattern_id)
@@ -124,7 +128,7 @@ async def get_pattern(pattern_id: int, db: AsyncSession = Depends(get_db)):
 # === Aggregation ===
 
 @router.post("/aggregate", response_model=AggregationResultResponse)
-async def run_aggregation(db: AsyncSession = Depends(get_db)):
+async def run_aggregation(_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     """Trigger batch aggregation of reports into patterns.
 
     Idempotent: deletes all existing patterns and recreates from reports.
@@ -190,6 +194,7 @@ async def get_relevant_patterns(
     hull_material: str | None = None,
     hull_construction: str | None = None,
     max_results: int = Query(default=20, le=50),
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Get patterns relevant to a specific boat via 5-level relevance matching."""

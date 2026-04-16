@@ -7,11 +7,24 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.permissions import get_current_user
 from app.db.database import get_db
-from app.models.models import Layout, LayoutVersion, User
+from app.models.models import Layout, LayoutVersion, Project, User
 from app.schemas.versions import LayoutVersionCreate, LayoutVersionResponse
 from app.services.diff.layout_diff import compute_layout_diff
 
 router = APIRouter(prefix="/projects/{project_id}", tags=["versions"])
+
+
+async def _verify_project_ownership(
+    project_id: UUID,
+    user: User,
+    db: AsyncSession,
+) -> None:
+    """Verify the project exists and belongs to the given user."""
+    result = await db.execute(
+        select(Project).where(Project.id == project_id, Project.user_id == user.id)
+    )
+    if not result.scalar_one_or_none():
+        raise HTTPException(status_code=404, detail="Projekt nicht gefunden")
 
 
 async def _get_layout_or_404(
@@ -36,8 +49,10 @@ async def _get_layout_or_404(
 async def list_versions(
     project_id: UUID,
     layout_id: UUID,
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    await _verify_project_ownership(project_id, _user, db)
     await _get_layout_or_404(project_id, layout_id, db)
 
     result = await db.execute(
@@ -60,6 +75,7 @@ async def create_version(
     db: AsyncSession = Depends(get_db),
     _user: User = Depends(get_current_user),
 ):
+    await _verify_project_ownership(project_id, _user, db)
     await _get_layout_or_404(project_id, layout_id, db)
 
     # Auto-increment version_number: max existing + 1, default 1
@@ -90,8 +106,10 @@ async def get_version(
     project_id: UUID,
     layout_id: UUID,
     version_id: UUID,
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    await _verify_project_ownership(project_id, _user, db)
     await _get_layout_or_404(project_id, layout_id, db)
 
     result = await db.execute(
@@ -112,9 +130,11 @@ async def diff_versions(
     layout_id: UUID,
     a: UUID = Query(..., description="Version A (Basis)"),
     b: UUID = Query(..., description="Version B (Neu)"),
+    _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Compute a structured diff between two layout versions."""
+    await _verify_project_ownership(project_id, _user, db)
     await _get_layout_or_404(project_id, layout_id, db)
 
     result_a = await db.execute(

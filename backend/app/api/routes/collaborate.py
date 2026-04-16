@@ -2,9 +2,12 @@
 import logging
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect
 
+from app.core.permissions import authenticate_websocket, get_current_user
 from app.core.websocket import manager
+from app.db.database import async_session
+from app.models.models import User
 
 logger = logging.getLogger(__name__)
 
@@ -15,13 +18,22 @@ router = APIRouter(tags=["collaboration"])
 async def collaborate_websocket(
     websocket: WebSocket,
     layout_id: str,
-    user_name: str = Query(default="Anonym"),
-    user_id: str = Query(default="unknown"),
 ):
-    """WebSocket endpoint for real-time layout collaboration."""
+    """WebSocket endpoint for real-time layout collaboration.
+
+    Requires authentication via ?token=<JWT> query parameter.
+    """
+    # Authenticate before accepting the connection
+    async with async_session() as db:
+        user = await authenticate_websocket(websocket, db)
+
+    if user is None:
+        await websocket.close(code=4001, reason="Nicht authentifiziert")
+        return
+
     user_info = {
-        "user_id": user_id,
-        "name": user_name,
+        "user_id": str(user.id),
+        "name": user.email,
         "joined_at": datetime.now(timezone.utc).isoformat(),
     }
 
@@ -91,11 +103,11 @@ async def collaborate_websocket(
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             })
     except Exception as e:
-        logger.error(f"WebSocket error for layout {layout_id}: {e}")
+        logger.error("WebSocket error for layout %s: %s", layout_id, e)
         manager.disconnect(websocket, layout_id)
 
 
 @router.get("/collaborate/sessions")
-async def list_active_sessions():
+async def list_active_sessions(_user: User = Depends(get_current_user)):
     """List all currently active collaboration sessions."""
     return {"sessions": manager.active_sessions()}

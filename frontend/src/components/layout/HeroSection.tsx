@@ -34,7 +34,7 @@ export default function HeroSection({
     const handleScroll = () => {
       setScrollY(window.scrollY)
     }
-    window.addEventListener('scroll', handleScroll)
+    window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
@@ -98,7 +98,7 @@ export default function HeroSection({
         </h1>
         {subtitle && (
           <p
-            className="font-sans text-[15px] text-navy-900 max-w-2xl leading-relaxed mt-2 animate-fade-in-up"
+            className="font-sans text-sm md:text-[15px] text-white/80 max-w-2xl leading-relaxed mt-2 animate-fade-in-up"
             style={{ animationDelay: '200ms' }}
           >
             {subtitle}
