@@ -669,7 +669,9 @@ def run_service_patterns_analysis(
         "suggestions": all_suggestions,
         "metrics": all_metrics,
         "config_used": config,
-        "confidence": data_source,
-        "confidence_note": "Basiert auf geschätzten Werten aus öffentlichen Spezifikationen." if data_source == "estimated" else None,
+        # Pipeline C: results derive from documented service reports, so the
+        # canonical provenance is "documented" (not "measured"/"estimated").
+        "confidence": "documented",
+        "confidence_note": "Aus dokumentierten Serviceberichten abgeleitet.",
         "knowledge_enrichment": knowledge_enrichment if knowledge_enrichment else None,
     }

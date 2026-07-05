@@ -180,8 +180,9 @@ async def run_full_analysis(
 
             for name, result in zip(module_names, tier_results):
                 if isinstance(result, Exception):
-                    logger.error("Module %s failed: %s", name, result)
-                    errors[name] = {"error": str(result), "type": type(result).__name__}
+                    logger.error("Module %s failed: %s", name, result, exc_info=result)
+                    # Detail is logged; do not leak the raw exception text to the client.
+                    errors[name] = {"error": "Modulanalyse fehlgeschlagen", "type": type(result).__name__}
                 elif isinstance(result, dict) and result.get("available") is False:
                     skipped[name] = result.get("reason", "Nicht verfuegbar")
                 elif isinstance(result, dict):

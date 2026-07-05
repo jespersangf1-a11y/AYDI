@@ -114,9 +114,11 @@ async def health_ready():
         async with engine.connect() as conn:
             await conn.execute(text("SELECT 1"))
         return {"status": "ready", "db": "ok"}
-    except Exception as exc:  # noqa: BLE001 — we want the message in the response
+    except Exception as exc:  # noqa: BLE001
+        # Detail stays in the logs — an unauthenticated probe must not receive
+        # raw DB/driver error text (host/port/driver internals).
         logger.warning("Readiness check failed: %s", exc)
-        return {"status": "not_ready", "db": "error", "detail": str(exc)}
+        return {"status": "not_ready", "db": "error"}
 
 
 # Backward-compatible alias for legacy probes / load balancers
