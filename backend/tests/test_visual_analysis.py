@@ -246,7 +246,7 @@ class TestVisualAnalyzer:
         with patch.object(type(analyzer), 'client', new_callable=lambda: property(lambda self: None)):
             result = asyncio.run(analyzer.analyze_image("some/path.jpg", "interior_overview", "cruising_sail"))
         assert result["score"] is None
-        assert result["confidence"]["level"] == "insufficient"
+        assert result["confidence"]["level"] == "visual_insufficient"
         assert result["confidence"]["is_usable"] is False
 
     def test_analyze_image_file_not_found(self):

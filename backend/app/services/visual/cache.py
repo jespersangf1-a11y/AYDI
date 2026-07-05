@@ -22,23 +22,24 @@ class AnalysisCache:
         except OSError:
             logger.warning("Could not create cache directory: %s", cache_dir)
 
+    # Bump when prompts or the model change so stale entries are not reused.
+    CACHE_VERSION = "v2"
+
     def get_cache_key(
         self,
         image_path: str,
         image_type: str,
         boat_class: str,
         analysis_depth: str,
+        zone_type: str | None = None,
+        context: dict | None = None,
     ) -> str:
-        """Generate a deterministic cache key from image content and parameters.
+        """Generate a deterministic cache key from image content and ALL
+        parameters that influence the prompt.
 
-        Args:
-            image_path: Path to the image file.
-            image_type: Type of image (e.g. 'interior_overview').
-            boat_class: Yacht class (e.g. 'cruising_sail').
-            analysis_depth: Analysis depth ('standard' or 'detailed').
-
-        Returns:
-            A hex digest string used as cache key.
+        ``zone_type`` and ``context`` (length/beam etc.) change the prompt, so
+        they must be part of the key — otherwise the same image analysed for a
+        different zone would return the first zone's cached result.
         """
         hasher = hashlib.sha256()
 
@@ -55,6 +56,12 @@ class AnalysisCache:
         hasher.update(image_type.encode("utf-8"))
         hasher.update(boat_class.encode("utf-8"))
         hasher.update(analysis_depth.encode("utf-8"))
+        hasher.update((zone_type or "").encode("utf-8"))
+        if context:
+            hasher.update(
+                json.dumps(context, sort_keys=True, default=str).encode("utf-8")
+            )
+        hasher.update(self.CACHE_VERSION.encode("utf-8"))
 
         return hasher.hexdigest()
 

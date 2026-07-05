@@ -266,6 +266,24 @@ class CircuitBreaker:
     def is_closed(self) -> bool:
         return self.state == CircuitState.CLOSED
 
+    def allow_request(self) -> bool:
+        """Whether a call may proceed right now.
+
+        CLOSED -> always. OPEN -> never. HALF_OPEN -> admit at most
+        ``half_open_max_calls`` probe(s); further calls are rejected until the
+        probe resolves (record_success/record_failure), so a recovering
+        downstream service is not hit by a thundering herd.
+        """
+        st = self.state  # may transition OPEN -> HALF_OPEN when the timeout elapsed
+        if st == CircuitState.OPEN:
+            return False
+        if st == CircuitState.HALF_OPEN:
+            if self._half_open_calls >= self.half_open_max_calls:
+                return False
+            self._half_open_calls += 1
+            return True
+        return True
+
     def record_success(self) -> None:
         """Record a successful call."""
         if self._state == CircuitState.HALF_OPEN:

@@ -59,7 +59,9 @@ class VisualAnalyzer:
         if self._client is None:
             try:
                 import anthropic
-                self._client = anthropic.Anthropic()
+                # Pass the configured key explicitly; if None the SDK falls back
+                # to the ANTHROPIC_API_KEY env var (so .env config is honoured).
+                self._client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
             except ImportError:
                 logger.warning("anthropic SDK not installed — visual analysis unavailable")
                 self._client = None
@@ -113,8 +115,11 @@ class VisualAnalyzer:
         if self.client is None:
             return self._unavailable_result(image_path, image_type, boat_class)
 
-        # Check cache
-        cache_key = self.cache.get_cache_key(image_path, image_type, boat_class, analysis_depth)
+        # Check cache — zone_type and context change the prompt, so include them.
+        cache_key = self.cache.get_cache_key(
+            image_path, image_type, boat_class, analysis_depth,
+            zone_type=zone_type, context=context,
+        )
         cached = self.cache.get(cache_key)
         if cached is not None:
             logger.info("Cache hit for %s (%s)", image_path, image_type)
@@ -151,8 +156,8 @@ class VisualAnalyzer:
         breaker = get_circuit_breaker(
             "anthropic_vision_api", failure_threshold=5, recovery_timeout=60.0
         )
-        if breaker.is_open:
-            logger.warning("Circuit breaker OPEN for Anthropic Vision API — skipping call")
+        if not breaker.allow_request():
+            logger.warning("Circuit breaker not admitting calls for Anthropic Vision API — skipping")
             return self._error_result(
                 image_path, image_type,
                 "API vorübergehend nicht verfügbar (Circuit Breaker offen). Bitte später erneut versuchen.",
@@ -210,14 +215,15 @@ class VisualAnalyzer:
 
         if not retry_result.success:
             breaker.record_failure()
-            error_msg = f"API-Aufruf fehlgeschlagen nach {retry_result.attempts} Versuchen"
-            if retry_result.error:
-                error_msg += f": {str(retry_result.error)[:200]}"
             logger.error(
                 "Claude API call failed for %s after %d attempts (%.0fms): %s",
                 image_path, retry_result.attempts, retry_result.total_time_ms, retry_result.error,
             )
-            return self._error_result(image_path, image_type, error_msg)
+            # Generic client-facing message — internal error details stay in logs.
+            return self._error_result(
+                image_path, image_type,
+                "Die visuelle Analyse ist fehlgeschlagen. Bitte später erneut versuchen.",
+            )
 
         breaker.record_success()
         response = retry_result.value
@@ -231,11 +237,14 @@ class VisualAnalyzer:
         # Parse JSON
         parsed = self._parse_json_response(response_text)
         if parsed is None:
-            logger.warning("Could not parse JSON from API response for %s", image_path)
+            # Log the raw response for debugging but never return it to the client.
+            logger.warning(
+                "Could not parse JSON from API response for %s: %s",
+                image_path, response_text[:500],
+            )
             return self._error_result(
                 image_path, image_type,
                 "KI-Antwort konnte nicht verarbeitet werden",
-                raw_response=response_text,
             )
 
         # Get image metadata for confidence assessment
@@ -499,7 +508,7 @@ class VisualAnalyzer:
             "boat_class": boat_class,
             "analysis": None,
             "confidence": {
-                "level": "insufficient",
+                "level": "visual_insufficient",
                 "is_usable": False,
                 "factors": ["Anthropic SDK nicht installiert — visuelle Analyse nicht verfuegbar"],
                 "image_quality": 0.0,
@@ -515,15 +524,18 @@ class VisualAnalyzer:
         image_path: str,
         image_type: str,
         error_message: str,
-        raw_response: str | None = None,
     ) -> dict:
-        """Return a structured error result."""
-        result = {
+        """Return a structured error result.
+
+        ``error_message`` must be a generic, client-safe string — raw model
+        output and internal exception text are logged, never returned here.
+        """
+        return {
             "image_path": image_path,
             "image_type": image_type,
             "analysis": None,
             "confidence": {
-                "level": "insufficient",
+                "level": "visual_insufficient",
                 "is_usable": False,
                 "factors": [error_message],
                 "image_quality": 0.0,
@@ -533,9 +545,6 @@ class VisualAnalyzer:
             "score": None,
             "error": error_message,
         }
-        if raw_response is not None:
-            result["raw_response"] = raw_response[:2000]  # Truncate for safety
-        return result
 
 
 # ---------------------------------------------------------------------------
