@@ -105,7 +105,7 @@ Die **Kompressionsrate** (Compression Ratio) ist entscheidend:
 | Mittelschiffs-Luke | 500×500 bis 700×700 mm | D-Profil oder Hohlprofil | Mittel–Hoch | Oft begangen, mechanische Belastung |
 | Achterdeck-Luke | 300×300 bis 500×500 mm | D-Profil | Mittel | Weniger Seegang-Belastung |
 | Motoryacht Deck-Luke | 500×500 bis 800×800 mm | Hohlprofil | Mittel | Oft flush-montiert |
-| Flucht-Luke (Emergency) | 400×400 mm min | D-Profil | Mittel | ISO 12216: min 400×520mm |
+| Flucht-Luke (Emergency) | 400×520 mm min | D-Profil | Mittel | ISO 12216: min 400×520mm |
 | Ankerkisten-Luke | Variabel | Einfaches D-Profil | Gering | Weniger kritisch |
 | Lazarette-Luke | Variabel | D-Profil oder Lippenprofil | Gering–Mittel | Achtern, Spritzwasser |
 

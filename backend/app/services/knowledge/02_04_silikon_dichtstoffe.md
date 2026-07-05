@@ -866,7 +866,7 @@ class SiliconeContaminationRecord(BaseModel):
 
 | Anwendungsort | Silikon zulässig? | Norm/Begründung | AYDI Compliance-Flag |
 |---|---|---|---|
-| Strukturelle Verbindungen (Rumpf-Deck) | NEIN | Keine strukturelle Festigkeit, CE/ISO 12217 | ❌ CRITICAL |
+| Strukturelle Verbindungen (Rumpf-Deck) | NEIN | Keine strukturelle Festigkeit, CE/ISO 12215 | ❌ CRITICAL |
 | Seeventile (<2m Wasserlinie) | NEIN | Strukturell, ISO 9093 | ❌ CRITICAL |
 | Fenster-Verglasung (Echtglas) | JA (bedingt) | ISO 12216, mit Primer | ✅ mit Einschränkung |
 | Fenster-Verglasung (Acryl/PC) | NEIN | Spannungsrisskorrosion | ❌ CRITICAL |
@@ -2078,7 +2078,7 @@ SILICONE_COMPLIANCE_CHECKS = {
     },
     "hull_deck_silicone": {
         "flag_level": "critical",
-        "iso_reference": "ISO 12217",
+        "iso_reference": "ISO 12215",
         "finding_de": "Silikon an Rumpf-Deck-Verbindung — keine strukturelle Festigkeit.",
         "recommendation_de": "Professionelle Neuverfugung mit PU-Strukturkleber (Sikaflex 292i)."
     },

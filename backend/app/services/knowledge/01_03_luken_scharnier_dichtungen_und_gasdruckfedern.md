@@ -342,7 +342,7 @@ Eine Gasdruckfeder (Gasfeder, Gas Spring, Gas Strut) besteht aus:
 **Vereinfachte Formel (für vertikale Luken):**
 
 ```
-F_gasfeder = (m × g × a) / (2 × b × n)
+F_gasfeder = (m × g × a) / (b × n)
 ```
 
 Dabei:
@@ -369,7 +369,7 @@ Dabei:
 model_config = {
     "from_attributes": True,
     "json_schema_extra": {
-        "formel": "F = (m * g * a) / (2 * b * n)",
+        "formel": "F = (m * g * a) / (b * n)",
         "sicherheitszuschlag_pct": 15,
         "sicherheitszuschlag_min_pct": 10,
         "sicherheitszuschlag_max_pct": 20,
@@ -1556,10 +1556,12 @@ model_config = {
 **Situation:** Motoryacht 18m, Custom-Motorraumluke 900×700mm, Gewicht 28kg.
 **Berechnung:**
 - m = 28 kg, g = 9,81, a = 350mm, b = 250mm, n = 2
-- F = (28 × 9,81 × 350) / (2 × 250 × 2) = 96.236 / 1000 = 96 N
-- Mit 15% Zuschlag: 110 N
+- F = (28 × 9,81 × 350) / (250 × 2) = 96.236 / 500 = 192 N
+- Mit 15% Zuschlag: 221 N
 **Gewählt:** 2× Stabilus LIFT-O-MAT INOX, 120N, 450mm Ausfahrlänge, 180mm Hub, Kugelkopf 10mm.
 **Ergebnis:** Luke öffnet kontrolliert, hält sicher, schließt nicht von selbst.
+
+> ⚠️ **ZU PRÜFEN (Audit):** Nach Korrektur der Kraftformel (ohne Faktor 2) ergibt sich F ≈ 192 N/Feder bzw. 221 N mit 15% Zuschlag — die hier gewählte 120-N-Feder ist damit zu schwach. Federauswahl anhand aktueller Herstellerkataloge neu prüfen.
 (Confidence: calculated)
 
 ### 35.3 Fallstudie: Lewmar Superhatch Komplett-Sanierung — Hallberg-Rassy 352 (1984)
@@ -1749,7 +1751,7 @@ model_config = {
 
 ### FAQ 1: Wie finde ich die richtige Gasdruckfeder für meine Luke?
 
-**Antwort:** 1) Alte Feder ausbauen und Aufschrift lesen (Kraft in N, Maße). 2) Wenn keine Aufschrift: Ausfahrlänge und Einfahrlänge messen (Auge–Auge). 3) Lukendeckel wiegen. 4) Kraft berechnen: F = (m × 9,81 × a) / (2 × b × n) + 15% Zuschlag. 5) Endstück-Typ prüfen (Kugelkopf 8mm oder 10mm?). 6) Bei Marine-Einsatz: V4A 316L wählen.
+**Antwort:** 1) Alte Feder ausbauen und Aufschrift lesen (Kraft in N, Maße). 2) Wenn keine Aufschrift: Ausfahrlänge und Einfahrlänge messen (Auge–Auge). 3) Lukendeckel wiegen. 4) Kraft berechnen: F = (m × 9,81 × a) / (b × n) + 15% Zuschlag. 5) Endstück-Typ prüfen (Kugelkopf 8mm oder 10mm?). 6) Bei Marine-Einsatz: V4A 316L wählen.
 (Confidence: documented)
 
 ### FAQ 2: Kann man Gasdruckfedern nachfüllen/reparieren?
@@ -2164,7 +2166,7 @@ START: Alte Gasfeder vorhanden?
 ├── JA → Aufschrift lesbar?
 │   ├── JA → Gleiche Maße + Kraft bestellen (V4A für Marine)
 │   └── NEIN → Messen: L₀, Lc, Endstück-ø
-│       └── Kraft berechnen: F = (m × g × a) / (2 × b × n) + 15%
+│       └── Kraft berechnen: F = (m × g × a) / (b × n) + 15%
 │           └── Bestellen bei Stabilus/Bansbach/Suspa
 │
 ├── NEIN (Nachrüstung) → Lukendeckel wiegen
@@ -2473,11 +2475,13 @@ START: Alte Gasfeder vorhanden?
 **Situation:** Custom-Maschinenraumluke 1100×800mm, 42kg Gewicht, kein OEM-Gasfeder-Kit.
 **Berechnung:**
 - m = 42 kg, g = 9,81, a = 400mm, b = 300mm, n = 2
-- F = (42 × 9,81 × 400) / (2 × 300 × 2) = 164.808 / 1200 = 137 N
-- Mit 15% Zuschlag: 158 N → gewählt: 160 N
+- F = (42 × 9,81 × 400) / (300 × 2) = 164.808 / 600 = 275 N
+- Mit 15% Zuschlag: 316 N → gewählt: 160 N
 **Lösung:** 2× Stabilus LIFT-O-MAT INOX 084552 0200N (200N, etwas überdimensioniert für Sicherheit bei schwerer Luke). Ausfahrlänge 455mm, Hub 200mm. Kugelkopf 10mm.
 **Kosten:** 2 × 48€ = 96€ + 2× Kugelbolzen M8→10mm (6€) = 102€.
 **Ergebnis:** Luke lässt sich leicht öffnen, bleibt sicher in jeder Position (Reibungswiderstand der schweren Luke genug). Für Wartungsarbeiten: zusätzlicher Teleskop-Stab als Sicherung.
+
+> ⚠️ **ZU PRÜFEN (Audit):** Nach Korrektur der Kraftformel (ohne Faktor 2) ergibt sich F ≈ 275 N/Feder bzw. 316 N mit 15% Zuschlag — die hier gewählten 160-/200-N-Federn sind damit zu schwach. Federauswahl anhand aktueller Herstellerkataloge neu prüfen.
 (Confidence: calculated)
 
 ---
@@ -2913,10 +2917,10 @@ Wenn eine Gasdruckfeder auf See versagt und keine Ersatzfeder vorhanden ist:
 | Schwerpunkt → Scharnier (a) | 220 mm |
 | Gasfeder-Befestigung → Scharnier (b) | 160 mm |
 | Anzahl Gasfedern (n) | 2 |
-| F = (7,5 × 9,81 × 220) / (2 × 160 × 2) | **25,3 N** |
-| + 15% Sicherheitszuschlag | **29 N** |
+| F = (7,5 × 9,81 × 220) / (160 × 2) | **50,6 N** |
+| + 15% Sicherheitszuschlag | **58 N** |
 | Gewählte Gasfeder | Bansbach A2A2-19-100-280-0060N (60N) |
-| Begründung 60N statt 29N | Reibungswiderstand des Scharnier-Mechanismus, Sicherheitsreserve, Gegenwind |
+| Begründung 60N statt 58N | Reibungswiderstand des Scharnier-Mechanismus, Sicherheitsreserve, Gegenwind |
 (Confidence: calculated)
 
 ### Q.2 Berechnung: Motorraumluke Grand Banks 42
@@ -2927,13 +2931,15 @@ Wenn eine Gasdruckfeder auf See versagt und keine Ersatzfeder vorhanden ist:
 | Schwerpunkt → Scharnier (a) | 350 mm |
 | Gasfeder-Befestigung → Scharnier (b) | 280 mm |
 | Anzahl Gasfedern (n) | 2 |
-| F = (22 × 9,81 × 350) / (2 × 280 × 2) | **67,4 N** |
-| + 15% Sicherheitszuschlag | **77,5 N** |
-| + 10% für schwere Luken-Gewicht-Toleranz | **85 N** |
+| F = (22 × 9,81 × 350) / (280 × 2) | **134,9 N** |
+| + 15% Sicherheitszuschlag | **155,1 N** |
+| + 10% für schwere Luken-Gewicht-Toleranz | **170,6 N** |
 | Gewählte Gasfeder | Taylor Made 3691840 (80 lbs = 356 N) — NEIN, viel zu stark! |
 | Korrektur: | Taylor Made 3691812 (20 lbs = 89 N) oder Stabilus 095432 0100N |
 | **Wichtig:** | lbs ≠ N! 80 lbs = 356 N, nicht 80 N! |
 (Confidence: calculated)
+
+> ⚠️ **ZU PRÜFEN (Audit):** Nach Korrektur der Kraftformel (ohne Faktor 2) ergibt sich F ≈ 134,9 N/Feder bzw. ~170,6 N mit Zuschlägen — die als Korrektur genannten Federn (89 N / 100 N) sind damit zu schwach. Federauswahl anhand aktueller Herstellerkataloge neu prüfen.
 
 **Häufiger Fehler:** Verwechslung von Pfund (lbs) und Newton (N). 1 lbs ≈ 4,45 N. Eine "80 lbs" Gasfeder hat ~356 N — das ist für die meisten Luken VIEL zu stark!
 
@@ -2957,13 +2963,13 @@ Wenn eine Gasdruckfeder auf See versagt und keine Ersatzfeder vorhanden ist:
 | Schwerpunkt → Scharnier (a) | 300 mm |
 | Gasfeder-Befestigung → Scharnier (b) | 200 mm |
 | Anzahl Gasfedern (n) | 2 |
-| F = (11 × 9,81 × 300) / (2 × 200 × 2) | **40,5 N** |
-| + 15% Sicherheitszuschlag | **46,6 N** |
+| F = (11 × 9,81 × 300) / (200 × 2) | **80,9 N** |
+| + 15% Sicherheitszuschlag | **93,1 N** |
 | Lewmar Kit B16499 (geschätzte Kraft) | ~120–150 N |
 | Diskrepanz | Lewmar-Federn sind stärker als berechnet — berücksichtigen Friction-Hinge-Widerstand |
 (Confidence: calculated)
 
-**Erklärung der Diskrepanz:** Lewmar dimensioniert die Gasfedern so, dass sie auch den Widerstand der Friction Hinges überwinden müssen. Der reine Gewichts-Anteil ist nur ~40 N, aber die Friction Hinges addieren ~60–100 N Widerstand (je nach Einstellung). Deshalb sind Lewmar OEM-Gasfedern deutlich stärker als die reine Gewichtsberechnung ergibt.
+**Erklärung der Diskrepanz:** Lewmar dimensioniert die Gasfedern so, dass sie auch den Widerstand der Friction Hinges überwinden müssen. Der reine Gewichts-Anteil ist nur ~81 N, aber die Friction Hinges addieren ~60–100 N Widerstand (je nach Einstellung). Deshalb sind Lewmar OEM-Gasfedern deutlich stärker als die reine Gewichtsberechnung ergibt.
 
 ```python
 # AYDI model_config: Gasdruckfeder-Berechnungs-Korrekturfaktoren
@@ -3409,7 +3415,7 @@ model_config = {
 |-------------|-----------------|---------|
 | Hersteller-Artikelnummern (Lewmar, Goiot, Gebo, Bomar) | measured | 360375999, 95659, R163, P100-52 |
 | Gasdruckfeder-Spezifikationen (Stabilus, Bansbach, Attwood) | measured | 095432 0100N, 355mm, 150mm Hub |
-| Kraft-Berechnungen (Formel + Parameter) | calculated | F = (m×g×a)/(2×b×n) |
+| Kraft-Berechnungen (Formel + Parameter) | calculated | F = (m×g×a)/(b×n) |
 | Forum-Konsens (50+ Threads, 8 Foren) | documented | Butyl-Tape als beste Scharnier-Abdichtung |
 | Erfahrungsberichte (10+ detaillierte Berichte) | documented | SV Windrose, SV Waypoint, etc. |
 | Preisangaben (2024/2025 Katalogpreise) | estimated | 35–70€ für Seal-Kit |
@@ -3770,15 +3776,17 @@ Analyse von 47 Charterbooten (Sunsail, Moorings, Dream Yacht), Mittelmeer-Einsat
 
 **Berechnung:**
 ```
-F_min = (m × g × a) / (2 × b × n)
-F_min = (18 × 9.81 × 350) / (2 × 280 × 2)
-F_min = 61,803 / 1,120
-F_min = 55.2 N pro Gasfeder
+F_min = (m × g × a) / (b × n)
+F_min = (18 × 9.81 × 350) / (280 × 2)
+F_min = 61,803 / 560
+F_min = 110.4 N pro Gasfeder
 
-Sicherheitszuschlag 20%: F_empfohlen = 55.2 × 1.2 = 66.2 N
+Sicherheitszuschlag 20%: F_empfohlen = 110.4 × 1.2 = 132.5 N
 → Gewählt: 2× Stabilus LIFT-O-MAT INOX 80N (nächste verfügbare Stufe)
 → Artikel-Nr: 085534 0080N
 ```
+
+> ⚠️ **ZU PRÜFEN (Audit):** Nach Korrektur der Kraftformel (ohne Faktor 2) ergibt sich F_min ≈ 110 N/Feder bzw. 132 N mit 20% Zuschlag — die gewählte 80-N-Feder ist damit zu schwach. Federauswahl anhand aktueller Herstellerkataloge neu prüfen.
 (Confidence: calculated)
 
 ### AI.2 Berechnung: Große Salonluke Hallberg-Rassy 44
@@ -3792,14 +3800,16 @@ Sicherheitszuschlag 20%: F_empfohlen = 55.2 × 1.2 = 66.2 N
 
 **Berechnung:**
 ```
-F_min = (8 × 9.81 × 220) / (2 × 180 × 1)
-F_min = 17,266 / 360
-F_min = 48.0 N
+F_min = (8 × 9.81 × 220) / (180 × 1)
+F_min = 17,266 / 180
+F_min = 95.9 N
 
-Sicherheitszuschlag 20%: F_empfohlen = 48.0 × 1.2 = 57.5 N
+Sicherheitszuschlag 20%: F_empfohlen = 95.9 × 1.2 = 115.1 N
 → Gewählt: 1× Stabilus LIFT-O-MAT INOX 60N
 → Artikel-Nr: 085530 0060N
 ```
+
+> ⚠️ **ZU PRÜFEN (Audit):** Nach Korrektur der Kraftformel (ohne Faktor 2) ergibt sich F_min ≈ 96 N bzw. 115 N mit 20% Zuschlag — die gewählte 60-N-Feder ist damit zu schwach. Federauswahl anhand aktueller Herstellerkataloge neu prüfen.
 (Confidence: calculated)
 
 ### AI.3 Berechnung: Flybridge-Luke Motoryacht
@@ -3813,15 +3823,17 @@ Sicherheitszuschlag 20%: F_empfohlen = 48.0 × 1.2 = 57.5 N
 
 **Berechnung:**
 ```
-F_min = (45 × 9.81 × 500) / (2 × 400 × 2)
-F_min = 220,725 / 1,600
-F_min = 137.9 N
+F_min = (45 × 9.81 × 500) / (400 × 2)
+F_min = 220,725 / 800
+F_min = 275.9 N
 
-Sicherheitszuschlag 20%: F = 137.9 × 1.2 = 165.5 N
-Wind-Zuschlag 15%: F_empfohlen = 165.5 × 1.15 = 190.3 N
+Sicherheitszuschlag 20%: F = 275.9 × 1.2 = 331.1 N
+Wind-Zuschlag 15%: F_empfohlen = 331.1 × 1.15 = 380.8 N
 → Gewählt: 2× Stabilus LIFT-O-MAT INOX 200N
 → Artikel-Nr: 9116BW 0200N
 ```
+
+> ⚠️ **ZU PRÜFEN (Audit):** Nach Korrektur der Kraftformel (ohne Faktor 2) ergibt sich F_min ≈ 276 N/Feder bzw. 381 N mit Zuschlägen (20% + 15% Wind) — die gewählte 200-N-Feder ist damit zu schwach. Federauswahl anhand aktueller Herstellerkataloge neu prüfen.
 (Confidence: calculated)
 
 ### AI.4 Häufige Berechnungsfehler

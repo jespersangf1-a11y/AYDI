@@ -2568,10 +2568,10 @@ class CoolingSystemInventory(BaseModel):
 | Rydlyme Marine | Durchspülen (Kreislauf) | 4–8 h | Raumtemperatur | CuNi, Messing, Edelstahl |
 | Barnacle Buster | Durchspülen | 4–8 h | Raumtemperatur | CuNi, Messing |
 | Essig (5%) | Einlegen | 12–24 h | Raumtemperatur | Nur Messing (nicht CuNi!) |
-| Zitronensäure (5%) | Einlegen | 4–8 h | Warm (40°C) | CuNi, Messing |
-| Salzsäure (verdünnt 3%) | NUR Profi | 30 min max | Raumtemperatur | NUR Edelstahl (NICHT Kupfer!) |
+| Zitronensäure (5%) | Einlegen | 4–8 h | Warm (40°C) | CuNi, Messing, Edelstahl (chloridfrei) |
+| Salzsäure (verdünnt 3%) | NICHT verwenden | — | — | KEIN Edelstahl (Chlorid → Lochfraß/SpRK, auch 316L!) — auch KEIN Kupfer/Messing |
 
-**WARNUNG**: Niemals Salzsäure auf Kupfer oder Messing! Löst das Material auf. Rydlyme Marine ist die sicherste Option.
+**WARNUNG**: Niemals Salzsäure (chloridhaltig) im Kühlsystem verwenden! Chlorid verursacht bei Edelstahl — auch 316L — Lochfraß- und Spannungsrisskorrosion (SpRK) und löst zudem Kupfer/Messing auf. Für Kalk auf Edelstahl-Wärmetauschern ausschließlich chloridfreie Reiniger verwenden: Rydlyme Marine, verdünnte Zitronensäure (5%) oder Sulfaminsäure. Rydlyme Marine ist die sicherste Option.
 
 ### X.2 O-Ring-Inspektion: Gut vs. Schlecht
 
