@@ -8,6 +8,7 @@ from app.services.analysis.production import (
     analyze_standardization,
     analyze_cable_routing,
     run_production_analysis,
+    _vertex_angles,
     BOAT_CLASS_DEFAULTS,
     SEVERITY_ORDER,
 )
@@ -17,6 +18,17 @@ def _default_config(boat_class: str = "cruising_sail") -> dict:
     config = BOAT_CLASS_DEFAULTS[boat_class].copy()
     config.pop("weights", None)
     return config
+
+
+def test_vertex_angles_winding_independent():
+    """Convex corners must not be misread as reflex just because the polygon
+    is wound clockwise (regression: CW CAD polygons collapsed the score)."""
+    ccw = [[0, 0], [1, 0], [1, 1], [0, 1]]  # counter-clockwise unit square
+    cw = [[0, 0], [0, 1], [1, 1], [1, 0]]   # clockwise unit square
+    for poly in (ccw, cw):
+        angles = _vertex_angles(poly)
+        assert all(abs(a - 90.0) < 1e-6 for a, _ in angles)
+        assert not any(is_reflex for _, is_reflex in angles)
 
 
 # ---------------------------------------------------------------------------

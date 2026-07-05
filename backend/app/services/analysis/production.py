@@ -21,6 +21,22 @@ except ImportError:
     CONSTRUCTION_METHODS_DATABASE = {}
     QUALITY_ASSURANCE_AND_STANDARDS = {}
 
+# Import central knowledge retrieval for markdown production knowledge
+try:
+    from app.services.knowledge.knowledge_retrieval import (
+        get_all_manufacturers_knowledge as _get_md_manufacturers,
+        get_all_fehlerbilder_knowledge as _get_md_fehlerbilder,
+        MARKDOWN_LOADER_AVAILABLE as _MD_AVAILABLE,
+    )
+except ImportError:
+    _MD_AVAILABLE = False
+
+    def _get_md_manufacturers(*a, **kw):
+        return []
+
+    def _get_md_fehlerbilder(*a, **kw):
+        return []
+
 BOAT_CLASS_DEFAULTS = {
     "small_sail": {
         "min_sharp_angle_deg": 30,
@@ -327,14 +343,26 @@ def _polygon_min_dimension(polygon: list[list[float]]) -> float:
 
 
 def _vertex_angles(polygon: list[list[float]]) -> list[tuple[float, bool]]:
-    """Compute interior angles for a CCW polygon.
+    """Compute interior angles and reflex flags, independent of winding order.
+
+    Reflex detection depends on orientation: for a CCW polygon ``cross > 0``
+    marks a reflex vertex, for a CW polygon it is ``cross < 0``. The winding is
+    derived from the signed area so that clockwise CAD polygons are not
+    mis-scored (otherwise every convex corner would read as a reflex/undercut
+    and collapse the production score).
 
     Returns a list of (angle_deg, is_reflex) tuples.
-    For CCW polygons, cross > 0 means a reflex vertex (interior angle > 180°).
     """
     n = len(polygon)
     if n < 3:
         return []
+    # Signed area (shoelace): > 0 => CCW, < 0 => CW.
+    signed_area = 0.0
+    for i in range(n):
+        x1, y1 = polygon[i][0], polygon[i][1]
+        x2, y2 = polygon[(i + 1) % n][0], polygon[(i + 1) % n][1]
+        signed_area += x1 * y2 - x2 * y1
+    orientation = 1.0 if signed_area >= 0 else -1.0
     results = []
     for i in range(n):
         p_prev = polygon[(i - 1) % n]
@@ -348,8 +376,8 @@ def _vertex_angles(polygon: list[list[float]]) -> list[tuple[float, bool]]:
         dot = ax * bx + ay * by
         angle_rad = math.atan2(abs(cross), dot)
         angle_deg = math.degrees(angle_rad)
-        # For CCW polygon, cross > 0 means reflex vertex (interior angle > 180)
-        is_reflex = cross > 0
+        # Reflex when the turn direction opposes the polygon's winding.
+        is_reflex = (cross * orientation) > 0
         if is_reflex:
             angle_deg = 360.0 - angle_deg
         results.append((angle_deg, is_reflex))
@@ -1113,6 +1141,35 @@ def run_production_analysis(
 
     all_warnings.sort(key=lambda w: SEVERITY_ORDER.get(w.get("severity", "info"), 2))
 
+    # =========================================================================
+    # MARKDOWN KNOWLEDGE ENRICHMENT — production-relevant data
+    # =========================================================================
+
+    knowledge_enrichment = {}
+    if _MD_AVAILABLE:
+        try:
+            # Get production-relevant fehlerbilder (harze, vakuuminfusion, etc.)
+            prod_fehlerbilder = _get_md_fehlerbilder(category="04", max_results=10)
+            knowledge_enrichment["production_fehlerbilder"] = [
+                {
+                    "title": fb.get("title_de", ""),
+                    "source": fb.get("knowledge_source", ""),
+                }
+                for fb in prod_fehlerbilder
+            ]
+
+            # Get manufacturer data for production insights
+            prod_manufacturers = _get_md_manufacturers(category="04", max_results=15)
+            knowledge_enrichment["production_manufacturers"] = [
+                {
+                    "name": m.get("name", ""),
+                    "specialization": m.get("specialization", ""),
+                }
+                for m in prod_manufacturers if m.get("name")
+            ]
+        except Exception:
+            logger.exception("Error enriching production with markdown knowledge")
+
     return {
         "module": "production",
         "overall_score": round(overall, 1),
@@ -1123,4 +1180,5 @@ def run_production_analysis(
         "config_used": config,
         "confidence": data_source,
         "confidence_note": "Basiert auf geschätzten Werten aus öffentlichen Spezifikationen." if data_source == "estimated" else None,
+        "knowledge_enrichment": knowledge_enrichment if knowledge_enrichment else None,
     }
