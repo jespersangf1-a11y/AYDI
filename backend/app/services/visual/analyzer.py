@@ -12,7 +12,7 @@ import re
 from pathlib import Path
 
 from app.core.config import settings
-from app.core.retry import retry_async, get_circuit_breaker, NonRetryableError
+from app.core.retry import retry_async, get_circuit_breaker, NonRetryableError, RetryableError
 
 logger = logging.getLogger(__name__)
 
@@ -185,14 +185,19 @@ class VisualAnalyzer:
                     ],
                 )
             except Exception as e:
-                # Map known non-retryable errors
+                # Classify so the retry layer actually acts: permanent errors
+                # (auth, 400 bad request) must NOT be retried; transient ones
+                # (429 rate limit, 5xx, timeouts, connection) MUST be re-raised
+                # as RetryableError — otherwise retry_async treats the raw SDK
+                # exception as non-retryable and aborts on the first failure.
                 error_str = str(e).lower()
-                if "invalid_api_key" in error_str or "authentication" in error_str:
+                status_code = getattr(e, "status_code", None)
+                if status_code in (401, 403) or "invalid_api_key" in error_str or "authentication" in error_str:
                     raise NonRetryableError(f"Authentication error: {e}") from e
-                if "invalid_request" in error_str or "400" in error_str:
+                if status_code == 400 or "invalid_request" in error_str:
                     raise NonRetryableError(f"Invalid request: {e}") from e
-                # All other errors are retryable (rate limits, timeouts, 500s)
-                raise
+                # Everything else (429, 5xx, timeouts, connection resets) is transient.
+                raise RetryableError(f"Transient API error: {e}") from e
 
         retry_result = await retry_async(
             _call_claude_api,

@@ -400,6 +400,10 @@ async def run_full_analysis_endpoint(
         zones=layout.zones or [],
         passages=layout.passages or [],
         boat_class=project.boat_class,
+        # Enforce the caller's real subscription tier server-side. Without this
+        # the context defaulted to "pro", so free-tier users received every
+        # paid Level-2 module (paywall bypass).
+        tier=_user.tier,
         length_m=project.length_m,
         beam_m=project.beam_m,
         deck_height_mm=layout.deck_height_mm or 2100,

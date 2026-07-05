@@ -27,8 +27,13 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["images"])
 
 UPLOAD_DIR = Path(__file__).resolve().parents[3] / "uploads" / "images"
-ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "heic", "webp"}
+# heic dropped: unsupported downstream (analyzer MEDIA_TYPE_MAP + Claude Vision).
+ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "webp"}
 MAX_FILE_SIZE = 20 * 1024 * 1024  # 20 MB
+MAX_BATCH_FILES = 20
+# Authoritative content-based format -> stored extension (defends against
+# polyglot / disguised non-image uploads that pass the filename-extension check).
+_PIL_FORMAT_TO_EXT = {"JPEG": "jpg", "PNG": "png", "WEBP": "webp"}
 
 
 def _ensure_upload_dir() -> None:
@@ -52,26 +57,55 @@ def _extract_extension(filename: str | None) -> str:
     return ext
 
 
-def _normalise_extension(ext: str) -> str:
-    """Normalise jpeg -> jpg for consistency."""
-    return "jpg" if ext == "jpeg" else ext
+def _validate_image_bytes(content: bytes) -> str:
+    """Verify the bytes decode as a supported image; return the canonical ext.
+
+    Content-based check (structural decode via Pillow) so a non-image payload
+    disguised with an image extension cannot be stored and later served
+    (stored-XSS / content-sniffing). Raises 400 on failure.
+    """
+    from io import BytesIO
+
+    try:
+        from PIL import Image
+
+        with Image.open(BytesIO(content)) as img:
+            img.verify()  # structural validation (leaves img unusable afterwards)
+        with Image.open(BytesIO(content)) as img2:
+            fmt = (img2.format or "").upper()
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=400, detail="Datei ist kein gültiges Bild.")
+
+    ext = _PIL_FORMAT_TO_EXT.get(fmt)
+    if ext is None:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Nicht unterstütztes Bildformat: {fmt or 'unbekannt'}. Erlaubt: JPEG, PNG, WEBP.",
+        )
+    return ext
 
 
 async def _save_file(file: UploadFile) -> tuple[str, str, int]:
     """Save uploaded file and return (file_path, file_type, file_size_bytes)."""
-    ext = _extract_extension(file.filename)
-    file_type = _normalise_extension(ext)
+    # Cheap early reject by filename extension.
+    _extract_extension(file.filename)
 
-    content = await file.read()
+    # Bounded read: never buffer more than the limit (+1 byte to detect overflow),
+    # so an oversized upload cannot exhaust memory before the size check runs.
+    content = await file.read(MAX_FILE_SIZE + 1)
     file_size = len(content)
-
     if file_size > MAX_FILE_SIZE:
         raise HTTPException(
-            status_code=400,
+            status_code=413,
             detail=f"Datei zu gross. Maximal {MAX_FILE_SIZE // (1024 * 1024)} MB erlaubt.",
         )
     if file_size == 0:
         raise HTTPException(status_code=400, detail="Leere Datei hochgeladen.")
+
+    # Content is authoritative for the stored extension.
+    file_type = _validate_image_bytes(content)
 
     _ensure_upload_dir()
     unique_name = f"{uuid_mod.uuid4()}.{file_type}"
@@ -334,6 +368,11 @@ async def analyze_batch(
     """Upload multiple images and get a combined visual assessment."""
     if not files:
         raise HTTPException(status_code=400, detail="Keine Dateien hochgeladen.")
+    if len(files) > MAX_BATCH_FILES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Zu viele Dateien. Maximal {MAX_BATCH_FILES} pro Batch.",
+        )
 
     all_findings = []
     all_positives = []
