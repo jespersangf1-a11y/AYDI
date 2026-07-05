@@ -23,20 +23,19 @@ def _default_config(boat_class: str = "cruising_sail") -> dict:
 
 
 def test_empty_reports():
-    """No service reports -> score 50.0 and a single info warning."""
+    """No service reports -> module reports unavailable (no fabricated score)."""
     result = run_service_patterns_analysis([], [], "cruising_sail", service_reports=[])
-    assert result["overall_score"] == 50.0
     assert result["module"] == "service_patterns"
-    assert len(result["warnings"]) == 1
-    assert result["warnings"][0]["severity"] == "info"
-    assert result["warnings"][0]["code"] == "NO_SERVICE_REPORTS"
+    assert result["available"] is False
+    assert "reason" in result
+    assert "overall_score" not in result
 
 
 def test_empty_reports_none():
     """service_reports=None is treated the same as an empty list."""
     result = run_service_patterns_analysis([], [], "cruising_sail", service_reports=None)
-    assert result["overall_score"] == 50.0
-    assert result["warnings"][0]["code"] == "NO_SERVICE_REPORTS"
+    assert result["available"] is False
+    assert "overall_score" not in result
 
 
 # ---------------------------------------------------------------------------

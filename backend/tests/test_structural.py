@@ -265,13 +265,11 @@ def test_structural_config_overrides():
 
 
 def test_structural_empty_input():
-    """No zones -> short-circuit: score 50, single STRUCTURAL_NO_ZONES warning."""
+    """No zones -> module reports unavailable (no fabricated score)."""
     result = run_structural_analysis([], [], "cruising_sail")
-    assert result["overall_score"] == 50.0
-    assert len(result["sub_scores"]) == 6
-    assert all(v == 50.0 for v in result["sub_scores"].values())
-    assert len(result["warnings"]) == 1
-    assert result["warnings"][0]["code"] == "STRUCTURAL_NO_ZONES"
+    assert result["available"] is False
+    assert "reason" in result
+    assert "overall_score" not in result
 
 
 def test_structural_unknown_zone_type():

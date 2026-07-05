@@ -937,7 +937,7 @@ class TestScoreFusionValidation:
         result = fuse_module_scores(None, None, "ergonomics", "cruising_sail")
 
         assert result["fused_score"] is None
-        assert result["confidence"] == "insufficient"
+        assert result["confidence"] == "visual_insufficient"
         assert result["data_sources"] == []
 
     def test_fuse_zone_score_structured_only(self):
@@ -976,7 +976,7 @@ class TestScoreFusionValidation:
         )
 
         assert result["score"] is None
-        assert result["confidence"] == "insufficient"
+        assert result["confidence"] == "visual_insufficient"
 
     def test_fuse_zone_score_with_large_discrepancy(self):
         """Test zone score fusion flags large discrepancies."""

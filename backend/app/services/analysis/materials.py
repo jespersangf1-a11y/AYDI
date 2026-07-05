@@ -34,6 +34,26 @@ try:
 except ImportError:
     ANTIFOULING_DATABASE = {}
 
+# Import central knowledge retrieval for markdown knowledge integration
+try:
+    from app.services.knowledge.knowledge_retrieval import (
+        get_knowledge_for_materials_analysis as _get_md_materials_knowledge,
+        get_all_fehlerbilder_knowledge as _get_md_fehlerbilder,
+        get_all_manufacturers_knowledge as _get_md_manufacturers,
+        MARKDOWN_LOADER_AVAILABLE as _MD_AVAILABLE,
+    )
+except ImportError:
+    _MD_AVAILABLE = False
+
+    def _get_md_materials_knowledge(*a, **kw):
+        return {}
+
+    def _get_md_fehlerbilder(*a, **kw):
+        return []
+
+    def _get_md_manufacturers(*a, **kw):
+        return []
+
 BOAT_CLASS_DEFAULTS = {
     "small_sail": {
         "min_lifespan_years": 15,
@@ -957,6 +977,19 @@ def run_materials_analysis(
 
     zone_materials = materials or []
 
+    # No materials assigned → nothing to analyse. Report as unavailable rather
+    # than running every sub-analysis on empty input and fabricating a 50/100
+    # score ("never present uncertain results as facts").
+    if not zone_materials:
+        return {
+            "module": "materials",
+            "available": False,
+            "reason": "Keine Materialien zugewiesen — Materialanalyse nicht möglich.",
+            "suggestions": [
+                "Materialien den Zonen zuweisen, um eine Materialanalyse zu erhalten."
+            ],
+        }
+
     sub_scores: dict[str, float] = {}
     all_warnings: list[dict] = []
     all_suggestions: list[str] = []
@@ -998,6 +1031,59 @@ def run_materials_analysis(
 
     all_warnings.sort(key=lambda w: SEVERITY_ORDER.get(w.get("severity", "info"), 2))
 
+    # =========================================================================
+    # MARKDOWN KNOWLEDGE ENRICHMENT — add fehlerbilder + manufacturer data
+    # =========================================================================
+
+    knowledge_enrichment = {}
+    if _MD_AVAILABLE:
+        try:
+            # Detect hull/core materials from zone_materials for targeted retrieval
+            hull_mat = None
+            core_mat = None
+            for zm in zone_materials:
+                mat = zm.get("material", {})
+                cat = mat.get("category", "").lower()
+                if "gfk" in cat or "fiberglass" in cat or "grp" in cat:
+                    hull_mat = "grp"
+                if "balsa" in cat:
+                    core_mat = "balsa"
+                elif "pvc" in cat:
+                    core_mat = "pvc_foam"
+                elif "san" in cat:
+                    core_mat = "san_foam"
+
+            md_knowledge = _get_md_materials_knowledge(
+                hull_material=hull_mat,
+                hull_construction=None,
+                core_material=core_mat,
+            )
+            knowledge_enrichment["markdown_known_issues"] = md_knowledge.get("known_issues", [])
+            knowledge_enrichment["markdown_manufacturers"] = md_knowledge.get("markdown_manufacturers", [])[:20]
+
+            # Add material-specific fehlerbilder to warnings
+            mat_names = {
+                zm.get("material", {}).get("name", "").lower()
+                for zm in zone_materials if zm.get("material")
+            }
+            for mat_name in mat_names:
+                if not mat_name:
+                    continue
+                md_fehlerbilder = _get_md_fehlerbilder(search_query=mat_name, max_results=3)
+                for fb in md_fehlerbilder:
+                    all_warnings.append({
+                        "code": "MD_FEHLERBILD",
+                        "severity": "info",
+                        "message": (
+                            f"[Wissensdatenbank] {fb.get('title_de', '')}: "
+                            f"{fb.get('symptom_de', '')[:150]}"
+                        ),
+                        "suggestion": fb.get("massnahme_de", "")[:150] if fb.get("massnahme_de") else None,
+                        "source": f"markdown:{fb.get('knowledge_source', '')}",
+                    })
+        except Exception:
+            logger.exception("Error enriching materials with markdown knowledge")
+
     return {
         "module": "materials",
         "overall_score": round(overall, 1),
@@ -1008,4 +1094,5 @@ def run_materials_analysis(
         "config_used": config,
         "confidence": data_source,
         "confidence_note": "Basiert auf geschätzten Werten aus öffentlichen Spezifikationen." if data_source == "estimated" else None,
+        "knowledge_enrichment": knowledge_enrichment if knowledge_enrichment else None,
     }

@@ -27,6 +27,18 @@ try:
 except ImportError:
     KEEL_DATABASE = {}
 
+# Import central knowledge retrieval for markdown knowledge integration
+try:
+    from app.services.knowledge.knowledge_retrieval import (
+        get_knowledge_for_structural_analysis as _get_md_structural_knowledge,
+        MARKDOWN_LOADER_AVAILABLE as _MD_AVAILABLE,
+    )
+except ImportError:
+    _MD_AVAILABLE = False
+
+    def _get_md_structural_knowledge(*a, **kw):
+        return {}
+
 BOAT_CLASS_DEFAULTS = {
     "small_sail": {
         "ideal_cog_x_range": (0.42, 0.52),
@@ -940,23 +952,14 @@ def run_structural_analysis(
     if config_overrides:
         config.update(config_overrides)
 
-    # Short-circuit: no zones → score 50 + single info warning
+    # Short-circuit: no zones → structural analysis is not possible. Report as
+    # unavailable rather than fabricating a 50/100 score for absent data.
     if not zones:
         return {
             "module": "structural",
-            "overall_score": 50.0,
-            "sub_scores": {k: 50.0 for k in weights},
-            "warnings": [{
-                "code": "STRUCTURAL_NO_ZONES",
-                "severity": "info",
-                "message": "Keine Zonen für Strukturanalyse vorhanden.",
-                "suggestion": "Zonen dem Layout zuweisen.",
-            }],
+            "available": False,
+            "reason": "Keine Zonen für Strukturanalyse vorhanden.",
             "suggestions": ["Zonen dem Layout zuweisen."],
-            "metrics": {},
-            "config_used": config,
-            "confidence": data_source,
-            "confidence_note": "Basiert auf geschätzten Werten aus öffentlichen Spezifikationen." if data_source == "estimated" else None,
         }
 
     sub_scores: dict[str, float] = {}
@@ -998,6 +1001,37 @@ def run_structural_analysis(
 
     all_warnings.sort(key=lambda w: SEVERITY_ORDER.get(w.get("severity", "info"), 2))
 
+    # =========================================================================
+    # MARKDOWN KNOWLEDGE ENRICHMENT — structural data from composites/fasteners
+    # =========================================================================
+
+    knowledge_enrichment = {}
+    if _MD_AVAILABLE:
+        try:
+            md_knowledge = _get_md_structural_knowledge(
+                hull_material="grp",
+                hull_construction=None,
+                core_material=None,
+            )
+            knowledge_enrichment["markdown_fastener_data"] = md_knowledge.get("markdown_fastener_data", [])
+            knowledge_enrichment["markdown_composite_data"] = md_knowledge.get("markdown_composite_data", [])
+
+            # Add structural fehlerbilder as info warnings
+            for fd in md_knowledge.get("markdown_fastener_data", [])[:5]:
+                for fb in fd.get("fehlerbilder", [])[:1]:
+                    all_warnings.append({
+                        "code": "MD_STRUCTURAL_FEHLERBILD",
+                        "severity": "info",
+                        "message": (
+                            f"[Wissensdatenbank: {fd.get('title', '')}] "
+                            f"{fb.get('title', '')}: {fb.get('symptom', '')[:120]}"
+                        ),
+                        "suggestion": fb.get("massnahme", "")[:120] if fb.get("massnahme") else None,
+                        "source": f"markdown:{fd.get('slug', '')}",
+                    })
+        except Exception:
+            logger.exception("Error enriching structural with markdown knowledge")
+
     return {
         "module": "structural",
         "overall_score": round(overall, 1),
@@ -1008,4 +1042,5 @@ def run_structural_analysis(
         "config_used": config,
         "confidence": data_source,
         "confidence_note": "Basiert auf geschätzten Werten aus öffentlichen Spezifikationen." if data_source == "estimated" else None,
+        "knowledge_enrichment": knowledge_enrichment if knowledge_enrichment else None,
     }

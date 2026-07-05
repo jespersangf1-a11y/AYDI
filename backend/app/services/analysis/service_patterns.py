@@ -32,6 +32,18 @@ try:
 except ImportError:
     CUMULATIVE_DEGRADATION_CYCLES = {}
 
+# Import central knowledge retrieval for markdown knowledge integration
+try:
+    from app.services.knowledge.knowledge_retrieval import (
+        get_knowledge_for_service_patterns as _get_md_service_knowledge,
+        MARKDOWN_LOADER_AVAILABLE as _MD_AVAILABLE,
+    )
+except ImportError:
+    _MD_AVAILABLE = False
+
+    def _get_md_service_knowledge(*a, **kw):
+        return {}
+
 BOAT_CLASS_DEFAULTS = {
     "small_sail": {
         "min_reports_for_pattern": 3,
@@ -551,39 +563,17 @@ def run_service_patterns_analysis(
 
     reports = service_reports or []
 
-    # Early exit when no reports are available
+    # Early exit when no reports are available: report as unavailable rather
+    # than fabricating a 50/100 score for data that was never provided.
     if not reports:
         return {
             "module": "service_patterns",
-            "overall_score": 50.0,
-            "sub_scores": {
-                "zone_issues": 50.0,
-                "age_patterns": 50.0,
-                "material_failures": 50.0,
-                "design_warnings": 50.0,
-            },
-            "warnings": [
-                {
-                    "code": "NO_SERVICE_REPORTS",
-                    "severity": "info",
-                    "message": (
-                        "Keine Serviceberichte vorhanden. "
-                        "Musteranalyse nicht möglich."
-                    ),
-                    "suggestion": (
-                        "Serviceberichte erfassen und mit Layouts verknüpfen, "
-                        "um Musteranalysen zu ermöglichen."
-                    ),
-                }
-            ],
+            "available": False,
+            "reason": "Keine Serviceberichte vorhanden. Musteranalyse nicht möglich.",
             "suggestions": [
                 "Serviceberichte erfassen und mit Layouts verknüpfen, "
                 "um Musteranalysen zu ermöglichen."
             ],
-            "metrics": {},
-            "config_used": config,
-            "confidence": data_source,
-            "confidence_note": "Basiert auf geschätzten Werten aus öffentlichen Spezifikationen." if data_source == "estimated" else None,
         }
 
     sub_scores: dict[str, float] = {}
@@ -635,6 +625,42 @@ def run_service_patterns_analysis(
 
     all_warnings.sort(key=lambda w: SEVERITY_ORDER.get(w.get("severity", "info"), 2))
 
+    # =========================================================================
+    # MARKDOWN KNOWLEDGE ENRICHMENT — Fallstudien, Erfahrungsberichte
+    # =========================================================================
+
+    knowledge_enrichment = {}
+    if _MD_AVAILABLE:
+        try:
+            md_service = _get_md_service_knowledge(
+                hull_material="grp",
+                hull_construction=None,
+            )
+
+            # Add real fallstudien from markdown knowledge
+            md_fallstudien = md_service.get("markdown_fallstudien", [])
+            knowledge_enrichment["markdown_fallstudien"] = md_fallstudien[:15]
+
+            # Add erfahrungsberichte
+            md_erfahrungen = md_service.get("markdown_erfahrungsberichte", [])
+            knowledge_enrichment["markdown_erfahrungsberichte"] = md_erfahrungen[:15]
+
+            # Add markdown fehlerbilder as design warnings
+            for fm in md_service.get("common_failure_modes", []):
+                if isinstance(fm, dict) and fm.get("title"):
+                    all_warnings.append({
+                        "code": "MD_SERVICE_FEHLERBILD",
+                        "severity": "info",
+                        "message": (
+                            f"[Wissensdatenbank: {fm.get('source', '')}] "
+                            f"{fm.get('title', '')}: {fm.get('symptom', '')[:120]}"
+                        ),
+                        "suggestion": fm.get("massnahme", "")[:150] if fm.get("massnahme") else None,
+                        "source": "markdown",
+                    })
+        except Exception:
+            logger.exception("Error enriching service_patterns with markdown knowledge")
+
     return {
         "module": "service_patterns",
         "overall_score": round(overall, 1),
@@ -645,4 +671,5 @@ def run_service_patterns_analysis(
         "config_used": config,
         "confidence": data_source,
         "confidence_note": "Basiert auf geschätzten Werten aus öffentlichen Spezifikationen." if data_source == "estimated" else None,
+        "knowledge_enrichment": knowledge_enrichment if knowledge_enrichment else None,
     }
