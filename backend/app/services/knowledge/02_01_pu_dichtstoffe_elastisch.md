@@ -155,16 +155,19 @@ Elastische Polyurethan-Dichtstoffe (PU-Sealants) sind feuchtigkeitshärtende 1-K
 | Einsatz | Fenster-Verklebung (Acrylglas, Polycarbonat, Mineralglas) |
 | Primer | Sika Primer-206 G+P + Sika Aktivator-205 |
 
-**Sikaflex 298 (Sandwich-Panel Bonding)**
+**Sikaflex 298 (Teakdeck-Klebstoff / Teak Deck Bonding)**
 
 | Parameter | Wert |
 |---|---|
-| Chemische Basis | 1K Polyurethan (hochfest) |
+| Chemische Basis | 1K Polyurethan (leicht thixotrop, feuchtigkeitshärtend) |
 | Farben | Schwarz |
-| Shore A | ~50 |
-| Zugfestigkeit | ~8,0 MPa |
-| Bruchdehnung | ~300% |
-| Einsatz | Sandwich-Verklebung, Deck-auf-Rumpf (OEM-Werften) |
+| Shore A | ~30 |
+| Zugfestigkeit | ~1,2 MPa |
+| Bruchdehnung | ~600% |
+| Einsatz | Teakdeck-**Verklebung/Bettung** (Bedding von Teakplanken auf GFK, Marine-Sperrholz, Stahl, Alu, Edelstahl); IMO-konform |
+| Abgrenzung | Klebt/bettet Teakplanken. Für die Naht-/Fugenverfüllung zwischen den Planken → Sikaflex 290 DC (Deck-Caulking, separate 2K-Datei) |
+
+> **Korrektur-Hinweis (Audit):** Frühere Beschreibung „Sandwich-Panel Bonding / Deck-auf-Rumpf" war sachlich falsch — Sikaflex 298 ist der Teakdeck-Bettungsklebstoff. Kennwerte auf Sika Product Data Sheet Sikaflex®-298, Version 03.01 (04-2023) korrigiert (Shore A ~30 / Zugfestigkeit ~1,2 MPa / Bruchdehnung ~600%, statt zuvor 50 / 8,0 MPa / 300%).
 
 **Sika Primer und Aktivatoren:**
 
@@ -332,7 +335,7 @@ Elastische Polyurethan-Dichtstoffe (PU-Sealants) sind feuchtigkeitshärtende 1-K
 | Bostik ISR 70-03 weiß | €8–14 |
 | ISR 70-08 Primer | €15–22 (250ml) |
 
-(Confidence: documented — Simson/Bostik TDS, niederländische Händler)
+(Confidence: documented — Simson/Bostik TDS, niederländische Händler; mechanische Kennwerte Simson MSR / Bostik ISR 70-03 jedoch estimated — unverifiziert, Konflikt mit Anhang S, siehe Audit-Hinweis Tabelle 3.1)
 
 ### 2.4 Sabatack / Saba (NL) — Marine-Dichtstoffe
 
@@ -371,7 +374,7 @@ Elastische Polyurethan-Dichtstoffe (PU-Sealants) sind feuchtigkeitshärtende 1-K
 | Sabatack 750 weiß | €14–20 |
 | Sabatack 770 weiß | €16–24 |
 
-(Confidence: documented — Saba TDS, Compass24 Listing)
+(Confidence: documented — Saba TDS, Compass24 Listing; mechanische Kennwerte Sabatack 750 / 770 jedoch estimated — unverifiziert, Konflikt mit Anhang S, siehe Audit-Hinweis Tabelle 3.1)
 
 ### 2.5 TotalBoat (Jamestown Distributors) — Marine Sealants
 
@@ -567,7 +570,7 @@ Elastische Polyurethan-Dichtstoffe (PU-Sealants) sind feuchtigkeitshärtende 1-K
 | Hautbildungszeit | ~10 min (!!) |
 | Preis | €9–14 (290ml) |
 
-(Confidence: documented — Soudal TDS)
+(Confidence: documented — Soudal TDS; mechanische Kennwerte Soudaseal 270HS / 240FC jedoch estimated — unverifiziert, Konflikt mit Anhang S, siehe Audit-Hinweis Tabelle 3.1)
 
 ### 2.14 Weitere Hersteller (Nischen/Regional)
 
@@ -600,7 +603,7 @@ Elastische Polyurethan-Dichtstoffe (PU-Sealants) sind feuchtigkeitshärtende 1-K
 | Sikaflex 291i LOT | PU | 30 | 2,0 | 600 | 60 | 3 |
 | Sikaflex 292i | PU | 45 | 6,0 | 350 | 50 | 3 |
 | Sikaflex 295i UV | PU | 40 | 3,5 | 400 | 40 | 3 |
-| Sikaflex 298 | PU | 50 | 8,0 | 300 | 40 | 3 |
+| Sikaflex 298 | PU | 30 | 1,2 | 600 | 40 | 3 |
 | 3M 4200 | PU | 40 | 2,4 | 400 | 45 | 3 |
 | 3M 4200FC | PU | 40 | 2,4 | 400 | 30 | 3 |
 | 3M 4000UV | PU | 35 | 2,1 | 600 | 45 | 3 |
@@ -623,7 +626,16 @@ Elastische Polyurethan-Dichtstoffe (PU-Sealants) sind feuchtigkeitshärtende 1-K
 
 *3M 5200: Hautbildung erst nach ~48h — extrem langsam!
 
-(Confidence: documented — Hersteller-TDS kompiliert)
+> ⚠️ **ZU PRÜFEN (Audit):** Die mechanischen Kennwerte mehrerer MS-Polymer-Produkte in dieser Tabelle widersprechen den Werten in Anhang S (Erweiterte Hersteller-Profile):
+> - **Simson MSR:** hier 1,5 MPa / 400 % — Anhang S: 1,8 MPa / 500 %
+> - **Bostik ISR 70-03:** hier Shore 30 / 1,2 MPa / 500 % — Anhang S: Shore 45 / 2,5 MPa / 300 % (Bostik-TDS real ca. Shore 55 / 2,6–3,2 MPa / 250 %)
+> - **Sabatack 750:** hier 2,0 MPa / 350 % — Anhang S: 1,5 MPa / 600 %
+> - **Sabatack 770:** hier Shore 45 / 3,5 MPa — Anhang S: Shore 50 / 3,0 MPa
+> - **Soudaseal 270HS:** hier Shore 45 / 3,0 MPa / 300 % — Anhang S: Shore 50 / 3,5 MPa / 250 %
+> - **Soudaseal 240FC:** hier Shore 35 — Anhang S: Shore 40
+> Keine Richtung zweifelsfrei belegbar → Werte vor Verwendung gegen die jeweils aktuellen Hersteller-TDS verifizieren.
+
+(Confidence: estimated — unverifiziert — TDS-Kennwert-Konflikte mit Anhang S (siehe Audit-Hinweis oben); Basis: Hersteller-TDS kompiliert)
 
 ### 3.2 Vergleichstabelle: Beständigkeiten
 
@@ -702,6 +714,8 @@ class MarineSealantTDS(BaseModel):
 | Teak-Deck (Fugen) | Sikaflex 290DC (2K!) | Teak Decking Systems TDS | NICHT 291i oder 5200 |
 | Innenraum (Möbelverklebung) | Sikaflex 291i | Simson MSR, BoatLIFE | 3M 5200 (overkill) |
 | Sanitär (Unterwasser) | 3M 5200, Sikaflex 292i | Polysulfid (Life-Calk) | Silikon |
+
+> ⚠️ **ZU PRÜFEN (Audit):** In den Zeilen „Rumpf-Deck-Verbindung" und „Kiel-Rumpf-Verbindung" ist **Sikaflex 298** als Alternative gelistet. Sikaflex 298 ist jedoch ein Teakdeck-Bettungsklebstoff (Shore A ~30, ~1,2 MPa, ~600 %) und **nicht** für strukturelle Rumpf-/Kielverklebung geeignet. Für strukturelle Verklebung sind die bereits als Primär gelisteten Produkte (Sikaflex 292i bzw. 3M 5200) zu verwenden. Empfehlung fachlich prüfen. (Confidence hier: estimated — unverifiziert)
 
 ### 4.2 Entscheidungsbaum: Welcher Dichtstoff?
 
@@ -2112,11 +2126,13 @@ class SealantComparison(BaseModel):
 | Produkt | Basis | Shore A | Zugfestigkeit | Bruchdehnung | Farben | Kartusche |
 |---|---|---|---|---|---|---|
 | Simson MSR | MS-Polymer | 35 | 1.8 MPa | 500% | Weiß, Schwarz, Grau | 290 ml |
-| Simson ISR 70-03 | MS-Polymer | 45 | 2.5 MPa | 300% | Weiß, Schwarz | 290 ml |
+| Bostik ISR 70-03 | MS-Polymer | 45 | 2.5 MPa | 300% | Weiß, Schwarz | 290 ml |
 | Simson ISR 70-08 (Primer) | — | — | — | — | Transparent | 250 ml Dose |
 | Simson ISR 70-05 | MS-Polymer | 55 | 3.0 MPa | 250% | Weiß, Schwarz, Grau | 290 ml |
 
-(Confidence: documented — Simson Marine TDS, Bostik Professional Catalog)
+> ⚠️ **ZU PRÜFEN (Audit):** Die Kennwerte für **Simson MSR** (hier 1,8 MPa / 500 %) und **Bostik ISR 70-03** (hier Shore 45 / 2,5 MPa / 300 %) weichen von Abschnitt 2.3 und Tabelle 3.1 ab (Simson MSR: 1,5 MPa / 400 %; Bostik ISR 70-03: Shore 30 / 1,2 MPa / 500 %). Der Bostik-TDS für ISR 70-03 nennt real ca. Shore 55 / 2,6–3,2 MPa / 250 % — d. h. keine der beiden internen Angaben ist exakt. Werte vor Verwendung gegen die aktuellen Hersteller-TDS prüfen. Markenname vereinheitlicht: „Bostik ISR 70-03" (Bostik übernahm Simson 2015, gleiche Produktlinie).
+
+(Confidence: estimated — unverifiziert — Kennwert-Konflikte mit Abschnitt 2.3 / Tabelle 3.1 (siehe Audit-Hinweis); Basis: Simson/Bostik Marine TDS, Bostik Professional Catalog)
 
 ### S.4 Saba/Sabatack — Niederländischer Spezialist
 
@@ -2141,7 +2157,9 @@ class SealantComparison(BaseModel):
 | Sabatack Primer G | MS-Polymer Primer | — | — | — | Transparent | SAB-PR-G |
 | Sabatack Primer M | MS-Polymer Primer | — | — | — | Transparent | SAB-PR-M |
 
-(Confidence: documented — SFR Coatings Sabatack Marine TDS, OEM Application Notes)
+> ⚠️ **ZU PRÜFEN (Audit):** Die Kennwerte für **Sabatack 750** (hier 1,5 MPa / 600 %) und **Sabatack 770** (hier Shore 50 / 3,0 MPa) weichen von Abschnitt 2.4 und Tabelle 3.1 ab (Sabatack 750: 2,0 MPa / 350 %; Sabatack 770: Shore 45 / 3,5 MPa). Keine Richtung zweifelsfrei belegbar → gegen die aktuellen Saba/Sabatack-TDS verifizieren.
+
+(Confidence: estimated — unverifiziert — Kennwert-Konflikte mit Abschnitt 2.4 / Tabelle 3.1 (siehe Audit-Hinweis); Basis: SFR Coatings Sabatack Marine TDS, OEM Application Notes)
 
 ### S.5 Soudal — Belgischer Weltmarktführer Dichtstoffe
 
@@ -2166,7 +2184,9 @@ class SealantComparison(BaseModel):
 | Soudaseal 215 LM | MS-Polymer (low modulus) | 20 | 0.8 MPa | 800% | Weiß | 290 ml |
 | Soudaflex 40 FC | PU (schnellhärtend) | 40 | 2.5 MPa | 350% | Weiß, Grau | 310 ml |
 
-(Confidence: documented — Soudal Marine Application Guide, TDS einzeln verifiziert)
+> ⚠️ **ZU PRÜFEN (Audit):** Die Kennwerte für **Soudaseal 270 HS** (hier Shore 50 / 3,5 MPa / 250 %) und **Soudaseal 240 FC** (hier Shore 40) weichen von Abschnitt 2.13 und Tabelle 3.1 ab (270HS: Shore 45 / 3,0 MPa / 300 %; 240FC: Shore 35). Keine Richtung zweifelsfrei belegbar → gegen die aktuellen Soudal-TDS verifizieren.
+
+(Confidence: estimated — unverifiziert — Kennwert-Konflikte mit Abschnitt 2.13 / Tabelle 3.1 (siehe Audit-Hinweis); Basis: Soudal Marine Application Guide)
 
 ---
 
@@ -3580,7 +3600,7 @@ Polyester (lackiert) → Sika Primer-206 G+P
 | 3M | 3M 4200 / 4200FC | +4°C bis +27°C | 12 Monate ab Produktion | US-Datierung: MM/YY auf Bodennaht |
 | 3M | 3M 5200 / 5200FC | +4°C bis +27°C | 12 Monate ab Produktion | Kartusche schwer — Lagerung stehend empfohlen |
 | Simson | Simson MSR | +5°C bis +25°C | 18 Monate ab Produktion | MS-Polymer hält länger als PU |
-| Simson | Simson ISR 70-03 | +5°C bis +25°C | 18 Monate ab Produktion | STP-Hybrid, gleiche Lagerung wie MSR |
+| Simson | Bostik ISR 70-03 | +5°C bis +25°C | 18 Monate ab Produktion | STP-Hybrid, gleiche Lagerung wie MSR |
 | Sabatack | Sabatack 750 | +5°C bis +25°C | 15 Monate ab Produktion | OEM-Chargen separat kennzeichnen |
 | Soudal | Soudaseal 270 HS | +5°C bis +25°C | 18 Monate ab Produktion | Belgische Qualitätskontrolle |
 | TotalBoat | TotalBoat SealIt | +4°C bis +27°C | 12 Monate ab Produktion | US-Markt, Import-Lagerung beachten |

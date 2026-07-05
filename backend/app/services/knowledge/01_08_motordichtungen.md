@@ -3403,6 +3403,8 @@ class GasketDifferentialDiagnosis(BaseModel):
 
 ## ANHANG BB — Erweiterte Cross-Referenz-Datenbank: Aftermarket-Quellen
 
+> ⚠️ **ZU PRÜFEN (Audit):** Die Teilenummern in diesem Anhang weichen systematisch von den Einzel-Katalogeinträgen ab und **widersprechen dem Hauptkatalog (Abschn. 3.2/4.2/10.2/12.2)**. Belegte Abweichungen: `128170-01911` (BB.1, „1GM/2GM/3GM") ist im Hauptkatalog nicht belegt — dort 1GM = `128170-01330` (Abschn. 3.2), 2GM20 = `128270-01911` (Abschn. 4.2), 3GM30 = `128370-01911` (Abschn. 5.2); `128370-01911` gilt laut Katalog nur für 3GM30/2YM20, **nicht** für 2GM20; `128671-01340` widerspricht dem 3JH2E-Kopfdichtungswert `129150-01331` (Abschn. 8.2/9.2); die 4JH-Nummern (`129573-01350`, `129612-01350`, `129795-01350`) und `128270-13201` (2YM/3YM) finden im Hauptkatalog keine Entsprechung. **Modell „3JH25" ist im Hauptkatalog nicht geführt** (dort nur 3JH2E/3JH3E/3JH4E/3JH5E/3JH40; „3JH25/3JH25A" existiert zwar als reales Yanmar-Modell, ist hier aber nicht katalogisiert). **Teilenummern sind fehlbestellungs-kritisch — vor Bestellung ist der Hauptkatalog bzw. die OEM-Original-Teilenummer maßgeblich; diese Aftermarket-Cross-Referenz NICHT ungeprüft verwenden.**
+
 ### BB.1 Cross-Referenz: Yanmar OEM → Aftermarket nach Anbieter
 
 | Yanmar OEM-Nr | Motor | Beschreibung | Parts4Engines | Keypart | RecMar | Sierra |
@@ -3442,7 +3444,7 @@ class GasketDifferentialDiagnosis(BaseModel):
 | 012 08361 | DV36 | Kopfdichtung | DVP-36HD | — | BY136 |
 | 012 08481 | DV48 | Kopfdichtung | DVP-48HD | — | BY148 |
 
-(Confidence: documented — Aftermarket-Kataloge 2024/2025, Parts4Engines.com, Orbitrade.com, RecMar.nl)
+(Confidence: estimated — unverifiziert — Teilenummern widersprechen dem Hauptkatalog (siehe Audit-Hinweis oben), vor Bestellung OEM-Nummer/Hauptkatalog maßgeblich; ursprüngl. Quellenangabe: Aftermarket-Kataloge 2024/2025, Parts4Engines.com, Orbitrade.com, RecMar.nl — nicht gegengeprüft)
 
 ---
 

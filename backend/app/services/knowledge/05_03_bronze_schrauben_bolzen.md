@@ -1155,6 +1155,8 @@ Für Holzboote mit Bleikiel (Ballastkiel angebolzt) sind Silizium-Bronze-Kielbol
 | **14m (46ft)** | 4000–7000 kg | 1" (25,4mm) | 10–12 | SiBr / Monel K-500 |
 | **16m+ (52ft+)** | 6000+ kg | 1-1/4"+ (31,8mm+) | 12+ | Monel K-500 empfohlen |
 
+> ⚠️ **ZU PRÜFEN (Audit):** Diese Dimensionierung widerspricht Anhang B.2 („Kielbolzen-Dimensionierung nach Bootsgröße"). Hier erhält ein 7m-Boot 1/2" (12,7mm) Bolzen bei 4 Stück; Anhang B.2 fordert für 6–8m dagegen 5/8"–3/4" (15,9–19,1mm) bei 4–6 Stück. Da die Kielbolzen-Dimensionierung last-/sicherheitskritisch ist (Lebenssicherheit) und die Richtung nicht zweifelsfrei auflösbar ist (unterschiedliche Bootslängen- und Bolzengrößen-Gruppierung), sind diese Werte NICHT verifiziert. **Confidence:** estimated — unverifiziert (vor Verwendung durch Statiker/Klassifikationsgesellschaft prüfen).
+
 ### 16.3 Kielbolzen-Herstellung
 
 Bronze-Kielbolzen werden typisch aus Gewindestangen oder massiven Rundstangen gefertigt:
@@ -3634,7 +3636,9 @@ Steve D'Antonio (stevedmarineconsulting.com) hat MEHRERE detaillierte Artikel zu
 | 16–20m | 1"–1-1/4" | 10–12 | SiBr C655 oder NAB | 75–120 | 370–600 |
 | 20–25m | 1-1/4"–1-1/2" | 12–16 | SiBr oder NAB | 120–180 | 600–900 |
 
-**Quelle:** ISO 12217, "Kleine Seefahrtsschiffe — Stabilitätstest und Klassifizierung". **Confidence:** calculated (Confidence-Level: grün)
+> ⚠️ **ZU PRÜFEN (Audit):** Diese Tabelle widerspricht der Dimensionierung im Haupttext (Abschnitt 16.2). Hier erhält ein 6–8m-Boot 5/8"–3/4" (15,9–19,1mm) Bolzen bei 4–6 Stück; Abschnitt 16.2 gibt für ein 7m-Boot dagegen 1/2" (12,7mm) bei 4 Stück an. Da die Kielbolzen-Dimensionierung last-/sicherheitskritisch ist (Lebenssicherheit) und die Richtung nicht zweifelsfrei auflösbar ist (unterschiedliche Bootslängen- und Bolzengrößen-Gruppierung), sind diese Werte NICHT verifiziert.
+
+**Quelle:** ISO 12217, "Kleine Seefahrtsschiffe — Stabilitätstest und Klassifizierung". **Confidence:** estimated — unverifiziert (Widerspruch zu Abschnitt 16.2 offen; vor Verwendung durch Statiker/Klassifikationsgesellschaft prüfen)
 
 ### B.3 Holzschrauben-Dimensionierung: Vorbohrdurchmesser nach Holzart
 
