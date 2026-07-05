@@ -42,11 +42,21 @@ MARKDOWN_FILES_PATTERN = re.compile(r"^\d{2}_\d{2}_.*\.md$")
 
 
 def _find_markdown_files() -> List[Path]:
-    """Discover all numbered markdown knowledge files in the knowledge dir."""
+    """Discover all numbered markdown knowledge files in the knowledge dir.
+
+    Excludes files with backup-suffixes like `_clean.md` (intermediate
+    bereinigte Kopien einer kanonischen Datei) and `_backup.md`. The
+    canonical version always lives at the unsuffixed name.
+    """
+    BACKUP_SUFFIXES = ("_clean.md", "_backup.md", "_old.md", "_tmp.md")
     files = []
     for f in sorted(KNOWLEDGE_DIR.iterdir()):
-        if f.is_file() and MARKDOWN_FILES_PATTERN.match(f.name):
-            files.append(f)
+        if not f.is_file() or not MARKDOWN_FILES_PATTERN.match(f.name):
+            continue
+        if any(f.name.endswith(suf) for suf in BACKUP_SUFFIXES):
+            logger.debug("Skipping backup file %s", f.name)
+            continue
+        files.append(f)
     return files
 
 
@@ -309,6 +319,75 @@ def _extract_expert_references(content: str) -> List[Dict[str, str]]:
                     continue
             i += 1
 
+    # --- Pattern 3: Inline blockquote expert references ---
+    # Format: > **E-XX-NNN**: „quote text" — *Source Name*
+    # Also handles "quote text" with regular quotes
+    blockquote_pattern = re.compile(
+        r'>\s*\*\*([A-Z]-[A-Z]{2,4}-\d{3})\*\*:\s*[\u201e\u201c\u201d""](.+?)[\u201c\u201d""\u201f]\s*\u2014\s*\*(.+?)\*',
+        re.DOTALL,
+    )
+    for match in blockquote_pattern.finditer(content):
+        ref_id = match.group(1).strip()
+        text = match.group(2).strip().replace("\n> ", " ").replace("\n", " ")
+        source = match.group(3).strip()
+        refs.append({
+            "ref_id": ref_id,
+            "source": source,
+            "text": text,
+        })
+
+    # --- Pattern 4: Blockquote with attribution on next line ---
+    # Format: > **"quote"**\n> — Source
+    # or: > **„quote"**\n> — Source
+    blockquote_pattern2 = re.compile(
+        r'>\s*\*\*[\u201e\u201c""](.+?)[\u201c\u201d""]\*\*\s*\n>\s*\u2014\s*(.+?)(?:\n\n|\n(?!>)|\Z)',
+        re.DOTALL,
+    )
+    for match in blockquote_pattern2.finditer(content):
+        text = match.group(1).strip().replace("\n> ", " ").replace("\n", " ")
+        source = match.group(2).strip()
+        refs.append({"source": source, "text": text})
+
+    # --- Pattern 5: Subsection-based expert refs ---
+    # Format: ## XX. Experten-Referenzen / Expertenzitate
+    #   ### XX.N Name (source)\n- "quote"\n- "quote"
+    expert_section_pattern2 = re.compile(
+        r"##\s+(?:\d+\.?\s*)?(?:Experten-Referenz(?:en)?|Expertenzitat(?:e)?|"
+        r"ANHANG\s+\w+\s*[—–-]\s*Expertenzitat(?:e)?)[^\n]*\n"
+        r"(.+?)(?=\n##\s+\d+|\n##\s+ANHANG(?!\s+\w+\s*[—–-]\s*Expertenzitat)|\Z)",
+        re.DOTALL | re.IGNORECASE,
+    )
+    for section_match in expert_section_pattern2.finditer(content):
+        section_content = section_match.group(1)
+        # Match ### XX.N Name (optional source info)
+        for sub_match in re.finditer(
+            r"###\s+(?:\d+\.\d+\s+)?(.+?)\n(.+?)(?=\n###\s|\Z)",
+            section_content, re.DOTALL,
+        ):
+            source = sub_match.group(1).strip()
+            body = sub_match.group(2).strip()
+            # Extract quoted text from bullet points
+            quotes = []
+            for quote_match in re.finditer(
+                r'-\s*["\u201e\u201c](.+?)["\u201d\u201c]',
+                body, re.DOTALL,
+            ):
+                quotes.append(quote_match.group(1).strip())
+            # Also bare bullet points starting with „
+            for quote_match in re.finditer(
+                r'-\s*[\u201e](.+?)[\u201c\u201d]',
+                body, re.DOTALL,
+            ):
+                text = quote_match.group(1).strip()
+                if text not in quotes:
+                    quotes.append(text)
+            if quotes:
+                for q in quotes:
+                    refs.append({"source": source, "text": q})
+            elif len(body) > 20:
+                # No quoted text — use full body as reference text
+                refs.append({"source": source, "text": body[:500]})
+
     return refs
 
 
@@ -319,19 +398,24 @@ def _extract_faq(content: str) -> List[Dict[str, str]]:
     - New: ### FAQ 1: Question
     - Old: ### F1: Question  (under ## XX. FAQ — Häufige Fragen)
     - Old: ### XX.1 Question  (numbered subsections under FAQ heading)
+    - Table: | Nr | Frage | Antwort | (under ## XX. FAQ — ...)
     """
     faqs = []
     seen_questions = set()
 
-    # --- Pattern 1: New-style ### FAQ N: Question ---
+    # --- Pattern 1: ### FAQ N: Question or ### FAQ-XX-NNN: Question ---
     pattern_new = re.compile(
-        r"###\s+FAQ\s+\d+:\s*(.+?)\n(.+?)(?=###\s+FAQ\s+\d+|\n---|\n##\s|\Z)",
+        r"###\s+FAQ[\s-][\w-]*\d+:\s*(.+?)\n(.+?)(?=###\s+FAQ[\s-]|\n---|\n##\s|\Z)",
         re.DOTALL,
     )
     for match in pattern_new.finditer(content):
         question = match.group(1).strip()
         answer = match.group(2).strip()
+        # Clean answer: remove **Antwort:** prefix if present
+        answer = re.sub(r"^\*\*Antwort:\*\*\s*", "", answer)
         conf_match = re.search(r"\(Confidence:\s*(\w+)\)", answer)
+        if not conf_match:
+            conf_match = re.search(r"<!--\s*Confidence:\s*(\w+)", answer)
         confidence = conf_match.group(1) if conf_match else "documented"
         if question not in seen_questions:
             seen_questions.add(question)
@@ -389,6 +473,158 @@ def _extract_faq(content: str) -> List[Dict[str, str]]:
                     "confidence": confidence,
                 })
 
+    # --- Pattern 4: Table-style FAQ under FAQ heading ---
+    # Matches: ## XX. FAQ — ... followed by | Nr | Frage | Antwort |
+    # Also matches: ## XX. Erweiterte FAQ ...
+    faq_table_sections = re.finditer(
+        r"##\s+\d+\.?\s*(?:Erweiterte\s+)?FAQ[^\n]*\n"
+        r"(.+?)(?=\n##\s+\d+|\n##\s+ANHANG|\Z)",
+        content, re.DOTALL | re.IGNORECASE,
+    )
+    for section_match in faq_table_sections:
+        section_content = section_match.group(1)
+        lines = section_content.split("\n")
+        i = 0
+        while i < len(lines):
+            line = lines[i]
+            if line.strip().startswith("|") and i + 2 < len(lines):
+                header_lower = line.lower()
+                if "frage" in header_lower or "antwort" in header_lower:
+                    table_lines = []
+                    while i < len(lines) and lines[i].strip().startswith("|"):
+                        table_lines.append(lines[i])
+                        i += 1
+                    rows = _parse_markdown_table(table_lines)
+                    for row in rows:
+                        question = ""
+                        answer = ""
+                        for key, val in row.items():
+                            key_lower = key.lower().strip()
+                            if "frage" in key_lower:
+                                question = val.strip()
+                            elif "antwort" in key_lower:
+                                answer = val.strip()
+                        if question and answer and question not in seen_questions:
+                            seen_questions.add(question)
+                            faqs.append({
+                                "question_de": question,
+                                "answer_de": answer,
+                                "confidence": "documented",
+                            })
+                    continue
+            i += 1
+
+    # --- Pattern 5: Bold-prefix FAQ under FAQ/Erweiterte FAQ heading ---
+    # Format: **F-XX-NNN: Question?**\nAnswer paragraph
+    # Also: **F-XX-NNN**: *Question?*\nAnswer paragraph
+    # Also: **F-XX-NNN**: Question\n**A**: Answer
+    faq_bold_sections = re.finditer(
+        r"##\s+\d+\.?\s*(?:Erweiterte\s+)?FAQ[^\n]*\n"
+        r"(.+?)(?=\n##\s+\d+|\n##\s+ANHANG|\Z)",
+        content, re.DOTALL | re.IGNORECASE,
+    )
+    for section_match in faq_bold_sections:
+        section_content = section_match.group(1)
+        # Match **F-XX-NNN: Question** or **F-XX-NNN**: Question\n**A**: Answer
+        bold_faq_pattern = re.compile(
+            r"\*\*F-[A-Z]{2,4}-\d{3}\*\*:\s*(.+?)\n"
+            r"\*\*A\*\*:\s*(.+?)(?=\n\*\*F-[A-Z]{2,4}-\d{3}|\n##|\n---|\Z)",
+            re.DOTALL,
+        )
+        for match in bold_faq_pattern.finditer(section_content):
+            question = match.group(1).strip().rstrip("*")
+            answer = match.group(2).strip()
+            if question and answer and len(answer) > 10 and question not in seen_questions:
+                seen_questions.add(question)
+                faqs.append({
+                    "question_de": question,
+                    "answer_de": answer,
+                    "confidence": "documented",
+                })
+
+        # Also match: **F-XX-NNN: Question?**\nAnswer (no **A** prefix)
+        bold_faq_pattern2 = re.compile(
+            r"\*\*F-[A-Z]{2,4}-\d{3}:\s*(.+?)\*\*\s*\n"
+            r"((?:(?!\*\*F-[A-Z]{2,4}-\d{3}).)+)",
+            re.DOTALL,
+        )
+        for match in bold_faq_pattern2.finditer(section_content):
+            question = match.group(1).strip()
+            answer = match.group(2).strip()
+            if question and answer and len(answer) > 10 and question not in seen_questions:
+                seen_questions.add(question)
+                faqs.append({
+                    "question_de": question,
+                    "answer_de": answer,
+                    "confidence": "documented",
+                })
+
+        # Also match: **F-XX-NNN**: *Question?*\nAnswer (italic question, no **A**)
+        bold_faq_pattern3 = re.compile(
+            r"\*\*F-[A-Z]{2,4}-\d{3}\*\*:\s*\*(.+?)\*\s*\n"
+            r"((?:(?!\*\*F-[A-Z]{2,4}-\d{3}).)+)",
+            re.DOTALL,
+        )
+        for match in bold_faq_pattern3.finditer(section_content):
+            question = match.group(1).strip()
+            answer = match.group(2).strip()
+            if question and answer and len(answer) > 10 and question not in seen_questions:
+                seen_questions.add(question)
+                faqs.append({
+                    "question_de": question,
+                    "answer_de": answer,
+                    "confidence": "documented",
+                })
+
+    # --- Pattern 6: ### F: Question format under FAQ heading ---
+    # Format: ### F: Question?\n**A**: Answer
+    faq_f_sections = re.finditer(
+        r"##\s+\d+\.?\s*FAQ[^\n]*\n(.+?)(?=\n##\s+\d+|\n##\s+ANHANG|\Z)",
+        content, re.DOTALL | re.IGNORECASE,
+    )
+    for section_match in faq_f_sections:
+        section_content = section_match.group(1)
+        for match in re.finditer(
+            r"###\s+F:\s*(.+?)\n\*\*A\*\*:\s*(.+?)(?=\n###\s|\n##\s|\Z)",
+            section_content, re.DOTALL,
+        ):
+            question = match.group(1).strip()
+            answer = match.group(2).strip()
+            if question and answer and len(answer) > 10 and question not in seen_questions:
+                seen_questions.add(question)
+                faqs.append({
+                    "question_de": question,
+                    "answer_de": answer,
+                    "confidence": "documented",
+                })
+
+    # --- Pattern 7: **F: Question**\nA: Answer (bare A:, no bold) ---
+    # Used in categories 01-03 under ## XX. FAQ or ### XX.N Häufig gestellte Fragen
+    faq_bare_sections = re.finditer(
+        r"##\s+\d+\.?\s*(?:FAQ|Häufig)[^\n]*\n(.+?)(?=\n##\s+\d+|\n##\s+ANHANG|\Z)",
+        content, re.DOTALL | re.IGNORECASE,
+    )
+    for section_match in faq_bare_sections:
+        section_content = section_match.group(1)
+        # Match **F: Question?**\nA: Answer\n(Confidence: ...)
+        for match in re.finditer(
+            r"\*\*F:\s*(.+?)\*\*\s*\n"
+            r"A:\s*(.+?)(?=\n\*\*F:|\n\(Confidence:|\n##|\n---|\Z)",
+            section_content, re.DOTALL,
+        ):
+            question = match.group(1).strip()
+            answer = match.group(2).strip()
+            # Extract confidence if present after the answer
+            conf_match = re.search(r"\(Confidence:\s*(\w+)", section_content[match.end():match.end()+100])
+            confidence = conf_match.group(1) if conf_match else "documented"
+            if question and answer and len(answer) > 10 and question not in seen_questions:
+                seen_questions.add(question)
+                faqs.append({
+                    "question_de": question,
+                    "answer_de": answer,
+                    "confidence": confidence,
+                })
+
     return faqs
 
 
@@ -407,57 +643,98 @@ def _extract_glossary(content: str) -> List[Dict[str, str]]:
         # New: ## Glossar
         r"##\s+Glossar\s*\n(.+?)(?=\n##\s|\Z)",
         # Old: ## 40. Glossar
-        r"##\s+\d+\.?\s*Glossar\s*\n(.+?)(?=\n##\s|\Z)",
+        r"##\s+\d+\.?\s*Glossar[^\n]*\n(.+?)(?=\n##\s|\Z)",
         # Old: ## ANHANG X — Glossar
         r"##\s+ANHANG\s+\w+\s*[—–-]\s*Glossar\s*\n(.+?)(?=\n##\s|\Z)",
+        # Extended: ## XX. Erweiterte Glossar-Ergänzungen
+        r"##\s+\d+\.?\s*Erweiterte\s+Glossar[^\n]*\n(.+?)(?=\n##\s|\Z)",
+        # Anhang subsections: ## XX. Anhang — Glossar
+        r"##\s+\d+\.?\s*Anhang[^\n]*Glossar[^\n]*\n(.+?)(?=\n##\s|\Z)",
     ]
 
-    glossar_content = ""
+    # Collect all glossar sections (there may be multiple)
+    all_glossar_content = []
     for pat in glossar_patterns:
-        match = re.search(pat, content, re.DOTALL | re.IGNORECASE)
-        if match:
-            glossar_content = match.group(1)
-            break
+        for match in re.finditer(pat, content, re.DOTALL | re.IGNORECASE):
+            all_glossar_content.append(match.group(1))
 
-    if not glossar_content:
+    if not all_glossar_content:
         return glossary
 
-    lines = glossar_content.strip().split("\n")
+    seen_terms = set()
+    for glossar_content in all_glossar_content:
+        lines = glossar_content.strip().split("\n")
 
-    # Parse ALL tables in the glossar section
-    i = 0
-    while i < len(lines):
-        if lines[i].strip().startswith("|"):
-            table_lines = []
-            while i < len(lines) and lines[i].strip().startswith("|"):
-                table_lines.append(lines[i])
-                i += 1
-            if len(table_lines) >= 3:
-                rows = _parse_markdown_table(table_lines)
-                for row in rows:
-                    entry = {}
-                    for key, val in row.items():
-                        key_lower = key.lower().strip().strip("*")
-                        val_clean = val.strip().strip("*")
-                        if not val_clean:
-                            continue
-                        # Term DE: "DE", "Begriff", "Begriff (DE)", "term"
-                        if key_lower in ("de", "begriff", "term") or \
-                           ("begriff" in key_lower and "en" not in key_lower):
-                            entry["term_de"] = val_clean
-                        elif key_lower == "en" or "english" in key_lower or \
-                             ("begriff" in key_lower and "(en)" in key_lower):
-                            entry["term_en"] = val_clean
-                        elif "definition" in key_lower or "erklärung" in key_lower or "erklaerung" in key_lower:
-                            entry["definition"] = val_clean
-                        elif "term_de" not in entry and "de" not in key_lower:
-                            # First unrecognized column with bold text is likely term
-                            if val.strip().startswith("**"):
+        # Parse ALL tables in the glossar section
+        i = 0
+        while i < len(lines):
+            if lines[i].strip().startswith("|"):
+                table_lines = []
+                while i < len(lines) and lines[i].strip().startswith("|"):
+                    table_lines.append(lines[i])
+                    i += 1
+                if len(table_lines) >= 3:
+                    rows = _parse_markdown_table(table_lines)
+                    for row in rows:
+                        entry = {}
+                        for key, val in row.items():
+                            key_lower = key.lower().strip().strip("*")
+                            val_clean = val.strip().strip("*")
+                            if not val_clean:
+                                continue
+                            # Term DE: "DE", "Begriff", "Begriff (DE)", "term"
+                            if key_lower in ("de", "begriff", "term") or \
+                               ("begriff" in key_lower and "en" not in key_lower):
                                 entry["term_de"] = val_clean
-                    if entry.get("term_de"):
-                        glossary.append(entry)
-            continue
-        i += 1
+                            elif key_lower == "en" or "english" in key_lower or \
+                                 ("begriff" in key_lower and "(en)" in key_lower):
+                                entry["term_en"] = val_clean
+                            elif "definition" in key_lower or "erklärung" in key_lower or "erklaerung" in key_lower:
+                                entry["definition"] = val_clean
+                            elif "marine" in key_lower or "kontext" in key_lower:
+                                # Marine-Kontext column → use as definition supplement
+                                existing_def = entry.get("definition", "")
+                                if existing_def:
+                                    entry["definition"] = f"{existing_def} — {val_clean}"
+                                else:
+                                    entry["definition"] = val_clean
+                            elif "term_de" not in entry and "de" not in key_lower:
+                                # First unrecognized column with bold text is likely term
+                                if val.strip().startswith("**"):
+                                    entry["term_de"] = val_clean
+                        if entry.get("term_de"):
+                            term_key = entry["term_de"].lower()
+                            if term_key not in seen_terms:
+                                seen_terms.add(term_key)
+                                glossary.append(entry)
+                continue
+            # --- Inline bold term format: **Term**: Def or **Term:** Def ---
+            elif lines[i].strip().startswith("**") and ("**:" in lines[i] or ":**" in lines[i]):
+                bold_match = re.match(
+                    r"\s*\*\*(.+?)(?::\*\*|\*\*:)\s*(.+)",
+                    lines[i],
+                )
+                if bold_match:
+                    term = bold_match.group(1).strip()
+                    definition = bold_match.group(2).strip()
+                    # Collect continuation lines
+                    j = i + 1
+                    while j < len(lines) and lines[j].strip() and \
+                          not lines[j].strip().startswith("**") and \
+                          not lines[j].strip().startswith("|") and \
+                          not lines[j].strip().startswith("#"):
+                        definition += " " + lines[j].strip()
+                        j += 1
+                    term_key = term.lower()
+                    if term_key not in seen_terms and len(definition) > 5:
+                        seen_terms.add(term_key)
+                        glossary.append({
+                            "term_de": term,
+                            "definition": definition,
+                        })
+                    i = j
+                    continue
+            i += 1
 
     return glossary
 
@@ -535,7 +812,7 @@ def _extract_fehlerbilder(content: str) -> List[Dict[str, str]]:
             if len(body) > 20:  # Skip trivial matches
                 _parse_fehlerbild_body(title, body)
 
-    # --- Pattern 3: Schadensbilder sections ---
+    # --- Pattern 3: Schadensbilder sections (heading-based sub-entries) ---
     for match in re.finditer(
         r"##\s+\d+\.?\s*(?:\w+\s*[—–-]\s*)?Schadensbilder[^\n]*\n(.+?)(?=\n##\s|\Z)",
         content, re.DOTALL | re.IGNORECASE,
@@ -549,6 +826,87 @@ def _extract_fehlerbilder(content: str) -> List[Dict[str, str]]:
             body = sub_match.group(2).strip()
             if len(body) > 30:
                 _parse_fehlerbild_body(title, body)
+
+    # --- Pattern 4: Table-format Schadensbilder / Fehlerbilder ---
+    # Format A: | Nr | Schadensbild | Optik | Klopftest | US-Ergebnis | Ursache wahrscheinlich | Maßnahme |
+    # Format B: | Nr | Fehlerbild | Ursache | Erkennung | Kritikalität | Reparatur | Kosten |
+    # Format C: | Defekt-ID | Fehlerbild | Ursache | ... (under Fehlerkatalog sections)
+    table_section_pattern = re.compile(
+        r"##\s+\d+\.?\s*[^\n]*(?:Schadensbilder|Fehlerbilder|Fehlerkatalog|Fehler[^\n]*Ausfallmuster)[^\n]*\n"
+        r"(.+?)(?=\n##\s+\d+|\Z)",
+        re.DOTALL | re.IGNORECASE,
+    )
+    for section_match in table_section_pattern.finditer(content):
+        section_content = section_match.group(1)
+        # Find tables inside this section (may be under ### sub-headings)
+        lines = section_content.split("\n")
+        i = 0
+        while i < len(lines):
+            line = lines[i].strip()
+            # Detect header row containing relevant columns
+            if line.startswith("|") and ("Schadensbild" in line or "Fehlerbild" in line):
+                header_cells = [c.strip().strip("*") for c in line.split("|")]
+                header_cells = [c for c in header_cells if c]
+                # Skip separator row
+                if i + 1 < len(lines) and re.match(r"^\s*\|[\s\-|]+\|?\s*$", lines[i + 1]):
+                    i += 2
+                else:
+                    i += 1
+                # Parse data rows
+                while i < len(lines) and lines[i].strip().startswith("|"):
+                    row_line = lines[i].strip()
+                    cells = [c.strip().strip("*") for c in row_line.split("|")]
+                    cells = [c for c in cells if c]
+                    if len(cells) >= 3:
+                        row = {}
+                        for idx, hdr in enumerate(header_cells):
+                            if idx < len(cells):
+                                row[hdr] = cells[idx]
+                        # Build fehlerbild entry from table row
+                        title = row.get("Schadensbild", row.get("Fehlerbild", row.get("Schadensbild/Fehlerbild", "")))
+                        if title and title not in seen_titles:
+                            seen_titles.add(title)
+                            entry = {"title_de": title}
+                            nr = row.get("Nr", row.get("Defekt-ID", ""))
+                            if nr:
+                                entry["nr"] = nr
+                            # Format A columns
+                            if "Optik" in row:
+                                entry["symptom_de"] = row["Optik"]
+                            if "Ursache wahrscheinlich" in row:
+                                entry["ursache_de"] = row["Ursache wahrscheinlich"]
+                            elif "Ursache" in row:
+                                entry["ursache_de"] = row["Ursache"]
+                            if "Maßnahme" in row:
+                                entry["massnahme_de"] = row["Maßnahme"]
+                            if "Klopftest" in row:
+                                entry["klopftest"] = row["Klopftest"]
+                            if "US-Ergebnis" in row:
+                                entry["us_ergebnis"] = row["US-Ergebnis"]
+                            # Format B columns
+                            if "Erkennung" in row:
+                                entry["symptom_de"] = row.get("symptom_de", "") or row["Erkennung"]
+                            if "Kritikalität" in row:
+                                entry["haeufigkeit_de"] = row["Kritikalität"]
+                            if "Reparatur" in row:
+                                entry["massnahme_de"] = entry.get("massnahme_de", "") or row["Reparatur"]
+                            if "Kosten" in row:
+                                entry["kosten"] = row["Kosten"]
+                            # Additional columns from various formats
+                            if "Konsequenz" in row:
+                                entry["konsequenz"] = row["Konsequenz"]
+                            if "Prävention" in row:
+                                entry["praevention"] = row["Prävention"]
+                            rk = row.get("Reparatur-Kosten (12m SY)", "")
+                            if rk:
+                                entry["kosten"] = rk
+                            hf = row.get("Häufigkeit", "")
+                            if hf and "haeufigkeit_de" not in entry:
+                                entry["haeufigkeit_de"] = hf
+                            fehlerbilder.append(entry)
+                    i += 1
+                continue
+            i += 1
 
     return fehlerbilder
 
@@ -637,6 +995,31 @@ def _extract_fallstudien(content: str) -> List[Dict[str, str]]:
         content, re.DOTALL,
     ):
         _parse_fallstudie_body(match.group(1).strip(), match.group(2).strip())
+
+    # --- Pattern 4: English "Case Study" format ---
+    # ### Case Study N: Title  or  ### XX.N Case Study N: Title
+    for match in re.finditer(
+        r"###\s+(?:\d+\.\d+\s+)?Case\s+Study\s+\d+:\s*(.+?)\n(.+?)(?=###\s+(?:\d+\.\d+\s+)?Case\s+Study|\n##\s|\Z)",
+        content, re.DOTALL | re.IGNORECASE,
+    ):
+        _parse_fallstudie_body(match.group(1).strip(), match.group(2).strip())
+
+    # --- Pattern 5: ## XX. Case Studies / Erweiterte Case Studies section ---
+    # with ### subsections
+    for section_match in re.finditer(
+        r"##\s+\d+\.?\s*(?:Erweiterte\s+)?Case\s+Stud(?:ies|y)[^\n]*\n"
+        r"(.+?)(?=\n##\s+\d+|\Z)",
+        content, re.DOTALL | re.IGNORECASE,
+    ):
+        section_content = section_match.group(1)
+        for sub_match in re.finditer(
+            r"###\s+(?:\d+\.\d+\s+)?(?:Case\s+Study\s+\d+:\s*)?(.+?)\n(.+?)(?=###\s|\Z)",
+            section_content, re.DOTALL,
+        ):
+            title = sub_match.group(1).strip()
+            body = sub_match.group(2).strip()
+            if len(body) > 30 and "Case Study" not in title[:15]:
+                _parse_fallstudie_body(title, body)
 
     return studies
 
@@ -897,7 +1280,24 @@ def load_all_markdown_knowledge() -> Dict[str, Dict[str, Any]]:
     for filepath in files:
         try:
             parsed = parse_knowledge_file(filepath)
-            knowledge[parsed["slug"]] = parsed
+            key = parsed["slug"]
+            if key in knowledge:
+                # Slug collision across categories (e.g. 13_02 vs 17_02
+                # 'ankerketten', 14_03 vs 20_02 'hydraulische_steuerung').
+                # Previously the later file silently overwrote the earlier one,
+                # dropping 6 knowledge files entirely. Keep the first under the
+                # bare slug (so existing slug lookups still resolve) and store the
+                # collider under its unique file stem so nothing is lost and both
+                # remain reachable via category filters / value iteration.
+                existing = knowledge[key]
+                key = f"{parsed['category']}_{parsed['subcategory']}_{parsed['slug']}"
+                logger.warning(
+                    "Slug collision '%s': already loaded from category %s_%s; "
+                    "storing %s under unique key '%s' (no data lost).",
+                    parsed["slug"], existing["category"], existing["subcategory"],
+                    filepath.name, key,
+                )
+            knowledge[key] = parsed
             logger.info(
                 f"Loaded markdown knowledge: {filepath.name} "
                 f"({parsed['line_count']} lines, "
@@ -1376,8 +1776,597 @@ SLUG_TO_RETRIEVAL_CONTEXT = {
     "s_glas": [
         "materials", "structural", "production", "service_patterns"
     ],
-    # 06_xx = Systems
-    "kuehlwasserschlaeuche": ["service_patterns", "materials"],
+    "carbongewebe": [
+        "materials", "structural", "production", "service_patterns"
+    ],
+    "aramidgewebe": [
+        "materials", "structural", "production", "service_patterns"
+    ],
+    "hybridgewebe": [
+        "materials", "structural", "production", "service_patterns"
+    ],
+    "kernmaterial_endkorn_balsa": [
+        "materials", "structural", "production", "service_patterns"
+    ],
+    "kernmaterial_pvc_schaum": [
+        "materials", "structural", "production", "service_patterns"
+    ],
+    "kernmaterial_san_schaum": [
+        "materials", "structural", "production", "service_patterns"
+    ],
+    # 06_xx = Systeme (Schläuche und Leitungen)
+    "kuehlwasserschlaeuche": ["service_patterns", "materials", "compliance"],
+    "auspuffschlaeuche": [
+        "service_patterns", "materials", "compliance", "structural"
+    ],
+    "sanitaerschlaeuche": [
+        "service_patterns", "materials", "compliance"
+    ],
+    "kraftstoffschlaeuche": [
+        "service_patterns", "materials", "compliance", "structural"
+    ],
+    "trinkwasserschlaeuche": [
+        "service_patterns", "materials", "compliance"
+    ],
+    "gasschlaeuche": [
+        "service_patterns", "materials", "compliance", "structural"
+    ],
+    "hydraulikschlaeuche": [
+        "service_patterns", "materials", "structural"
+    ],
+    "bilgenschlaeuche": [
+        "service_patterns", "materials", "compliance"
+    ],
+    "deckwaschschlaeuche": [
+        "service_patterns", "materials"
+    ],
+    # 07_xx = Seeventile und Borddurchlässe
+    "seeventile": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
+    "borddurchlaesse": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
+    "seeventilhaehne": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
+    "seewasserfilter": [
+        "materials", "compliance", "service_patterns"
+    ],
+    "schlauchverbindungen": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
+    "opferanoden": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
+    # 08_xx = Luken, Fenster und Bullaugen
+    "decksluken": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
+    "bullaugen": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
+    "windschutzscheiben": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
+    "lukenbeschlaege": [
+        "materials", "structural", "service_patterns"
+    ],
+    "luken_fensterdichtungen": [
+        "materials", "compliance", "service_patterns"
+    ],
+    # 09_xx = Winschen
+    "winschen_grundlagen": [
+        "materials", "structural", "service_patterns"
+    ],
+    "harken_winschen": [
+        "materials", "structural", "service_patterns"
+    ],
+    "lewmar_winschen": [
+        "materials", "structural", "service_patterns"
+    ],
+    "andersen_winschen": [
+        "materials", "structural", "service_patterns"
+    ],
+    "antal_winschen": [
+        "materials", "structural", "service_patterns"
+    ],
+    "elektrische_winschen": [
+        "materials", "structural", "service_patterns", "compliance"
+    ],
+    "winschen_wartung": [
+        "service_patterns", "materials"
+    ],
+    # 10_xx = Blöcke und Umlenkrollen
+    "bloecke_grundlagen": [
+        "materials", "structural", "service_patterns"
+    ],
+    "harken_bloecke": [
+        "materials", "structural", "service_patterns"
+    ],
+    "lewmar_ronstan_bloecke": [
+        "materials", "structural", "service_patterns"
+    ],
+    "hochlast_bloecke": [
+        "materials", "structural", "service_patterns", "compliance"
+    ],
+    "bloecke_wartung": [
+        "service_patterns", "materials"
+    ],
+    # 11_xx = Klampen, Klemmen und Schienensysteme
+    "klampen_grundlagen": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
+    "cam_cleats_klemmen": [
+        "materials", "structural", "service_patterns"
+    ],
+    "schienensysteme": [
+        "materials", "structural", "service_patterns"
+    ],
+    "relingstuetzen": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
+    "augenplatten_decksbeschlaege": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
+    # 12_xx = Schäkel, Wirbel und Verbinder
+    "schaekel_grundlagen": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
+    "wirbel_drehgelenke": [
+        "materials", "structural", "service_patterns"
+    ],
+    "bolzen_splinte": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
+    "schnappschaekel": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
+    "verbinder_wartung": [
+        "service_patterns", "materials"
+    ],
+    # 13_xx = Ankersysteme und Festmacher
+    "anker_grundlagen": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
+    "ankerketten": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
+    "ankerwinden": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
+    "ankergeschirr": [
+        "materials", "structural", "service_patterns"
+    ],
+    "festmacher_fender": [
+        "materials", "service_patterns"
+    ],
+    "ankerbucht_bugbeschlaege": [
+        "materials", "structural", "service_patterns"
+    ],
+    "mooring_systeme": [
+        "materials", "compliance", "service_patterns"
+    ],
+    "ankersysteme_wartung": [
+        "service_patterns", "materials"
+    ],
+    # 14_xx = Steueranlagen und Autopilot
+    "steueranlagen_grundlagen": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
+    "mechanische_steuerung": [
+        "materials", "structural", "service_patterns"
+    ],
+    "hydraulische_steuerung": [
+        "materials", "structural", "service_patterns"
+    ],
+    "ruderanlage_lager": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
+    "autopilot_systeme": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
+    "notruder_notsteuerung": [
+        "structural", "compliance", "service_patterns"
+    ],
+    "steuerraeder_pinnen": [
+        "materials", "structural", "service_patterns"
+    ],
+    "steueranlagen_wartung": [
+        "service_patterns", "materials"
+    ],
+    # 15_xx = Rollreffanlagen und Furler
+    "rollreffanlagen_grundlagen": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
+    "grosssegel_rollreff": [
+        "materials", "structural", "service_patterns"
+    ],
+    "furler_hersteller": [
+        "materials", "structural", "service_patterns"
+    ],
+    "rollreffanlagen_wartung": [
+        "service_patterns", "materials"
+    ],
+    # 16_xx = Segel
+    "segel_grundlagen": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
+    "grosssegel": [
+        "materials", "structural", "service_patterns"
+    ],
+    "vorsegel": [
+        "materials", "structural", "service_patterns"
+    ],
+    "spinnaker_gennaker": [
+        "materials", "structural", "service_patterns"
+    ],
+    "segeltuch_materialien": [
+        "materials", "structural"
+    ],
+    "segelmacher_hersteller": [
+        "materials", "service_patterns"
+    ],
+    "segelschnitt_trimm": [
+        "materials", "structural", "service_patterns"
+    ],
+    "segel_wartung": [
+        "service_patterns", "materials"
+    ],
+    # 17_xx = Anker und Kette
+    "ankertypen_grundlagen": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
+    "ankerketten": [
+        "materials", "structural", "service_patterns"
+    ],
+    "ankerwinden": [
+        "materials", "structural", "service_patterns"
+    ],
+    "ankergeschirr": [
+        "materials", "structural", "service_patterns"
+    ],
+    "snubber_kettenstopper": [
+        "materials", "structural", "service_patterns"
+    ],
+    "ankertechniken": [
+        "compliance", "service_patterns"
+    ],
+    "ankerbucht_design": [
+        "structural", "materials", "compliance"
+    ],
+    "anker_wartung": [
+        "service_patterns", "materials"
+    ],
+    # 18_xx = Motoren und Antrieb
+    "marine_diesel_grundlagen": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
+    "yanmar_motoren": [
+        "materials", "structural", "service_patterns"
+    ],
+    "volvo_penta": [
+        "materials", "structural", "service_patterns"
+    ],
+    "beta_nanni_vetus": [
+        "materials", "structural", "service_patterns"
+    ],
+    "kuehlsystem": [
+        "materials", "structural", "service_patterns"
+    ],
+    "abgasanlage": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
+    "getriebe_saildrive": [
+        "materials", "structural", "service_patterns"
+    ],
+    "wellenanlage": [
+        "materials", "structural", "service_patterns"
+    ],
+    "propeller": [
+        "materials", "structural", "service_patterns"
+    ],
+    "motorlager_einbau": [
+        "structural", "materials", "service_patterns"
+    ],
+    "elektroantrieb": [
+        "materials", "structural", "service_patterns"
+    ],
+    "bugstrahlruder": [
+        "materials", "structural", "service_patterns"
+    ],
+    "motor_wartung": [
+        "service_patterns", "materials"
+    ],
+    "motor_troubleshooting": [
+        "service_patterns", "materials", "structural"
+    ],
+    # 19_xx = Kraftstoffsystem
+    "kraftstofftanks_grundlagen": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
+    "kraftstofffilter_abscheider": [
+        "materials", "service_patterns"
+    ],
+    "kraftstoffleitungen_armaturen": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
+    "kraftstoffsystem_wartung": [
+        "service_patterns", "materials"
+    ],
+    # 20_xx = Steuerung
+    "steuerung_grundlagen": [
+        "structural", "materials", "compliance", "service_patterns"
+    ],
+    "hydraulische_steuerung": [
+        "structural", "materials", "service_patterns"
+    ],
+    "ruderanlage_lager": [
+        "structural", "materials", "service_patterns"
+    ],
+    "steuerraeder_pinnen": [
+        "materials", "service_patterns"
+    ],
+    "notsteuerung": [
+        "compliance", "structural", "service_patterns"
+    ],
+    "steuerung_wartung": [
+        "service_patterns", "materials", "structural"
+    ],
+    # 21_xx = Autopilot
+    "autopilot_grundlagen": [
+        "structural", "materials", "compliance", "service_patterns"
+    ],
+    "autopilot_hersteller": [
+        "materials", "service_patterns"
+    ],
+    "windfahnen_selbststeueranlage": [
+        "structural", "materials", "service_patterns"
+    ],
+    "autopilot_installation": [
+        "structural", "compliance", "service_patterns"
+    ],
+    "autopilot_wartung": [
+        "service_patterns", "materials"
+    ],
+    # 22_xx = Elektrik
+    "elektrik_grundlagen": [
+        "structural", "materials", "compliance", "service_patterns"
+    ],
+    "batterien": [
+        "materials", "structural", "service_patterns"
+    ],
+    "kabel_leitungen": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
+    "ladegeraete_laderegler": [
+        "materials", "service_patterns"
+    ],
+    "solaranlage": [
+        "materials", "structural", "service_patterns"
+    ],
+    "windgenerator": [
+        "materials", "structural", "service_patterns"
+    ],
+    "wechselrichter_landstrom": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
+    "schalttafeln_sicherungen": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
+    "beleuchtung": [
+        "materials", "compliance", "service_patterns"
+    ],
+    "galvanische_korrosion": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
+    "generatoren": [
+        "materials", "structural", "service_patterns"
+    ],
+    "elektrik_wartung": [
+        "service_patterns", "materials", "structural"
+    ],
+    # 23_xx = Elektronik/Navigation
+    "navigation_grundlagen": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
+    "kartenplotter": [
+        "materials", "service_patterns"
+    ],
+    "radar_ais": [
+        "materials", "compliance", "service_patterns"
+    ],
+    "ukw_funk": [
+        "compliance", "service_patterns"
+    ],
+    "instrumente_sensoren": [
+        "materials", "structural", "service_patterns"
+    ],
+    "nmea_vernetzung": [
+        "materials", "structural", "service_patterns"
+    ],
+    "antennen_installation": [
+        "materials", "structural", "service_patterns"
+    ],
+    "elektronik_wartung": [
+        "service_patterns", "materials"
+    ],
+    # 24_xx = Sanitär
+    "bordtoiletten": [
+        "materials", "compliance", "service_patterns"
+    ],
+    "faekalientanks": [
+        "materials", "compliance", "service_patterns"
+    ],
+    "frischwassersystem": [
+        "materials", "structural", "service_patterns"
+    ],
+    "warmwasserbereiter": [
+        "materials", "structural", "service_patterns"
+    ],
+    "pumpen_sanitaer": [
+        "materials", "structural", "service_patterns"
+    ],
+    "rohrleitungen_armaturen_sanitaer": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
+    "sanitaer_wartung": [
+        "service_patterns", "materials"
+    ],
+    # 25_xx = Gas und Kochen
+    "gasanlage_grundlagen": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
+    "kocher_backofen": [
+        "materials", "compliance", "service_patterns"
+    ],
+    "gasflaschenlagerung": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
+    "gas_sicherheit_wartung": [
+        "compliance", "service_patterns", "materials"
+    ],
+    # 26_xx = Heizung/Klima
+    "heizung_grundlagen": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
+    "diesel_heizung": [
+        "materials", "structural", "service_patterns"
+    ],
+    "klimaanlage": [
+        "materials", "structural", "service_patterns"
+    ],
+    "isolation_lueftung": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
+    "waermepumpe": [
+        "materials", "structural", "service_patterns"
+    ],
+    "heizung_klima_wartung": [
+        "service_patterns", "materials"
+    ],
+    # 27_xx = Persenning
+    "persenning_grundlagen": [
+        "materials", "production", "service_patterns"
+    ],
+    "bimini_sprayhood": [
+        "materials", "structural", "production", "service_patterns"
+    ],
+    "cockpitverdecke": [
+        "materials", "production", "service_patterns"
+    ],
+    "winterplanen": [
+        "materials", "service_patterns"
+    ],
+    "sonnensegel_polster": [
+        "materials", "production", "service_patterns"
+    ],
+    "persenning_wartung": [
+        "service_patterns", "materials"
+    ],
+    # 28_xx = Interieur-Materialien
+    "interieur_holz": [
+        "materials", "production", "service_patterns"
+    ],
+    "polstermaterialien": [
+        "materials", "production", "service_patterns"
+    ],
+    "bodenbelaege": [
+        "materials", "production", "service_patterns"
+    ],
+    "oberflaechen_lacke": [
+        "materials", "production", "service_patterns"
+    ],
+    "beschlaege_interieur": [
+        "materials", "structural", "service_patterns"
+    ],
+    "countertops_arbeitsflaechen": [
+        "materials", "production", "service_patterns"
+    ],
+    "interieur_wartung": [
+        "service_patterns", "materials"
+    ],
+    # 29_xx = Sicherheitsausrüstung
+    "rettungswesten": [
+        "compliance", "service_patterns", "materials"
+    ],
+    "rettungsinseln": [
+        "compliance", "service_patterns", "materials"
+    ],
+    "sicherheitsleinen": [
+        "compliance", "structural", "service_patterns", "materials"
+    ],
+    "signalmittel": [
+        "compliance", "service_patterns"
+    ],
+    "feuerloesch": [
+        "compliance", "service_patterns", "materials"
+    ],
+    "erste_hilfe": [
+        "compliance", "service_patterns"
+    ],
+    "mann_ueber_bord": [
+        "compliance", "service_patterns", "materials"
+    ],
+    "lenzpumpen_notausruestung": [
+        "compliance", "structural", "service_patterns", "materials"
+    ],
+    "sicherheit_wartung": [
+        "compliance", "service_patterns"
+    ],
+    # 30_xx = Trailer/Transport
+    "bootstrailer": [
+        "materials", "structural", "compliance", "service_patterns"
+    ],
+    "kranarbeiten_slippen": [
+        "structural", "compliance", "service_patterns"
+    ],
+    "transport_lagerung": [
+        "service_patterns", "materials"
+    ],
+    # 31_xx = Design/Konstruktion
+    "rumpfformen": [
+        "structural", "materials"
+    ],
+    "hydrostatik": [
+        "structural", "compliance"
+    ],
+    "strukturberechnung": [
+        "structural", "materials", "compliance"
+    ],
+    "rigg_dimensionierung": [
+        "structural", "materials"
+    ],
+    "gewichtsmanagement": [
+        "structural"
+    ],
+    "propellerauslegung": [
+        "structural", "materials"
+    ],
+    "tankplanung": [
+        "structural", "compliance", "materials"
+    ],
+    "kielkonstruktion": [
+        "structural", "materials", "compliance"
+    ],
+    "ruder_design": [
+        "structural", "materials"
+    ],
+    "deck_layout": [
+        "structural", "compliance"
+    ],
+    "interieur_layout": [
+        "structural", "production"
+    ],
+    "laminatplan": [
+        "structural", "materials", "production"
+    ],
+    "cad_tools": [
+        "production"
+    ],
+    "design_konstruktion_wartung": [
+        "service_patterns"
+    ],
 }
 
 

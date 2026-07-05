@@ -136,6 +136,17 @@ def _try_visual_analysis(
         return None
 
 
+def _analysis_succeeded(result: dict | None) -> bool:
+    """True only when a real visual analysis ran and produced a parsed result.
+
+    Unavailable/error results (SDK missing, API failure, unparseable response)
+    carry ``analysis=None`` plus an ``error`` key. They must NOT be counted as
+    successful analyses — otherwise confidence would be reported for work that
+    never happened (Reliability rule: "never present uncertain results as facts").
+    """
+    return bool(result) and result.get("analysis") is not None and not result.get("error")
+
+
 async def _get_project(project_id: UUID, user: User, db: AsyncSession) -> Project:
     result = await db.execute(
         select(Project).where(Project.id == project_id, Project.user_id == user.id)
@@ -177,7 +188,8 @@ async def analyze_image_standalone(
 
     metadata = await asyncio.to_thread(_extract_image_metadata, file_path)
 
-    ai_result = _try_visual_analysis(
+    ai_result = await asyncio.to_thread(
+        _try_visual_analysis,
         file_path=file_path,
         image_type=image_type,
         boat_class=boat_class,
@@ -244,7 +256,8 @@ async def upload_project_image(
     file_path, file_type, file_size = await _save_file(file)
     metadata = await asyncio.to_thread(_extract_image_metadata, file_path)
 
-    ai_result = _try_visual_analysis(
+    ai_result = await asyncio.to_thread(
+        _try_visual_analysis,
         file_path=file_path,
         image_type=image_type,
         boat_class=project.boat_class,
@@ -326,6 +339,7 @@ async def analyze_batch(
     all_positives = []
     all_concerns = []
     all_recommendations = []
+    images_saved = 0
     images_analyzed = 0
     images_rejected = 0
     scores_sum: dict[str, list[float]] = {}
@@ -339,7 +353,8 @@ async def analyze_batch(
 
         metadata = await asyncio.to_thread(_extract_image_metadata, file_path)
 
-        ai_result = _try_visual_analysis(
+        ai_result = await asyncio.to_thread(
+            _try_visual_analysis,
             file_path=file_path,
             image_type="interior_overview",
             boat_class=boat_class,
@@ -354,21 +369,25 @@ async def analyze_batch(
             image_type="interior_overview",
             zone_name=zone_type,
             ai_analysis=ai_result,
-            ai_analysis_version="1.0" if ai_result else None,
+            ai_analysis_version="1.0" if _analysis_succeeded(ai_result) else None,
             metadata_extra=metadata,
         )
         db.add(image)
+        images_saved += 1
 
-        if ai_result:
+        # Only a real, parsed analysis counts toward the reported confidence.
+        # A saved-but-unanalyzed image (SDK unavailable / API error) must never
+        # inflate the confidence tier.
+        if _analysis_succeeded(ai_result):
             images_analyzed += 1
-            for key, val in ai_result.get("scores", {}).items():
-                scores_sum.setdefault(key, []).append(val)
-            all_findings.extend(ai_result.get("findings", []))
-            all_positives.extend(ai_result.get("positive_aspects", []))
-            all_concerns.extend(ai_result.get("concerns", []))
-            all_recommendations.extend(ai_result.get("recommendations", []))
-        else:
-            images_analyzed += 1  # File saved successfully even without analysis
+            analysis = ai_result.get("analysis") or {}
+            score = ai_result.get("score")
+            if isinstance(score, (int, float)):
+                scores_sum.setdefault("overall", []).append(float(score))
+            all_findings.extend(analysis.get("findings", []) or [])
+            all_positives.extend(analysis.get("positive_aspects", []) or [])
+            all_concerns.extend(analysis.get("concerns", []) or [])
+            all_recommendations.extend(analysis.get("recommendations", []) or [])
 
     await db.commit()
 

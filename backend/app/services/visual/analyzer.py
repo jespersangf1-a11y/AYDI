@@ -531,3 +531,53 @@ class VisualAnalyzer:
         if raw_response is not None:
             result["raw_response"] = raw_response[:2000]  # Truncate for safety
         return result
+
+
+# ---------------------------------------------------------------------------
+# Module-level convenience wrapper
+#
+# Routes import `analyze_image` from this module (a plain function), while the
+# real logic lives on the async `VisualAnalyzer.analyze_image` method. This
+# wrapper bridges the two: it maps the route-facing `file_path` argument to the
+# analyzer's `image_path` parameter and drives the coroutine to completion.
+# ---------------------------------------------------------------------------
+
+_default_analyzer: "VisualAnalyzer | None" = None
+
+
+def _get_default_analyzer() -> "VisualAnalyzer":
+    """Return a process-wide shared VisualAnalyzer instance."""
+    global _default_analyzer
+    if _default_analyzer is None:
+        _default_analyzer = VisualAnalyzer()
+    return _default_analyzer
+
+
+def analyze_image(
+    file_path: str,
+    image_type: str,
+    boat_class: str,
+    zone_type: str | None = None,
+    analysis_depth: str = "standard",
+    context: dict | None = None,
+    boat_dna: object | None = None,
+) -> dict:
+    """Synchronous wrapper around ``VisualAnalyzer.analyze_image``.
+
+    IMPORTANT: must be called OFF the event loop (e.g. via ``asyncio.to_thread``)
+    — it uses ``asyncio.run`` and would raise inside an already-running loop.
+    This also keeps the blocking Anthropic SDK call off the main event loop.
+    """
+    import asyncio
+
+    return asyncio.run(
+        _get_default_analyzer().analyze_image(
+            image_path=file_path,
+            image_type=image_type,
+            boat_class=boat_class,
+            zone_type=zone_type,
+            analysis_depth=analysis_depth,
+            context=context,
+            boat_dna=boat_dna,
+        )
+    )
