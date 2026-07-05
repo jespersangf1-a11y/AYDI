@@ -1322,7 +1322,13 @@ def analyze_companionway_sill(
     warnings: list[dict] = []
 
     ce_category = config.get("ce_category", "A")
-    min_sill = config.get("companionway_sill_mm", _CE_SILL_HEIGHT_MM.get(ce_category, 300))
+    # A per-class override may only be STRICTER than the CE-category minimum,
+    # never weaker — otherwise a boat below the CE requirement would falsely
+    # pass (e.g. catamaran_sail Cat A must still meet 300 mm, not 250).
+    min_sill = max(
+        config.get("companionway_sill_mm", 0),
+        _CE_SILL_HEIGHT_MM.get(ce_category, 300),
+    )
 
     if min_sill <= 0:
         return 100.0, warnings, {"sills_checked": 0, "sills_compliant": 0}
