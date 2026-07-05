@@ -30,6 +30,10 @@ class Settings(BaseSettings):
     AUTH_COOKIE_ONLY: bool = False
     COOKIE_SECURE: bool = False  # set True in production (requires HTTPS)
     COOKIE_DOMAIN: str | None = None
+    # Only honour X-Forwarded-For for the client IP when set True — enable ONLY
+    # when behind a trusted proxy/load balancer that sets it. Default False so
+    # the header cannot be spoofed to bypass rate limits / grow memory.
+    TRUST_PROXY_HEADERS: bool = False
 
     model_config = SettingsConfigDict(env_file=".env")
 

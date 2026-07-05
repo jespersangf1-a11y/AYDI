@@ -126,9 +126,19 @@ async def import_dxf(
 ):
     await _get_project(project_id, _user, db)
 
-    content = await file.read()
+    # Validate the extension BEFORE buffering the whole file, and bound the read
+    # so an oversized upload cannot exhaust memory before any check runs.
     if not file.filename or not file.filename.lower().endswith(".dxf"):
         raise HTTPException(status_code=400, detail="Nur DXF-Dateien werden unterstützt")
+    _MAX_DXF_BYTES = 25 * 1024 * 1024  # 25 MB
+    content = await file.read(_MAX_DXF_BYTES + 1)
+    if len(content) > _MAX_DXF_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail=f"Datei zu gross. Maximal {_MAX_DXF_BYTES // (1024 * 1024)} MB erlaubt.",
+        )
+    if not content:
+        raise HTTPException(status_code=400, detail="Leere Datei hochgeladen.")
 
     custom_layer_map = None
     if layer_map:
