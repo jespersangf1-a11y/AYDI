@@ -1566,7 +1566,9 @@ A: Seeventil öffnen, Kühlwasserschlauch am höchsten Punkt lösen, warten bis 
 | Tobin Bronze | C46400 | 380 | 170 | 90 HB | Gut |
 | 316L SS | S31603 | 485 | 170 | 150 HB | Mäßig (Pitting!) |
 
-(Confidence: measured — ASTM, Western Branch Metals)
+> ⚠️ **ZU PRÜFEN (Audit):** Die Aquamet-Festigkeiten dieser Tabelle (Aquamet 22: 860 MPa Zug / 690 MPa Streckgrenze; Aquamet 19: 830 / 620; Aquamet 17: 800 / 550) widersprechen ANHANG AI.1 (Aquamet 22: 1.000 / 690; Aquamet 19: 1.200 / 1.100; Aquamet 17: 1.170 / 1.070) um bis zu ~45 %. Aquamet/Aqualoy sind kaltverfestigte Wellenlegierungen; Streck-/Zugfestigkeit hängen stark von Wellendurchmesser und Lieferzustand ab (Western Branch Metals gibt Mindest-Streckgrenzen je Durchmesser an, keinen festen Einzelwert je Legierung). Werte sind sicherheitsrelevant (Wellenauslegung) und derzeit nicht belastbar — vor jeder Last-/Strukturauslegung am WBM-Aqualoy-Originaldatenblatt (17/19/22/22HS) für den konkreten Durchmesser verifizieren. Zahlen bis zur Klärung unverändert.
+
+(Confidence: estimated — UNVERIFIZIERT; von „measured" zurückgestuft, siehe ⚠️ ZU PRÜFEN)
 
 ## ANHANG C — PYI PSS Kompressions-Tabelle
 
@@ -2326,9 +2328,9 @@ class ShaftSealRecommendation(BaseModel):
 
 | Motor/Antrieb | Teil-Nr. | Beschreibung | Preis EUR | Alternativen |
 |---|---|---|---|---|
-| Volvo 120S/130S | 3593663 | Diaphragma komplett | €280–380 | — |
+| Volvo 120S/130S | 3593663 | Propellerwellen-Dichtring (Paar, mit Edelstahlfeder) — NICHT die Rumpfmembran | €280–380 | — |
 | Volvo 120S/130S | 3888916 | Dichtring oberer Flansch | €45–65 | — |
-| Volvo 150S | 21389074 | Diaphragma komplett | €320–430 | — |
+| Volvo Saildrive 110S/120S/130S/150S/MS25S (außer SD100) | 21389074 | Rumpfmembran/Diaphragma komplett — universeller Membransatz für alle Saildrives | €320–430 | — |
 | Yanmar SD20/SD25 | 196420-08260 | Dichtring Set | €65–90 | — |
 | Yanmar SD40/SD50 | 196470-08260 | Dichtring Set | €85–120 | — |
 | ZF SD10 | 3213 308 097 | Dichtring Set | €75–105 | — |
@@ -2909,7 +2911,9 @@ class ShaftSealMaintenanceHistory(BaseModel):
 | Aquamet 22 | S66286 | 26,0 | 15,0 | 1,25 | 690 | 1.000 | Hervorragend | Premium-Yachten, Langfahrt | 1,8× |
 | Aquamet 22 HS | S66286 | 26,0 | 15,0 | 1,25 | 860 | 1.100 | Hervorragend | Großyachten, Berufsschifffahrt | 2,0× |
 
-(Confidence: measured — Western Branch Metals Catalogue)
+> ⚠️ **ZU PRÜFEN (Audit):** Die Festigkeitswerte dieser Tabelle (Aquamet 17: 1.070 MPa Streckgrenze / 1.170 MPa Zug; Aquamet 19: 1.100 / 1.200; Aquamet 22: 690 / 1.000) widersprechen ANHANG B (Aquamet 17: 550 / 800; Aquamet 19: 620 / 830; Aquamet 22: 690 / 860) um bis zu ~45 %. Zusätzlich ist die Zuordnung Aquamet 22 = UNS S66286 (A‑286: 26 % Ni / 15 % Cr / 1,25 % Mo) nicht korrekt: Aquamet 22 ist verifiziert Nitronic 50 / Alloy XM‑19 / UNS S20910 (22Cr‑13Ni‑5Mn, stickstoffverfestigter austenitischer Edelstahl). Festigkeiten sind durchmesser-/kaltverfestigungsabhängig und sicherheitsrelevant — vor jeder Last-/Strukturauslegung am WBM-Originaldatenblatt für den konkreten Durchmesser verifizieren. Zahlen (inkl. UNS/Zusammensetzung) bis zur Klärung unverändert.
+
+(Confidence: estimated — UNVERIFIZIERT; von „measured" zurückgestuft, siehe ⚠️ ZU PRÜFEN)
 
 ### AI.2 Edelstahl-Wellen
 
