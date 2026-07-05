@@ -39,6 +39,18 @@ function AssessmentBadge({ assessment }: { assessment: string }) {
   )
 }
 
+// Per-finding confidence is the raw AI self-assessment, which the Vision prompts
+// emit in German (hoch/mittel/niedrig) or, for materials, sicher/wahrscheinlich/vermutet.
+// Match all low-confidence spellings (plus the canonical/English fallbacks) so that
+// low-confidence findings are correctly hidden by default, per the confidence framework.
+const LOW_CONFIDENCE_TOKENS = new Set([
+  'niedrig', 'sehr niedrig', 'vermutet', 'low', 'very low', 'visual_low',
+])
+
+function isLowConfidence(confidence: string | null | undefined): boolean {
+  return !!confidence && LOW_CONFIDENCE_TOKENS.has(confidence.trim().toLowerCase())
+}
+
 function groupFindings(findings: VisualFinding[]): Record<string, VisualFinding[]> {
   const groups: Record<string, VisualFinding[]> = {}
   for (const f of findings) {
@@ -78,10 +90,10 @@ export default function VisualResults({
 
   const visibleFindings = showLow
     ? result.findings
-    : result.findings.filter((f) => f.confidence !== 'low')
+    : result.findings.filter((f) => !isLowConfidence(f.confidence))
 
   const grouped = groupFindings(visibleFindings)
-  const hasLowConfidence = result.findings.some((f) => f.confidence === 'low')
+  const hasLowConfidence = result.findings.some((f) => isLowConfidence(f.confidence))
 
   return (
     <div className="space-y-6">
@@ -160,7 +172,7 @@ export default function VisualResults({
                       <span>{finding.suggestion}</span>
                     </div>
                   )}
-                  {finding.confidence === 'low' && (
+                  {isLowConfidence(finding.confidence) && (
                     <span className="inline-block rounded text-[10px] text-navy-500 border border-navy-600/30 px-2 py-1">
                       Niedrige Sicherheit
                     </span>
