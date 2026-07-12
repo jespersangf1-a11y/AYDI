@@ -28,6 +28,65 @@ Das Ruder ist der **primäre Kontroll-Element** für Kurshaltung, Manöver und N
 
 ---
 
+## 0. Normativer Rahmen — verifizierte Normen & Anwendungsgrenzen
+
+> Dieser Abschnitt wurde web-verifiziert (2026-07). Er ist die **normative Grundlage** für alle Dimensionierungsaussagen weiter unten. Wo ältere Abschnitte auf falsche Normen verweisen (z. B. „ISO 12217-3" im Pydantic-Beispiel Anhang B — das ist eine **Stabilitäts**norm, NICHT Struktur), gilt der hier festgelegte Rahmen.
+
+### 0.1 Die maßgebliche Ruder-Scantling-Norm: ISO 12215-8
+
+**ISO 12215-8 — „Small craft — Hull construction and scantlings — Part 8: Rudders"** ist die **einzige** ISO-Norm, die die Scantlings (Schaftdurchmesser, Blatt-Laminat, Lager) von Sportboot-Rudern regelt. `documented`
+
+| Merkmal | Festlegung | Quelle |
+|---------|-----------|--------|
+| Geltungsbereich | Ruder an Booten mit Rumpflänge L_H **bis 24 m** (nach ISO 8666), **nur Einrumpfboote (monohull)** | ISO 12215-8:2009 Scope |
+| Berücksichtigte Last | **Nur Drucklasten aus Manövrieren** des Bootes | ISO 12215-8:2009 Scope |
+| **Ausdrücklich NICHT abgedeckt** | Lasten aus **Grundberührung / Docking** (Grounding) — separat zu betrachten | ISO 12215-8:2009 Scope |
+| Rechenwege | Scantling-Gleichungen der Norm **oder** gleichwertige Ingenieurmethoden (Continuous-Beam-Theorie, Matrix-Displacement, Classical Lamination Theory) | ISO 12215-8:2009 |
+| Editionen | ISO 12215-8:2009 + Cor 1:2010; harmonisiert als **EN ISO 12215-8:2018** (RCD 2013/53/EU) | ISO/CEN |
+
+**Fünf Rudertypen (Type I–V) der Norm** — die Wahl bestimmt die Rechenmethode: `documented`
+
+| Typ | Bauform (ISO 12215-8) | Entspricht Bezeichnung in §1 dieses Dokuments |
+|-----|----------------------|-----------------------------------------------|
+| Type I | **Spade** (freistehend) — inkl. niedriges Streckungsverhältnis/„cut-out top" bei schnellen Motorbooten, near-rectangular, semi-elliptisch (Segler), **transom-hung** | §1.1 Spade + §1.3 Transom-hung |
+| Type II | Ruder gestützt durch **Skeg (Solepiece) + Skeg-Lager** | §1.2 Skeg-hung (Sonderfall unteres Lager) |
+| Type III | **Schmaler voller Skeg** | §1.2 Skeg-hung |
+| Type IV | **Breiter voller Skeg** | §1.2 Skeg-hung |
+| Type V | **Teil-Skeg (partial skeg)** | §1.2 Skeg-hung |
+
+Die Norm trennt die Analyse für **Spade (Type I)** und **Skeg-Ruder (Type II–V)**; das Blatt wird (außer Sonderfall I c) rechteckig oder trapezförmig idealisiert. `documented`
+
+> **Wichtige Klarstellung zur Ruder*fläche*:** ISO 12215-8 legt **Scantlings** fest (wie dick/stark), **nicht die Ruderfläche** (wie groß). Die Flächen-Faustformeln in §1.1/§1.2 dieses Dokuments sind **hydrodynamische Auslegung (`estimated`)**, keine Normvorgabe. ABS- und ISO-Verfahren leiten die *Auslegungsgeschwindigkeit* implizit aus Wasserlinienlänge und Verdrängungs-Längen-Verhältnis ab (kein direkter Geschwindigkeitseingang) — siehe Anhang E. Quelle: K. Klaka, „Why Sailing Yacht Rudders Break", RINA Int. Journal of Small Craft Technology.
+
+### 0.2 Angrenzende Normen (Lenksystem, Anhänge, Struktur)
+
+| Norm | Titel / Scope | Relevanz für Ruder | Confidence |
+|------|--------------|--------------------|-----------|
+| **ISO 12215-5** | Design pressures for monohulls, design stresses, scantlings determination | Bezugsnorm für Bemessungsdrücke/-spannungen des Rumpfs; ISO 12215-8 baut darauf auf | `documented` |
+| **ISO 12215-9** | Appendages & rig attachment (Kiel/Anhänge) | **Kiel-/Anhang**-Befestigung — nicht Ruder, aber oft verwechselt; siehe CLAUDE.md-Hinweis | `documented` |
+| **ISO 8847** | Steering gear — **Cable over pulley systems** (Seil-/Umlenkrollen-Lenkung) | Mechanische Segelboot-Lenkung bis 24 m; 2021er Edition auch Außenborder bis 37 kW. Deckt Steuermechanismus bis zur mechanischen Schnittstelle am Ruderschaft ab | `documented` |
+| **ISO 10592** | **Hydraulic / remote hydraulic** steering systems | Hydrauliklenkung bis 24 m. **Adressiert ausdrücklich KEINE Notsteuerung** (emergency means of steering) — Notsteuerung ist separat sicherzustellen | `documented` |
+| **ISO 25197** | Electrical/electronic control systems for steering, shift and throttle | Elektrische/„steer-by-wire"-Lenkansteuerung | `documented` |
+| **ISO 8666** | Principal data / Längenmessung | Definition von L_H für Scantling-Geltungsbereich | `documented` |
+
+### 0.3 Klassifikations-Alternativen (>24 m oder freiwillig)
+
+Für Yachten außerhalb des ISO-Scope oder bei Klassifikation gelten Regelwerke der Klassifikationsgesellschaften — dieselbe Physik, andere Koeffizienten: `documented`
+- **ABS** „Guide for Building and Classing Yachts", Part 3, Ch. 2, Sec. 9 (Ruder). Nutzt Auftriebsbeiwert C_L ≈ 1,5; zulässige Spannung = kleinerer Wert aus Streckgrenze oder **57 % der Zugfestigkeit**.
+- **DNV** (vormals GL) „Rules for Classification: Yachts", Part 3 Hull, Ch. 7 (Ruder). Geschwindigkeit als Eingang („highest anticipated speed"), Grenzen z. B. 8,5–24 kn im Beispiel.
+- **ISO 12215-8** (via Larsson et al.): zulässige Spannung = kleinerer Wert aus Streckgrenze oder **50 % der Zugfestigkeit**; Faktor variiert mit Entwurfskategorie A/B/C/D.
+
+> Quellen (0.1–0.3): [ISO 12215-8:2009](https://www.iso.org/standard/37476.html); [EN ISO 12215-8:2018](https://standards.iteh.ai/catalog/standards/cen/91ef7678-fea6-426d-b8b6-930dd52d9b97/en-iso-12215-8-2018); [ISO 12215-5:2019](https://www.iso.org/standard/69552.html); [ISO 8847:2021](https://www.iso.org/standard/75809.html); [ISO 10592:2022](https://www.iso.org/standard/75811.html); [ISO 25197](https://standards.globalspec.com/std/14216180/iso-25197); [Klaka, „Why Sailing Yacht Rudders Break", RINA IJSCT](https://klakamarine.org/wp-content/uploads/2022/04/Klaka-IJSCT-rudder-strength-submitted.pdf).
+
+### 0.4 Notsteuerung — Schnittstelle & Anforderung `documented`
+
+- **Radgesteuerte Boote sollen eine Notpinne (emergency tiller) mitführen, die auf den Ruderschaft aufsteckbar ist** — für den Fall, dass Seilzug bricht oder Hydraulik/Elektrik ausfällt. Dies ist der Standard-Failsafe der mechanischen Schnittstelle.
+- Die Hydraulik-Norm **ISO 10592 deckt Notsteuerung nicht ab** → der Konstrukteur muss die Notpinnen-Schnittstelle (Vierkant/Passung am Schaftkopf, Zugang durch Deck) unabhängig vorsehen.
+- Der Schaftkopf muss daher **konstruktiv eine Notpinnen-Aufnahme** bereitstellen (Vierkant/Keilnut oberhalb des oberen Lagers, unter einem zugänglichen Deckel). Wird in §7 (Failsafe) und Fehlerbild **FB-31-09-011** vertieft.
+> Quelle: [ISO 10592 Scope (CE-Marking)](https://www.iso.org/standard/75811.html); Praxis: [Yachting World — emergency steering](https://www.yachtingworld.com/features/how-to-set-up-emergency-steering-system-129113).
+
+---
+
 ## 1. Ruderbauarten und Auswahl
 
 ### 1.1 Spade Rudder (Spatenruder)
@@ -1051,6 +1110,198 @@ A: Selten bei normalen Booten (<20 kn). Bei >25 kn Motorbooten: ja. Prävention:
 
 ---
 
+## ANHANG E — Dokumentierte Auslegungsmethodik (First-Principles + Normvergleich)
+
+> **Herkunft:** Die folgende Methodik ist **peer-reviewed publiziert** — K. Klaka, *„Why Sailing Yacht Rudders Break"*, Royal Institution of Naval Architects (RINA), International Journal of Small Craft Technology. Sie ist mit ISO 12215-8, ABS und DNV/GL abgeglichen. `documented`
+>
+> **Warum dieser Anhang die ⚠️-Flags in §1.1 und §3.1 auflöst (Prinzip, nicht Zahlen):** Die dortigen Rechenbeispiele sind arithmetisch/dimensionell fehlerhaft und bleiben markiert. Hier steht stattdessen die **belegte, konsistente** Methode. Die exakten Koeffizienten der Normtexte (ISO/ABS/DNV) sind kostenpflichtig und werden **nicht rekonstruiert**; wo unten Zahlen stehen, stammen sie direkt aus der genannten Publikation.
+
+### E.1 Kernbefund des Audits (Sicherheitsrelevanz)
+
+> **„Most yacht rudders break because they are not designed to be strong enough."** — Ruderversagen tritt rund **10× häufiger** auf als Kielverlust. Dokumentierte Ausfallraten: ~1 % aller Ozeanüberquerungen (Casey 2018); 6 % der Flotte im Fastnet 1979; 2 % Sydney–Hobart 1998. Hauptursache laut Analyse: **Wahl einer zu niedrigen Auslegungsgeschwindigkeit** und zu optimistischer zulässiger Spannung. `documented`
+
+### E.2 Hydrodynamische Ruderkraft (Normalkraft N)
+
+```
+N = C_N × 0.5 × ρ × A × V²          [N]
+
+C_N = Normalkraft-Beiwert ≈ C_L,max  (typisch 1,3; bis 1,5 möglich)
+ρ   = 1025 kg/m³ (Salzwasser)
+A   = Ruder-Profilfläche [m²]  (mittlere Spannweite × mittlere Sehne)
+V   = Anströmgeschwindigkeit am Ruder [m/s]
+```
+- **Kritischer Punkt = Geschwindigkeitswahl** (Kraft ∝ V²). „Hull speed" (Fn = 0,4) ist **unzureichend**: beim Surfen erreichen selbst schwere Boote +40 % über Rumpfgeschwindigkeit, leichte bis 2×. **Empfehlung der Quelle: mindestens 125 % der Rumpfgeschwindigkeit, besser höher.** `documented`
+- Beispiel (8 m WL, 5 t): 125 % → 0,9 t Ruderkraft; 140 % → 1,15 t — d. h. **~doppelt** so hoch wie bei Rechnung mit Rumpfgeschwindigkeit (0,6 t). Deshalb ist die 15 %-Unsicherheit bei C_N nachrangig gegenüber der Geschwindigkeitswahl.
+- Orbitalgeschwindigkeit der Wellenteilchen erhöht die Anströmung zusätzlich (offene See, 2 m/75 m/7 s-Welle ≈ 1,7 kn an der Oberfläche).
+
+### E.3 Struktur: Biegemoment, Torsion, äquivalentes Moment, Schaftdurchmesser
+
+Schaft = **Kragträger (cantilever)**, Last greift am spannweitigen Druckmittelpunkt C_ps an (etwas **unterhalb** des Flächenschwerpunkts; variiert mit Streckung/Zuspitzung/Ruderwinkel). `documented`
+
+```
+Biegemoment:   BM = N × (C_ps + 0,05)          [N·m]
+   (0,05 m ≈ halbe untere Lagerlänge + Spalt Ruderwurzel↔Rumpf)
+
+Torsion:       Q  = N × 0,1 × c                 [N·m]
+   (Torsionshebel ≈ 10 % der mittleren Sehne c; für Spade fast immer vernachlässigbar,
+    der Vollständigkeit halber geführt)
+
+Äquiv. Moment: M  = 0,5 × [ BM + √(BM² + Q²) ]  (Roark & Young, 1975)
+
+Vollschaft-Ø:  d  = ( 32 × M / (π × σ_zul) )^(1/3)   [m]
+```
+> **Konsistenz mit §3.1:** Damit ist das **Schaftmoment über einen Sehnen-nahen Hebel** definiert (Torsionshebel ≈ 0,1·c), während das **Biegemoment die Spannweite** nutzt — genau die Trennung, die der Audit-Flag in §3.1 einforderte. Die dortigen Zahlen bleiben unkorrigiert markiert; **maßgeblich ist diese Methode.**
+
+### E.4 Zulässige Spannung σ_zul & Sicherheitsfaktor
+
+- **Wahl Streckgrenze (0,2 %-Dehngrenze) vs. Zugfestigkeit:** Quelle empfiehlt **0,2 %-Dehngrenze** (ein dauerhaft verbogener Schaft klemmt im Lager → unbrauchbar, aber kein Rohr-/Flutungs-Bruch → niedrigerer SF vertretbar).
+- **Normfaktoren:** ISO 12215-8 nutzt den kleineren Wert aus Streckgrenze **oder 50 % Zugfestigkeit**; ABS **oder 57 % Zugfestigkeit**. `documented`
+- **Sicherheitsfaktor:** **SF ≥ 2** als Minimum für korrosionsarme Werkstoffe (professionelle Fertigung, spezifiziertes Material). Ein Verfahren, das **SF > 5** braucht, ist methodisch fragwürdig. `documented`
+- **Ermüdung:** Für 2205 liegt die Dauerfestigkeit ≈ 0,2 %-Dehngrenze (Sandvik 2009); für 316L bei 10⁷ Zyklen (R = −1) ≈ 184 MPa (Huang et al. 2006) — am unteren Rand des Dehngrenzen-Bandes.
+
+### E.5 Normvergleich (Beispiel-Yacht 8 m WL, 5 t, 316L-Vollschaft)
+
+| Methode | Erforderlicher Schaft-Ø | Anmerkung |
+|---------|------------------------|-----------|
+| ABS | 62,9 mm | Geschwindigkeit implizit aus L_WL & D/L-Verhältnis |
+| ISO 12215-8 (via Larsson et al. 2014) | 61,3 mm | Kategorie-Faktor A/B/C/D |
+| GL (2003) | 63,1 mm | Geschwindigkeit als Eingang |
+| Klaka (125 % Rumpfgeschw.) | 81,2 mm | First-Principles, SF = 2 |
+| **Ist-Ausführung (Beispielboot)** | **63,5 mm (2,5″)** | matcht ABS/ISO/GL |
+
+**Interpretation der Quelle:** Die drei Codes stimmen untereinander gut überein, liegen aber **deutlich unter** dem First-Principles-Wert bei realistischer Surf-Geschwindigkeit → strukturelle Erklärung, warum Ruder mit Code-Mindest-Ø brechen. Namhafte Büros legen daher **über** ISO-Minimum aus (z. B. Farr Yacht Design: „designed to exceed the minimum scantling requirements required by the ISO 12215 Rule"). `documented`
+
+> Quelle E.1–E.5: [Klaka, RINA IJSCT (PDF)](https://klakamarine.org/wp-content/uploads/2022/04/Klaka-IJSCT-rudder-strength-submitted.pdf).
+
+---
+
+## ANHANG F — Werkstoff-Kennwerte Ruderschaft (verifiziert)
+
+> Sammlung aus Klaka (RINA IJSCT), zusammengetragen aus Euro Inox, Sandvik, Atlas, Dexter, Huang, Johansson, DNVGL, Jefa. Werte streuen prozessabhängig — **immer Werkstoffnachweis des Lieferanten anfordern.** `documented`
+
+**Nichtrostende Stähle:**
+
+| Legierung | 0,2 %-Dehngrenze [MPa] | Zugfestigkeit [MPa] | Bemerkung |
+|-----------|------------------------|---------------------|-----------|
+| **316L** | 170–290 (Streuung!); Jefa nutzt **200** | 485–700 | Häufigster Schaftwerkstoff; große Streuung = Auslegungsrisiko |
+| **2205** (Duplex) / AISI 629 | **450**–500 | 640–950 | ~2× Dehngrenze von 316L, etwas bessere Korrosionsbeständigkeit; Jefa nutzt 450 |
+
+**Aluminium-Legierungen** (weniger verbreitet, Korrosionssorge): `documented`
+
+| Legierung | 0,2 %-Dehngrenze [MPa] | Zugfestigkeit [MPa] | Bemerkung |
+|-----------|------------------------|---------------------|-----------|
+| **6061-T6** | 241 (ADC) | 289 | leicht erhöhter Cu-Gehalt → kann angrenzendes 5083/5086-Plattenmaterial schneller korrodieren; US-üblich |
+| **6082-T6** | 240–280 | 290–340 | europäisch üblich |
+
+- **Schweiß-Warnung Aluminium:** Schweißen senkt in der Wärmeeinflusszone (bis ~25 mm beidseits der Naht) die Zugfestigkeit um **~35 %**, die Dehngrenze um **~45 %**. Liegt eine Schweißnaht nahe dem unteren Lager, **Durchmesser deutlich erhöhen.** Stähle behalten beim Schweißen nahezu ihre Festigkeit. `documented`
+- **7000er-Legierungen** (Luftfahrt) sind für Marineumgebung **nicht ausreichend korrosionsbeständig** → nicht verwenden.
+- **FRP-/Carbonschäfte:** andere, komplexere Methodik (nicht homogen) — Carbon-Ruderschäfte seit >40 Jahren im Einsatz; nicht in obigen Tabellen abgebildet.
+
+> Quelle: [Klaka, RINA IJSCT, Tab. 2 & 3](https://klakamarine.org/wp-content/uploads/2022/04/Klaka-IJSCT-rudder-strength-submitted.pdf).
+
+---
+
+## ANHANG G — Reale Lager-/Lenkungs-Komponenten (Marktübersicht)
+
+> Nur reale, verifizierbare Hersteller/Produktlinien. `documented`
+
+| Hersteller | Produkt / Typ | Einsatz | Quelle |
+|-----------|---------------|---------|--------|
+| **Jefa Rudder & Steering** (DK) | Selbstausrichtende **Captive-Roller-Ruderlager** (Alu-Gehäuse); self-aligning eliminiert präzise Ausrichtung bei Montage; >40.000 Boote mit Lagern, >15.000 Lenksysteme seit 1980 | Segelboote aller Größen; Schaft, der sich unter Last biegt | [PYI/Jefa](https://www.pyiinc.com/jefa-rudder/) |
+| **Lewmar** (UK) | Ruderlager & Steuersysteme (teils Jefa-basiert) | Serien-Segelyachten | [Jefa/Lewmar](https://www.pyiinc.com/jefa-rudder/) |
+| **Edson International** (US) | Seilzug-/Kettenlenkung (cable over pulley) | Segelboote, ISO 8847 | Herstellerangabe |
+| **Lecomble & Schmitt (LS)** (FR) | Hydrauliklenkung & Autopilot-Antriebe | Motor-/große Segelyachten, ISO 10592 | [Jefa Vertrieb](https://www.pyiinc.com/jefa-rudder/) |
+
+> **Wartungshinweis Jefa/Lewmar-Lager:** Captive-Roller-Lager sind wartungsarm, aber salzwasserabhängig — Dichtungsqualität ist kritisch. Selbstausrichtende Lager verzeihen Schaft-Durchbiegung; Standard-Lager erfordern präzise Fluchtung, sonst Kantenlauf/Verschleiß.
+
+---
+
+## ANHANG H — Fehlerbild-Atlas (FB-31-09-NNN)
+
+> Fortlaufende, kollisionsfreie IDs im Format **FB-31-09-NNN** (keine Kollision mit den informellen „Fehleranalyse-Schwerpunkten 1–12" der Übersicht oder den `31_09_00x`-Beispielen in Anhang B). Schweregrad: `kritisch` / `hoch` / `mittel` / `niedrig`.
+
+### FB-31-09-001 — Schaftdurchmesser unterdimensioniert (Bruch beim Surfen)
+- **Schweregrad:** kritisch · **Sicherheitsrelevanz:** ja · **Typen:** Spade (Type I) besonders
+- **Symptome:** wachsende Ruderdurchbiegung/„weiches" Helmgefühl unter Last; plötzlicher Bruch beim Anluven/Surfen mit vollem Ruder.
+- **Ursache:** Auslegung mit zu niedriger Geschwindigkeit (Rumpfgeschwindigkeit statt ≥125 %) und/oder zu optimistischer σ_zul; Code-Minimum ausgereizt. `documented`
+- **Diagnose:** Nachrechnung nach Anhang E (N, BM, M, d); Ist-Ø mit Anhang-E.5-Werten vergleichen; Werkstoffnachweis prüfen.
+- **Abhilfe/Prävention:** Ø nach First-Principles + SF ≥ 2 auslegen; **über** ISO-Minimum gehen; 2205 statt 316L bei Ø-Restriktion.
+- **Norm/Quelle:** ISO 12215-8; [Klaka RINA IJSCT](https://klakamarine.org/wp-content/uploads/2022/04/Klaka-IJSCT-rudder-strength-submitted.pdf).
+
+### FB-31-09-002 — Ruderfläche zu klein (Kontrollverlust, v. a. unter Motor)
+- **Schweregrad:** hoch · **Typen:** alle
+- **Symptome:** träges Ansprechen, Übersteuern nötig, schlechte Manövrierbarkeit bei niedriger Fahrt / im Hafen.
+- **Ursache:** hydrodynamische Fehlauslegung der Fläche (nicht ISO-geregelt, `estimated`); Propeller-Blasstrom nicht genutzt.
+- **Diagnose:** Vergleich Ruderfläche/Segelfläche bzw. Ruderfläche/Lateralplan mit Schwesterbooten; Drehkreis-Test.
+- **Abhilfe:** Fläche/Streckung anpassen; Ruder in Propellerstrom setzen (Motorboot).
+
+### FB-31-09-003 — Profil nicht auf Krängung optimiert (Auftriebsverlust bei Heel)
+- **Schweregrad:** mittel · **Typen:** Segler
+- **Symptome:** bei 20–25° Krängung deutlich mehr Ruderausschlag für gleichen Kurs; Widerstand/Geschwindigkeitsverlust (vgl. §2.2).
+- **Abhilfe:** flacheres/konsistenteres Profil; Balance anpassen.
+
+### FB-31-09-004 — Kavitation bei hoher Fahrt (Oberflächenerosion)
+- **Schweregrad:** mittel · **Typen:** schnelle Motorboote (>20–25 kn)
+- **Symptome:** Erosionspitting an Saugseite, Geräusch/Vibration, Effizienzeinbruch (vgl. §2.3).
+- **Abhilfe:** dickeres Profil, tiefere Lage, Abstand zum Propeller, Belüftungsbohrung.
+
+### FB-31-09-005 — Delamination / Hohlräume im Ruderblatt-Laminat
+- **Schweregrad:** hoch · **Typen:** alle FRP-Ruder
+- **Symptome:** dumpfer Klopfton, Blasen, Wassereintritt, im Winter Frostrisse.
+- **Diagnose:** Klopftest, Ultraschall, ggf. Thermographie (vgl. §4.3/§8).
+- **Ursache:** Kern nicht vakuumiert, unzureichende Harz-Imprägnierung, Wassereintritt am Schaftaustritt.
+
+### FB-31-09-006 — Bolzen-/Flansch-Korrosion, Festfressen
+- **Schweregrad:** hoch · **Typen:** alle
+- **Symptome:** Kupferbelag/Verfärbung (galvanisch), lose/festsitzende Bolzen.
+- **Abhilfe:** 316L-Bolzen, Isolation galvanischer Paare, anaerobes Dichtmittel, Drehmoment kontrollieren (vgl. §5.2).
+
+### FB-31-09-007 — Lagerverschleiß (Pintle/Gudgeon oder Rollenlager)
+- **Schweregrad:** hoch · **Typen:** Skeg-/Transom-Ruder, alle mit Gleit-/Rollenlager
+- **Symptome:** Radialspiel von 0,2–0,5 mm (neu) auf >1,5 mm gewachsen; Flattern, schlechtere Kontrolle (vgl. §6).
+- **Prävention:** jährliche Spielprüfung; Schmierung; Salzwasser beschleunigt (3–5 J vs. 5–10 J Süßwasser).
+
+### FB-31-09-008 — Krevikorrosion des nichtrostenden Schafts (verdeckt im Lager/Rohr)
+- **Schweregrad:** kritisch · **Sicherheitsrelevanz:** ja · **Typen:** 316L-Schäfte
+- **Symptome:** oft **unsichtbar** bis zum Bruch; Verfärbung am Schaftaustritt, Ermüdungsanrisse.
+- **Ursache:** Spaltkorrosion/Kaltverfestigung in sauerstoffarmer Zone (Lager, Ruderrohr), verschärft durch zyklische Last.
+- **Abhilfe/Prävention:** 2205 Duplex statt 316L (bessere Korrosion **und** ~2× Dehngrenze); periodische Schaftinspektion/Ausbau; kein Dauerkontakt mit stehendem Salzwasser.
+- **Quelle:** [Klaka RINA IJSCT](https://klakamarine.org/wp-content/uploads/2022/04/Klaka-IJSCT-rudder-strength-submitted.pdf).
+
+### FB-31-09-009 — Dynamisches Flattern / Resonanz (High-Speed)
+- **Schweregrad:** mittel · **Typen:** schnelle Boote
+- **Symptome:** spürbare Lenkrad-Vibration, langfristig Delaminationsrisiko (vgl. §7.3).
+- **Ursache:** Lagerspiel zu groß, Blatt nicht steif genug, Propeller-Blasstrom.
+
+### FB-31-09-010 — Ruderkopf-/Schaftbruch bei Übersteuerung oder Grundberührung
+- **Schweregrad:** kritisch · **Sicherheitsrelevanz:** ja
+- **Wichtig:** **Grundberührungs-/Docking-Lasten sind NICHT von ISO 12215-8 abgedeckt** (Scope-Ausschluss) → separater Nachweis nötig. `documented`
+- **Folge:** Verlust der Steuerfähigkeit + mögliche Beschädigung von Ruderrohr/Lager → **Flutungsgefahr**, wenn kein wasserdichtes Schott vor dem Ruderrohr.
+- **Prävention:** Schott/Ruderrohr-Integrität, Skeg als Grundschutz (Type II–V), Grounding-Lastfall separat auslegen.
+
+### FB-31-09-011 — Notsteuerungs-Schnittstelle fehlt/unbrauchbar
+- **Schweregrad:** kritisch · **Sicherheitsrelevanz:** ja · **Typen:** rad-/hydraulik-/elektrisch gelenkt
+- **Symptome:** bei Hydraulik-/Seilzug-/Elektrikausfall keine mechanische Rückfallebene; Notpinne passt nicht/nicht erreichbar.
+- **Ursache:** Schaftkopf ohne Notpinnen-Aufnahme; **ISO 10592 fordert keine Notsteuerung** → oft übersehen.
+- **Abhilfe/Prävention:** Vierkant/Keil am Schaftkopf über oberem Lager + zugänglicher Deckel; Notpinne an Bord, **getestet** und regelmäßig geübt.
+- **Quelle:** [ISO 10592 Scope](https://www.iso.org/standard/75811.html); [Yachting World](https://www.yachtingworld.com/features/how-to-set-up-emergency-steering-system-129113).
+
+### FB-31-09-012 — Anschluss-/Übergangslaminat Schaft↔Blatt zu dünn
+- **Schweregrad:** hoch · **Typen:** FRP-Spade
+- **Symptome:** Risse an der Einleitungszone Schaft→Blatt, Spiel zwischen Schaft und Laminat.
+- **Ursache:** unzureichende Krafteinleitung/Verklebung Metallschaft↔FRP; Lastspitzen an der oberen Lagerebene.
+- **Prävention:** ausreichende Überlappung/Rovings an der Einleitung, Web/CLT-Nachweis der Anschlusszone (ISO 12215-8 erlaubt Classical Lamination Theory).
+
+### FB-31-09-013 — Seegras-/Leinen-Verhängung
+- **Schweregrad:** niedrig–mittel · **Typen:** Skeg-hung häufiger
+- **Symptome:** plötzlicher Widerstand, einseitig blockierter Ausschlag.
+- **Abhilfe:** Rückwärtsschub, Tauchgang; Spade weniger anfällig als Skeg-hung.
+
+> **Mapping zu Anhang B (Pydantic):** Diese FB-31-09-NNN-Einträge sind die kanonischen Fehlerbilder; die `31_09_00x`-IDs im Pydantic-Beispiel sind lediglich Schema-Demonstration. Bei Datenpflege FB-31-09-NNN als `fehlerbild_id` verwenden. **Korrektur zu Anhang B:** dort `normen_referenzen=["ISO 12217-3", ...]` ist fachlich falsch für Ruder-Scantlings → richtig **ISO 12215-8** (ISO 12217 = Stabilität).
+
+---
+
 **Redaktion & Qualitätskontrolle:** AYDI Knowledge Engineering v6  
-**Letzte Überprüfung:** 2026-05-18  
-**Gültig für:** Segelboote, Motorsegler, Motorboote 8–40m LOA
+**Letzte Überprüfung:** 2026-05-18 · **Web-Verifikation & Erweiterung (Normrahmen, Methodik, Werkstoffe, Fehlerbild-Atlas):** 2026-07-13  
+**Gültig für:** Segelboote, Motorsegler, Motorboote 8–40m LOA  
+**Primärquellen der Erweiterung:** ISO 12215-8:2009 / EN ISO 12215-8:2018 (Scope, Rudertypen); ISO 12215-5, 8847, 10592, 25197 (Scopes); K. Klaka „Why Sailing Yacht Rudders Break", RINA Int. Journal of Small Craft Technology (Methodik, Werkstoff-Kennwerte, Ausfallstatistik).

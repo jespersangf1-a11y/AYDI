@@ -1103,3 +1103,338 @@ A: Ultraschall-Prüfung (UT) für Delaminierung; Röntgen für innere Hohlräume
 **Redaktion & Qualitätskontrolle:** AYDI Knowledge Engineering v6  
 **Letzte Überprüfung:** 2026-05-18  
 **Gültig für:** Segelboote, Motorsegel, Rennboote 8–40m LOA
+
+---
+---
+
+# TEIL II — WEB-VERIFIZIERTE WERFT-ERWEITERUNG (Audit 2026-07)
+
+> **Lesehinweis / Confidence-Konvention dieses Teils.** Alle Angaben in Teil II sind
+> gegen autoritative Quellen (ISO-Katalogeinträge, begutachtete Fachpublikation,
+> Kielhersteller, MAIB-Unfalluntersuchungen, Surveyor-Praxis) geprüft und tragen
+> ein Confidence-Tag: `documented` = wörtlich/sinngemäß aus benannter Quelle
+> belegt; `estimated` = branchenübliche Größenordnung ohne zweifelsfreien
+> Einzelbeleg. **Exakte Formel-Koeffizienten, Teilsicherheitsbeiwerte und die
+> genauen Lastfall-Gleichungen von ISO 12215-9 stehen ausschließlich im
+> kostenpflichtigen Normtext und wurden NICHT rekonstruiert** — sie werden hier
+> qualitativ (Was/Warum/welche Norm) beschrieben, nicht als Zahlenrezept.
+>
+> **Verhältnis zu Teil I:** Teil I (v2.0) enthält zahlreiche Rechenbeispiele,
+> Profil-L/D-Werte, Abriebsraten und Koeffizienten **ohne Quellenbeleg**. Diese sind
+> als `estimated — unverifiziert` zu behandeln. Wo Teil I einer verifizierten
+> Quelle widerspricht, gilt Teil II. Die wichtigsten Korrekturen sind in
+> Abschnitt II-0 zusammengefasst.
+
+---
+
+## II-0. Normative Klarstellungen und Korrekturen (Vorrang vor Teil I)
+
+| # | Aussage in Teil I | Korrektur (verifiziert) | Confidence |
+|---|-------------------|-------------------------|------------|
+| K1 | Abschnitt 1.1: „Dimensionierung nach **ISO 12217-1**" für Kielflächen/Scantlings | **Falsche Norm.** ISO 12217 behandelt ausschließlich **Stabilität und Auftrieb**, nicht Struktur. Kiel-/Anhangslasten und -Scantlings: **ISO 12215-9**; Rumpf-Bemessungsdrücke/-Spannungen: **ISO 12215-5**. Die Formel `Fin_Area = LOA × Beam / 12` ist in keiner Norm belegt → `estimated — unverifiziert`. | `documented` |
+| K2 | Abschnitt 2.1 / 6 / FAQ F5: „Stainless **316L** (mindestens): erforderlich" als Fakt | **Zu stark.** 316/316L erleidet im anaeroben, feuchten Kielsumpf-Spalt **intensive Spaltkorrosion (crevice corrosion)** und ist für dauergetauchte kritische Kielbolzen nach Herstelleraussage *nicht* geeignet. Moderner Konsens: **Duplex 2205 / Super-Duplex 2507** (siehe II-3). | `documented` |
+| K3 | Diverse Rechenbeispiele (2.2, 2.3, 5, 7) mit Impact-Faktoren, Peel-Stress, Pitch-Frequenz-Formel | Keine dieser Formeln/Koeffizienten ist aus ISO 12215-9 oder anderer Quelle belegbar. **Als Illustration behandeln, nicht für reale Dimensionierung verwenden.** Reale Lastfälle: siehe II-2. | `estimated — unverifiziert` |
+| K4 | „ISO 12944 C5-M" als „Passivierungs-Norm" (Abschn. 6.3 / 9.1) | ISO 12944-Teile beschreiben **Korrosionsschutz durch Beschichtungssysteme** und die Korrosivitätskategorie **C5** (nicht „C5-M"; die Kategorie heißt seit ISO 12944-2:2017 schlicht **C5**, zusätzlich **CX** für offshore/extrem). Chemische **Passivierung** von Edelstahl ist dagegen **ASTM A967 / ISO 16048**-Thema. Beide Normbezüge in Teil I sind ungenau. | `documented` |
+
+---
+
+## II-1. Normativer Rahmen — ISO-12215-Familie (verifiziert)
+
+Die Reihe **ISO 12215 „Small craft — Hull construction and scantlings"** ist die
+Bemessungsgrundlage für Rumpf und Anhänge kleiner Wasserfahrzeuge bis **24 m
+Rumpflänge L_H** (Längenmessung nach **ISO 8666**). Relevante Teile für die
+Kielkonstruktion:
+
+| Teil | Titel | Rolle für den Kiel | Confidence |
+|------|-------|--------------------|------------|
+| **ISO 12215-5** | Design pressures for monohulls, design stresses, scantlings determination | Bemessungsdrücke, Bemessungsspannungen und Scantling-Ermittlung des Rumpfs — u. a. der Rumpfschale **im Kielanschlussbereich** | `documented` |
+| **ISO 12215-8** | Rudders | Ruder (Ruderkraft, Schaft) — nicht Kiel, aber gleiche Systematik | `documented` |
+| **ISO 12215-9** | **Sailing craft appendages** | **Kern für Kiel:** Lasten & Scantlings von festen/kippbaren Kielen, Schwertern, Steckschwertern und **deren Befestigung am Rumpf** | `documented` |
+| **ISO 12215-10** | Rig loads and rig attachment in sailing craft | Rigg-Lasten/-Anschluss (indirekt kielrelevant über Rumpfbelastung) | `documented` |
+
+> Quelle: ISO-Katalog, ISO 12215-5:2019 (Std. 69552) und ISO 12215-9:2012 (Std. 55339);
+> „For the complete scantlings of the craft, ISO 12215-5 is intended to be used with
+> ISO 12215-8 for rudders, ISO 12215-9 for appendages and ISO 12215-10 for rig loads."
+> — iso.org. Confidence `documented`.
+
+### ISO 12215-9 — Zweck und Geltungsbereich (verifiziert)
+
+- **Geltungsbereich:** Lasten und Scantlings der Anhänge von **einrümpfigen
+  Segelfahrzeugen bis 24 m L_H**. Erfasst **feste und kippende (canting) Kiele,
+  Schwerter (centreboards) und Steckschwerter (daggerboards) sowie ihre Befestigung
+  am Rumpf**. (ISO 12215-9, Scope) — `documented`
+- **Was die Norm liefert:** Bemessungsspannungen (design stresses), die zu
+  bewertenden Strukturbauteile, **Lastfälle und Bemessungslasten** für Kiel/Schwert
+  und deren Befestigung, Rechenmethoden und Modellierungshinweise sowie die Nachweis-
+  /Konformitätswege. — `documented`
+- **Sicherheitsbegründung (Zitat sinngemäß, ISO/AFNOR-Scope):** „The loss of a keel
+  leading to craft capsize is one of the major casualty hazards on sailing craft and
+  therefore the structural efficiency of all elements of the keel and its connection
+  to the craft is paramount." → **Kielverlust = Kentern**; deshalb gilt der
+  Kielanschluss als hochkritisches Strukturelement. — `documented`
+
+> **Wichtig (bekräftigt CLAUDE.md):** Für Kiel-Scantlings gilt **ISO 12215-9**, für
+> Rumpfscantlings **ISO 12215-5** — **nicht** ISO 12217 (das nur Stabilität/Auftrieb
+> bewertet).
+
+### Revision ISO 12215-9 (Fassung 2025/2026) — verifiziert
+
+Die Norm wird überarbeitet (ISO-Projekt Std. 85208; nationale Übernahme z. B.
+SRPS EN ISO 12215-9:2026 in Vorbereitung). Laut begutachteter Fachpublikation
+*„Regulatory Developments in Structural Keel Design: A Revised ISO 12215-9"*
+(Aston University Research Explorer / ResearchGate 2024) umfasst die Revision:
+
+1. **Neuer Lastfall „lateral impact"** (seitlicher Stoß) — bisher nicht abgedeckt. — `documented`
+2. **Verpflichtende, strengere Ermüdungsbewertung** (fatigue) der Kielstruktur. — `documented`
+3. **Verbesserte konstruktive Ausführung von Bolzen und Backing Plates**
+   (Unterlegplatten), inkl. Abwägung Einzelschalen-Rumpflaminat vs. Backing-Plate-
+   Dicke im Kielbereich und Behandlung der **Kielbolzen-Vorspannung**. — `documented`
+4. **Informative Leitlinien zur Kielmontage** (keel installation procedures). — `documented`
+
+> Quelle: research.aston.ac.uk / researchgate.net Publikation 379120751. Confidence `documented`.
+> Genaue neue Gleichungen/Beiwerte stehen nur im Normtext → hier nicht wiedergegeben.
+
+---
+
+## II-2. Lastfälle und Bemessungsmethodik (dokumentierte Struktur, ohne Koeffizienten)
+
+ISO 12215-9:2012 betrachtet **mehrere Lastfälle** (in der Literatur mit **sechs**
+Lastfällen angegeben). Zwei sind für die Kielbefestigung führend:
+
+| Lastfall | Bezeichnung | Physik / Nachweisort | Confidence |
+|----------|-------------|----------------------|------------|
+| **LC 1** | **90°-Knockdown (fester Kiel)** | Definiert Kraft **F1** und Bemessungs-**Biegemoment M1** bei **90° Krängung**, angesetzt am **Kielwurzel-/Bolzenniveau** bzw. an der **neutralen Faser der Bodenwrange (floor neutral axis)**. Üblicherweise die **schwerste Querbiegung** für feste Ballastkiele. | `documented` |
+| **LC 3** | **Vertikaler Stoß / Grundberührung** | Vertikale **Pounding-Kraft am Kielboden** [N] — deckt Trockenfallen/Aufsetzen bzw. rein **vertikale, aufwärts gerichtete Grundberührung** ab. | `documented` |
+
+> Quelle: ISO 12215-9:2012 (iso.org / scribd 741899436) und Aston-Publikation.
+> „Load case 1 … force F1 and design bending moment M1 at 90° heel … at its root/bolt
+> level and floor neutral axis"; „Load case 3 considers a vertical impact load in
+> relation to events of dry-docking or purely vertical and upwards grounding …
+> vertical pounding force exerted at keel bottom." Confidence `documented`.
+
+**Methodik-Prinzip (belegt, qualitativ):**
+- Die Norm gibt **Bemessungsspannungen** vor und benennt die **zu bewertenden
+  Bauteile** der Lastkette: **Kielbolzen → Backing Plate/Unterlegplatte →
+  Bodenwrangen (floors)/Matrix → Rumpfschale**. Jedes Glied ist einzeln nachzuweisen
+  (das schwächste bestimmt die Sicherheit). — `documented`
+- Nachweis wahlweise über **normative Formeln** oder **FEM** (die Norm gibt
+  Modellierungshinweise). — `documented`
+- Die Revision macht **Ermüdung verpflichtend** und ergänzt **seitlichen Stoß** —
+  d. h. der reine Grounding-Vertikalstoß (LC 3) allein genügt künftig nicht. — `documented`
+
+> ⚠️ ZU PRÜFEN (Audit): Die **Zahlenwerte** von F1/M1/LC3 (z. B. angesetzte
+> Impact-Faktoren, Momentarme, Teilsicherheiten) stehen nur im Normtext und sind
+> hier **bewusst nicht** angegeben. Die Rechenbeispiele in Teil I §2.2/§5 sind
+> **nicht** aus der Norm abgeleitet und dürfen nicht als Normwerte zitiert werden.
+
+---
+
+## II-3. Kielbolzen-Werkstoffe — dokumentierte Werftrealität
+
+Dies korrigiert und vertieft Teil I §2.1/§6 und FAQ F5.
+
+| Werkstoff | Seewasser-Eignung (getaucht, Kielspalt) | Belege / Hinweise | Confidence |
+|-----------|------------------------------------------|-------------------|------------|
+| **304 / 304L** | **Ungeeignet** für Seewasser | Korrodiert schnell; nur Süßwasser | `documented` |
+| **316 / 316L** | **Kritisch** — trotz „marine grade"-Ruf | „316 Stainless Steel cannot be used for critical applications immersed in seawater … suffers intense localised corrosion (crevice corrosion)"; einzelne Kiele versagten „almost as fast as ordinary steel", wenn Seewasser in den Spalt eindrang. Versagt gerade im **anaeroben, sauerstoffarmen** Kielsumpf-Spalt, wo die Passivschicht nicht erhalten bleibt. | `documented` |
+| **Duplex 2205** | **Bevorzugt** (moderner Konsens) | „the Duplex Stainless family of alloys have become the preferred alloys for use as Keel Bolts in seawater immersion applications" — hohe Festigkeit **und** bessere Spaltkorrosionsbeständigkeit als 316. | `documented` |
+| **Super-Duplex 2507** | **Sehr gut** | Für Hochsalz/High-Load; höchste Korrosionsbeständigkeit der genannten. | `documented` |
+| **17-4 PH** | Herstellerangebot (z. B. MarsKeel) | Ausscheidungsgehärtet, hohe Festigkeit; Korrosionsverhalten anwendungsabhängig prüfen. | `documented` |
+| **Aqualoy 22** | Herstellerangebot (Wellenwerkstoff-Familie) | Von Kielherstellern als Option gelistet. | `documented` |
+| **Silizium-Bronze** | Traditionell geeignet | In der Literatur als „only truly appropriate material … in most circumstances" bezeichnet; unkritisch gegen Spaltkorrosion, dafür geringere Festigkeit → größerer Ø. | `documented` |
+| **Feuerverzinkter/verzinkter Baustahl** | Nur Serienbau/Süßwasser, Verschleißteil | Von Serienwerften (Beneteau/Jeanneau/Hunter u. a.) verbreitet; „cheap option" — muss **regelmäßig geprüft und ersetzt** werden. | `documented` |
+
+> Quellen: anzor.com.au/blog/keel-bolts; marskeel.com/resources/keel-bolt-material.
+>
+> **Werft-Fazit (documented):** Für dauergetauchte, kritische Kielbolzen in Seewasser
+> ist **Duplex 2205 (bzw. 2507)** der Stand der Technik; **316/316L nur mit vollem
+> Bewusstsein des Spaltkorrosionsrisikos** und intaktem, dauerhaft trockenem
+> Bolzenspalt. Die pauschale Aussage „316L genügt" aus Teil I ist zu relativieren.
+
+**Warum der Spalt tödlich ist (Mechanismus, documented):** Edelstahl benötigt
+**Sauerstoff**, um die Passivschicht aufrechtzuerhalten. Im dauerfeuchten,
+sauerstoffarmen **Kielsumpf-/Bolzenspalt** (Sealant-Versagen, stehendes Bilgewasser)
+kommt es zu **Spaltkorrosion**: „A bolt that looks perfectly sound at the nut in the
+bilge can be severely wasted at the sheathed section" — d. h. der Bolzen kann an der
+Mutter oben makellos aussehen und im laminierten/geschlossenen Abschnitt stark
+abgezehrt sein. (marine-inspect.co.uk)
+
+---
+
+## II-4. Kielbolzen-Vorspannung / Anziehen — belegtes Prinzip
+
+Ergänzt Teil I §9 (Drehmoment). **Belegtes Prinzip (documented):** Die
+**Vorspannkraft** eines Kielbolzens hängt ab von **Betriebskraft, Werkstoff von
+Schraube und Mutter sowie Reibungskoeffizient**; die **Reibung im Gewinde und unter
+dem Schrauben-/Mutterkopf macht oft bis zu 90 % des Anziehdrehmoments aus**
+(Aston-Publikation, sinngemäß zu ISO 12215-9). → Das in Teil I §9 genannte
+`T = K · F · d` mit stark streuendem K (0,08–0,20 je nach Schmierung) ist damit
+**prinzipiell korrekt**, aber die **absoluten N·m-Werte in Teil I sind
+estimated/unverifiziert**.
+
+> **Konsequenz:** Drehmoment ohne bekannten, kontrollierten Reibwert ist ein
+> **unzuverlässiges** Maß der tatsächlichen Vorspannung. Werftpraxis: definierte
+> Schmierung (Herstellerangabe), ggf. **Dehnungs-/Längenmessung** statt reiner
+> Drehmomentkontrolle, und **Re-Torque nach Herstellerintervall** (siehe II-6).
+> Genaue Ziel-Vorspannungen/Beiwerte: nur Normtext + Bolzenlieferant. `documented`/`estimated`.
+
+---
+
+## II-5. Fehlerbild-Atlas (verifiziert, kollisionsfreie IDs FB-31-08-xxx)
+
+> IDs bewusst im Schema **FB-31-08-NNN** — kollisionsfrei zu den 12 nummerierten
+> „Fehleranalyse-Schwerpunkten" und zu den Pydantic-`fehlerbild_id`-Werten
+> (`31_08_00x`) aus Anhang B. Jedes Fehlerbild trägt Beleg + Confidence.
+
+### FB-31-08-001 — Spaltkorrosion Kielbolzen im anaeroben Kielsumpf
+- **Fehlerbild:** Bolzen oben (Mutter/Bilge) optisch intakt, im laminierten/getauchten
+  Abschnitt stark abgezehrt; ausgehend von Sealant-Versagen + stehendem Bilgewasser.
+- **Diagnose:** Verfärbtes/rostiges Wasser im Kielsumpf als **Frühindikator** (noch
+  vor sichtbarer Bewegung); endgültiger Nachweis nur durch **Bolzenziehen**.
+- **Norm/Quelle:** marine-inspect.co.uk; anzor.com.au. **Confidence `documented`.**
+- **Gegenmaßnahme:** Duplex-Bolzen, dauerhaft trockener Spalt, Sealant-Erneuerung,
+  Re-Torque-Intervall einhalten.
+
+### FB-31-08-002 — „Smile Crack" (Grinsen) an der Kiel-Rumpf-Fuge
+- **Fehlerbild:** Gebogener Riss entlang der Kiel-Rumpf-Trennfuge, oft durch
+  Antifouling sichtbar — **der bedeutsamste visuelle Einzelindikator für
+  Kielbewegung**.
+- **Diagnose:** Sichtkontrolle rund um die Fuge; Feuchtemessung; Perkussion.
+- **Quelle:** marine-inspect.co.uk. **Confidence `documented`.**
+
+### FB-31-08-003 — Herstellungsabweichung von der Konstruktionszeichnung (Kielstruktur)
+- **Fehlerbild:** Kiel **nicht gemäß Designer-Zeichnung** gefertigt; kritische innere
+  Schweißnähte (Rahmen↔Topplatte) im Bleiguss **verborgen und nicht inspizierbar**.
+- **Realfall:** **„Tyger of London"** (Charter-Yacht, 07.12.2017, La Gomera→Teneriffa):
+  Kiel versagte ohne Vorwarnung, Yacht kenterte in Sekunden; MAIB stellte fest, dass
+  die Bolzen-Anzugskontrolle **nicht** den wahren Zustand des inneren Kielrahmens
+  anzeigt.
+- **Quelle:** MAIB via iims.org.uk / safety4sea.com. **Confidence `documented`.**
+
+### FB-31-08-004 — Ermüdungsriss Kielanschluss (bisher unterbewertet)
+- **Fehlerbild:** Rissbildung durch wiederholte Wellen-/Segellast an Bolzen, Wrangen
+  oder Laminatanschluss; in ISO 12215-9:2012 nur begrenzt erfasst → **Revision macht
+  Ermüdungsnachweis verpflichtend und strenger**.
+- **Quelle:** Aston-Publikation. **Confidence `documented`.**
+
+### FB-31-08-005 — Seitlicher Stoß (lateral impact) ohne Nachweis
+- **Fehlerbild:** Kiel für **vertikale** Grundberührung (LC 3) ausgelegt, aber nicht
+  für **seitlichen** Stoß (Fels/Container quer). Revision führt **neuen Lastfall
+  lateral impact** ein → Altkonstruktionen ohne diesen Nachweis sind exponiert.
+- **Quelle:** Aston-Publikation. **Confidence `documented`.**
+
+### FB-31-08-006 — Unzureichende Backing Plate / Bodenwrangen (Lastkette)
+- **Fehlerbild:** Schwächstes Glied ist nicht der Bolzen, sondern **Unterlegplatte
+  oder Bodenwrange/Matrix**; Rumpflaminat im Kielbereich zu dünn ggü. Backing-Plate-
+  Dicke. Revision adressiert genau diese **Abwägung Einzelschale ↔ Backing-Plate**.
+- **Norm:** ISO 12215-9 (Bauteilkette Bolzen→Backing Plate→Wrangen→Schale). **Confidence `documented`.**
+
+### FB-31-08-007 — Matrix-/Wrangenanbindung löst sich (Sekundärbindung)
+- **Fehlerbild:** Innenmatrix/Bodenwrangen sekundär eingeklebt; Ablösung überträgt
+  Kiellast direkt in die Rumpfschale.
+- **Kontext:** MAIB-Sicherheitswarnung zu Kielversagen auf Segelyachten mahnt
+  Inspektion der Kiel-Rumpf-/Matrix-Sicherung an.
+- **Quelle:** gov.uk MAIB safety warning. **Confidence `documented`** (Mechanismus),
+  Detailmaße `estimated`.
+
+### FB-31-08-008 — Fehlendes Re-Torque-Protokoll
+- **Fehlerbild:** Hersteller nennt Re-Torque-Intervall, aber **kein Nachweis** liegt
+  vor → Surveyor wertet dies als **„material finding"** (wesentlicher Mangel).
+- **Quelle:** marine-inspect.co.uk. **Confidence `documented`.**
+
+> **Referenz-Realfälle (documented):** „Cheeki Rafiki" (2014, Kielverlust,
+> Besatzung verloren — iims.org.uk/study-keel) und die generelle **MAIB Safety
+> Warning „keel failures on sailing yachts"** (gov.uk) unterstreichen: Kielversagen
+> tritt oft **ohne Vorwarnung** ein; äußere Sichtprüfung allein ist unzureichend.
+
+---
+
+## II-6. Inspektion, Prüffristen und Survey (verifiziert)
+
+Ergänzt Teil I §10.
+
+| Prüfpunkt | Vorgehen (belegt) | Confidence |
+|-----------|-------------------|------------|
+| Kiel-Rumpf-Fuge | Auf **Smile Crack** prüfen (bedeutsamster Sichtindikator) | `documented` |
+| Kielsumpf | **Verfärbtes/rostiges Wasser = Frühindikator** für Bolzenkorrosion, noch vor Bewegung | `documented` |
+| Bolzenzustand | Mutter/Washer-Interface + freiliegender Abschnitt; **kritische Zone (durch Laminat) nur durch Ziehen inspizierbar** | `documented` |
+| Feuchte/Laminat | Feuchtemessung gegen trockene Referenz, **Perkussionstest quadrantenweise**, Unzugängliches explizit dokumentieren | `documented` |
+| Re-Torque | Hersteller-Intervall prüfen; **fehlender Nachweis = material finding**. Praxisintervall in der Literatur genannt: **alle 7–10 Jahre** | `documented` (Prinzip), `estimated` (7–10 J.) |
+
+> Quelle: marine-inspect.co.uk; safety4sea.com. **Wichtig:** Ein oben makelloser Bolzen
+> kann im getauchten Abschnitt schwer abgezehrt sein → **Drehmoment-/Sichtprüfung
+> ersetzt keine periodische Bolzenprüfung durch Ziehen** bei Verdacht.
+
+---
+
+## II-7. FAQ-Ergänzungen (verifiziert)
+
+**F11: Welche Norm gilt wirklich für Kiel und Kielbefestigung?**
+A: **ISO 12215-9** (Sailing craft appendages) für Kiel/Schwert + Befestigung,
+zusammen mit **ISO 12215-5** für die Rumpfschale. **Nicht** ISO 12217 (nur
+Stabilität/Auftrieb). Confidence `documented`.
+
+**F12: Ist 316L wirklich ausreichend für Kielbolzen?**
+A: Mit Vorbehalt. 316/316L gilt als „marine grade", **versagt aber gerade im
+anaeroben Kielspalt durch Spaltkorrosion**. Moderner Standard für dauergetauchte
+Kielbolzen: **Duplex 2205 / Super-Duplex 2507**. Silizium-Bronze ist die klassische
+korrosionssichere (aber weichere) Alternative. Confidence `documented`.
+
+**F13: Was ist der maßgebende Lastfall für einen festen Ballastkiel?**
+A: In ISO 12215-9:2012 üblicherweise der **90°-Knockdown (LC 1)** für die
+Querbiegung an Bolzen/Wrangen; zusätzlich **vertikale Grundberührung (LC 3)**. Die
+Revision ergänzt **seitlichen Stoß** und **verpflichtende Ermüdung**. Confidence
+`documented`. Zahlenwerte nur im Normtext.
+
+**F14: Reicht Drehmomentkontrolle, um die Vorspannung zu sichern?**
+A: Nur bedingt — **bis zu 90 % des Drehmoments gehen in Reibung**; ohne bekannten
+Reibwert ist die reale Vorspannung unsicher. Besser: definierte Schmierung +
+ggf. Längen-/Dehnungsmessung, plus Re-Torque nach Herstellerintervall. Confidence
+`documented`.
+
+---
+
+## II-8. Glossar-Ergänzungen
+
+**Backing Plate (Unterlegplatte):** Lastverteilende Platte zwischen Kielbolzen-Mutter
+und Rumpfstruktur; Teil der Lastkette Bolzen→Backing Plate→Wrangen→Schale. In der
+ISO-12215-9-Revision explizit behandelt.
+
+**Bodenwrange (Floor):** Quer-/Längsträger über dem Kielanschluss, der die Kiellast in
+den Rumpf einleitet; in LC 1 wird das Moment an der **neutralen Faser der Wrange**
+nachgewiesen.
+
+**Canting Keel (Kippkiel):** Seitlich schwenkbarer Ballastkiel; von ISO 12215-9
+ausdrücklich erfasst.
+
+**Crevice Corrosion (Spaltkorrosion):** Lokalisierte Korrosion in engen, sauerstoff-
+armen Spalten (Kielsumpf) — Hauptversagensmechanismus von Edelstahl-Kielbolzen.
+
+**Knockdown (90°):** Krängung auf 90°; maßgebender Querbiege-Lastfall (LC 1) fester
+Ballastkiele in ISO 12215-9.
+
+**L_H (Rumpflänge):** Längenmaß nach ISO 8666; Geltungsgrenze der ISO-12215-Reihe = 24 m.
+
+**Smile Crack:** Gebogener Riss entlang der Kiel-Rumpf-Fuge; wichtigster Sichtindikator
+für Kielbewegung.
+
+---
+
+## II-9. Quellen (Teil II)
+
+- ISO 12215-9:2012 (Katalog) — iso.org/standard/55339.html
+- ISO 12215-9 Revision (Projekt) — iso.org/standard/85208.html
+- ISO 12215-5:2019 (Katalog) — iso.org/standard/69552.html
+- Regulatory Developments in Structural Keel Design: A Revised ISO 12215-9 —
+  research.aston.ac.uk / researchgate.net/publication/379120751
+- Keel Bolts – which Stainless is best? — anzor.com.au/blog/keel-bolts
+- Keel Bolt Material — marskeel.com/resources/keel-bolt-material
+- Keel Integrity in Pre-Purchase Surveys — marine-inspect.co.uk/blog/keel-integrity-pre-purchase-survey-documentation
+- Tyger of London — MAIB report (via IIMS) — iims.org.uk/keel-failure-and-capsize-of-charter-yacht-tyger-of-london-maib-report-published
+- Study of a keel failure / Cheeki Rafiki — iims.org.uk/study-keel
+- MAIB Safety warning about keel failures on sailing yachts — gov.uk/maib-reports/safety-warning-about-keel-failures-on-sailing-yachts
+- UK MAIB: Lessons learned after yacht keel failure — safety4sea.com/uk-maib-lessons-learned-after-yacht-keel-failure
+
+**Redaktion Teil II:** AYDI Knowledge Engineering — Web-verifizierte Audit-Erweiterung  
+**Erstellt:** 2026-07-13  
+**Regel:** Kein unverifizierter Fakt; Norm-Koeffizienten bewusst nicht rekonstruiert.
