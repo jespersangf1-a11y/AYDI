@@ -2247,7 +2247,7 @@ Auf Superyachten (>18m) wird Butylband seltener verwendet als auf Serienbooten, 
 | ASTM G154 | Standard Practice for UV Exposure | UV-Beständigkeit |
 | ISO 12216 | Small Craft — Windows, Portlights, Hatches | Luken/Fenster-Anforderungen |
 | ISO 15085 | Small Craft — Man Overboard Prevention | Reling/Stanchion-Anforderungen |
-| EN 13956 | Flexible Sheets for Waterproofing — Bitumen | Bezug für Dachbahnen (EternaBond) |
+| EN 13956 | Flexible Sheets for Waterproofing — Kunststoff-/Elastomerbahnen (Plastic and Rubber Sheets) | Bezug für Dachbahnen (EternaBond) |
 | MIL-PRF-131 | Military Spec: Barrier Material, Waterproof | Butylband als Barriere |
 
 (Confidence: documented — Normendatenbanken)

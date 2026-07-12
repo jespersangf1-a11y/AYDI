@@ -525,9 +525,9 @@ Gougeon Brothers, Inc. (Bay City, Michigan, seit 1969) entwickelte das West Syst
 | 125/225 | 100:28 | Medium |
 | 125/226 | 100:28 | Slow — Strukturell empfohlen |
 | 125/227 | 100:28 | Extra Slow |
-| 135/224 | 100:31 | Fast |
-| 135/225 | 100:31 | Medium |
-| 135/226 | 100:31 | Slow |
+| 135/224 | 100:28,6 | Fast |
+| 135/225 | 100:28,6 | Medium |
+| 135/226 | 100:28,6 | Slow |
 | INF-114/225 | 100:25 | Medium Infusion |
 | INF-114/226 | 100:25 | Slow Infusion |
 | INF-114/229 | 100:25 | Ultra Slow Infusion |
@@ -3704,7 +3704,7 @@ A: JA! Kristallisation ist ein physikalischer Prozess, keine chemische Veränder
 A: JA, West System empfiehlt dies sogar für mittlere Topfzeiten. Z.B. 50% 205 + 50% 206 ergibt eine Topfzeit zwischen Fast und Slow. Das Gesamtverhältnis zum Harz muss natürlich stimmen (5:1 bleibt 5:1).
 
 **F: Wie berechne ich die Klebefläche für einen Beschlag?**
-A: Maximale Belastung (N) ÷ Scherfestigkeit Kleber (MPa) × 10⁶ ÷ Sicherheitsfaktor (3–5) = erforderliche Fläche (mm²). Beispiel: 5.000N Last, 15 MPa Kleber, SF 4: 5.000 ÷ 15.000.000 × 4 = 1.333 mm² = 36×37mm Minimum.
+A: Maximale Belastung (N) ÷ Scherfestigkeit Kleber (MPa) × 10⁶ × Sicherheitsfaktor (3–5) = erforderliche Fläche (mm²). Beispiel: 5.000N Last, 15 MPa Kleber, SF 4: 5.000 ÷ 15.000.000 × 4 = 1.333 mm² = 36×37mm Minimum.
 
 **F: Gibt es Epoxid das unter Wasser aushärtet?**
 A: Für temporäre Reparaturen: J-B Weld WaterWeld (Epoxid-Knetmasse, unterwasser anwendbar). Für dauerhafte Unterwasser-Aushärtung: Wenige Spezialsysteme existieren (z.B. Belzona 5811, Devcon Underwater Putty), aber Festigkeit ist deutlich reduziert gegenüber Trockenanwendung.

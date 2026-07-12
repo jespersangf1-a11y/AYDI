@@ -1212,7 +1212,7 @@ Alu-Masten werden meist aus den folgenden Profilen konstruiert:
 - Anwendung: Cockpitböden (nass), Dieseltank-Deckel
 - Typischer Preis: €40–€65/m²
 - Gewicht 3/4,5mm: 9,2 kg/m²
-- Standard nach DIN 1669 (Deutschland)
+- Standard nach EN 1386 (Aluminium-Riffelblech/Tränenblech; in Deutschland als DIN EN 1386)
 
 **Duett-Muster (2 Tränen pro Zoll):**
 - Kleinere Tränen, mehr Flächenstabilität
@@ -2180,7 +2180,7 @@ Antwort: Überraschend: NEIN — nicht mehr als eine GFK-Yacht.
 - Isolation (z.B. um das Heck-Fitting) muss unterbrochen werden, um Potenzialausgleich zu ermöglichen
 - Tipps: Kupfer-Bänder (min. 6 mm²) von Mast zum tiefsten Punkt des Rumpfes
 
-**Standard:** Siehe ISO 9094-1 (Electrical Safety). Keine zusätzliche externe Anode nötig.
+**Standard:** Siehe ISO 10134 (Small craft — Electrical devices — Lightning-protection systems / Blitzschutzsysteme). Keine zusätzliche externe Anode nötig. (Hinweis: ISO 9094 ist *Brandschutz*, nicht Elektrik/Blitzschutz.)
 
 ### 18.11 Alu vs. Stahl — Direktvergleich für Yachtbauer
 
@@ -2715,7 +2715,7 @@ def get_yacht_material_recommendation(loa_m: float, ce_category: str) -> dict:
             recommended_alloy=AluminiumAlloy.AL_6082,
             recommended_temper=AluminiumTemper.T6,
             alternative_alloy=AluminiumAlloy.AL_6061,
-            semi_finished_type=SemiFinishedType.EXTRUSION_TUBE,
+            semi_finished_type=SemiFinishedType.ROUND_TUBE,
             thickness_mm=5.0,
             dimension_mm="Ø100×5 nahtlos",
             weight_per_unit=4.08,  # kg/m
@@ -3019,7 +3019,7 @@ def recommend_aluminium(
 | EN 755-2 | CEN | Mechanische Eigenschaften Profile | Material-Spezifikation |
 | EN 754-2 | CEN | Mechanische Eigenschaften Rohre | Material-Spezifikation |
 | EN 515 | CEN | Zustandsbezeichnungen | H116, T6, O erklärt |
-| EN 12216 | CEN | Windows, Türen, Luken — Anforderungen | Fenster/Luke Design |
+| ISO 12216 | ISO | Windows, portlights, hatches, deadlights, doors — Festigkeit/Wasserdichtheit | Fenster/Luke Design |
 | EN 15085 | CEN | Schweißung von Aluminiumlegierungen | Schweißtechnik |
 | ISO 12215-5 | ISO | Hull construction and scantlings | WICHTIG: Plattendicken berechnen |
 | ISO 9094 | ISO | Fire protection — General requirements | Brandschutz, Isolierung Maschinenraum |
@@ -3030,6 +3030,8 @@ def recommend_aluminium(
 | DNV-Rules | DNV | Classification and classed ships | Klassifikations-Anforderungen |
 | Lloyd's Register | LR | Classed ships | Klassifikations-Anforderungen |
 | Bureau Veritas | BV | Classed ships | Klassifikations-Anforderungen |
+
+> ⚠️ **ZU PRÜFEN (Audit):** Die Zeile „EN 15085 — Schweißung von Aluminiumlegierungen" ist scope-fremd. **EN 15085** ist *Railway applications — Welding of railway vehicles and components* (Schweißen von Schienenfahrzeugen, web-verifiziert CEN) — keine allgemeine Norm für Alu-Schweißen im Yacht-/Marinebau. Für den hier zitierten Scope einschlägig sind z. B. **ISO 10042** (Bewertungsgruppen für Alu-Schweißnähte, im Dokument bereits verwendet), **EN 1090-3** (Ausführung von Aluminiumtragwerken) oder **ISO 3834** (Qualitätsanforderungen Schmelzschweißen). Normnummer/Scope vor Nutzung prüfen.
 
 ---
 

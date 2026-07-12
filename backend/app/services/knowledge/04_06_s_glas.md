@@ -323,7 +323,7 @@ S-Glas (Strength Glass) ist eine Hochleistungs-Glasfaservariante mit ca. 40% hö
 | Qualitätskonstanz | ±8% | ±3% | Deutlich breiter gestreut |
 | Verfügbarkeit | CN/Asia | US/EU | Exportmenge begrenzt |
 | Preis | €6–10/kg | €15–25/kg | 50–60% günstiger |
-| Zertifizierung | ISO 9001 | MIL-PRF-49533 | Kein Mil-Spec |
+| Zertifizierung | ISO 9001 | MIL-PRF-60346 | Kein Mil-Spec |
 
 > **E-SG-009**: „Sinoma HS-Glas ist ein interessanter Newcomer. Die Durchschnittswerte kommen an S-2 heran, aber die Streuung ist noch zu groß für Strukturanwendungen. Für eine Serienwerft, die IQC ernst nimmt, könnte es in 3–5 Jahren eine Option sein." — *Materialprüfer bei einem unabhängigen Labor*
 
@@ -635,7 +635,7 @@ S-Glas (Strength Glass) ist eine Hochleistungs-Glasfaservariante mit ca. 40% hö
 
 | Norm | Titel | S-Glas spezifisch | Marine-Relevanz |
 |---|---|---|---|
-| MIL-PRF-49533 | S-2 Glass Fiber and Rovings | Ja — S-2 Glas Spezifikation | Mittel (Militär-Referenz) |
+| MIL-PRF-60346 | S-2 Glass Fiber and Rovings | Ja — S-2 Glas Spezifikation | Mittel (Militär-Referenz) |
 | ASTM D578 | Glass Fiber Strands | Allgemein Glasfaser | Hoch (Faser-QC) |
 | ISO 2078 | Textile Glass — Yarns — Designation | Allgemein | Hoch |
 | ISO 3341 | Textile Glass — Yarns — Breaking Force | Allgemein | Hoch (Faser-Prüfung) |
@@ -657,11 +657,11 @@ S-Glas (Strength Glass) ist eine Hochleistungs-Glasfaservariante mit ca. 40% hö
 | 5 | LOI (Glühverlust) | 625°C, 1h | Stichprobe 1:10 | 0.4–0.8% (niedriger als E-Glas) | 90 min | Weniger Schlichte |
 | 6 | Optische Prüfung | Durchlicht | Jede Rolle | Keine Fehlstellen >3mm | 10 min/m | Strenger als E-Glas |
 | 7 | Feuchte | 105°C, 2h | Stichprobe 1:5 | <0.05% (strenger) | 130 min | Empfindlicher |
-| 8 | MIL-Spec Zertifikat | Dokumentenprüfung | Jede Charge | MIL-PRF-49533 konform | 2 min | Nur bei AGY S-2 |
+| 8 | MIL-Spec Zertifikat | Dokumentenprüfung | Jede Charge | MIL-PRF-60346 konform | 2 min | Nur bei AGY S-2 |
 
 > **E-SG-023**: „Bei S-2 Glas sind die IQC-Toleranzen enger als bei E-Glas — und das muss so sein. Du zahlst 5× so viel für das Material, also erwartest du auch 5× bessere Konsistenz. AGY liefert ±3% Flächengewicht und ±1° Orientierung — Standard bei E-Glas ist ±5% und ±2°." — *QA-Manager bei Oyster Yachts*
 
-<!-- Confidence: measured — IQC-Anforderungen aus MIL-PRF-49533 und AGY Quality Manual -->
+<!-- Confidence: measured — IQC-Anforderungen aus MIL-PRF-60346 und AGY Quality Manual -->
 
 ---
 
@@ -1093,7 +1093,7 @@ S-Glas (Strength Glass) ist eine Hochleistungs-Glasfaservariante mit ca. 40% hö
 | 5 | **HiPer-tex** | HiPer-tex® | Hochleistungs-E-Glas von 3B-Fibreglass, 15% stärker als E-Glas | — | Hoch |
 | 6 | **AGY** | AGY | Alleinhersteller von S-2/S-3 Glass, Aiken SC, USA | — | Hoch |
 | 7 | **3B-Fibreglass** | 3B-Fibreglass | Belgischer Glasfaserhersteller, HiPer-tex Marke | — | Hoch |
-| 8 | **MIL-PRF-49533** | MIL-PRF-49533 | US-Militärspezifikation für S-2 Glass Fiber | — | Mittel |
+| 8 | **MIL-PRF-60346** | MIL-PRF-60346 | US-Militärspezifikation für S-2 Glass Fiber | — | Mittel |
 | 9 | **Spezifische Festigkeit** | Specific Strength | Zugfestigkeit / Dichte = Festigkeit pro Masseeinheit | MPa·cm³/g | Hoch |
 | 10 | **Spezifische Steifigkeit** | Specific Stiffness | E-Modul / Dichte = Steifigkeit pro Masseeinheit | GPa·cm³/g | Hoch |
 | 11 | **Impact-Toleranz** | Impact Tolerance/Damage Tolerance | Fähigkeit, Impact-Energie zu absorbieren ohne Durchbruch | J | Hoch |
@@ -1509,8 +1509,10 @@ class SGlassHybridOptimizer(BaseModel):
 | 9 | **HiPer-tex W2060-1200** | 1200 | 13 | 2.46 | 4600 | 87 | 5.3 | Multi | Universell Heavy |
 | 10 | **HiPer-tex W2060-2400** | 2400 | 13 | 2.46 | 4600 | 87 | 5.3 | Multi | Universell Pultrusion |
 
-<!-- Confidence: measured — 3B-Fibreglass Produktkatalog 2024/2025, TDS W2020/W2040/W2060 -->
+<!-- Confidence: estimated — unverifiziert (Audit): Faser-Kennwerte weichen von Sek. 2.3/5.2 ab -->
 <!-- Pydantic: model_config = {"from_attributes": True} — HiPerTexRovingSelector -->
+
+> ⚠️ **ZU PRÜFEN (Audit):** HiPer-tex W2020 hier 4400 MPa / 86 GPa / 2.46 g/cm³ vs. Sek. 2.3 & 5.2: 3900 MPa / 82 GPa / 2.55 g/cm³ (dort als „+15 % vs. E-Glas"). Offizielles 3B-TDS (imprägnierter Strang, ASTM D2343) nennt 2700–2900 MPa bei 86–89 GPa und Dichte 2.58 g/cm³ — die Dichte 2.46 g/cm³ in dieser Tabelle entspricht dem S-2-Wert (mutmaßlicher Kopierfehler). Faserfestigkeit vor jeder Auslegung (z. B. Kielgurt) am Original-Datenblatt verifizieren; Werte hier nicht als bemessungsrelevant behandeln.
 
 > **E-SG-062**: „HiPer-tex W2020 ist unsere erste Wahl als S-2 Glass Alternative in Europa. 90% der Performance, 30% weniger Kosten, und 3B liefert ab Belgien in 2–3 Wochen statt 6–8 Wochen aus den USA." — *Einkaufsleiter bei Contest Yachts*
 

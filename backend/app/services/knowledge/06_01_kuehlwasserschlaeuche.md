@@ -655,6 +655,8 @@ class EngineHoseKit(BaseModel):
 **SAE J2006 — Small Diameter Coolant Hoses:**
 Für Innendurchmesser < 16mm (Heizungsschläuche, Bypass, Expansion). Gleiche Temperatur-Anforderungen wie J20, aber dünnwandiger.
 
+> ⚠️ **ZU PRÜFEN (Audit):** Falsche Normzuordnung. **SAE J2006** ist laut SAE die Norm **„Marine Exhaust Hose"** (marine Nass-Abgas-Schläuche) — dieselbe Anwendung wie das im Dokument für Nass-Abgas genutzte ISO 13363 — und NICHT eine Norm für dünnwandige Kühlwasserschläuche. Kleine Kühlwasserschläuche fallen unter SAE J20. Betrifft auch den Abschnitt „Zweck dieser Wissensdatei" (Normen-Aufzählung) und den Glossar-Eintrag SAE J2006. (Quelle: sae.org/standards/j2006 — „Marine Exhaust Hose".)
+
 **ISO 7840:2021 — Kraftstoff- und Ölschläuche (Feuerresistenz):**
 Nicht direkt für Kühlwasser, aber relevant für Abgasschläuche (Wet Exhaust), die Feuerbeständigkeit benötigen. Typ A1 = feuerbeständig, Typ A2 = feuerbeständig + benzinresistent.
 
@@ -684,7 +686,7 @@ EPDM quillt bei Kontakt mit Mineralöl, Diesel oder Kraftstoff. NIEMALS EPDM-Sch
 
 | Eigenschaft | Wert |
 |------------|------|
-| Temperaturbereich | −60°C bis +200°C (Dauerbetrieb +230°C) |
+| Temperaturbereich | −60°C bis +200°C (kurzzeitig +230°C) |
 | Härte (Shore A) | 50–70 (neu) |
 | Beständigkeit Wasser/Glykol | Ausgezeichnet |
 | Beständigkeit Seewasser | Gut |
@@ -743,7 +745,7 @@ EPDM quillt bei Kontakt mit Mineralöl, Diesel oder Kraftstoff. NIEMALS EPDM-Sch
 **Standard-Markierung (aufgedruckt oder geprägt):**
 
 ```
-GATES 28440 SAE20R1 3/4" 19mm 125°C 1.5BAR MARINE 2024Q2
+GATES 28425 SAE20R1 3/4" 19mm 125°C 1.5BAR MARINE 2024Q2
 |      |      |       |    |     |      |      |       |
 |      |      |       |    |     |      |      |       Produktionsdatum
 |      |      |       |    |     |      |      Marine-Zulassung
@@ -1828,6 +1830,8 @@ Perforierte Bandschellen (Löcher im Band für die Schnecke) SCHNEIDEN in den Sc
 | > 32mm (> 1-1/4") | NEIN | PFLICHT überall | Mindestens T-Bolt |
 | Wet Exhaust (> 40mm) | NEIN | PFLICHT + T-Bolt | Hochtemperatur + Vibration |
 
+> ⚠️ **ZU PRÜFEN (Audit):** Die in der Zeile „19–32mm" genannte Norm **ISO 8846** ist falsch zugeordnet — ISO 8846 regelt „Small craft — Electrical devices — Protection against ignition of surrounding flammable gases" (elektrischer Zündschutz) und hat nichts mit Schlauchschellen/-verbindungen zu tun. Für Doppelschellen unter WL ist ABYC H-27 einschlägig; die ISO-Entsprechung für Seeventile/Rumpfdurchführungen wäre ISO 9093 — bitte prüfen. (Quelle: iso.org/standard/87197 — ISO 8846.)
+
 **Erfahrungsbericht — thehulltruth.com, User "ClampNazi", 2021:**
 > "I inspect hundreds of boats a year. #1 cause of sinking at the dock: single perforated hose clamp on a below-waterline connection. It corrodes, the band breaks, the hose slips off. Use double SOLID BAND 316 stainless clamps on EVERYTHING below the waterline."
 
@@ -1973,6 +1977,8 @@ D = Schlauchdurchmesser (m)
 - Schlauch-Durchmesser vergrößern (32mm) → ΔP fällt auf 0,5 bar ✓
 - ODER: Schlauchlänge verkürzen
 
+> ⚠️ **ZU PRÜFEN (Audit):** Rechenergebnis unstimmig. Mit den angegebenen Werten liefert die Formel ΔP = (0,03 × 5 × 1000 × 2,7²) / (2 × 0,025) = 21 870 Pa ≈ **0,22 bar**, nicht 1,47 bar. Damit wäre der Druckverlust bereits unkritisch (< 0,5 bar) und die daraus abgeleitete „Lösung" (Durchmesser vergrößern) hinfällig. Die Formel (Darcy-Weisbach) ist korrekt, das Zahlenergebnis und die Schlussfolgerung sind unverifiziert/fehlerhaft.
+
 ### Mindest-Biegeradius nach Schlauch-ID
 
 Zu scharfe Biegungen verursachen Knicke und reduzieren Durchfluss.
@@ -1987,6 +1993,8 @@ Zu scharfe Biegungen verursachen Knicke und reduzieren Durchfluss.
 | 38 | 160 | 250 | Gates J20 |
 | 45 | 200 | 300 | Gates/Continental |
 | 50 | 250 | 380 | Gates/Continental |
+
+> ⚠️ **ZU PRÜFEN (Audit):** Für ID 38/45/50 mm weichen die Mindest-Biegeradien hier (160/200/250 mm) von ANHANG C („Mindest-Biegeradien nach ID", EPDM-Spalte: 150/180/200 mm) ab — interner Widerspruch. Die kleineren IDs (12–32 mm) stimmen überein. Korrekte Richtung nicht zweifelsfrei; vor Nutzung als Auslegungswert abgleichen.
 
 **Praktischer Check:** Schlauch sollte sich mit beiden Händen bewegen lassen — nicht zu scharf knicken!
 
@@ -3206,6 +3214,8 @@ Die EU-Richtlinie 2013/53/EU (Recreational Craft Directive) schreibt vor, dass a
 | **Temperatur-Beständigkeit** | SAE J20 | Minimum J20R1 (125°C) oder J20R2 (100°C) je nach Position |
 | **Dokumentation** | ISO 14731 | Technische Datenblätter müssen an Bord verfügbar sein |
 
+> ⚠️ **ZU PRÜFEN (Audit):** Zwei Normnummern in dieser Tabelle sind falsch zugeordnet. **ISO 6162** regelt hydraulische Flanschverbindungen („Hydraulic fluid power — flange connections"), NICHT die Dichtheitsprüfung von Kühl-/Abgasschläuchen. **ISO 14731** ist „Welding coordination — Tasks and responsibilities" (Schweißaufsicht) und betrifft keine Datenblatt-Dokumentation an Bord. Dieselbe ISO-6162-Fehlzuordnung erscheint auch unter „Werft-Inspektion" (Dichtheitsprüfung/Helium-Leck-Test) und in der Burst-Test-Tabelle. (Quellen: iso.org/standard/68567 — ISO 6162; iso.org/standard/68893 — ISO 14731.)
+
 **Praktische Implikationen für Bootseigner:**
 - OEM-Schläuche sind typischerweise CE-konform zertifiziert
 - Aftermarket-Schläuche (Gates, Continental) sind CE-konform wenn EU-sourced
@@ -3216,7 +3226,7 @@ Die EU-Richtlinie 2013/53/EU (Recreational Craft Directive) schreibt vor, dass a
 
 ABYC ist der amerikanische Standard-Setzungsorganistaion. Viele Versicherer und Werften weltweit nutzen ABYC.
 
-**ABYC H-27 — Marine Diesel Engine Installation**
+**ABYC H-27 — Seacocks, Thru-Hull Fittings, and Drain Plugs**
 
 Kritische Anforderungen an Kühlwasserschläuche:
 
@@ -3232,6 +3242,8 @@ Kritische Anforderungen an Kühlwasserschläuche:
 
 **ABYC H-28 — Fuel Systems**
 Nicht direkt für Kühlwasser, aber: Kraftstoff-Schläuche müssen von Kühlwasser-Schläuchen isoliert sein (mind. 2 Zoll = 5cm Abstand).
+
+> ⚠️ **ZU PRÜFEN (Audit):** Norm-Nummer prüfen — die ABYC-Kraftstoff-Standards sind H-24 (Gasoline Fuel Systems), H-25 (Portable Fuel Systems) und H-33 (Diesel Fuel Systems). Ein ABYC „H-28 — Fuel Systems" ist nicht belegt. (Quelle: abycinc.org Standards-Liste.)
 
 ### Lloyd's Register & DNV-GL Standards
 

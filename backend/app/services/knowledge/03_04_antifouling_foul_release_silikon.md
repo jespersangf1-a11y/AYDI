@@ -776,6 +776,8 @@ Die oft zitierte Aussage „Fouling-Release funktioniert nur bei >15 Knoten" sta
 | **FR-Produkte mit Selektope** | Hempel Silic One, Hempel Hempasil X7, Jotun SeaQuantum Skate, Jotun SeaQuantum X200 |
 | **OHNE Selektope** | Intersleek (alle), SigmaGlide (alle), CMP BIOCLEAN, Sea Hawk Smart Solution |
 
+> ⚠️ **ZU PRÜFEN (Audit):** **Hempel Hempasil X3 87500 enthält KEIN Selektope** und ist biozid-frei (web-verifiziert: Hempel PDS 87500 — „third generation, high solids, silicone based, biocide free fouling release coating", Mindestgeschwindigkeit >8 kt). X3 gehört damit in die Zeile „OHNE Selektope". Mehrere spätere Abschnitte beschreiben X3 jedoch fälschlich als „mit Selektope®" (Praxisbericht 45/P.5, Expertenzitat 43/Q.8, Empfehlungsmatrix Anhang W.1, FAQ 56/R.6, Fehlerbild 20/N.13, Anhang Y.1) — diese Angaben sind FALSCH. Das Selektope-/biozidhaltige Hempel-Produkt ist **Hempaguard (ActiGuard)**, nicht Hempasil X3.
+
 > Confidence: `measured`
 
 ### 12.2 Selektope® — Wirkung im FR-Kontext
@@ -3751,7 +3753,9 @@ class FRProductSelection(BaseModel):
 | 3. Gen + Selektope® | 0 kt (aktiv) | Hempasil X3 87500 |
 | 4. Gen (2022+) | >4–6 kt | Intersleek 1400, Hempasil X7 |
 
-> Confidence: `measured`
+> ⚠️ **ZU PRÜFEN (Audit):** Die Zeile „3. Gen + Selektope® / 0 kt (aktiv) / Hempasil X3 87500" ist FALSCH. Hempasil X3 (87500) ist laut Hempel-PDS **biozid-frei und enthält KEIN Selektope** (siehe Kap. 3.2, Kap. 12.1, Anhang A); zudem reinigt sich kein biozid-freies Silikon-FR bei „0 kt". Das Selektope-/biozidhaltige Hempel-Produkt ist Hempaguard, nicht Hempasil X3.
+
+> Confidence: `estimated` — unverifiziert (siehe Audit-Hinweis)
 
 ### Y.2 Mythos: "FR ist nur für Superyachten wirtschaftlich"
 

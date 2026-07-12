@@ -141,10 +141,16 @@ Epoxidharze (EP) bilden die technologisch anspruchsvollste Klasse duroplastische
 
 | Härter | Typ | Mischverhältnis Gew. | Mischverhältnis Vol. (Pumpen) | Topfzeit 100g 20°C min | Tg RT °C | Tg Post-Cure °C | Einsatz | Confidence |
 |---|---|---|---|---|---|---|---|---|
-| **205 Fast** | Aliphatisches Amin | 100:20.4 (5:1 Gew.) | 5:1 (Pumpen) | 9–12 | 55 | 80–85 (60°C/8h) | Schnelle Reparaturen, kalt, kleine Flächen | `measured` |
-| **206 Slow** | Amin-Addukt | 100:22.7 (4.4:1 Gew.) | 5:1 (Pumpen) | 20–25 | 58 | 120–125 (72°C/8h) | Standard-Laminat, Holz/Glasboot-Bau, warm | `measured` |
-| **207 Special Coating** | Amin-Addukt, klar | 100:26.4 (3.8:1 Gew.) | 3:1 (Pumpen) | 20–26 | 55 | 110–115 (60°C/8h) | Klare Beschichtung, UV-stabil mit 422 UV-Additiv | `measured` |
-| **209 Extra Slow** | Amin-Addukt, langsam | 100:22.5 (4.4:1 Gew.) | 3:1 (Pumpen) | 40–50 | 52 | 115–120 (72°C/8h) | Große Flächen, Tropenbedingungen, Infusion | `measured` |
+| **205 Fast** | Aliphatisches Amin | 100:20.4 (5:1 Gew.) | 5:1 (Pumpen) | 9–12 | 55 | 80–85 (60°C/8h) | Schnelle Reparaturen, kalt, kleine Flächen | `estimated — unverifiziert` |
+| **206 Slow** | Amin-Addukt | 100:22.7 (4.4:1 Gew.) | 5:1 (Pumpen) | 20–25 | 58 | 120–125 (72°C/8h) | Standard-Laminat, Holz/Glasboot-Bau, warm | `estimated — unverifiziert` |
+| **207 Special Coating** | Amin-Addukt, klar | 100:26.4 (3.8:1 Gew.) | 3:1 (Pumpen) | 20–26 | 55 | 110–115 (60°C/8h) | Klare Beschichtung, UV-stabil mit 422 UV-Additiv | `estimated — unverifiziert` |
+| **209 Extra Slow** | Amin-Addukt, langsam | 100:22.5 (4.4:1 Gew.) | 3:1 (Pumpen) | 40–50 | 52 | 115–120 (72°C/8h) | Große Flächen, Tropenbedingungen, Infusion | `estimated — unverifiziert` |
+
+> ⚠️ **ZU PRÜFEN (Audit):** Mischverhältnisse (Gew.) und Post-Cure-Tg dieser Tabelle widersprechen anderen Abschnitten und den offiziellen West-System-TDS (Gougeon Brothers, TDS 105/206 u. 105/207, 2014).
+> • **206 Gew.-Verhältnis** hier „100:22.7 (4.4:1)" liegt **außerhalb** der West-Toleranz (TDS: nominal **5.36:1**, Bereich 4.84–6.19:1 ≙ 100:16–100:20.7); §17.1 und §43.3 nennen „5:1 (100:20)".
+> • **207** hier „3.8:1" vs. §17.1 „3.5:1" vs. §43.4 „3:1 (100:33)" — drei abweichende Werte; West-TDS: **3.64:1** (100:27.5), Bereich 3.41–4.16:1. Der Wert 100:33 (§43.4) liegt außerhalb der Toleranz.
+> • **209** hier „4.4:1" vs. §43.5 „3:1 (100:33)" — West-TDS: **3.68:1** (≈100:27); keiner der beiden Dokumentwerte trifft zu.
+> • **Post-Cure-Tg** (110–125 °C für 206/207/209) übersteigt die West-System-TDS massiv: **Ultimate Tg 206 = 59 °C (139 °F), 207 = 47 °C (116 °F)**. West-105-Systeme erreichen KEINE 100–125 °C. Sicherheitsrelevant (thermische Einsatzgrenze) — nicht ohne TDS-Quelle als „measured" führen.
 
 <!-- model_config = {"from_attributes": True} — Pydantic v2 -->
 
@@ -166,9 +172,9 @@ Epoxidharze (EP) bilden die technologisch anspruchsvollste Klasse duroplastische
 
 | Eigenschaft | Wert | Prüfnorm | Confidence |
 |---|---|---|---|
-| **Zugfestigkeit Reinharz** | 73.8 MPa | ASTM D638 | `measured` |
-| **Druckfestigkeit Reinharz** | 114 MPa | ASTM D695 | `measured` |
-| **Biegefestigkeit Reinharz** | 117 MPa | ASTM D790 | `measured` |
+| **Zugfestigkeit Reinharz** | 73.8 MPa | ASTM D638 | `estimated — unverifiziert` |
+| **Druckfestigkeit Reinharz** | 114 MPa | ASTM D695 | `estimated — unverifiziert` |
+| **Biegefestigkeit Reinharz** | 117 MPa | ASTM D790 | `estimated — unverifiziert` |
 | **Biege-E-Modul Reinharz** | 3.17 GPa | ASTM D790 | `measured` |
 | **Zugfestigkeit Laminat (E-Glas Biaxial)** | 420 MPa | ASTM D3039 | `measured` |
 | **Druckfestigkeit Laminat** | 310 MPa | ASTM D3410 | `measured` |
@@ -176,6 +182,12 @@ Epoxidharze (EP) bilden die technologisch anspruchsvollste Klasse duroplastische
 | **Faseranteil (Hand)** | 42–48% | Glühverlust | `measured` |
 | **Wasseraufnahme (2 Wochen RT)** | 0.38% | ASTM D570 | `measured` |
 | **Schrumpf** | 1.8% | — | `measured` |
+
+> ⚠️ **ZU PRÜFEN (Audit):** Die **Reinharz**-Festigkeiten dieser 105/206-Tabelle widersprechen §43.3, §49.1 und der West-System-TDS 105/206:
+> • Zugfestigkeit hier **73.8 MPa** vs. TDS/§43.3/§49.1 **50.3 MPa** (7 300 psi).
+> • Druckfestigkeit hier **114 MPa** vs. TDS **79 MPa** (11 500 psi Compression yield) bzw. §43.3 76.1 MPa.
+> • Biegefestigkeit hier **117 MPa** vs. TDS **81.4 MPa** (11 800 psi) bzw. §43.3 78.6 MPa.
+> Reinharz-Werte um ~40 % zu hoch; als Bemessungsgrundlage nicht verwenden. Laminat-Werte (420/310/52 MPa) sind separat zu prüfen. Quelle: West System TDS 105/206 (Gougeon Brothers).
 
 > **Expertenzitat E-EP-03:** „West System 105/206 ist der Toyota Corolla der Marine-Epoxide: nicht aufregend, aber absolut zuverlässig. Seit 50 Jahren bewährt, weltweit verfügbar, einfach in der Anwendung." — Bootsbauer, 40 Jahre Erfahrung, 2024 | Confidence: `documented`
 
@@ -408,12 +420,17 @@ Epoxidharze (EP) bilden die technologisch anspruchsvollste Klasse duroplastische
 
 | Produktlinie | Typ | Viskosität mPa·s | Tg PC °C | Einsatz | Confidence |
 |---|---|---|---|---|---|
-| **Ampreg 22** | Hand-Laminier-EP | 700–900 | 80 (RT) / 125 (80°C/5h) | Marine Hand-Laminat, Standard | `measured` |
-| **Ampreg 26** | Infusions-EP | 280–350 | 62 (RT) / 130 (80°C/5h) | Marine Infusion, niedriger Visc. | `measured` |
-| **PRIME 37** | Prepreg-EP | — (Prepreg) | 150 (120°C Cure) | Hochleistungs-Rumpf, Regatta | `measured` |
-| **PRIME 27** | Prepreg-EP (LT) | — (Prepreg) | 130 (80°C Cure) | Low-Temp Prepreg, Marine | `measured` |
+| **Ampreg 22** | Hand-Laminier-EP | 700–900 | 80 (RT) / 125 (80°C/5h) | Marine Hand-Laminat, Standard | `estimated — unverifiziert` |
+| **Ampreg 26** | Infusions-EP | 280–350 | 62 (RT) / 130 (80°C/5h) | Marine Infusion, niedriger Visc. | `estimated — unverifiziert` |
+| **PRIME 37** | Prepreg-EP | — (Prepreg) | 150 (120°C Cure) | Hochleistungs-Rumpf, Regatta | `estimated — unverifiziert` |
+| **PRIME 27** | Prepreg-EP (LT) | — (Prepreg) | 130 (80°C Cure) | Low-Temp Prepreg, Marine | `estimated — unverifiziert` |
 | **SPABOND 340LV** | Strukturkleber | Paste | 70 (RT) / 100 (60°C/6h) | Sandwich-Kern-Verklebung | `measured` |
 | **Corecell** | Kernmaterial | — | — | SAN-Kern für EP-Infusion | `measured` |
+
+> ⚠️ **ZU PRÜFEN (Audit):** Diese Übersicht widerspricht den Detail-Datenblättern §44/§48 und den Gurit-Hersteller-TDS.
+> • **Ampreg 22:** hier Tg 80 (RT) / 125 (80 °C/5h) — §44.1 u. §48.2 nennen 62 (RT) / **88** (80 °C/5h).
+> • **Ampreg 26:** hier „Infusions-EP", 280–350 mPa·s, Tg 130 — §44.2 führt Ampreg 26 als **Nasslaminierharz** mit 600–900 mPa·s und Tg **92** (80 °C/5h); Gurit klassifiziert Ampreg 26 als Hand-/Vakuum-Laminiersystem, primär nicht als Infusionsharz.
+> • **PRIME 27 / PRIME 37:** hier als „Prepreg" gelistet — laut Gurit-TDS sind PRIME 27 und PRIME 37 **Infusionsharze** (VARTM/SCRIMP/RTM), keine Prepregs, mit hoher Tg bereits aus moderatem ~50-°C-Post-Cure. §44.3/§46.1 führen PRIME 27 als Infusionsharz mit Tg **95** (statt 130); §44.4/§48.2 nennen PRIME 37 Tg **120** (statt 150). Quelle: Gurit PRIME Systems TDS.
 
 ### 10.3 Gurit Ampreg 26 — Detaildaten (Infusion)
 
@@ -427,20 +444,24 @@ Epoxidharze (EP) bilden die technologisch anspruchsvollste Klasse duroplastische
 | **Biege-E-Modul** | 3.40 GPa | `measured` |
 | **Bruchdehnung** | 6.0% | `measured` |
 | **GIc (Fracture Toughness)** | 450 J/m² | `measured` |
-| **Tg (DMTA, Post-Cured 80°C/5h)** | 130°C | `measured` |
+| **Tg (DMTA, Post-Cured 80°C/5h)** | 130°C | `estimated — unverifiziert` |
 | **ILSS (E-Glas Infusion)** | 62 MPa | `measured` |
+
+> ⚠️ **ZU PRÜFEN (Audit):** **Tg 130 °C (80 °C/5h)** widerspricht §44.2 und §48.2, die für Ampreg 26 (80 °C/5h) übereinstimmend **92 °C** nennen (Differenz 38 °C, thermische Einsatzgrenze). Auch Verfahren/Viskosität weichen ab: §44.2 führt Ampreg 26 als Nasslaminierharz (600–900 mPa·s), nicht als Infusionsharz (280–350 mPa·s). Richtung nicht zweifelsfrei → Tg auf „estimated" zurückgestuft.
 
 ### 10.4 Gurit PRIME 37 — Prepreg-Daten
 
 | Eigenschaft | Wert | Confidence |
 |---|---|---|
 | **Cure-Bedingungen** | 120°C / 1h im Autoklav oder Vakuum-Ofen | `measured` |
-| **Tg (Post-Cured)** | 150°C | `measured` |
+| **Tg (Post-Cured)** | 150°C | `estimated — unverifiziert` |
 | **Zugfestigkeit (T700 Carbon UD)** | 2.400 MPa | `measured` |
 | **Druckfestigkeit** | 1.450 MPa | `measured` |
 | **ILSS** | 95 MPa | `measured` |
 | **Faseranteil** | 58–62% | `measured` |
 | **Einsatz** | America's Cup, TP52, VOR, Superyacht-Rümpfe | `documented` |
+
+> ⚠️ **ZU PRÜFEN (Audit):** Abschnittstitel „Prepreg-Daten" und **Tg 150 °C** sind zu prüfen: Gurit-TDS führen **PRIME 37 als Infusionsharz** (VARTM/SCRIMP/RTM), nicht als 120-°C-Autoklav-Prepreg; die hohe Tg entsteht laut Gurit bereits aus moderatem ~50-°C-Post-Cure. §44.4 und §48.2 nennen für PRIME 37 Tg **120 °C** (nicht 150). Richtung nicht zweifelsfrei → Tg auf „estimated" zurückgestuft. (Gilt sinngemäß für die PRIME-37-„Prepreg"-Fallstudien CS-EP-006/010/016/030/041/058.)
 
 > **Expertenzitat E-EP-07:** „Gurit Ampreg 26 ist der Goldstandard für Marine-Infusion. 280 mPa·s und Tg 130°C post-cured — kein anderes System bietet diese Kombination." — Composites-Ingenieur, Vendée Globe Team, 2024 | Confidence: `documented`
 
@@ -642,14 +663,21 @@ Epoxidharze (EP) bilden die technologisch anspruchsvollste Klasse duroplastische
 
 | System | RT only °C | 40°C/16h °C | 50°C/16h °C | 60°C/8h °C | 70°C/8h °C | 80°C/6h °C | 120°C/2h °C | Confidence |
 |---|---|---|---|---|---|---|---|---|
-| **West 105/205** | 55 | 68 | 75 | 82 | — | — | — | `measured` |
-| **West 105/206** | 58 | 72 | 85 | 105 | 118 | 125 | — | `measured` |
-| **West 105/207** | 55 | 68 | 78 | 98 | 108 | 115 | — | `measured` |
-| **West 105/209** | 52 | 65 | 78 | 100 | 112 | 120 | — | `measured` |
-| **PRO-SET INF-114/212** | 65 | 80 | 95 | 110 | 120 | 128 | — | `measured` |
-| **Gurit Ampreg 26** | 62 | 78 | 92 | 108 | 122 | 130 | — | `measured` |
-| **Sicomin SR 8100** | 60 | 76 | 90 | 108 | 122 | 130 | — | `measured` |
-| **Gurit PRIME 37** | — | — | — | — | — | 120 | 150 | `measured` |
+| **West 105/205** | 55 | 68 | 75 | 82 | — | — | — | `estimated — unverifiziert` |
+| **West 105/206** | 58 | 72 | 85 | 105 | 118 | 125 | — | `estimated — unverifiziert` |
+| **West 105/207** | 55 | 68 | 78 | 98 | 108 | 115 | — | `estimated — unverifiziert` |
+| **West 105/209** | 52 | 65 | 78 | 100 | 112 | 120 | — | `estimated — unverifiziert` |
+| **PRO-SET INF-114/212** | 65 | 80 | 95 | 110 | 120 | 128 | — | `estimated — unverifiziert` |
+| **Gurit Ampreg 26** | 62 | 78 | 92 | 108 | 122 | 130 | — | `estimated — unverifiziert` |
+| **Sicomin SR 8100** | 60 | 76 | 90 | 108 | 122 | 130 | — | `estimated — unverifiziert` |
+| **Gurit PRIME 37** | — | — | — | — | — | 120 | 150 | `estimated — unverifiziert` |
+
+> ⚠️ **ZU PRÜFEN (Audit):** Diese Post-Cure-Tg-Tabelle widerspricht systematisch den Detail-Anhängen §44/§46.1/§48 UND den Hersteller-TDS. Sicherheitsrelevant, da Tg die thermische Einsatzgrenze bestimmt.
+> • **West 105/206/207/209:** hier bis 125 °C — West-System-TDS nennen Ultimate Tg **206 = 59 °C, 207 = 47 °C**; §48.1 nennt für 206/207 nur 58–72 °C. Das Zitat E-EP-11 („Post-Cure 60 °C/8h hebt es auf 105 °C") ist damit sachlich falsch.
+> • **Gurit Ampreg 26:** hier 130 °C (80 °C/6h) — §44.2 u. §48.2 nennen **92 °C** (80 °C/5h).
+> • **PRO-SET INF-114:** hier 128 °C — §46.1 nennt **88 °C**.
+> • **Sicomin SR 8100:** hier 130 °C — §46.1 u. §48.3 nennen **85 °C**.
+> • **Gurit PRIME 37:** hier 150 °C — §44.4 u. §48.2 nennen **120 °C**; zudem ist PRIME 37 laut Gurit-TDS ein Infusionsharz, kein 120-°C-Prepreg. Richtung für Drittsysteme unverifiziert → alle Werte auf „estimated" zurückgestuft.
 
 > **Expertenzitat E-EP-11:** „Tg bestimmt die Einsatzgrenze. Ohne Post-Cure hat West 105/206 nur Tg 58°C — auf einem schwarzen Deck in der Karibik wird das weich. Post-Cure 60°C/8h hebt es auf 105°C. Das ist der Unterschied zwischen Hobby und Profi." — Composites-Berater, 2024 | Confidence: `documented`
 
@@ -2121,7 +2149,7 @@ class EPPostCureCalculator(BaseModel):
 |---|---|---|---|
 | 1 | **EP hat die höchste Festigkeit und beste Faser-Haftung aller Duroplaste** | ILSS 45–65 MPa (vs. UP 25–35, VE 35–48) | `measured` |
 | 2 | **Mischverhältnis ist KRITISCH — ±5% Maximum** | Stöchiometrie, Abweichung = Unterhärtung | `measured` |
-| 3 | **Post-Cure hebt Tg um 40–70°C** | West 105/206: 58°C → 105–125°C | `measured` |
+| 3 | **Post-Cure hebt Tg um 40–70°C** | West 105/206: 58°C → 105–125°C ⚠️ ZU PRÜFEN | `estimated — unverifiziert` |
 | 4 | **VE ist bessere Osmose-Barrier, EP ist besserer Kleber/Strukturharz** | Permeabilität VE 1.8 vs. EP 4.5 g·mm/(m²·24h) | `measured` |
 | 5 | **West System 105 ist der weltweite Marine-EP-Standard** | 50+ Jahre, 50+ Länder, beste Dokumentation | `documented` |
 | 6 | **Aminblush ist das EP-spezifische Problem** | Waschen mit warmem Wasser oder im Fenster überschichten | `measured` |
@@ -2129,6 +2157,8 @@ class EPPostCureCalculator(BaseModel):
 | 8 | **Infusions-EP braucht <350 mPa·s** | PRO-SET 280, Gurit 280, Sicomin 210, Resoltech 180 | `measured` |
 | 9 | **Bio-EP ist praxistauglich** | Entropy 31%, Sicomin 28–56% Bio-Content, identische Mechanik | `measured` |
 | 10 | **EP ist 3× teurer als UP, aber 2× fester und 25% leichter** | Langfristig wirtschaftlichste Lösung für Performance | `calculated` |
+
+> ⚠️ **ZU PRÜFEN (Audit):** Kernaussage 3 nennt für West 105/206 eine Post-Cure-Tg von „105–125 °C". Die West-System-TDS geben als **Ultimate Tg 59 °C (206) bzw. 47 °C (207)** an — West-105-Systeme erreichen diese Werte nicht. Aussage/Scoring-Bezug entsprechend auf die realen TDS-Werte korrigieren (vgl. Audit-Hinweise §4.3 u. §16.2).
 
 <!-- model_config = {"from_attributes": True} — Pydantic v2 -->
 

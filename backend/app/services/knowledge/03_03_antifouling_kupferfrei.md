@@ -82,7 +82,7 @@ START
   │
   ├─ Aluminium-Rumpf?
   │   ├─ JA → Zwingend kupferfrei
-  │   │   ├─ Regatta/Racing → VC 17m Extra Graphite / Seajet 038 Taisho
+  │   │   ├─ Regatta/Racing → Seajet 038 Taisho (kupferfrei; VC 17m Extra NICHT — enthält Kupfer)
   │   │   ├─ Fahrtensegler → Trilux 33 Alu / Hempel Hard Racing Xtra / Sea Hawk Aluminex
   │   │   ├─ Langfahrt Tropen → Hempel Silic One / Jotun SeaQuantum Skate
   │   │   └─ Trailer → Pettit Vivid Free / Marlin Aluminium
@@ -209,7 +209,7 @@ START
 |-------------|--------|
 | **Wirkungsweise** | Fluorpolymer-Oberfläche mit extrem niedriger Oberflächenenergie |
 | **Produkte** | International VC 17m Extra (PTFE-Copolymer in Vinyl-Matrix) |
-| **Aluminium-kompatibel** | JA |
+| **Aluminium-kompatibel** | Reines PTFE ist inert, ABER International VC 17m Extra enthält Kupfer → laut Hersteller **NICHT für Aluminium** (Kupfer → galvanische Korrosion) |
 | **Haltbarkeit** | 6–12 Monate (Dünnschicht, muss erneuert werden) |
 | **Vorteile** | Glatteste biozidfreie Oberfläche, Racing-Standard |
 | **Nachteile** | Nicht biozid — funktioniert über Glätte + häufiges Fahren, Dünnschicht = jährlich neu |
@@ -297,8 +297,8 @@ START
 | **VOC** | 590 g/L (hoch wegen Lösemittelgehalt) |
 | **Verdünner** | VC General Thinner (max. 5%) |
 | **Empfohlener Primer** | VC Tar2 YEB022 (spezieller Vinyl-Primer) — NICHT Primocon! |
-| **Aluminium-kompatibel** | JA |
-| **Racing-Eignung** | SEHR GUT — Regatta-Standard für Kielboote |
+| **Aluminium-kompatibel** | **NEIN** — enthält Kupfer; Hersteller International/AkzoNobel schließt Aluminium ausdrücklich aus (Kupfer → galvanische Korrosion). Für Alu: Trilux 33 kupferfrei |
+| **Racing-Eignung** | SEHR GUT — Regatta-Standard für Kielboote (GFK/Composite, NICHT Aluminium) |
 
 > Confidence: `measured`
 
@@ -342,7 +342,7 @@ START
 | USA | PTFE + ggf. Cu-Derivat | Prüfe lokales TDS |
 | Australien | Prüfe Altex-Alternative für garantiert kupferfrei | — |
 
-> ⚠️ **WICHTIG**: VC 17m Extra ist in manchen Formulierungen NICHT vollständig kupferfrei (enthält CuSCN). Für Aluminium-Rümpfe ist es dennoch zugelassen, da CuSCN weniger galvanisch aktiv ist als Cu₂O. Für strikt kupferfreie Anforderungen (Schweden Ostsee): Trilux 33 kupferfrei oder Hempel Hard Racing Xtra verwenden.
+> ⚠️ **WICHTIG**: VC 17m Extra ist NICHT kupferfrei (enthält Kupfer — je nach Quelle/Markt Cu₂O bzw. metallisches Kupferpulver oder CuSCN). Der Hersteller International/AkzoNobel schließt die Anwendung auf **Aluminium ausdrücklich aus** — Kupfer-AF auf Aluminium verursacht galvanische Korrosion (siehe Kap. 14.1). Für Aluminium sowie für strikt kupferfreie Anforderungen (Schweden Ostsee, Bodensee): Trilux 33 kupferfrei oder Hempel Hard Racing Xtra verwenden.
 
 > Confidence: `measured`
 
@@ -1031,7 +1031,7 @@ START
 | Produkt | Hersteller | Typ | Biozide | Primer-System | Preis/L | Bewertung Alu |
 |---------|------------|-----|---------|---------------|---------|--------------|
 | Trilux 33 | International | Hart | Zineb+ZPT | Vinyl Wash → Interprotect → Primocon | €52 | ★★★★☆ |
-| VC 17m Extra | International | Hart/Dünn | CuSCN (!) | VC Tar2 | €73 | ★★★★★ (Racing) |
+| VC 17m Extra | International | Hart/Dünn | Kupfer (!) | VC Tar2 | €73 | ⚠️ NICHT für Aluminium — Hersteller schließt Kupfer-AF auf Alu aus (nur GFK/Composite-Racing) |
 | Hard Racing Xtra 76900 | Hempel | Hart | Econea | Hempadur → Light Primer | €58 | ★★★★★ |
 | Silic One 77450 | Hempel | FR | Selektope | Hempadur → Tiecoat | €140 | ★★★★☆ (>8kt) |
 | Ultima ECO 1180 | Pettit | SPC | Econea+Zineb | Metal Primer 6455 | $55/qt | ★★★★☆ |
@@ -1674,7 +1674,9 @@ START
 ### Expertenzitat 14
 > „CuSCN (Kupferthiocyanat) in VC 17m Extra ist galvanisch weniger aggressiv als Cu₂O — deshalb funktioniert es auf Aluminium, obwohl es technisch Kupfer enthält." — **International Paint**, Technical Bulletin 2021
 
-> Confidence: `documented`
+> ⚠️ **ZU PRÜFEN (Audit):** Dieses Zitat widerspricht der offiziellen Herstellerangabe — International/AkzoNobel schließt VC 17m für Aluminium ausdrücklich aus (Kupfergehalt → galvanische Korrosion, vgl. Kap. 14.1). Aussage vermutlich falsch bzw. fehlattribuiert; NICHT als Freigabe für Aluminium interpretieren.
+
+> Confidence: `estimated — unverifiziert`
 
 ### Expertenzitat 15
 > „Zineb und ZPT allein bieten in warmen Gewässern keinen ausreichenden Seepockenschutz. Econea oder Selektope als Ergänzung sind essenziell für Warmwasser-Tauglichkeit." — **Janssen PMP**, Econea Technical Documentation 2022
@@ -1736,7 +1738,7 @@ START
 | **VC 17m Extra** | NEIN — inkompatibel | NEIN | NEIN | JA (auf VC Tar2) | NEIN | NEIN |
 | **Silic One** | NEIN — Silikon entfernen | NEIN | JA (Topcoat erneuern) | NEIN | NEIN | NEIN |
 | **Nackter Gelcoat** | Primer nötig | Primer nötig | Primer nötig | VC Tar2 nötig | Primer nötig | Primer nötig |
-| **Nacktes Aluminium** | Alu-Primer nötig | Alu-Primer nötig | Alu-Primer nötig | VC Tar2 auf Alu ok | Alu-Primer nötig | Alu-Primer nötig |
+| **Nacktes Aluminium** | Alu-Primer nötig | Alu-Primer nötig | Alu-Primer nötig | ⚠️ NICHT — VC 17m enthält Kupfer, nicht für Alu | Alu-Primer nötig | Alu-Primer nötig |
 
 > Confidence: `measured`
 
@@ -1861,7 +1863,7 @@ START
 | Nr. | Produkt | Hersteller | Typ | Biozid | Aluminium | Preis/L (€) | Ergiebigkeit (m²/L) | Empfehlung |
 |-----|---------|------------|-----|--------|-----------|-------------|---------------------|-----------|
 | 1 | Trilux 33 kupferfrei | International | Hart | Zineb+ZPT | JA | 50–56 | 10–12 | Allround |
-| 2 | VC 17m Extra | International | Hart/Dünn | CuSCN* | JA | 73–87 | 15–18 | Racing |
+| 2 | VC 17m Extra | International | Hart/Dünn | Kupfer* | NEIN* | 73–87 | 15–18 | Racing (GFK, NICHT Alu) |
 | 3 | VC Offshore kupferfrei | International | Hart | DCOIT+ZPT | Prüfen | ~55 | 10–12 | UK/EU |
 | 4 | Hard Racing Xtra 76900 | Hempel | Hart | Econea | JA | 58–62 | 8–10 | Alu-Fahrt |
 | 5 | Silic One 77450 | Hempel | FR | Selektope | JA | 120–140 | 6–8 | Motorboot >8kt |
@@ -1896,7 +1898,7 @@ START
 | 34 | BIOCLEAN FRC | CMP | FR | KEINE | JA | Gewerblich | 4–6 | Gewerblich |
 | 35 | Hempasil X7 | Hempel | FR | Selektope | JA | Gewerblich | 4–6 | Gewerblich/Super |
 
-> *VC 17m Extra enthält CuSCN in EU-Formulierung — nicht vollständig kupferfrei
+> *VC 17m Extra enthält Kupfer (Cu₂O/Kupferpulver bzw. CuSCN je nach Markt) — NICHT kupferfrei; Hersteller International/AkzoNobel schließt Aluminium aus (galvanische Korrosion)
 
 > Confidence: `measured`
 
@@ -2115,7 +2117,7 @@ class FoulingReleasePerformanceAssessment(BaseModel):
 
 ### FAQ 3: Welches kupferfreie AF ist das beste für Aluminium?
 **Frage:** Was ist die Top-Empfehlung für Alu-Boote?
-**Antwort:** Hempel Hard Racing Xtra 76900 (Econea) für Fahrtensegler, Sea Hawk Aluminex für USA/AU, VC 17m Extra für Racing. Für Motoryachten >8kt: Hempel Silic One als Fouling-Release.
+**Antwort:** Hempel Hard Racing Xtra 76900 (Econea) für Fahrtensegler, Sea Hawk Aluminex für USA/AU, Seajet 038 Taisho (kupferfrei, Econea) für Racing. VC 17m Extra ist für Aluminium NICHT geeignet (enthält Kupfer → galvanische Korrosion). Für Motoryachten >8kt: Hempel Silic One als Fouling-Release.
 > Confidence: `estimated`
 
 ### FAQ 4: Wie gut schützt kupferfreies AF im Vergleich zu kupferhaltigem?
@@ -2130,7 +2132,7 @@ class FoulingReleasePerformanceAssessment(BaseModel):
 
 ### FAQ 6: Ist VC 17m Extra wirklich kupferfrei?
 **Frage:** Kann ich VC 17m Extra auf Aluminium verwenden?
-**Antwort:** VC 17m Extra enthält in der EU-Formulierung CuSCN (Kupferthiocyanat). Es ist NICHT vollständig kupferfrei, aber CuSCN ist galvanisch weniger aggressiv als Cu₂O. International gibt es für Aluminium frei. Für strikt kupferfreie Anforderungen (Schweden, Bodensee): andere Produkte verwenden.
+**Antwort:** VC 17m Extra ist NICHT kupferfrei (enthält Kupfer). Der Hersteller International/AkzoNobel gibt VC 17m ausdrücklich NICHT für Aluminium frei — Kupfer auf Aluminium führt zu galvanischer Korrosion (Lochfraß). Für Aluminium sowie strikt kupferfreie Anforderungen (Schweden, Bodensee): kupferfreie Produkte wie Trilux 33 oder Hempel Hard Racing Xtra verwenden.
 > Confidence: `measured`
 
 ### FAQ 7: Was ist Fouling-Release und für wen eignet es sich?

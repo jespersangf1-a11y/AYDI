@@ -748,7 +748,8 @@ Höhere Qualität als Rivnut, mit Sperr-Nase:
 
 **Fazit:** Rivnuts kostengünstig, schnell, wartungsfrei. Beste Lösung für GFK!
 
-**AYDI-Confidence:** measured — Rivnut/Nutsert Katalog, DIN 15051 (Blindnieten), GFK-Reparatur-Best-Practice
+**AYDI-Confidence:** estimated — unverifiziert — Rivnut/Nutsert Katalog, GFK-Reparatur-Best-Practice
+> ⚠️ **ZU PRÜFEN (Audit):** Der Normbezug „DIN 15051 (Blindnieten)" ist falsch — DIN EN 15051 betrifft die Staubungsmessung von Schüttgütern, NICHT Blindniete. Für Blindniete gilt DIN 7337 / ISO 15973–15979; für Blindnietmuttern existiert keine gleichnamige Norm. Falscher Bezug entfernt, Confidence zurückgestuft.
 ---
 
 ## 8. Epoxid-Methode (Flüssiggewinde)
@@ -950,6 +951,8 @@ Selbstschneidende Gewindeeinsätze haben ein spezielles Außenprofil (Kerben, Ri
 | Temperaturbereich | –40°C bis +120°C (Standard) |
 | Salzwasser-Eignung | A4 optional, aber Standard ist A2 (prüfen!) |
 
+> ⚠️ **ZU PRÜFEN (Audit):** Keensert-Standard Temperaturbereich hier „–40 °C bis +120 °C" vs. §27.2.1 „–40 °C bis +150 °C" — beide als „measured" ausgewiesen. Herstellerangabe (Howmet) nicht zweifelsfrei belegbar; Wert unverifiziert.
+
 #### 10.2.2 Loksert (Alternative, weniger verbreitet)
 
 Seltener Konkurrenz zu Keensert mit ähnlichem Prinzip:
@@ -1050,7 +1053,8 @@ Seltener Konkurrenz zu Keensert mit ähnlichem Prinzip:
 - Marin-Werkstatt: €50–80 pro Installation (Spezial-Material)
 - DIY Hydraulic-Presse Leih: €25–50 Tag
 
-**AYDI-Confidence:** measured — Howmet Aerospace Keensert Katalog, ISO 23143 Standard, Marine Workshop Experience
+**AYDI-Confidence:** estimated — unverifiziert — Howmet Aerospace Keensert Katalog, Marine Workshop Experience
+> ⚠️ **ZU PRÜFEN (Audit):** „ISO 23143" ist KEINE Gewindeeinsatz-Norm, sondern betrifft den Datenaustausch zwischen BIM und GIS. Keensert ist ein proprietäres Howmet-Produkt ohne gleichnamige ISO-Norm. Temperatur-/Auszugskraftangaben unverifiziert.
 ---
 
 ## 11. Reparatureinsätze für Zündkerzen-/Glühkerzengewinde
@@ -1665,7 +1669,7 @@ Wenn A4-Einsatz in Salzwasser-Alu = Galvanische Korrosion möglich (Edelstahl ed
 - Falsch (Edelstahl-zu-Edelstahl): Schraube fressen, Rettung = Getriebeleiter bricht ab = €5000+
 - Richtig (Messing-Insert): €2 Material + 15 min Arbeit = €80 total = unbezahlbar!
 
-**AYDI-Confidence:** measured — DIN 7965, ISO 6415, Loctite Technical Data, Böllhoff Galling Guide
+**AYDI-Confidence:** measured — DIN 7965, DIN 8140, Loctite Technical Data, Böllhoff Galling Guide
 ---
 
 ## 17. Ausgerissene Gewinde reparieren — Entscheidungsbaum
@@ -1774,7 +1778,7 @@ Wobei:
 
 **Fazit:** Gleicher Einsatz liefert sehr unterschiedliche Haltekraft je nach Material.
 
-#### 18.1.3 Bohr-Durchmesser-Tabelle (ISO 6415)
+#### 18.1.3 Bohr-Durchmesser-Tabelle (DIN 8140-2)
 
 Die kritische Größe beim Gewindeeinsatz ist der **Bohr-Durchmesser**. Zu groß = Einsatz locker, zu klein = Material reißt auf.
 
@@ -1880,7 +1884,7 @@ Empfohlene Anziehdrehmomente für Stahlschrauben in verschiedenen Einsätzen:
 | Zu starkes Anzieh-Drehmoment | Schraube reißt, Gewinde überlastet | Mit Drehmomentzange max. Tabellenwert |
 | Falsche Einbau-Reihenfolge | Einsatz sitzt verkantet, Gewinde unwirksam | Bohrung/Gewindeschnitt/Einsatz/Schraube streng nacheinander |
 
-**AYDI-Confidence:** measured — DIN 7965, ISO 6415, Böllhoff Designleitfaden, Rampa Katalog
+**AYDI-Confidence:** measured — DIN 7965, DIN 8140, Böllhoff Designleitfaden, Rampa Katalog
 ---
 
 ## 19. Drehmomente für Gewindeeinsätze
@@ -2122,7 +2126,7 @@ Wie Kato Tangless — Zapfen bricht beim Werkzeug-Rückzug automatisch:
 |-----------|---------|---------|---------|
 | **Preis M8 (A4)** | €11 | €16 | €13 |
 | **Kompatibilität Werkzeuge** | 100% HeliCoil | Baseline | E-Z Coil-Werkzeuge |
-| **Auszugskraft** | Standard (ISO 6415) | Standard | Standard |
+| **Auszugskraft** | Standard (DIN 8140) | Standard | Standard |
 | **Verfügbarkeit Australien** | Exzellent | Gut | Schwach |
 | **Verfügbarkeit USA** | Sehr Gut (Import) | Exzellent | Exzellent |
 | **Verfügbarkeit EU** | Mittel (Import) | Exzellent | Schwach |
@@ -2231,7 +2235,7 @@ Wie Kato Tangless — Zapfen bricht beim Werkzeug-Rückzug automatisch:
 | Material Premium | Edelstahl 316 (A4, salzwasser-optimiert) |
 | Zapfen-Design | Längs-Zapfen (bricht mit Zange ab) |
 | Größen | UNC/UNF: #4 bis 1/2" (metrisch M3–M10) |
-| Auszugskraft (UNC #10) | 2.800N (ISO 6415 Minimum) |
+| Auszugskraft (UNC #10) | 2.800N (DIN 8140 Minimum) |
 | Umgebungstemperatur | –40°C bis +120°C |
 | Salzwasser-Eignung | ★★★★☆ (wenn A4 Material) |
 | Preis-Index | 1,0× (günstiger als HeliCoil) |
@@ -2269,7 +2273,7 @@ Wie Kato Tangless — Zapfen bricht beim Werkzeug-Rückzug automatisch:
 | Vorteile | Keine Zange nötig, kein Zapfen-Bruch-Fehler möglich |
 | Material | A4 Edelstahl 316L (marinoptimiert) |
 | Größen | UNC/UNF (#4 bis 1/2"), metrisch M3–M12 |
-| Auszugskraft | Gleich Standard Kato (ISO 6415) |
+| Auszugskraft | Gleich Standard Kato (DIN 8140) |
 | Fehlerquote Montage | Praktisch 0% (automatischer Zapfen-Bruch) |
 | Installation-Geschwindigkeit | +30% schneller (kein Zapfen-Abbrechen-Schritt) |
 | Zusatzkosten vs. Standard | +25–40% Preis |
@@ -2376,7 +2380,7 @@ Für Motorblock + Abgas-Systeme (Hochtemperatur bis 200°C):
 
 ### 24.1 Firmenprofil
 
-- **Standort:** Schramberg, Schwarzwald, Deutschland
+- **Standort:** Büchen, Schleswig-Holstein, Deutschland
 - **Gründung:** 1920er Jahre
 - **Spezialität:** Gewindeeinsätze für Holz, Kunststoff, Weichmaterialien
 - **Marktposition:** Markenname = Synonym für Holz-Gewindeeinsatz
@@ -2842,7 +2846,8 @@ Kombination aus Keil + Schraubensicherung für kritischste Anwendungen:
 
 **Fazit:** Keensert höher Preis, aber NULL Wartung über 10+ Jahre = ROI sehr günstig für kritische Anwendungen.
 
-**AYDI-Confidence:** measured — Howmet Aerospace Technical Data Sheets, ISO 23143 (Keensert Standard), DNV-GL Zertifikat
+**AYDI-Confidence:** estimated — unverifiziert — Howmet Aerospace Technical Data Sheets, DNV-GL Zertifikat
+> ⚠️ **ZU PRÜFEN (Audit):** „ISO 23143 (Keensert Standard)" ist falsch — ISO 23143 betrifft den BIM/GIS-Datenaustausch, nicht Gewindeeinsätze. Falscher Normbezug entfernt.
 
 ---
 
@@ -3576,9 +3581,9 @@ G/flex ist ein modifiziertes Epoxid mit erhöhter Flexibilität. Entwickelt von 
 
 | Händler | Standort | Sortiment | Lieferzeit | Website |
 |---------|----------|----------|-----------|---------|
-| **Böllhoff (Direkt)** | Künzelsau (Baden-Württemberg) | HeliCoil, Loksert, RIVKLE, alle Größen | Direktbestellung 2-5 Tage | boellhoff.com |
-| **KerbKonus (Direkt)** | Maikammer (Rheinland-Pfalz) | Ensat 302/318, Spezialsortiment | 3-7 Tage | kerbkonus.de |
-| **Rampa (Direkt)** | Österreich (Versand zu DE) | Rampa-Muffen A/B, Sonderanfertigungen | 4-8 Wochen (Spezial), Lager 2-3 Tage | rampa.com |
+| **Böllhoff (Direkt)** | Bielefeld (Nordrhein-Westfalen) | HeliCoil, Loksert, RIVKLE, alle Größen | Direktbestellung 2-5 Tage | boellhoff.com |
+| **KerbKonus (Direkt)** | Amberg (Bayern) | Ensat 302/318, Spezialsortiment | 3-7 Tage | kerbkonus.de |
+| **Rampa (Direkt)** | Büchen, Deutschland | Rampa-Muffen A/B, Sonderanfertigungen | 4-8 Wochen (Spezial), Lager 2-3 Tage | rampa.com |
 | **Schrauben-Jäger** (Online) | Verschiedene Lager | HeliCoil, Rampa, Rivnuts, breites Sortiment | 1-2 Tage | schrauben-jaeger.de |
 | **Reyher** (Groß-Handel) | National | HeliCoil, Rampa, Ensat | 1-2 Tage | reyher.de |
 | **Würth** (Filialen + Online) | National (500+ Filialen) | HeliCoil (Lizenz), Rampa, Rivnuts | Same-Day (Filiale) oder 1-2 Tage | wuerth.de |
@@ -4725,6 +4730,8 @@ Große edle Fläche in kleiner unedler Fläche = GEFÄHRLICH.
 | NAS 1130 | National Aerospace Standard (US) | Vibrations-Sicherheit, extreme Lasten | ★★★★☆ |
 | NASM33537 | Wire thread insert — Specifications (supersedes MIL-I-8846) | Aktueller Aerospace-Standard | ★★★★☆ |
 
+> ⚠️ **ZU PRÜFEN (Audit):** „ISO 8750" bezeichnet gewickelte Spannstifte (Spiralspannstifte, vgl. DIN 7343), NICHT Drahtgewindeeinsätze. Maßgebend für Drahtgewindeeinsätze ist DIN 8140 (Teil 1: Maße/technische Lieferbedingungen, Teil 2: Kernlöcher/Gewindetoleranzen). Normbezug unverifiziert.
+
 ### 52.2 Holz-Gewindeeinsätze
 
 | Norm | Gegenstand | Prüfungen | Anwendung |
@@ -4742,6 +4749,8 @@ Große edle Fläche in kleiner unedler Fläche = GEFÄHRLICH.
 | DIN EN ISO 6157-1 (2010) | Edelstahl-Sechskantschrauben für Decksbeschläge | Klasse A4-70 | ★★★★★ |
 | ASTM F593 (US) | Stainless Steel Fasteners (Bolts, Nuts, Screws) for Boat Service | ASTM A276 (316L) | US-Marine-Standard |
 
+> ⚠️ **ZU PRÜFEN (Audit):** „ISO 6157-1" regelt zulässige Oberflächenfehler an Schrauben/Bolzen (Fasteners — Surface discontinuities — Part 1: Bolts, screws and studs), NICHT „Edelstahl-Sechskantschrauben für Decksbeschläge". Die Scope-/Materialangabe in dieser Zeile ist falsch/unverifiziert.
+
 ### 52.4 Mechanik und Berechnung
 
 | Norm | Fokus | Anwendung Marine |
@@ -4757,6 +4766,8 @@ Große edle Fläche in kleiner unedler Fläche = GEFÄHRLICH.
 | ISO 4503 | Fiberglass testing — Tensile strength | GFK-Zugfestigkeit mit Einsätzen |
 | ASTM D2992 | Standard test methods for adhesive bonds in structures | Epoxid-Klebung-Prüfung (relevant für Epoxid-Gewinde) |
 | DIN 65151 | Epoxy resins — Classification, designation, specification | Epoxid-Rohstoff-Norm (West System 105/205 erfüllt) |
+
+> ⚠️ **ZU PRÜFEN (Audit):** „DIN 65151" ist der Junker-Schwingungstest (dynamische Prüfung der Losdreh-/Losrüttelsicherung von Schraubenverbindungen unter Querbelastung), NICHT eine Epoxidharz-Klassifizierung. Der Normbezug in dieser Zeile ist falsch/unverifiziert.
 
 ---
 
@@ -5098,7 +5109,7 @@ Konsens: Böllhoff Helicoils (€50/Kit) sind €5-10 teurer als Würth/Reyher (
 
 ### 58.2 Holz-Einsätze
 
-- **Rampa-Muffe:** Gewindeeinsatz für Holz von österreichischem Hersteller. Typen: A (Massivholz, 10-15mm), B (Sperrholz, 12-18mm). Eingedreht mit Innensechskant.
+- **Rampa-Muffe:** Gewindeeinsatz für Holz von deutschem Hersteller (RAMPA GmbH, Büchen). Typen: A (Massivholz, 10-15mm), B (Sperrholz, 12-18mm). Eingedreht mit Innensechskant.
 - **Einschraubmuffe:** Allgemeiner Begriff für Rampa-ähnliche Holzgewinde-Einsätze. Wird mit Innensechskant-Schlüssel eingedreht.
 - **Einschlagmutter (Tee Nut):** Mutter mit Zinken, wird mit Hammer in Holz eingeschlagen. Einfach, aber lockert sich über Zeit. NICHT empfohlen für marine Struktur.
 - **Holzgewinde-Reparatur klassisch:** Ausbohren + Holzdübel + Epoxid + neues Bohren. Günstig (~€2), zeitaufwendig (24h).

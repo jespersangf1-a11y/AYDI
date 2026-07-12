@@ -8,7 +8,7 @@
 |---|---|---|---|
 | Aluminium-Oxidschicht | Natürliche Al₂O₃-Schicht (5–10 nm) | Bietet Basis-Schutz, aber NICHT ausreichend für Marine | `measured` |
 | Salzwasser-Angriff | Chloride durchdringen Al₂O₃ → Lochfraß | Unbeschichtetes Alu im Salzwasser: Lebensdauer 2–5 Jahre | `measured` |
-| Galvanische Korrosion | Alu = sehr unedles Metall (-0,76V vs. SHE) | Kontakt mit edleren Metallen = Alu wird Opfer | `measured` |
+| Galvanische Korrosion | Alu = sehr unedles Metall (-0,76V vs. SHE) | Kontakt mit edleren Metallen = Alu wird Opfer | `estimated — unverifiziert` |
 | UV-Degradation | Al₂O₃ selbst UV-stabil, aber... | Beschichtung schützt zusätzlich vor mechanischen Einflüssen | `measured` |
 | Biologischer Bewuchs | Unterwasser: Seepocken, Algen, Muscheln | Antifouling PFLICHT — aber NICHT Kupfer-basiert! | `measured` |
 | Ästhetik | Unbeschichtetes Alu wird matt-grau, fleckig | Überwasser-Beschichtung für Optik + Schutz | `measured` |
@@ -23,13 +23,15 @@
 
 | Aspekt | Erklärung | Confidence |
 |---|---|---|
-| Warum verboten | Kupfer (+0,34V) vs. Aluminium (-0,76V) = ΔV 1,1V galvanische Spannung | `measured` |
+| Warum verboten | Kupfer (+0,34V) vs. Aluminium (-0,76V) = ΔV 1,1V galvanische Spannung | `estimated — unverifiziert` |
 | Effekt | Kupfer-Ionen wandern aus Antifouling → setzen sich auf Alu ab → lokale Galvanzelle → Lochfraß | `measured` |
 | Geschwindigkeit | Kupfer-AF auf Alu: Durchfressung 3–5mm Rumpf in 1–3 Saisons! | `measured` |
 | Sichtbarkeit | Anfangs unsichtbar unter der Beschichtung → plötzlich Wassereinbruch | `measured` |
 | Auch indirekt verboten | Kupfer-AF auf GFK-Nachbarboot im selben Hafen → Kupfer-Ionen im Wasser → Migration auf Alu | `estimated` |
 | Kupfer-freie Alternativen | Zinkpyrithion, Zineb, Econea (Tralopyril), DCOIT (Sea-Nine), Selektope | `measured` |
 | Historische Katastrophen | Dutzende Alu-Yachten durch falsch beratene Kupfer-AF-Anwendung zerstört | `measured` |
+
+> ⚠️ **ZU PRÜFEN (Audit):** −0,76 V ist NICHT das Standardpotential von Aluminium vs. SHE — der korrekte Wert ist **−1,66 V** (−0,76 V ist der SHE-Wert von **Zink**). Die für Alu genannten −0,76 V (Abschnitt 1.1, 1.2, 4.1.1) und die daraus abgeleitete ΔV ≈ 1,1 V zu Kupfer mischen ein praktisches Korrosionspotential (Alu) mit dem thermodynamischen SHE-Wert (Kupfer +0,34 V); die Angabe „vs. SHE" ist daher unpräzise. Werte NICHT isoliert ändern — die 1,1 V erscheinen konsistent in Kap. 38, 60, 84.2 und 91. Zur Einordnung: rein thermodynamisch wäre ΔV ≈ 2,0 V, praktisch (Seewasser, vgl. Abschnitt 9.1) ≈ 0,5–0,7 V. Elektrochemische Bezugsbasis vereinheitlichen.
 
 > **„Kupfer-Antifouling auf einem Alu-Boot ist wie Salzsäure auf Zähne — es frisst das Material von innen auf. Ich habe Boote gesehen, wo man den Finger durch den Rumpf drücken konnte, weil jemand auf den Gedanken kam, Kupfer-AF direkt aufzutragen. Das ist keine Übertreibung."**
 > — Don Casey, „This Old Boat" (3rd Edition), International Marine, 2021
@@ -1514,12 +1516,14 @@ class AluminumCoatingCostEstimate(BaseModel):
 | Aspekt | Detail | Confidence |
 |---|---|---|
 | Warum wichtig | JEDE Pore in der UW-Beschichtung auf Alu = Korrosionseinstieg! | `measured` |
-| Methode | Low-Voltage Wet Sponge (ASTM D5162) — 67,5V DC auf feuchtem Schwamm | `measured` |
+| Methode | Low-Voltage Wet Sponge (ASTM D5162) — 67,5V DC auf feuchtem Schwamm | `estimated — unverifiziert` |
 | Gerät | Elcometer 270 / Tinker & Rasor M/1 | `measured` |
 | Durchführung | Schwamm langsam über gesamte UW-Fläche führen | `measured` |
 | Alarm = Holiday | Piep-Ton → markieren, Primer-Touch-Up | `measured` |
 | Wiederholung | NACH jedem Primer/Epoxid-Auftrag → Holiday-frei bevor nächste Schicht | `measured` |
 | Bei Refit | Holiday-Test vor AF-Auftrag → alle Schwachstellen finden und reparieren | `measured` |
+
+> ⚠️ **ZU PRÜFEN (Audit):** 67,5 V vs. 90 V — die Prüfspannung des Nassschwamm-Holiday-Tests ist hier mit 67,5 V DC angegeben, an anderer Stelle jedoch mit 90 V DC (Kap. 68.2, 73.3-Checkliste, 78-Glossar), beide als `measured`. Für **metallische** (Alu-)Substrate ist 67,5 V die Standard-Niederspannung des Nassschwamm-Tests (NACE SP0188 / ASTM D5162); 90 V wird für schlechter leitende Substrate (z. B. Beton) bzw. dickere Systeme verwendet. Einheitlichen Wert für Alu festlegen.
 
 > **„Auf einem Alu-Boot ist der Holiday-Test nicht optional — er ist ÜBERLEBENSWICHTIG. Eine einzige Pore im Epoxid, durch die Seewasser an das blanke Alu kommt, startet eine Korrosionszelle. In 2 Jahren ist daraus ein 50mm-Lochfraß geworden. Holiday-Test auf jede Schicht. Jede."**
 > — Beschichtungsinspektor, NACE CIP Level 3, Lloyd's Register, Interview 2024
@@ -2642,7 +2646,7 @@ class AluminumCoatingMaintenancePlan(BaseModel):
 |---|---|---|---|---|---|
 | Goiot Cristal Ouvrant (Alu-Rahmen) | Fensterrahmen: Eloxiert ODER 2K-PU | 0mm (Rahmen = Alu) | EPDM + PU-Kleber (Sikaflex 295 UV) | N/A (gleich Metall) | `measured` |
 | Lewmar Standard (Alu-Rahmen) | Werks-Eloxierung beibehalten, Kanten nachversiegeln | 0mm | Neopren + Butylband | N/A | `measured` |
-| Bomar Edelstahl-Rahmen auf Alu-Deck | Alu unter Rahmen: VOLLSTÄNDIG beschichtet (Epoxid+PU) | Mind. 5mm über Rahmen hinaus | EPDM + Dichtmasse (KEIN Sikaflex = Essig!) | Teflon-Beilagscheiben + Nylon-Hülsen PFLICHT | `measured` |
+| Bomar Edelstahl-Rahmen auf Alu-Deck | Alu unter Rahmen: VOLLSTÄNDIG beschichtet (Epoxid+PU) | Mind. 5mm über Rahmen hinaus | EPDM + Dichtmasse (KEIN Acetoxy-Silikon — Essigsäure greift Alu an! Neutralvernetzendes PU wie Sikaflex ist geeignet) | Teflon-Beilagscheiben + Nylon-Hülsen PFLICHT | `measured` |
 | Rutgerson-Luken (Alu-Rahmen) | Eloxiert + zusätzlich Primer auf Kontaktfläche | 0mm | EPDM gerahmt | N/A | `measured` |
 
 ### 69.2 Beschlag-Montage auf beschichtetem Alu
@@ -3719,6 +3723,8 @@ class MaintenanceSchedule(BaseModel):
 ---
 
 ## 90. Index der Fehlerbilder (Gesamtübersicht)
+
+> ⚠️ **ZU PRÜFEN (Audit):** Die Code→Bezeichnung-Zuordnung dieser Index-Tabelle (F-AB-001 bis F-AB-020) stimmt NICHT mit den ausführlichen Fehlerbild-Definitionen in Kap. 12 (F-AB-001–010) und Kap. 33 (F-AB-011–020) überein — z. B. ist F-AB-001 dort „Osmotische Blasenbildung", hier „Filiform-Korrosion"; F-AB-005 dort „Filiform-Korrosion", hier „Kupfer-AF auf Alu"; F-AB-003 dort „Kupfer-AF-Lochfraß", hier „Blasenbildung UW". Auch dokumentinterne Querverweise (z. B. „Siehe F-AB-005" in Kap. 66.2, „F-AB-008" in Kap. 82.2) folgen dieser abweichenden Nummerierung. Widersprüchliche Taxonomie — F-AB-Codes vor Nutzung mit den Definitionskapiteln abgleichen (F-AB-021–025 sind konsistent).
 
 | Code | Bezeichnung | Kritikalität | Kapitel | Confidence |
 |---|---|---|---|---|

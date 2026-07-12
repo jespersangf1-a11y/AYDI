@@ -1808,6 +1808,8 @@ SZENARIO 3: "Erste Entformung Katastrophe"
 | **ASTM D6000** | Guide for Composite Materials | Allgemeine Composite-Richtlinie inkl. Trennmittel |
 | **ASTM D882** | Zugfestigkeit Folien | Für Trennfolien (FEP, PTFE) |
 
+> ⚠️ **ZU PRÜFEN (Audit):** Zwei Normnummern in dieser Tabelle sind falsch zugeordnet. **ASTM D6602** ist tatsächlich "Standard Practice for Sampling and Testing of Possible Carbon Black Fugitive Emissions or Other Environmental Particulate" (Ruß-Immissionen) — KEIN Trennmittel-Prüfverfahren. **ASTM D6000** ist "Standard Guide for Presentation of Water-Level Information from Groundwater Sites" (Grundwasser, 2024 zurückgezogen) — KEINE Composite-Richtlinie. Eine dedizierte ASTM-Norm speziell zur Trennmittel-Bewertung ist nicht zweifelsfrei belegbar; Zuordnung vor Zitat verifizieren. (ASTM D3171 Faservolumenanteil und ASTM D882 Folien-Zugfestigkeit sind korrekt.) Quelle: ASTM/ANSI Webstore.
+
 ### 28.2 ISO-Normen (Marine-relevant)
 
 | Norm | Bereich | Trennmittel-Relevanz |
@@ -1850,6 +1852,8 @@ SZENARIO 3: "Erste Entformung Katastrophe"
 | **Entformungs-Qualität (Haftung)** | Prozessbeobachtung: Entformungszeit + Widerstand | DIN 16901 (Laminat-Qualität) | Entformungszeit ±10% vs. Baseline | Jede Entformung | Produktionslog |
 | **Trennmittel-Transfer** | Visuelle/taktile Kontrolle entformtes Bauteil | Betriebsstandard | Kein sichtbarer Wachsfilm; bei Haftproblemen = Fehler | Stichproben 10% | Mängelprotokoll |
 | **Umgebungs-Parameter** | Hygrometer + Thermometer | ASTM D4169 (Lagerumgebung) | 20–25°C, 40–60% r.F. (optimal) | Täglich 3× | Klimakontroll-Blatt |
+
+> ⚠️ **ZU PRÜFEN (Audit):** In der Zeile "Oberflächenrauheit Ra" ist **ASTM B462** falsch zitiert — das ist die "Standard Specification for Forged or Rolled Nickel Alloy Pipe Flanges, Forged Fittings, and Valves" (Rohrflansche für korrosive Hochtemperatur-Anwendungen), keine Rauheits-/Oberflächentextur-Norm. Für Ra gilt ASME B46.1 bzw. ISO 21920 (früher ISO 4287); die daneben genannte DIN 4768 (Rauheit Ra/Rz) ist korrekt. Quelle: ASTM Webstore (B462).
 
 ### 28a.2 Glossmeter-Messprotokolle (ASTM D523)
 
@@ -2076,7 +2080,7 @@ Datum      | Kontaktwinkel-Messwerte (5 Punkte)        | Mittel  | Trend
 |---------|-------------|------------|-----------|
 | **Paste Wachs** | Nicht gefährlich | Nicht flüchtig | Normaler Paketdienst OK |
 | **PVA (flüssig)** | Nicht gefährlich | Entzündbar (Alkohol) | GHS-Etikett; unter 30 L ohne UN-Nummer |
-| **Semi-permanent (lösemittelbasiert)** | Gefährlich (Klasse 3) | UN1256 (Spirits) oder ähnlich | Gefahrgut-Versand; ADR/IMDG-konform; Einzelhandelsmengen teilweise befreit |
+| **Semi-permanent (lösemittelbasiert)** | Gefährlich (Klasse 3) | UN1256 (Cyclohexan) oder ähnlich | Gefahrgut-Versand; ADR/IMDG-konform; Einzelhandelsmengen teilweise befreit |
 | **Aerosol** | Gefährlich (Klasse 2) | UN1950 (Aerosole) | Flugverboten; Versand nur per Schiff/Straße |
 | **Wasser-basiert (Zyvax)** | Nicht/minimal gefährlich | Biologisch abbaubar | Einfacher Versand; beachte Frostgefahr |
 

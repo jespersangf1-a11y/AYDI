@@ -748,7 +748,7 @@ class RudderSealFailureAssessment(BaseModel):
 | 4 | Druck 30 min halten → Druckabfall = Leck |
 | 5 | Seifenblase-Test von außen → Leckstelle lokalisieren |
 
-(Confidence: documented — ABYC H-24, Surveyor-Praxis)
+(Confidence: documented — ABYC P-17, Surveyor-Praxis)
 
 ### 5.3 Pydantic-Modell: Diagnose-Ergebnis
 
@@ -1252,7 +1252,7 @@ class GalvanicCorrosionRisk(BaseModel):
 | ISO 8847:2004 | Small Craft — Steering | Allg. Anforderungen Steuerung |
 | ISO 12217-1/2/3 | Stability & Buoyancy | Wassereinbruch-Szenarien, Bilge-Kapazität |
 | ISO 15085:2003 | Man-overboard Prevention | Deck-Durchführungen sicher gestalten |
-| ABYC H-24 | Steering Systems | US-Standard: Ruderlager, Dichtungen, Materialien |
+| ABYC P-17 | Mechanical Steering Systems | US-Standard: Steueranlagen, Ruderlager, Materialien |
 | ABYC H-27 | Seacocks and Through-Hull Fittings | Rumpf-Durchführungen allgemein |
 | ABYC E-2 | Cathodic Protection | Galvanische Korrosion, Isolation |
 | Lloyd's Register SSC | Yacht Code | Superyachten >24m: Ruder-Structural-Requirements |
@@ -1278,7 +1278,7 @@ class GalvanicCorrosionRisk(BaseModel):
 | Versicherungs-Survey | 10-jährlich | Gesamtzustand Steueranlage |
 | Eigner-Inspektion | Jährlich (empfohlen) | Tropfrate, Geräusche, Lagerspiel |
 
-(Confidence: documented — ISO 10592, ABYC H-24, Surveyor-Praxis)
+(Confidence: documented — ISO 10592, ABYC P-17, Surveyor-Praxis)
 
 ---
 
@@ -1518,7 +1518,7 @@ Meistens das Lager. Test: Ruderblatt unten anfassen und rütteln → Spiel = Lag
 | Sikaflex 291 | Marine-Dichtstoff (Polyurethan) |
 | Butyl-Tape | Butylkautschuk-Klebeband (nicht-aushärtend) |
 | ISO 10592 | Internationale Norm für hydraulische Steueranlagen |
-| ABYC H-24 | US-Standard für Steueranlagen |
+| ABYC P-17 | US-Standard für Steueranlagen |
 
 (Confidence: measured — Fachterminologie, Normenverweise)
 
@@ -1641,7 +1641,7 @@ class RudderSealMaintenanceLog(BaseModel):
     confidence: str = "documented"
 ```
 
-(Confidence: documented — Wartungspläne von Jefa, Tides Marine, ABYC H-24)
+(Confidence: documented — Wartungspläne von Jefa, Tides Marine, ABYC P-17)
 
 ---
 
@@ -2007,7 +2007,7 @@ Tropft die Ruderdichtung?
         └── **NOTFALL** → Bilgenpumpe, Stopfen bereithalten, Hafen anlaufen, MAYDAY wenn nötig
 ```
 
-(Confidence: documented — ABYC H-24, Surveyor Best Practice)
+(Confidence: documented — ABYC P-17, Surveyor Best Practice)
 
 ---
 
@@ -2159,7 +2159,7 @@ Maximale Durchbiegung bei Spatenruder:
 
 > **Jefa Marine** (Technisches Bulletin): "Unsere Rudder Bearings sind für 20+ Jahre Lebensdauer ausgelegt. Der Seal-Kit sollte jedoch alle 10–15 Jahre getauscht werden, auch wenn keine Leckage vorliegt — als Vorsichtsmaßnahme."
 
-> **ABYC** (H-24 Standard): "Die Ruderschaft-Durchführung muss so konstruiert sein, dass im Falle eines Dichtungsversagens kein unkontrollierter Wassereinbruch stattfindet."
+> **ABYC** (P-17 Standard): "Die Ruderschaft-Durchführung muss so konstruiert sein, dass im Falle eines Dichtungsversagens kein unkontrollierter Wassereinbruch stattfindet."
 
 (Confidence: documented — Primärquellen verifiziert)
 
@@ -3766,7 +3766,7 @@ Ja — mit Bilgenwasser-Sensor im Ruderkasten (z.B. Maretron WSO100 oder Rule bi
 | Tides Marine Tech Library | tidesmarine.com | Installation Manuals, Sizing Guides |
 | Jefa Marine Knowledge Base | jfracing.com | Technische Dokumente, Installation Guides |
 | PYI Inc. Resources | pyiinc.com | Katalog, Installation Guide |
-| ABYC Standards Library | abycinc.org | H-24, H-27, E-2 (kostenpflichtig) |
+| ABYC Standards Library | abycinc.org | P-17, H-27, E-2 (kostenpflichtig) |
 | ISO Standards | iso.org | ISO 10592, 8847 (kostenpflichtig) |
 
 ### BD.3 Fachzeitschriften
@@ -3785,7 +3785,7 @@ Ja — mit Bilgenwasser-Sensor im Ruderkasten (z.B. Maretron WSO100 oder Rule bi
 | Organisation | Normen | Bezug |
 |---|---|---|
 | ISO | ISO 10592, 8847, 12217, 15085, 12216 | iso.org |
-| ABYC | H-24, H-27, E-2 | abycinc.org |
+| ABYC | P-17, H-27, E-2 | abycinc.org |
 | BSI | BS-Normen (Marine) | bsigroup.com |
 | DIN | DIN ISO 3601 (O-Ringe) | beuth.de |
 | Lloyd's Register | SSC Yacht Code | lr.org |
@@ -3874,4 +3874,4 @@ class RudderSealChangeoverChecklist(BaseModel):
 
 ---
 
-*Recherche-Datei 01.12 — Steuerkoker-Dichtung / Ruderschaft-Abdichtung (Rudder Port Seal / Rudder Gland / Rudder Shaft Seal). Erstellt 2026-03-30. Quellen: Tides Marine (tidesmarine.com, SureSeal Katalog), PYI Inc. (pyiinc.com, Rudder Seal Katalog), Jefa Marine (jfracing.com, Rudder Bearing Katalog), Lewmar (lewmar.com), Wills Ridley/Halyard Marine, Edson Marine (edsonmarine.com), Dometic Marine/SeaStar, Båtsystem AB, Thordon Bearings (thordonbearings.com), Garlock/Palmetto, James Walker, W.L. Gore (GFO), Steve D'Antonio (stevedmarineconsulting.com), Nigel Calder (Boatowner's Manual), Don Casey (This Old Boat), Dave Gerr (Elements of Boat Strength), Rod Collins (marinehowto.com), Practical Sailor, ABYC H-24, ISO 10592, cruisersforum.com, sailboatowners.com, ybw.co.uk, boote-forum.de, segeln-forum.de, sailinganarchy.com, SailNet, 16 YouTube-Kanäle, 25+ Praxisberichte, 50+ Produkte. Anhänge A–X (24 Anhänge). Pydantic v2 model_config durchgängig. AYDI-Integration: materials, structural, compliance, service_patterns.*
+*Recherche-Datei 01.12 — Steuerkoker-Dichtung / Ruderschaft-Abdichtung (Rudder Port Seal / Rudder Gland / Rudder Shaft Seal). Erstellt 2026-03-30. Quellen: Tides Marine (tidesmarine.com, SureSeal Katalog), PYI Inc. (pyiinc.com, Rudder Seal Katalog), Jefa Marine (jfracing.com, Rudder Bearing Katalog), Lewmar (lewmar.com), Wills Ridley/Halyard Marine, Edson Marine (edsonmarine.com), Dometic Marine/SeaStar, Båtsystem AB, Thordon Bearings (thordonbearings.com), Garlock/Palmetto, James Walker, W.L. Gore (GFO), Steve D'Antonio (stevedmarineconsulting.com), Nigel Calder (Boatowner's Manual), Don Casey (This Old Boat), Dave Gerr (Elements of Boat Strength), Rod Collins (marinehowto.com), Practical Sailor, ABYC P-17, ISO 10592, cruisersforum.com, sailboatowners.com, ybw.co.uk, boote-forum.de, segeln-forum.de, sailinganarchy.com, SailNet, 16 YouTube-Kanäle, 25+ Praxisberichte, 50+ Produkte. Anhänge A–X (24 Anhänge). Pydantic v2 model_config durchgängig. AYDI-Integration: materials, structural, compliance, service_patterns.*

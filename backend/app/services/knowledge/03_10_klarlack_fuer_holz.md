@@ -314,7 +314,7 @@ class HolzKlarlackKompatibilitaet:
 | Ergiebigkeit | 15 m²/L |
 | VOC | 389 g/L |
 | Verdünner | International Thinner No. 1 |
-| Preis (1L) | €42–52 (DE), £36–44 (UK), $48–58 (USA) |
+| Preis (750ml) | €42–52 (DE), £36–44 (UK), $48–58 (USA) |
 
 > Confidence: `measured`
 

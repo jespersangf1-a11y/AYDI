@@ -1171,10 +1171,12 @@ Die häufigste Kontaktkleber-Chemie im Marinebereich. Polychloropren (CR) = chlo
 |------------|----------|---------------|-------------|-----------|------------|
 | Toluol | 50 ppm | 200 ppm | 20 ppm | Ältere Formulierungen | `measured` |
 | Hexan (n-Hexan) | 50 ppm | 500 ppm | 50 ppm | 3M #10, DAP | `measured` |
-| Naphtha (Schwerbenzin) | 100 ppm | 300 ppm | 100 ppm | Die meisten CR-Kleber | `measured` |
+| Naphtha (Schwerbenzin) | 100 ppm | 300 ppm | 100 ppm | Die meisten CR-Kleber | `estimated — unverifiziert` |
 | MEK (Butanon) | 200 ppm | 200 ppm | 200 ppm | Einige Formulierungen | `measured` |
 | Heptan | 500 ppm | 400 ppm | 400 ppm | Neuere Formulierungen | `measured` |
 | Aceton | 500 ppm | 1.000 ppm | 250 ppm | Reinigung | `measured` |
+
+> ⚠️ **ZU PRÜFEN (Audit):** Naphtha-MAK (DE) = 100 ppm hier vs. 200 ppm im Glossar (Anhang BA, „MAK-Wert") und in Anhang BC.10 (Sicherheits-Schnellübersicht, „200 (Naphtha)"). „Naphtha/Schwerbenzin" ist ein Sammelbegriff mit fraktionsabhängigen Grenzwerten — korrekten AGW/MAK je konkretem Lösemittel im SDB prüfen, nicht raten.
 
 ### 8.3 Brandschutz
 
@@ -1759,7 +1761,7 @@ class ContactAdhesiveModuleWeighting(BaseModel):
 |------|-------|----------------------------------|------------|
 | DIN EN 1392 | Leder — Schälfestigkeit Kontaktkleber | Standard-Prüfmethode für CR-Kleber | `measured` |
 | DIN EN ISO 4587 | Zugscherversuch | Strukturelle Bewertung | `measured` |
-| ISO 4578 | T-Peel Test | Rollenschälversuch, flexible Substrate | `measured` |
+| ISO 4578 | Schälwiderstand hochfester Klebungen — Rollenschälverfahren (Floating-Roller) | Rollenschälversuch, flexible Substrate | `measured` |
 | ASTM D903 | Peel or Stripping Strength | US-Standard für Schälkraft | `measured` |
 | ASTM D1876 | T-Peel Test | US-Standard, flexible Substrate | `measured` |
 | ASTM D3163 | Determining Strength of Adhesively Bonded Joints | Allgemein | `measured` |
@@ -2561,7 +2563,7 @@ class VisualContactAdhesiveInspection(BaseModel):
 | REACH (1907/2006) | Chemikalien-Registrierung | Alle Inhaltsstoffe registriert | `measured` |
 | CLP (1272/2008) | GHS-Einstufung | H-/P-Sätze auf Verpackung | `measured` |
 | EN 13999 | VOC-Bestimmung Klebstoffe | Testmethode für VOC-Gehalt | `measured` |
-| EU Directive 2009/148/EC | Arbeitsschutz Chemikalien | MAK-Werte, PSA-Anforderungen | `measured` |
+| EU Directive 98/24/EC (Chemical Agents Directive) | Arbeitsschutz Chemikalien | MAK-Werte, PSA-Anforderungen | `measured` |
 
 ### U.2 US-Regulierung
 
@@ -4183,7 +4185,9 @@ class ContactAdhesiveProjectCalculator(BaseModel):
 | Farbe | Gelbgrün | Klar | Beige | Gelblich | Beige | Klar | Gelblich | Braun |
 | Marine-Eignung | ★★★★ | ★★★ | ★★★★★ | ★★★ | ★★★★★ | ★★★★ | ★★★ | ★★ |
 | Preis €/L | 28 | 32 | 14 | 12 | 9 | 16 | 11 | 8 |
-> Confidence: `measured`
+
+> ⚠️ **ZU PRÜFEN (Audit):** Temperatur-Beständigkeit und Feststoffgehalt dieser Tabelle widersprechen den Hauptabschnitten (Kap. 2): Teroson SB 2444 +110°C hier vs. +100°C in 2.4.1; Bostik 1400 +120°C vs. +80°C in 2.2.2; Bostik Best +100°C vs. +70°C in 2.2.1; Pattex Classic +100°C vs. +70°C in 2.3.1; 3M 4693 +66°C vs. +82°C in 2.1.8; DAP Weldwood +60°C vs. +71°C in 2.7.1 (Feststoffgehalt analog abweichend). Sicherheitskritisch: überhöhte Temperaturwerte könnten Standard-CR-Kleber fälschlich als motorraumtauglich ausweisen (vgl. Warnung „Standard-CR versagt bei >70°C"). Herstellerdatenblätter prüfen.
+> Confidence: `estimated — unverifiziert`
 
 ### BC.2 NBR-Kontaktkleber — Datenvergleich
 

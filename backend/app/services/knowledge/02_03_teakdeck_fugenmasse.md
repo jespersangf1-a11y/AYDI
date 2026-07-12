@@ -43,6 +43,8 @@ Traditionelle Holzschiffe verwendeten Baumwolle + Pech (Oakum + Pitch) als Kalfa
 | Haltbarkeit ungeöffnet | 12 Monate (bei 10–25°C) | 15 Monate (bei 5–25°C) |
 | Verpackungseinheit Profi | Karton à 12 Kartuschen | Karton à 12 Kartuschen |
 
+> ⚠️ **ZU PRÜFEN (Audit):** Das aktuelle Sika-Produktdatenblatt für 290 DC PRO nennt Shore-A ≈ **40** (ISO 48-4) und Zugfestigkeit ≈ **3 N/mm²** (ISO 527) — nicht die hier gelisteten 25–35 bzw. 1,5 MPa. Da die Härte-Argumentation dieses Dokuments (290 DC angeblich „weicher" als Soudaseal/3M mit 35–40) auf dem niedrigeren Wert beruht, vor Nutzung gegen das TDS verifizieren. (Bruchdehnung „>400 %" bleibt korrekt: real ≈ 600 %.) Confidence dieser Spalte daher: estimated — unverifiziert.
+
 **Produktvarianten:**
 
 | Variante | Artikelnummer | Beschreibung |
@@ -57,12 +59,14 @@ Traditionelle Holzschiffe verwendeten Baumwolle + Pech (Oakum + Pitch) als Kalfa
 
 | Primer | Artikelnummer | Anwendung | Ablüftzeit | Menge |
 |---|---|---|---|---|
-| Sika Primer-3 N | 427454 | Auf Teak, GFK, Sperrholz VOR 290 DC | 30 min bei 23°C (min 10 min, max 24h) | 250 ml |
+| Sika Primer-3 N | 427454 | Auf Teak, GFK, Sperrholz VOR 290 DC | 30 min bei 23°C (min. 30 min, max. 24h) | 250 ml |
 | Sika Aktivator-205 | 572187 | Reinigung/Aktivierung VOR Primer | Sofort nach Verdunstung | 250 ml / 1000 ml |
 | Sika Cleaner-205 | 577109 | Alternative zu Aktivator-205 | Sofort nach Verdunstung | 1000 ml |
 
 **KRITISCH: Primer-Verwechslung!**
 Sika Primer-209 D ist für Metall/Kunststoff — NICHT für Teak! Primer-3 N ist der einzige von Sika für Holz/Teak freigegebene Primer im 290 DC System. Verwechslung führt zu Adhäsionsbruch innerhalb 6–18 Monaten.
+
+> ⚠️ **ZU PRÜFEN (Audit):** Artikelnummer Sika Primer-3 N 250 ml — hier `427454` vs. Anhang AS.1 `91437` (interner Widerspruch, gleiches Produkt). Beide Nummern ließen sich nicht gegen aktuelle Sika-/Händlerangaben verifizieren (Sika-SKUs sind regions-/gebindeabhängig); herstellerseitige Bestellnummer beim Bezug prüfen.
 
 (Confidence: documented — Sika Marine TDS Sikaflex 290 DC PRO, Version 2024)
 
@@ -485,7 +489,7 @@ OHNE Bond Breaker:               MIT Bond Breaker:
 | 2 | Primer auf BEIDE Fugenflanken auftragen | Pinsel 3–5mm (Sika liefert mit) |
 | 3 | Dünne, gleichmäßige Schicht — NICHT pfützenbildend | Überschuss mit Tuch abnehmen |
 | 4 | NUR Fugenflanken, NICHT den Bond Breaker grundieren | Sorgfalt bei Auftrag |
-| 5 | Ablüftzeit einhalten: min. 10 min, max. 24h | Timer stellen |
+| 5 | Ablüftzeit einhalten: min. 30 min, max. 24h | Timer stellen |
 | 6 | Teak-Öl-Rückstände VOR Primer entfernen | Aceton-Wisch 3× |
 
 ### 4.3 Teak-Öl und Primer — Die häufigste Fehlerquelle
@@ -654,7 +658,7 @@ Kartuschen = Fugenvolumen / Kartuscheninhalt (aufgerundet)
 | 3 | Primer dünn auf BEIDE Fugenflanken auftragen (Pinsel) |
 | 4 | NICHT auf Bond Breaker primen |
 | 5 | NICHT auf Malerkrepp primen |
-| 6 | Ablüftzeit einhalten: Sika 3 N = min. 10 min, max. 24h bei 23°C |
+| 6 | Ablüftzeit einhalten: Sika 3 N = min. 30 min, max. 24h bei 23°C |
 | 7 | Bei kaltem Wetter (10–15°C): Ablüftzeit verdoppeln |
 | 8 | Primer muss matt/trocken aussehen BEVOR Fugenmasse kommt |
 
@@ -2040,7 +2044,7 @@ class CaulkingWindowCalculator:
 | | 20 | Taupunkt berechnen (Substrat mind. 3°C darüber) | ☐ |
 | | 21 | Primer dünn auf BEIDE Fugenflanken | ☐ |
 | | 22 | NICHT auf Bond Breaker oder Kreppband primen | ☐ |
-| | 23 | Ablüftzeit einhalten (Primer-3 N: 10 min–24h) | ☐ |
+| | 23 | Ablüftzeit einhalten (Primer-3 N: 30 min–24h) | ☐ |
 | FUGEN | 24 | Kartusche bei Raumtemperatur (20–25°C) | ☐ |
 | | 25 | Kartuschenspitze 45° schneiden (Ø = Fugenbreite) | ☐ |
 | | 26 | Erste 5cm verwerfen | ☐ |
@@ -3834,6 +3838,8 @@ Für professionelle Teakdeck-Arbeiten vor Ort empfehlen erfahrene Betriebe folge
 ### FAQ #56: Wie lange hält eine Neuverfugung im Durchschnitt?
 **Antwort:** Statistik aus Praxis-Erfahrungen: 290 DC PRO mit Bond Breaker + Primer = 8–15 Jahre (je nach UV/Klima). TDS Caulk Classic (2K Polysulfid) = 12–20 Jahre. Simson MSR Teak Caulk = 6–12 Jahre (noch wenig Langzeit-Daten). OHNE Bond Breaker: Alle Produkte 40–60% kürzere Lebensdauer. Hauptfaktor: Verarbeitungsqualität > Produktwahl.
 
+> ⚠️ **ZU PRÜFEN (Audit):** Die hier für TDS Caulk Classic (Polysulfid) genannten „12–20 Jahre" widersprechen Tabelle 11.1 (dort 5–12 Jahre) und Abschnitt 13.1 (dort 6–10 Jahre, Polysulfid als am kürzesten haltbar eingestuft). Standzeit-Angabe unverifiziert.
+
 (Confidence: estimated — Aggregierte Praxis-Erfahrungen)
 
 ### FAQ #57: Kann ich 290 DC PRO auf altem Polysulfid-Material auftragen?
@@ -3891,7 +3897,7 @@ Für professionelle Teakdeck-Arbeiten vor Ort empfehlen erfahrene Betriebe folge
 (Confidence: documented — Nigel Calder, Standardwerk Yachttechnik)
 
 ### Experten-Zitat #17 — Sika Marine Application Engineering
-> „Primer-3 N muss auf beiden Fugen-Flanken aufgetragen werden. Der Primer benötigt eine Ablüftzeit von mindestens 30 Minuten bei 23°C und maximal 2 Stunden. Außerhalb dieses Fensters muss neu grundiert werden."
+> „Primer-3 N muss auf beiden Fugen-Flanken aufgetragen werden. Der Primer benötigt eine Ablüftzeit von mindestens 30 Minuten bei 23°C und maximal 24 Stunden. Außerhalb dieses Fensters muss neu grundiert werden."
 
 (Confidence: documented — Sika AG Verarbeitungsrichtlinie)
 

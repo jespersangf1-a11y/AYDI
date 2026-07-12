@@ -1327,6 +1327,8 @@ CA kann als Schraubensicherung dienen — Alternative zu Loctite Threadlocker:
 | Starbond EM-2000 | 5mm | 15–45 s | 8–14 MPa | ~$9/oz |
 | Zap Gel | 5mm | 15–45 s | 8–14 MPa | ~$7/oz |
 
+> ⚠️ **ZU PRÜFEN (Audit):** Spaltfüllung „5mm" für einkomponentige Gel-CA (454, 910, CA100, EM-2000, Insta-Cure+, Zap Gel) widerspricht FAQ 38 und Glossar (Anhang AE): dort Gel „bis 0,3mm", nur 2K-CA (3090) „bis 5mm". Einkomponentiger CA härtet feuchtigkeitsinitiiert nur oberflächennah (vgl. §1.1/§2.2: Tiefenaushärtung ≤0,25mm), daher ist 5mm-Durchhärtung nur für 2K-Typen plausibel. Gel-Spaltfüllung hier als `estimated — unverifiziert` behandeln.
+
 ### 17.4 Entscheidungsmatrix: Welcher CA wofür?
 
 | Anwendung | Viskosität | Toughened? | Feuchte? | HT? | UV? | Empfehlung |
@@ -1663,7 +1665,7 @@ CA kann als Schraubensicherung dienen — Alternative zu Loctite Threadlocker:
 | Norm | Titel | Relevanz |
 |------|-------|----------|
 | DIN EN 1465 | Zugscherfestigkeit — Lapscherzug | Standard-Festigkeitstest |
-| DIN EN 1464 | Schälfestigkeit — T-Peel | Kritisch für flexible Verbindungen |
+| DIN EN 1464 | Schälfestigkeit — Rollenschälverfahren (floating roller) | Kritisch für flexible Verbindungen |
 | ISO 11343 | Schlagschälfestigkeit | Für Toughened-CA |
 | DIN EN ISO 527 | Zugeigenschaften | Bruchdehnung, E-Modul |
 | DIN ISO 868 | Shore-Härte | Klebefugen-Härte |
@@ -1896,7 +1898,7 @@ Klebefuge gebrochen?
 **Antwort:** Nein. CA benötigt Oberflächenfeuchtigkeit zur Initiation, aber kann nicht in Wasser-Immersion polymerisieren — das Wasser verdünnt das Monomer bevor Polymerisation stattfindet. Für Unterwasser-Verklebung: Epoxid-Unterwasser-Kits (Belzona, SplashZone).
 
 ### FAQ 9: Ist CA giftig?
-**Antwort:** Gering giftig. CA-Monomerdämpfe reizen Augen und Atemwege (H315, H319, H335), sind aber nicht krebserregend und nicht chronisch toxisch. MAK-Wert: 2 ppm (Ethyl-CA). Bei normaler Verwendung (kleine Mengen, belüftet) kein Gesundheitsrisiko. Problematisch nur in geschlossenen Räumen bei großen Mengen.
+**Antwort:** Gering giftig. CA-Monomerdämpfe reizen Augen und Atemwege (H315, H319, H335), sind aber nicht krebserregend und nicht chronisch toxisch. MAK-Wert: 0,2 ppm (Ethyl-CA; ACGIH TLV-TWA, 1 ppm STEL). Bei normaler Verwendung (kleine Mengen, belüftet) kein Gesundheitsrisiko. Problematisch nur in geschlossenen Räumen bei großen Mengen.
 
 ### FAQ 10: Kann ich CA auf PVC-Schläuchen verwenden?
 **Antwort:** Ja — CA haftet gut auf Hart-PVC. Auf Weich-PVC (Schläuche) ist die Haftung mäßig da der Weichmacher die Oberfläche kontaminiert. Oberfläche mit IPA reinigen und schnell kleben. Für dauerhafte Schlauchverbindungen: Schlauchschelle + Dichtmittel.
@@ -3418,12 +3420,12 @@ def should_recommend_ca(
 
 | Norm/Standard | Inhalt | Relevanz für Marine-CA | Confidence |
 |---------------|--------|----------------------|------------|
-| DIN EN 15190 | Strukturelles Kleben — Richtlinie für Klebstoffauswahl | Allgemein, inkl. CA-Empfehlungen | `measured` |
+| DIN EN 15190 | Strukturkleben — Prüfverfahren zur Langzeitbeständigkeit geklebter Metallstrukturen | Alterungsbeständigkeit geklebter Metallverbindungen (nicht CA-spezifisch) | `measured` |
 | DIN EN ISO 4587 | Zugscherversuch für steife Substrate | Standard-Testmethode für CA | `measured` |
 | DIN EN 1465 | Zugscherversuch, Metallsubstrate | Metallverklebungen mit CA | `measured` |
 | ASTM D3163 | Standard for Determining Strength of Adhesively Bonded Joints | US-Äquivalent zu ISO 4587 | `measured` |
 | ASTM D2651 | Surface Preparation of Metals | Vorbehandlung für CA-Klebung | `measured` |
-| ISO 4588 | T-Peel Test for Flexible-to-Rigid Bonds | Relevant für CA auf Gummi/Elastomere | `measured` |
+| ISO 11339 | T-Peel Test für flexibel-flexibel-Verbindungen | Relevant für CA auf Gummi/Elastomere | `measured` |
 | DNV-OS-C501 | Composite Components | FRP-Verklebung auf Schiffen | `measured` |
 | Lloyd's Register Rules | Structural Adhesive Bonding | Klassifikationsanforderungen | `measured` |
 | ABS Guide | Fiber-Reinforced Plastics | CA als Hilfsmittel bei FRP-Reparatur | `measured` |
@@ -3722,7 +3724,7 @@ class BondJointForensics(BaseModel):
 | MAK | Maximale Arbeitsplatzkonzentration | 0,2 ppm für Ethyl-2-CA | `measured` |
 | MMA | Methylmethacrylat | Acrylat-Strukturkleber (Alternative zu CA) | `measured` |
 | NPG | Neopentylglykol | Premium-Gelcoat-Basis, gut klebbar | `measured` |
-| OSHA PEL | Occupational Exposure Limit | 2 ppm (USA), strenger als MAK | `measured` |
+| OSHA PEL | Occupational Exposure Limit | 2 ppm (USA) — siehe Audit-Hinweis unten | `estimated — unverifiziert` |
 | Peel Strength | Schälfestigkeit | N/mm, kritisch für flexible Verbindungen | `measured` |
 | Polymerisation (anionisch) | Kettenreaktion von CA-Monomeren | Grundmechanismus aller CA-Kleber | `measured` |
 | Primer | Vorbehandlungsmittel für schwierige Substrate | 770 (PE/PP), 768 (Silikon), 7471 (allgemein) | `measured` |
@@ -3737,6 +3739,8 @@ class BondJointForensics(BaseModel):
 | Viskosität | Fließwiderstand in mPa·s (cP) | 1–5 dünn, 20–100 mittel, >500 gel | `measured` |
 | Weichmacher-Migration | Wanderung von Weichmachern aus PVC | Zerstört CA-Klebfuge auf Weich-PVC | `measured` |
 | Ziegler-Polymerisation | Koordinative Polymerisation | Nicht relevant für CA (rein anionisch) | `measured` |
+
+> ⚠️ **ZU PRÜFEN (Audit):** OSHA hat für Ethyl-2-Cyanacrylat keinen substanzspezifischen PEL veröffentlicht — der Wert „2 ppm (USA)" ist nicht belegbar. Zudem ist „strenger als MAK" logisch falsch: 2 ppm ist höher (= weniger streng) als der MAK/TLV von 0,2 ppm (siehe Zeile MAK). Belegter Wert: ACGIH TLV 0,2 ppm TWA / 1 ppm STEL.
 
 ---
 

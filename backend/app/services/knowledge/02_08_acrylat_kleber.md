@@ -251,6 +251,8 @@ Für die Verklebung von PMMA (Plexiglas, Perspex, Acrylite) und Polycarbonat (Ma
 | Temperaturbereich | -55 bis +150°C |
 | Einsatz | Höchstbelastete Strukturverklebungen, Kiel-Fin, Keel-to-Hull |
 
+> ⚠️ **ZU PRÜFEN (Audit):** Mischverhältnis **1:1** (hier, ebenso Tab. 11.1 und Anhang A) vs. **2:1** (Anhang O „MA832-Detaildatenblatt" und Praxis-Tipp 28) — interner Widerspruch bei einem lastkritischen Parameter. Hersteller-TDS (ITW Performance Polymers) nennt für MA832 tatsächlich **10:1 (Vol.)**, Bruchdehnung **30–60 %**, Verarbeitungszeit **~12–16 min** — beide dokumentinternen Mischverhältnisse sind damit unverifiziert (ein falsches Mischverhältnis führt zu Bindungsversagen). Auch die Mechanik-Charakterisierung hier („höchste Festigkeit, Bruchdehnung 15–25 %, E-Modul 1200 MPa") widerspricht Anhang O („100–200 %, E-Modul 150–250 MPa"). Vor Verwendung Mischverhältnis am aktuellen TDS verifizieren. Confidence: estimated — unverifiziert.
+
 > **Experten-Zitat #3** — ITW Plexus Marine Application Guide:
 > „MA832 is our highest performance marine adhesive. It combines the toughness of MMA with the temperature resistance of epoxy. It is specified by leading superyacht builders for keel-fin bonding, rudder post attachment, and critical structural joints."
 
@@ -384,6 +386,8 @@ Für die Verklebung von PMMA (Plexiglas, Perspex, Acrylite) und Polycarbonat (Ma
 | Besonderheit | Transparente Klebefuge, Festigkeit > PMMA-Grundmaterial |
 | Gebindegrößen | 1,5 oz Kit (mit Mischer), 5 oz Kit |
 | Preis (1,5 oz Kit) | $15–22 |
+
+> ⚠️ **ZU PRÜFEN (Audit):** Mischverhältnis Weld-On 40 **25:1** (hier) vs. **5:1** (Anhang P, WO40-Detaildatenblatt) — interner Widerspruch, lastkritisch. Hersteller-TDS (IPS/SCIGRIP) nennt **20:1** (100 Teile A : 5 Teile B, Vol./Gew.). „5:1" (Anhang P) bedeutet die 4-fache Härtermenge und ist gefährlich falsch. Dieselbe Diskrepanz betrifft Weld-On 42 (§3.2.5: 25:1 vs. Anhang P: 5:1). Vor Verwendung Mischverhältnis am aktuellen TDS verifizieren. Confidence: estimated — unverifiziert.
 
 #### 3.2.5 Weld-On 42
 
@@ -1323,8 +1327,8 @@ Für die Verklebung von PMMA (Plexiglas, Perspex, Acrylite) und Polycarbonat (Ma
 |------|--------|------------------|
 | ISO 4587 | Scherfestigkeit Klebstoffe | Hauptprüfverfahren |
 | ISO 6922 | Zugfestigkeit Klebstoffe | Prüfverfahren |
-| ISO 11003 | Schälfestigkeit | Prüfverfahren |
-| ISO 9664 | Schlagschälfestigkeit | Prüfverfahren |
+| ISO 11339 | Schälfestigkeit (T-Peel) | Prüfverfahren |
+| ISO 11343 | Schlagschälfestigkeit (Schlag-Keil-Verfahren) | Prüfverfahren |
 | EN 2243 | Luft-/Raumfahrt Klebstoffe | Hochleistungsverklebung |
 | ISO 12215-6 | Rumpf-Konstruktion Strukturverbindungen | Klebefugen-Dimensionierung |
 | ISO 14126 | Druckfestigkeit Composit | Begleitnorm |
@@ -2072,6 +2076,8 @@ class AcrylatFinalAssessment(BaseModel):
 | Verpackung | 50ml, 400ml, 490ml Doppelkartusche | — |
 | Mischrohr | MA-Serie Statikmischer | — |
 
+> ⚠️ **ZU PRÜFEN (Audit):** Die Verarbeitungs-/Aushärtezeiten dieses Anhang-O-Blatts widersprechen dem Haupttext §2.2. Beispiel MA300: „Offene Zeit 18–24 min / Handhabungsfest 35–50 min" hier vs. „Topfzeit 4–6 min / Handhabungsfestigkeit 8–12 min" in §2.2.1 (und Tab. 11.1: 4 min). Der Hersteller-TDS (ITW) bestätigt MA300 als Schnellkleber (Verarbeitungszeit **3–6 min**) — die Anhang-O-Zeiten für MA300 sind also falsch. Weitere Anhang-O-Blätter dieser Serie weichen analog ab (z.B. MA420 hier „schnellhärtend, 8–12 min" vs. §2.2.3 „langsam, 20–30 min"). Anhang-O-Kennwerte nicht als „measured" behandeln. Confidence: estimated — unverifiziert.
+
 > **Experten-Zitat (E41):** „Plexus MA300 ist der Workhorse-Kleber im Marine-Composite-Bau — nicht der schnellste, nicht der stärkste, aber der zuverlässigste Allrounder bei normalen Spaltmaßen bis 6mm." — *James Connolly, ITW Plexus Senior Application Engineer, Marine Technology Seminar 2023*
 
 ### Plexus MA310 — Detaildatenblatt
@@ -2235,6 +2241,8 @@ class AcrylatFinalAssessment(BaseModel):
 | Mischrohr | MR-832 Statikmischer (2:1) | — |
 | Zulassungen | Lloyd's, DNV-GL, ABS Marine Type Approval | — |
 
+> ⚠️ **ZU PRÜFEN (Audit):** Dieses Detaildatenblatt widerspricht dem Haupttext §2.2.7: Mischverhältnis **2:1** hier vs. **1:1** dort; Bruchdehnung **100–200 %** hier vs. **15–25 %** dort; E-Modul **150–250 MPa** hier vs. **1200 MPa** dort; Verarbeitungszeit **30–40 min** hier vs. **55–75 min** dort. Hersteller-TDS (ITW) nennt **10:1 (Vol.)**, Bruchdehnung **30–60 %**, Verarbeitungszeit **~12–16 min** — beide Dokumentversionen sind unverifiziert. Mischverhältnis vor Verwendung am aktuellen TDS prüfen. Confidence: estimated — unverifiziert.
+
 > **Experten-Zitat (E47):** „MA832 ist das Flaggschiff — die MMA-Urethan-Hybridchemie gibt dir die höchste Bruchdehnung (200%) und Schälfestigkeit in der ganzen Plexus-Linie. Das zahlt sich aus bei Carbon/Epoxid-Verklebungen wo die unterschiedlichen Wärmeausdehnungskoeffizienten die Klebefuge stressen." — *Dr. Michael Chen, MIT Sea Grant Composites Lab, SAMPE Conference 2024*
 
 ---
@@ -2326,6 +2334,8 @@ class AcrylatFinalAssessment(BaseModel):
 | Geeignete Substrate | PMMA, PS, ABS | — |
 | GHS | H225, H315, H319, H335 | CLP |
 | Verpackung | Doppelkartusche 50ml, 200ml | — |
+
+> ⚠️ **ZU PRÜFEN (Audit):** Mischverhältnis **5:1** hier widerspricht §3.2.4 (**25:1**). Hersteller-TDS (IPS/SCIGRIP) nennt Weld-On 40 = **20:1** (100 : 5). „5:1" ist gefährlich falsch (4-fache Härtermenge). Vor Verwendung am aktuellen TDS verifizieren. Confidence: estimated — unverifiziert.
 
 > **Experten-Zitat (E51):** „Weld-On 40 ist der einzige Klebstoff der optisch in Acrylglas ‚verschwindet' — gleicher Brechungsindex wie PMMA. Für Vitrinen und Display-Fenster auf Superyachten unersetzlich. Nachteil: kurze Offenzeit, nicht für große Flächen." — *Marco Visconti, Feadship Interior Finishing Supervisor, 2024*
 
@@ -2913,7 +2923,7 @@ class AcrylatFinalAssessment(BaseModel):
 | ASTM B117 | Salt Spray Test | Salzsprühnebel-Beständigkeit |
 | ASTM D2196 | Brookfield Viscosity | Viskositätsmessung |
 | ASTM D792 | Density by Displacement | Dichtemessung |
-| ISO 9664 | Structural Adhesives — Test Specimens | Probekörper-Geometrie |
+| ISO 9664 | Adhesives — Fatigue Properties in Tensile Shear | Ermüdungsprüfung Strukturklebstoffe |
 | ISO 4587 | Adhesives — Lap Shear | EU-Pendant zu ASTM D1002 |
 | ISO 11003-2 | Adhesives — Thick Adherend Shear | Dickschicht-Schertest |
 | ISO 11343 | Adhesives — Wedge Impact | Schlagschälfestigkeit |

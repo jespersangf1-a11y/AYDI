@@ -778,7 +778,7 @@ Abreißgewebe (Peel Ply) wird direkt auf das Laminat gelegt und nach Aushärtung
 |-------------|------|------|
 | Kette | 160 Fäden/inch (nominal) | — |
 | Schuss | 103 Picks/inch (nominal) | — |
-| Gewicht | 1,85 oz/yd² (62,7 g/m²) | ASTM D3775 |
+| Gewicht | 1,85 oz/yd² (62,7 g/m²) | ASTM D3776 |
 | Finish | Entschlichtet, wärmegesetzt | — |
 | Breite | 155 cm (61") nominal | — |
 | Lagerung | Trocken, <30°C | — |
@@ -883,7 +883,7 @@ Die Fließhilfe ist das **Herzstück der Vakuuminfusion**. Sie leitet das Harz h
 | Harzkompatibilität | Polyester, Vinyl-Ester, Epoxid |
 | Wiederverwendbar | Nein (Einweg) |
 | Rollenlänge | Standard: 100 m (330 ft) |
-| Schmelztemperatur | 161°C (230°F) |
+| Schmelztemperatur | 161°C (322°F) |
 | Dauertemperatur | 150°C max |
 | Franst nicht beim Schneiden | ✅ Ja |
 
@@ -2572,7 +2572,7 @@ Membranpumpen sind **ölfrei** und kontaminieren das Vakuumsystem nicht. Ideal f
 | ASTM D374 | Dicke Folien | Vakuumfolien |
 | ASTM D1922 | Einreißfestigkeit | Vakuumfolien |
 | ASTM E96 | Wasserdampfdurchlässigkeit | Vakuumfolien |
-| ASTM D3775 | Gewebegewicht | Peel Ply |
+| ASTM D3776 | Gewebegewicht | Peel Ply |
 
 ---
 
@@ -3059,12 +3059,12 @@ ergebnis = harzverbrauch_infusion(
 )
 # Ergebnis:
 # faser_gewicht_kg: 54.0
-# harz_netto_kg: 40.4
-# harz_netto_L: 35.2
-# verschnitt_kg: 4.0
-# fliess_verlust_kg: 2.0
-# sicherheit_kg: 4.0
-# harz_gesamt_kg: 50.5
+# harz_netto_kg: 20.0
+# harz_netto_L: 17.4
+# verschnitt_kg: 2.0
+# fliess_verlust_kg: 1.0
+# sicherheit_kg: 2.0
+# harz_gesamt_kg: 25.0
 ```
 
 ### A.2 Pumpen-Dimensionierung

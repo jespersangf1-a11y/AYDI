@@ -1270,10 +1270,12 @@ A: PREN = Pitting Resistance Equivalent Number = %Cr + 3.3×%Mo + 16×%N. Es ist
 | EN 10088 | Nichtrostende Stähle — Teile 1–5 | Europäische Edelstahl-Norm |
 | ISO 8501-1 | Oberflächenreinheitsgrade (Strahlen) | Oberflächen-Vorbereitung |
 | ISO 3506 | Mechanische Eigenschaften von Verbindungselementen aus Edelstahl | Schrauben/Bolzen |
-| NACE SP0487 | Considerations in Selecting Materials for Marine Environments | Materialauswahl Marine |
+| NACE SP0487 | Selection/Evaluation of Rust Preventives & VCI for Interim (Temporary) Corrosion Protection | ⚠️ ZU PRÜFEN — temporärer Korrosionsschutz, NICHT Marine-Materialauswahl (s. Hinweis unter Tabelle) |
 | NACE MR0175 | Sulfide Stress Cracking Resistant Materials | SCC-Beständigkeit |
 
-<!-- Confidence: measured — Normenverzeichnis geprüft -->
+> ⚠️ **ZU PRÜFEN (Audit):** NACE SP0487 trägt tatsächlich den Titel „Considerations in the Selection and Evaluation of Rust Preventives and Vapor Corrosion Inhibitors for Interim (Temporary) Corrosion Protection" — also temporärer Korrosionsschutz (Rostschutzmittel/VCI), NICHT Materialauswahl für Meerwasser. Die im Haupttext (Kap. 1.4, 12.2, 12.3) und in den Literaturlisten unter dieser Normnummer zitierte „Marine-Materialauswahl / Kriterien für Meerwasser" ist mit NACE SP0487 NICHT belegt — die korrekte Normquelle ist unverifiziert (estimated — unverifiziert).
+
+<!-- Confidence: measured — Normenverzeichnis geprüft; Ausnahme NACE SP0487 s. Audit-Hinweis oben -->
 
 ### 19.7 Sicherheitsdatenblätter — Zusammenfassung
 
@@ -2869,8 +2871,8 @@ Chlorbleiche (Domestos, Eau de Javel) zerstört die Passivschicht! Für Desinfek
 | Zitronensäure (Passivierung) | 77-92-9 | GHS05 (Ätzend) | H319 | P264, P280, P305+P351+P338 | `measured` |
 | Salpetersäure 20–30% (Passivierung) | 7697-37-2 | GHS03, GHS05, GHS07 | H272, H314 | P220, P280, P301+P330+P331 | `measured` |
 | Fluorwasserstoff / HF (Beizpaste!) | 7664-39-3 | GHS06, GHS05, GHS08 | H300+H310+H330, H314 | P260, P264, P280, P284 | `measured` |
-| Phosphorsäure 10–25% (BKF) | 7664-38-2 | GHS05 | H290, H314 | P280, P301+P330+P331 | `measured` |
-| Oxalsäure (manche Reiniger) | 144-62-7 | GHS07 | H302, H312 | P264, P270, P280 | `measured` |
+| Phosphorsäure 10–25% (z.B. 3M Marine, Ospho) | 7664-38-2 | GHS05 | H290, H314 | P280, P301+P330+P331 | `measured` |
+| Oxalsäure (BKF, manche Reiniger) | 144-62-7 | GHS07 | H302, H312 | P264, P270, P280 | `measured` |
 | Natriumhydroxid (alkalische Reiniger) | 1310-73-2 | GHS05 | H290, H314 | P260, P280, P301+P330+P331 | `measured` |
 | Kaliumferricyanid (Ferroxyl-Test) | 13746-66-2 | GHS07 | H302, H332 | P261, P264, P270 | `measured` |
 | Kupfersulfat (CuSO₄-Test) | 7758-98-7 | GHS07, GHS09 | H302, H315, H318, H410 | P273, P280, P305+P351+P338 | `measured` |
@@ -3707,7 +3709,7 @@ START: Bräunliche Verfärbung auf Edelstahl?
 <!-- Confidence: measured — PREN-Berechnung + Schadensstatistik -->
 
 ### FAQ-M03: „Man kann Edelstahl mit Chlorreiniger putzen"
-**GEFÄHRLICH FALSCH.** Chlor (Hypochlorit) enthält Chlorid-Ionen, die die Passivschicht DIREKT angreifen. Chlorreiniger auf Edelstahl = Pitting-Einladung. Stattdessen: Zitronensäure, Phosphorsäure (BKF), oder pH-neutrale Reiniger.
+**GEFÄHRLICH FALSCH.** Chlor (Hypochlorit) enthält Chlorid-Ionen, die die Passivschicht DIREKT angreifen. Chlorreiniger auf Edelstahl = Pitting-Einladung. Stattdessen: Zitronensäure, Oxalsäure (BKF), oder pH-neutrale Reiniger.
 
 <!-- Confidence: measured — Elektrochemie + Schadensfälle -->
 

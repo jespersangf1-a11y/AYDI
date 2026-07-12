@@ -1221,6 +1221,8 @@ Wenn A4-Bolzen durch Aluminium-Beschlag oder Aluminium-Backing-Plate gehen:
 | **M24** | 600 | 172 | 36 |
 | **M30** | 1200 | 274 | 46 |
 
+> ⚠️ **ZU PRÜFEN (Audit):** Diese Tabelle (A4-70, µ=0,14) widerspricht ANHANG A.1 bei gleichem Material und gleicher Reibungszahl — siehe ausführlichen Warnhinweis unter Tabelle 17.2. Die hier genannten Werte entsprechen TROCKEN-Anzugsmomenten und ergeben Vorspannkräfte über der Streckgrenze; bei Schmierung mit Tef-Gel drohen Überspannung/Bruch. **Confidence: estimated — unverifiziert.**
+
 ### 17.2 Allgemeine Drehmoment-Tabelle A4-80
 
 | Bolzen-Ø | Drehmoment (Nm) µ=0,14 | Vorspannkraft (kN) | Schlüsselweite (mm) |
@@ -1235,6 +1237,8 @@ Wenn A4-Bolzen durch Aluminium-Beschlag oder Aluminium-Backing-Plate gehen:
 | **M20** | 450 | 154 | 30 |
 | **M24** | 780 | 224 | 36 |
 | **M30** | 1550 | 355 | 46 |
+
+> ⚠️ **ZU PRÜFEN (Audit):** Die Drehmoment-/Vorspannwerte in 17.1 (A4-70) und 17.2 (A4-80) widersprechen ANHANG A (A.1/A.2) bei GLEICHEM Material und GLEICHER Reibungszahl (µ=0,14). Beispiel M10: 17.1 = 41 Nm / 28,2 kN vs. A.1 = 28,4 Nm / 19,7 kN; 17.2 = 54 Nm / 37,0 kN vs. A.2 = 37,6 Nm / 26,1 kN. Die Werte in 17.1/17.2 entsprechen TROCKEN-Anzugsmomenten (Referenz Fastenal/Optimas: A2/A4 trocken M10 ≈ 42 Nm, M12 ≈ 73 Nm, M16 ≈ 180 Nm) und ergeben rechnerisch Vorspannkräfte OBERHALB der Streckgrenze (M10 A4-70: 28,2 kN > Rp0,2·As = 450 MPa · 58 mm² = 26,1 kN; M10 A4-80: 37,0 kN > 34,8 kN). Mit Tef-Gel (µ ≈ 0,14) führen diese Momente zur ÜBERSPANNUNG bzw. zum Bruch des Bolzens. Bis zur Klärung sind die niedrigeren, mit Standardreferenzen übereinstimmenden Werte aus ANHANG A maßgeblich. **Confidence beider Tabellen: estimated — unverifiziert.**
 
 ### 17.3 Einfluss der Reibungszahl auf das Drehmoment
 

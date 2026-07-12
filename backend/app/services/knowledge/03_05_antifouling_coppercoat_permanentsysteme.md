@@ -2377,7 +2377,7 @@ Ja! Die besten Ergebnisse kommen oft von Kombinationen: Coppercoat + Ultraschall
 | **Zeitraum** | 2022–2024 |
 | **Stichprobe** | 4 identische Bavaria C38, je 1 System: Shipsonic S4, Ultraguard 4, Sonihull SH4, Hasytec S4 |
 | **Methode** | Monatliche Unterwasser-Inspektion, identisches konv. AF auf allen 4 |
-| **Ergebnis** | Biofilm-Reduktion: Hasytec 80%, Shipsonic 75%, Ultraguard 70%, Sonihull 60%. Seepocken-Reduktion: alle 30–45%. Stromverbrauch: Sonihull am niedrigsten (6W), Hasytec am höchsten (10W). Alle Systeme reduzieren Wartungsaufwand messbar |
+| **Ergebnis** | Biofilm-Reduktion: Hasytec 80%, Shipsonic 75%, Ultraguard 70%, Sonihull 60%. Seepocken-Reduktion: alle 30–45%. Stromverbrauch: Sonihull am niedrigsten (6W), Shipsonic am höchsten (12W). Alle Systeme reduzieren Wartungsaufwand messbar |
 | **Schlussfolgerung** | Alle 4 Systeme funktionieren — Hasytec und Shipsonic haben leichten Performance-Vorteil durch breiteren Frequenzbereich |
 
 > Confidence: `documented`
@@ -3454,7 +3454,9 @@ Nur UNGEMISCHTE Komponenten! Harz und Härter separat: 24 Monate haltbar bei 5�
 
 Richtwert: ~1,5–2,0 kg/m² (5–6 Schichten, fertig ausgehärtet). Für ein 12m Boot mit 25 m² UW-Fläche: ~40–50 kg Zusatzgewicht. Zum Vergleich: Konventionelles AF: ~0,5–1,0 kg/m² pro Saison (wird aber jährlich erneuert/aufgebaut).
 
-> Confidence: `measured`
+> ⚠️ **ZU PRÜFEN (Audit):** Flächengewicht ~1,5–2,0 kg/m² vs. dokumentinterne Kennwerte Dichte 2,1 g/cm³ (Abschnitt 2.2) und Trockenschichtdicke 250–300 µm (Abschnitte 2.2/K.4) — daraus errechnet sich nur ~0,53–0,63 kg/m². Die drei Werte sind nicht widerspruchsfrei; korrektes reales Flächengewicht nicht zweifelsfrei belegbar (kein verifizierter TDS-Wert). Nicht geraten.
+
+> Confidence: `estimated — unverifiziert`
 
 ### R.7 FAQ 62: Ecospeed — Kann ich das auf einem kleinen Boot (8m) verwenden?
 

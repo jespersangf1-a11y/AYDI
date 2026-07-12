@@ -199,6 +199,8 @@ class WestSystemFairingMix(BaseModel):
 | **422 Barrier Coat Additive** | Speziell für Osmoseschutz | — | Barrier Coat Mischung | Spezial-Barrier | ★★★☆☆ | ✅ Ja (Zweck!) |
 | **423 Graphite Powder** | Graphit | 2.2 g/cm³ | Gleiteigenschaften | Schwarz, glatt | ★★☆☆☆ | ✅ Ja |
 
+> ⚠️ **ZU PRÜFEN (Audit):** „408 Adhesive Filler (Baumwollflocken)" und „409 Microsphere Blend" sind keine realen West-System-Artikelnummern. Das offizielle West-System-Füllstoffsortiment umfasst 403, 404, 405, 406, 407, 410, 420, 422, 423 (Quelle: westsystem.com / eu.westsystem.com „Filler Selection Guide"). Artikelnummern vor Verwendung verifizieren — betrifft auch Abschnitt 1.3 (Eintrag „Baumwollflocken → West System 408"). Confidence dieser beiden Einträge: „documented" → „estimated — unverifiziert".
+
 > **„Das West System ist wie LEGO für den Bootsbauer: Ein Harz, verschiedene Härter, verschiedene Füllstoffe — endlose Kombinationen für jede Anwendung. Das ist seine Stärke und seine Schwäche: Der Anwender muss wissen, was er mischt."**
 > — Gougeon Brothers, „The Gougeon Brothers on Boat Construction", 5th Edition
 

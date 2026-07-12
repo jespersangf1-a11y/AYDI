@@ -886,7 +886,7 @@ Ein Strainer (Rohwasserfilter) sitzt zwischen Seeventil und Verbraucher (Motor, 
 
 **Midland 945 Seeventile (Kugelhahn-Serie, Direktvergleich mit GROCO BV):**
 
-| Merkmal | Midland 945-075 (3/4") | GROCO BV-500-N (3/4") |
+| Merkmal | Midland 945-075 (3/4") | GROCO BV-750 (3/4") |
 |---------|----------------------|----------------------|
 | Material | C83600 Bronze | C83600 Bronze |
 | Kugel-Durchmesser | 25,4 mm (1") | 25,4 mm (1") |
@@ -924,7 +924,7 @@ Ein Strainer (Rohwasserfilter) sitzt zwischen Seeventil und Verbraucher (Motor, 
 
 | Hersteller | Modell | Typ | Preis USD | Verfügbarkeit EU |
 |------------|--------|-----|-----------|-----------------|
-| GROCO | BV-500-N | Kugelhahn | $140–$180 | Sehr gut |
+| GROCO | BV-750 | Kugelhahn | $140–$180 | Sehr gut |
 | Midland | 945-075 | Kugelhahn | $95–$120 | Gut |
 | Vetus | SV03 | Kugelhahn (BSP) | €65–€85 | Sehr gut |
 | Guidi | 1160-OT (BSP) | Kugelhahn | €52–€70 | Sehr gut |
@@ -1211,7 +1211,7 @@ Marelon ist der Markenname für glasfaserverstärktes Nylon (Polyamid), das von 
 | Zinn (Sn) | 9% | 5% |
 | Zink (Zn) | 3% | 5% |
 | Phosphor (P) | 0,05% | Spuren |
-| Blei (Pb) | <0,05% | <0,05% |
+| Blei (Pb) | <0,05% | 5% |
 
 **Resultat:** Gunmetal ist **härter** (höherer Zinn-Anteil), **weniger anfällig** für Dezinkifizierung (nur 3% Zink), aber **teurer** in der Herstellung.
 
@@ -2213,7 +2213,7 @@ UNTERSCHRIFT: ____________________  Zertifikat-Nr.: _______
 
 **FALL 5: Miss Conduct (Sydney 38, Australien, 2010–2022)**
 - **Problem:** Nach 12 Jahren Süßwasser + Brackwasser (Murray River, Gippsland Lakes) zeigten Seeventile KEINE Dezinkifizierung, aber O-Ring-Verschleiß war evident.
-- **Diagnose:** GROCO BV-500 (Bronze) hatte intakte Kugel und Konus, aber PTFE-Sitze waren hart und verschlissen (10–12 Jahre Süßwasser ohne Wartung).
+- **Diagnose:** GROCO BV-750 (Bronze) hatte intakte Kugel und Konus, aber PTFE-Sitze waren hart und verschlissen (10–12 Jahre Süßwasser ohne Wartung).
 - **Lösung:** Rebuild-Kits (PTFE-Sitze + O-Ringe) für alle Ventile: €22/Kit × 4 Ventile = €88. DIY-Ausbau und Rebuild in 4 Stunden.
 - **Ergebnis:** Ventile seither 2 Jahre problemfrei.
 - **Lesson:** In Süßwasser können Ventile länger halten, aber PTFE verschleißt trotzdem — Rebuild ist oft billiger als Neukauf.
@@ -2725,7 +2725,7 @@ def analyze_bronze_fittings(boat_specs, photos):
       "nominal_size": "3/4",
       "seacock_type": "ball_valve",
       "manufacturer": "GROCO",
-      "model": "BV-500-N",
+      "model": "BV-750",
       "age_years": 8,
       "operable": true,
       "dezincification_detected": false,
@@ -2784,7 +2784,7 @@ def analyze_bronze_fittings(boat_specs, photos):
 
 | Hersteller + Modell | Material | Größe | Preis EUR (approx) | Verfügbarkeit EU | Lead Time | Quelle |
 |------------------|---------|-------|-----------------|---------|----------|--------|
-| **GROCO BV-500-N** | C83600 | 3/4" NPT | €135–€165 | Mittel (Import) | 2–4 Wochen | West Marine, Jamestown |
+| **GROCO BV-750** | C83600 | 3/4" NPT | €135–€165 | Mittel (Import) | 2–4 Wochen | West Marine, Jamestown |
 | **Midland 945-075** | C83600 | 3/4" NPT | €95–€120 | Mittel (Import) | 2–4 Wochen | West Marine, SVB |
 | **Perko 051-075** | C83600 | 3/4" NPT | €110–€140 | Mittel (Import) | 2–4 Wochen | West Marine |
 | **Apollo 70-100** | C83600 | 3/4" NPT | €60–€80 | Begrenzt | 4–6 Wochen | eBay, Salvage |

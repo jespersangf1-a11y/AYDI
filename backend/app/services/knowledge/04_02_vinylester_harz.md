@@ -2034,11 +2034,13 @@ class OsmoseSanierungsProtokoll(BaseModel):
 
 | Produkt | Styrolgehalt % | Viskosität mPa·s (25°C) | HDT °C | Zugfestigkeit MPa | Bruchdehnung % | Barcol | Einsatzgebiet Marine | Confidence |
 |---|---|---|---|---|---|---|---|---|
-| **Derakane 411-350** | 45 | 350 | 104 | 86 | 5.0 | 35 | Standard-Barrier, Skin-Coat, Osmose-Schutz | `measured` |
+| **Derakane 411-350** | 45 | 350 | 104 | 86 | 5.0 | 35 | Standard-Barrier, Skin-Coat, Osmose-Schutz | `estimated — unverifiziert` |
 | **Derakane 411-C-50** | 50 | 200 | 100 | 82 | 4.5 | 33 | RTM-Verfahren, dünnflüssig | `measured` |
 | **Derakane 411-45** | 45 | 450 | 105 | 88 | 5.2 | 36 | Hand-Laminat, Standardviskosität | `measured` |
 | **Derakane 411-350 EPA** | 42 | 380 | 104 | 86 | 5.0 | 35 | Low-Emission, reduzierter Styrolgehalt | `measured` |
 | **Derakane 411-350 HT** | 45 | 350 | 120 | 90 | 4.8 | 38 | Hochtemperatur-Einsatz, Maschinenraum | `measured` |
+
+> ⚠️ **ZU PRÜFEN (Audit):** Derakane 411-350 wird hier mit Zugfestigkeit **86 MPa** / HDT **104 °C** angegeben — das widerspricht dem Primär-Datenblatt in §4.2/§4.3 (**82 MPa** / HDT **112 °C @0,45 MPa** / Wasseraufnahme 24h **0,12 %**) sowie der Benchmark-Tabelle §61.1 und Tabelle §70; §61.1 nennt zusätzlich Wasseraufnahme 24h **0,08 %**. Alle Angaben tragen `measured`, obwohl sie sich gegenseitig ausschließen. Reale INEOS-TDS (Derakane 411-350): Zugfestigkeit ≈ **83 MPa** (12.000 psi, ASTM D638), Zug-E-Modul ≈ 3,0 GPa, HDT ≈ **100–105 °C @1,8 MPa** (ASTM D648) bzw. höher bei 0,45 MPa. Kein interner Wert ist zweifelsfrei belegbar (Streuung ±3–4 MPa bzw. je nach HDT-Prüflast) — Confidence der Derakane-411-350-Zeile daher auf `estimated — unverifiziert` zurückgestuft. Quelle: INEOS/Ashland Derakane 411-350 TDS (ulprospector.com; ineos.com).
 
 <!-- model_config = {"from_attributes": True} — Pydantic v2 -->
 
@@ -2107,7 +2109,7 @@ class OsmoseSanierungsProtokoll(BaseModel):
 | Komponente | Anteil | Produkt-Beispiel | Confidence |
 |---|---|---|---|
 | **VE-Harz (Low-Visc)** | 100 Teile | Derakane 411-C-50 | `measured` |
-| **MEKP-Härter** | 1.2 Teile | Luperox DHD-9 (Arkema) | `measured` |
+| **MEKP-Härter** | 1.2 Teile | Luperox DDM-9 (Arkema) | `measured` |
 | **Kobalt-Beschleuniger** | 0.15 Teile | Akzo NL-49P | `measured` |
 | **DMA (Dimethylanilin)** | 0.05 Teile | Optional, kalte Werkstatt | `measured` |
 | **Topfzeit** | 45–60 min bei 20°C | Verlängert für Infusion | `measured` |

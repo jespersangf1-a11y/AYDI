@@ -103,7 +103,7 @@ Galling (Kaltverschweißung, Festfressen) ist ein Phänomen bei austenitischen E
 | Anwendungsfall | 1. Wahl | 2. Wahl | NICHT verwenden | Grund |
 |---------------|---------|---------|-----------------|-------|
 | Edelstahl-Schraube in Alu-Profil | Tef-Gel | Duralac | Kupferpaste | Kupfer fördert Alu-Korrosion |
-| Edelstahl-Schraube in Edelstahl-Mutter | Loctite 8150 (Kupfer) | Tef-Gel | Nichts (Galling!) | Kupfer ideal gegen Galling |
+| Edelstahl-Schraube in Edelstahl-Mutter | Loctite 8008 (Kupfer) | Tef-Gel | Nichts (Galling!) | Kupfer ideal gegen Galling |
 | Kielbolzen (Edelstahl in Blei/GFK) | Tef-Gel + Sikaflex | Duralac + Sikaflex | Kupferpaste | Galvanische Isolation nötig |
 | Propellerwelle (Edelstahl/Bronze) | Lanocote | Tef-Gel | MoS₂ in Seewasser | MoS₂ korrodiert in Salzwasser |
 | Ankerketten-Schäkel | Tef-Gel | Lanocote | Nichts | Regelmäßige Demontage nötig |
