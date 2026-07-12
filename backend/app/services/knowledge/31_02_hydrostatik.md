@@ -846,3 +846,354 @@ def evaluate_iso_12217_compliance(
 
 **Datei abgeschlossen.**  
 Kat 31.02 Hydrostatik — Version 1.0 — 2025-01
+
+---
+---
+
+# ERGÄNZUNG Version 1.1 (2026-07) — Werft-Tiefe: dokumentierte Hydrostatik-Grundgrößen
+
+> **Hinweis zur Ergänzung:** Der Bestand oben (Abschnitte 1–10) bleibt unverändert. Die folgenden Abschnitte 11–19 ergänzen die im Bestand fehlenden **klassischen Hydrostatik-Grundgrößen** (Wasserlinienfläche, Formkoeffizienten, LCB/LCF, TPC, MCT, KB/BM/KM/GM) mit **web-verifizierten, quellenbelegten** Definitionen und Formeln. Jede faktische Angabe trägt eine Quelle und ein Confidence-Tag.
+>
+> **Kernregel dieser Ergänzung:** Es werden **keine** yacht-spezifischen Zahlenwerte, Rechenbeispiele oder Grenzwerte erfunden. Wo eine Formel/Definition dokumentiert ist, steht sie mit Quelle. Wo nur ein Prinzip belegbar ist, steht das Prinzip — quantitative Beispiele, die nicht zweifelsfrei belegbar sind, werden als `estimated — unverifiziert` markiert oder weggelassen.
+
+---
+
+## 11. Normativer Rahmen — Terminologie & Bemessungsgrundlagen
+
+Für Hydrostatik/Stabilität von Sportbooten sind drei ISO-Normfamilien einschlägig. Nummer + Titel + Scope sind einzeln verifiziert:
+
+| Norm | Titel (verbatim) | Scope (Kurz) |
+|------|------------------|--------------|
+| **ISO 7462:1985** | *Shipbuilding — Principal ship dimensions — Terminology and definitions for computer applications* | Legt Terminologie und Definitionen für die Hauptabmessungen und daraus abgeleitete (dimensionslose) Formkoeffizienten zur Beschreibung des Rumpfs und seiner hydrostatischen Zustände fest. |
+| **ISO 8666:2020** | *Small craft — Principal data* | Definitionen der Hauptabmessungen und zugehöriger Daten sowie der Massespezifikationen und Beladungszustände. Gilt für Boote mit Rumpflänge **L_H ≤ 24 m**. |
+| **ISO 12217 (Teil 1/2/3)** | *Small craft — Stability and buoyancy assessment and categorization* | Verfahren zur Bewertung von Stabilität/Auftrieb intakter Boote und Zuweisung der Entwurfskategorie A/B/C/D. **Teil 1:** Nicht-Segelboote L_H ≥ 6 m · **Teil 2:** Segelboote L_H ≥ 6 m · **Teil 3:** Boote L_H < 6 m. |
+
+> Quellen: [ISO 7462:1985 (iso.org)](https://www.iso.org/standard/14197.html) · [ISO 8666:2020 (iso.org)](https://www.iso.org/standard/79071.html) · [ISO 12217-1:2022 (iso.org)](https://www.iso.org/standard/79072.html) · [ISO 12217-2:2022 (iso.org)](https://www.iso.org/standard/79073.html) · [ISO 12217-3:2022 (iso.org)](https://www.iso.org/standard/79074.html) | Confidence: **documented**
+
+**Wichtige Abgrenzung (Audit-relevant):**
+- **ISO 7462** ist die *Definitions-/Terminologienorm* für Hauptabmessungen und Formkoeffizienten (die Sprache, in der Hydrostatik-Größen benannt werden).
+- **ISO 8666** legt fest, *welche* Abmessungen und *welche* Beladungszustände (u. a. der beladene Verdrängungszustand `m_LDC`) für Sportboote gelten — d. h. mit welcher Verdrängung die Hydrostatik gerechnet wird.
+- **ISO 12217** ist die *Bewertungsnorm* (Stabilitätskriterien, Kategorisierung). Sie ist **Stabilität/Auftrieb** — nicht Struktur (Struktur = ISO 12215, siehe CLAUDE.md).
+
+> ⚠️ ZU PRÜFEN (Audit): Die konkreten GZ-/RA-Zahlengrenzwerte in **Bestands-Abschnitt 2.3** (z. B. „GZ @ 30° ≥ 0,20 m" für Kat A) sind gegen die **konkret anwendbare ISO-12217-Teilnorm und Ausgabe (2015 vs. 2022)** zu verifizieren, da die Kriterien je nach Teil (Segel-/Nicht-Segelboot) und Prüfmethode unterschiedlich definiert sind. Bis zur Einzelverifikation gelten diese Bestandswerte als `estimated — unverifiziert`.
+
+---
+
+## 12. Grundgrößen: Verdrängung, Wasserlinienfläche, Formkoeffizienten
+
+### 12.1 Verdrängung (Displacement)
+
+Zwei dokumentierte Formen (vgl. Bestand Abschnitt 1.1, hier terminologisch präzisiert):
+
+```
+Massenverdrängung   Δ = ρ × ∇        [t]   (ρ in t/m³, ∇ in m³)
+Volumenverdrängung  ∇ = Δ / ρ        [m³]
+```
+
+- **Δ (Delta):** Masse des verdrängten Wassers = Gesamtmasse des Boots (Gleichgewicht).
+- **∇ (Nabla):** Volumen des verdrängten Wassers = eingetauchtes Rumpfvolumen.
+
+> Quelle: [Marine Insight — Ship Stability / Hydrostatics](https://www.marineinsight.com/naval-architecture/ship-stability-introduction-hydrostatics-stability-surface-ships/) | Confidence: **documented**
+
+### 12.2 Wasserlinienfläche A_w (Waterplane Area)
+
+Die **Wasserlinienfläche** ist die vom Rumpf in der Schwimmwasserlinie eingeschlossene horizontale Schnittfläche. Sie ist die zentrale Größe für **TPC**, **BM** und **LCF** (alle nachfolgend).
+
+```
+A_w = L_WL × B_WL × C_w
+```
+
+> Quelle: TPC-/Formkoeffizienten-Definition, [Marine Inbox / cultofsea](https://www.cultofsea.com/ship-stability/coefficients-of-form-ships-waterplane-block-midship-and-prismatic-coefficient/) | Confidence: **documented**
+
+### 12.3 Formkoeffizienten (Coefficients of Form)
+
+Dimensionslose Kennzahlen der Rumpfvölligkeit (alle Definitionen verifiziert, ISO-7462-Terminologie):
+
+| Koeffizient | Symbol | Formel | Bedeutung |
+|-------------|--------|--------|-----------|
+| Wasserlinien-Völligkeit | **C_w** | `C_w = A_w / (L_WL × B_WL)` | Völligkeit der Wasserlinienfläche |
+| Blockkoeffizient | **C_b** | `C_b = ∇ / (L_WL × B_WL × T)` | Völligkeit des Verdrängungskörpers |
+| Hauptspant-Völligkeit | **C_m** | `C_m = A_m / (B_WL × T)` | Völligkeit des größten eingetauchten Spants (A_m) |
+| Schärfegrad (prismatisch) | **C_p** | `C_p = ∇ / (A_m × L_WL)` | Längsverteilung des Volumens |
+
+**Dokumentierte Beziehung:**
+```
+C_b = C_m × C_p     ⇒     C_p = C_b / C_m
+```
+
+> Quellen: [cultofsea — Coefficients of Form](https://www.cultofsea.com/ship-stability/coefficients-of-form-ships-waterplane-block-midship-and-prismatic-coefficient/) · [Ships2Ports — Ship Specifications](https://ships2ports.com/ship-specifications-explained-dimensions-tonnage-stability-and-calculation-formulas/) | Confidence: **documented**
+
+> ℹ️ Hinweis: T = Tiefgang (draught), A_m = Fläche des eingetauchten Hauptspants. Es werden hier bewusst **keine** typischen C_b/C_p-Zahlenbereiche für Yacht-Klassen angegeben — belastbare klassenspezifische Bänder wären erfindungsgefährdet (`estimated — unverifiziert`). Konkrete Werte immer aus dem CAD-/Lines-Modell des jeweiligen Boots ableiten.
+
+---
+
+## 13. Auftriebs- und Flotationszentren: LCB, VCB (KB), LCF
+
+| Größe | Symbol | Definition (verifiziert) |
+|-------|--------|--------------------------|
+| Längenschwerpunkt des Auftriebs | **LCB** | Längsposition des Volumenschwerpunkts der Verdrängung (Center of Buoyancy) bezogen auf einen Referenzpunkt. |
+| Höhenschwerpunkt des Auftriebs | **VCB / KB** | Vertikaler Abstand Kiel → Auftriebsmittelpunkt B. |
+| Längenschwerpunkt der Wasserlinienfläche | **LCF** | Flächenschwerpunkt (Zentroid) der Wasserlinienfläche A_w. **Drehpunkt (Fulcrum), um den das Boot trimmt.** |
+
+> Quelle: [Marine Insight — Hydrostatics/Stability](https://www.marineinsight.com/naval-architecture/ship-stability-introduction-hydrostatics-stability-surface-ships/) · [Marine Insight — Centre of Flotation](https://www.marineinsight.com/naval-architecture/what-is-the-centre-of-floatation/) | Confidence: **documented**
+
+**Zentrale Merksätze (dokumentiert):**
+1. **Längsgleichgewicht (kein Trimmmoment):** LCB liegt exakt senkrecht unter dem Längenschwerpunkt der Masse LCG. → `x_LCB = x_LCG`. Dies präzisiert den Bestands-Abschnitt 5.1.
+2. **LCF ≠ LCB:** Der Auftriebs-Längenschwerpunkt (LCB, Volumen) und der Flotations-Längenschwerpunkt (LCF, Fläche) liegen i. d. R. **nicht** an derselben Stelle. Trimm dreht um **LCF**, nicht um Mitte Schiff.
+
+### 13.1 VCB/KB — dokumentierte Näherung (Morrish/Normand)
+
+Für Rümpfe „gewöhnlicher Form" existiert eine **dokumentierte** Näherungsformel (Morrish/Normand):
+
+```
+KB ≈ (1/3) × ( 5T/2 − ∇ / A_w )        (Morrish/Normand)
+```
+
+- T = Tiefgang, ∇ = Verdrängungsvolumen, A_w = Wasserlinienfläche.
+
+> Quelle: „Morrish's or Normand's formula", [Stability for Masters and Mates (flipbuilder)](https://online.flipbuilder.com/ekxp/lzjw/files/basic-html/page114.html) · [KB/BM Skript (academy PDF)](https://ilginozgul.academy/wp-content/uploads/2021/12/ship-stb.-wihtout-video.pdf) | Confidence: **documented**
+
+> ⚠️ Näherung: Gilt für „ordinary form"; für ausgeprägte Yacht-Formen (Kielyacht, Katamaran, Gleiter) nur als Plausibilitätscheck. Exaktes KB aus Spantintegration (Bestands-Abschnitt 3.2, Simpson) verwenden.
+
+---
+
+## 14. Vertikale Metazentrik: KB, BM, KM, GM (transversal & longitudinal)
+
+Diese Größen sind der dokumentierte Kern der Anfangsstabilität. Sie präzisieren Bestands-Abschnitt 2.1/2.2.
+
+### 14.1 Transversal (Querstabilität)
+
+```
+BM   = I_T / ∇          I_T = 2. Flächenmoment der Wasserlinie um die Längs-Mittellinie
+KM   = KB + BM
+GM   = KM − KG          KG = Höhe des Massenschwerpunks über Kiel
+```
+
+> Quelle: [Marine Insight — Hydrostatics/Stability](https://www.marineinsight.com/naval-architecture/ship-stability-introduction-hydrostatics-stability-surface-ships/) | Confidence: **documented**
+
+### 14.2 Longitudinal (Längsstabilität — Basis für Trimm/MCT)
+
+Analog, aber um die **Querachse durch LCF**:
+
+```
+BM_L = I_L / ∇          I_L = 2. Flächenmoment der Wasserlinie um die Querachse durch LCF
+KM_L = KB + BM_L
+GM_L = KM_L − KG
+```
+
+> Quelle: [Nautical Solver — LCF/BM_L](https://nauticalsolver.com/calculators/hull/lcf/lcf.php) · Britannica, *Naval architecture — Metacentric stability* | Confidence: **documented**
+
+**Größenordnung (dokumentiert, qualitativ):** GM_L ist typischerweise um Größenordnungen größer als GM (transversal), da I_L ≫ I_T (Länge ≫ Breite). Deshalb ist ein Boot längs weit „steifer" als quer — konkrete Zahlen sind boots­spezifisch und werden hier **nicht** angegeben (Erfindungsvermeidung).
+
+### 14.3 GZ bei großen Winkeln — wall-sided-Formel (dokumentiert)
+
+Der Bestand nutzt für kleine Winkel `GZ ≈ GM · sinθ`. Für größere Winkel (Rumpf noch annähernd senkrechtwandig an der WL) ist die **wall-sided-Formel** dokumentiert:
+
+```
+GZ = sinθ × ( GM + ½ · BM · tan²θ )
+```
+
+> Quelle: [ShipCalculators — Metacentric height / wall-sided](https://shipcalculators.com/wiki/metacentric-height) · [Merchant Navy Decoded — Transverse Stability](https://www.merchantnavydecoded.com/transverse-stability-of-ship/) | Confidence: **documented**
+
+> ⚠️ Gültigkeitsgrenze: Die Annahme „wall-sided" (senkrechte Bordwände an der Wasserlinie) verliert mit zunehmendem Winkel an Genauigkeit, sobald Deck eintaucht bzw. die Bilge austaucht. Für die vollständige GZ-Kurve (0–180°, Bestands-Abschnitt 3) bleibt die numerische Spantintegration maßgeblich.
+
+---
+
+## 15. TPC und MCT — Eintauchung und Trimmänderung
+
+### 15.1 TPC — Tonnes Per Centimetre Immersion
+
+**Definition (verifiziert):** Die Masse, die geladen/gelöscht werden muss, um den mittleren Tiefgang um **1 cm** (paralleles Ein-/Auftauchen) zu ändern.
+
+```
+TPC = A_w × ρ / 100          A_w in m², ρ in t/m³ → TPC in t/cm
+```
+
+**Herleitung (dokumentiert):** 1 cm Paralleltauchung = 0,01 m Höhe → Volumen `A_w × 0,01 m³` → Masse `ρ × A_w × 0,01` = `A_w × ρ / 100`.
+
+> Quelle: [Marine Inbox — TPC](https://marineinbox.com/marine-exams/tonnes-per-centimetre-immersion-tpc/) · [MarineGyaan — TPC](https://marinegyaan.com/what-is-tonnes-per-centimeter-tpc/) | Confidence: **documented**
+
+- Höhere Wasserdichte ODER größere A_w ⇒ höheres TPC.
+- TPC variiert mit Tiefgang (A_w ändert sich) und mit ρ (Süß-/Salzwasser, vgl. Bestands-Abschnitt 1.1).
+
+### 15.2 MCT1cm (MCTC) — Moment to Change Trim one centimetre
+
+**Definition (verifiziert):** Das Längs-Moment (um LCF), das erforderlich ist, um den Trimm um **1 cm** zu ändern.
+
+```
+MCT1cm = ( Δ × GM_L ) / ( 100 × L )     Δ in t, GM_L und L in m → t·m / cm
+```
+
+**Herleitung (dokumentiert):** Moment für 1 m Trimm = `Δ × GM_L / L`; Division durch 100 ⇒ Moment für 1 cm Trimm.
+
+> Quelle: [MarineGyaan — Trimming Moment (MCTC)](https://marinegyaan.com/what-is-trimming-moment-mctc/) · [Merchant Navy Decoded — Trim of Ship](https://www.merchantnavydecoded.com/trim-of-ship/) | Confidence: **documented**
+
+> ℹ️ In Näherungen wird oft GM_L ≈ BM_L gesetzt (da BG_L klein gegenüber BM_L). Nur als Näherung verwenden; exakt mit GM_L rechnen.
+
+### 15.3 Trimmänderung und Verteilung auf die Perpendikel
+
+```
+Trimmänderung  COT = Trimmmoment / MCT1cm            [cm]
+```
+
+Die Änderung verteilt sich **um LCF** (nicht um Mitte Schiff) auf vorderes/hinteres Perpendikel:
+
+```
+Δd_achtern  = COT × (l / L)      l = Abstand LCF ↔ hinteres Perpendikel (AP)
+Δd_vorn     = COT − Δd_achtern
+```
+
+> Quelle: [ScienceDirect — Draft Aft / change of trim](https://www.sciencedirect.com/topics/engineering/draft-aft) · [The Nautical Site — Trim](http://thenauticalsite.in/NauticalNotes/Stability/MyStability-Lesson09-Trim.htm) | Confidence: **documented**
+
+**Merksatz (dokumentiert):** Nur wenn LCF exakt mittschiffs liegt, ändern sich Bug- und Heck-Tiefgang gleich stark. Liegt LCF (typisch) achterlich, ändert sich der Heck-Tiefgang stärker.
+
+---
+
+## 16. Fehlerbild-Atlas (FB-31-02-NNN)
+
+> Kollisionsprüfung: Der Bestand nutzt das Schema `[F7.1]…[F7.12]`. Der folgende Atlas nutzt das **kollisionsfreie** Präfix `FB-31-02-NNN` und ergänzt Fehlerbilder rund um die in dieser Ergänzung eingeführten Grundgrößen (Wasserlinienfläche, Koeffizienten, LCB/LCF, TPC, MCT). Fachliche Überschneidungen mit dem Bestand sind vermerkt.
+
+### FB-31-02-001 — Trimm fälschlich um Mitte Schiff statt um LCF gerechnet
+- **Fehlerbild:** Bug-/Heck-Tiefgänge nach Zuladung stimmen nicht mit Messung überein; Δd vorn = Δd achtern angenommen.
+- **Ursache:** Trimmverteilung ohne LCF-Position (l/L) gerechnet.
+- **Korrektur:** COT über LCF verteilen (Abschnitt 15.3). LCF aus Hydrostatik-Tabelle je Tiefgang entnehmen.
+- **Prüfkriterium:** Wenn LCF ≠ Mitte Schiff und Δd_vorn = Δd_achtern gesetzt → Fehler.
+- Quelle: siehe 15.3 | Confidence: **documented**
+
+### FB-31-02-002 — TPC mit falscher Wasserdichte (Süß-/Salzwasser)
+- **Fehlerbild:** Reale Paralleltauchung weicht ~2,5 % von der Rechnung ab.
+- **Ursache:** ρ = 1,000 statt 1,025 t/m³ (oder umgekehrt) in `TPC = A_w × ρ / 100`.
+- **Korrektur:** ρ passend zum Fahrtgebiet wählen (Bestands-Abschnitt 1.1: Süß 1000, Atlantik 1025, Mittelmeer 1023 kg/m³).
+- **Prüfkriterium:** Dichteannahme nicht dokumentiert → Überprüfung.
+- Quelle: 15.1 | Confidence: **documented**
+
+### FB-31-02-003 — A_w bei falschem Tiefgang verwendet
+- **Fehlerbild:** TPC/BM/MCT über den Beladungsbereich unplausibel konstant.
+- **Ursache:** A_w (und damit I_T, I_L) ist tiefgangsabhängig; ein einziger A_w-Wert für alle Zustände benutzt.
+- **Korrektur:** A_w, I_T, I_L, LCF je Tiefgang aus der Hydrostatik-Kurve; TPC/BM/MCT tiefgangsabhängig führen.
+- **Prüfkriterium:** Gleicher A_w für ≥ 2 stark verschiedene Tiefgänge → Überprüfung.
+- Quelle: 12.2 / 14 / 15 | Confidence: **documented**
+
+### FB-31-02-004 — GM_L mit BM (transversal) statt BM_L verwechselt
+- **Fehlerbild:** MCT1cm um Größenordnungen zu klein; Trimm reagiert „viel zu empfindlich" in der Rechnung.
+- **Ursache:** In `MCT1cm = Δ·GM_L/(100·L)` GM (quer) statt GM_L (längs) eingesetzt.
+- **Korrektur:** GM_L aus `I_L/∇` (Querachse durch LCF), nicht I_T.
+- **Prüfkriterium:** GM_L in derselben Größenordnung wie GM_transversal → Fehler.
+- Quelle: 14.2 / 15.2 | Confidence: **documented**
+
+### FB-31-02-005 — Formkoeffizienten mit inkonsistenten Längen (LOA vs. LWL vs. LPP)
+- **Fehlerbild:** C_b > 1 oder unplausibel; C_b = C_m·C_p geht nicht auf.
+- **Ursache:** Mischung aus LOA/LWL/LPP bzw. Formbreite vs. B_WL in den Nennern.
+- **Korrektur:** Durchgängig **eine** Bezugslänge und **B_WL/T** in der Wasserlinie verwenden; Konsistenz über C_b = C_m·C_p prüfen.
+- **Prüfkriterium:** C_b·C_p·C_m-Beziehung verletzt oder C_b > 1 → Fehler.
+- Quelle: 12.3 | Confidence: **documented**
+
+### FB-31-02-006 — wall-sided-Formel über ihren Gültigkeitsbereich hinaus benutzt
+- **Fehlerbild:** GZ bei großen Winkeln (Deck taucht ein) überschätzt.
+- **Ursache:** `GZ = sinθ(GM + ½BM·tan²θ)` bis in den Bereich Decktauchung/Bilge-Austauchung angewendet.
+- **Korrektur:** Bei großen Winkeln numerische Spantintegration (Bestands-Abschnitt 3) statt wall-sided.
+- **Prüfkriterium:** wall-sided jenseits Decktauchung → Überprüfung.
+- Quelle: 14.3 | Confidence: **documented**
+- *Überschneidung:* ergänzt Bestand [F7.4]/[F7.5] (GZ-Kurve hohe Winkel).
+
+### FB-31-02-007 — Verdrängung nicht im normgerechten Beladungszustand
+- **Fehlerbild:** Hydrostatik/Stabilität gegen ein „Wunsch"-Δ statt den maßgeblichen Zustand nachgewiesen.
+- **Ursache:** Falscher/kein definierter Beladungszustand (z. B. `m_LDC` nach ISO 8666) zugrunde gelegt.
+- **Korrektur:** Beladungszustände gemäß ISO 8666 definieren und Hydrostatik je Zustand rechnen (vgl. Bestands-Abschnitt 8, mehrere Ladesituationen).
+- **Prüfkriterium:** Kein dokumentierter Norm-Beladungszustand → Überprüfung.
+- Quelle: 11 (ISO 8666) | Confidence: **documented**
+- *Überschneidung:* ergänzt Bestand [F7.3]/[F7.11] (CG/Ladesituationen).
+
+---
+
+## 17. Troubleshooting — Entscheidungsbaum Grundgrößen
+
+```
+Symptom: berechnete Tiefgänge/Trimm ≠ Messung (Krängungsversuch/Ablesung)
+│
+├─ Paralleltauchung falsch?
+│   ├─ ρ (Süß/Salz) korrekt?              → nein: FB-31-02-002
+│   └─ A_w beim richtigen Tiefgang?       → nein: FB-31-02-003
+│
+├─ Trimm/Endtiefgänge falsch?
+│   ├─ um LCF (l/L) verteilt?             → nein: FB-31-02-001
+│   ├─ GM_L (nicht GM_quer) in MCT1cm?    → nein: FB-31-02-004
+│   └─ maßgeblicher Beladungszustand?     → nein: FB-31-02-007
+│
+└─ Koeffizienten/Völligkeit unplausibel?
+    └─ konsistente Längen/B_WL/T?         → nein: FB-31-02-005
+        └─ Check: C_b = C_m × C_p
+```
+
+---
+
+## 18. FAQ, Revalidierung & Glossar
+
+### 18.1 FAQ
+
+**F: Um welchen Punkt trimmt das Boot — Mitte Schiff oder LCF?**
+A: Um **LCF** (Flächenschwerpunkt der Wasserlinie). Trimmmomente wirken um LCF als Drehpunkt. Quelle: Abschnitt 13 / 15.3. Confidence: documented.
+
+**F: Warum ist ein Boot längs viel „steifer" als quer?**
+A: Weil GM_L auf `I_L/∇` mit dem Flächenmoment um die **Querachse** beruht und I_L ≫ I_T (Länge ≫ Breite). Konkrete Zahlen sind bootsspezifisch. Quelle: 14.2. Confidence: documented (qualitativ).
+
+**F: Reicht `GZ ≈ GM·sinθ` für die Stabilitätskurve?**
+A: Nur für kleine Winkel. Größere Winkel: wall-sided-Formel (14.3, mit Gültigkeitsgrenze) bzw. numerische Integration (Bestand Abschnitt 3). Confidence: documented.
+
+**F: Welche Norm liefert die Definitionen, welche die Kriterien?**
+A: Definitionen/Terminologie: ISO 7462 (Rümpfe allgemein) und ISO 8666 (Sportboot-Hauptdaten/Beladung). Bewertungskriterien/Kategorisierung: ISO 12217 (Teil 1/2/3). Quelle: Abschnitt 11. Confidence: documented.
+
+### 18.2 Revalidierung / Prüfanlässe
+
+Hydrostatik-/Stabilitätsgrundlagen sind kein „einmal berechnet, fertig". Neu zu validieren bei:
+- Änderung der Massenverteilung (Ballast, Motor, Ausbau, Tankanordnung) → KG/LCG neu, damit GM/GM_L/Trimm neu.
+- Geometrieänderung an der Wasserlinie (Anbauten, Baderplattform, Kiel) → A_w, I_T, I_L, LCF, TPC, MCT neu.
+- Wechsel des maßgeblichen Beladungszustands (ISO 8666).
+- **Krängungsversuch (inclining experiment):** dokumentiertes Verfahren zur empirischen Bestimmung von KG/GM; im Rahmen der ISO-12217-Bewertung ein anerkanntes Mittel, um die gerechnete Vertikallage des Schwerpunkts abzusichern.
+
+> ⚠️ ZU PRÜFEN (Audit): Konkrete Auslöse-Schwellen und die genaue Pflicht/Häufigkeit eines Krängungsversuchs sind der jeweils anwendbaren ISO-12217-Teilnorm zu entnehmen; hier bewusst **nicht** beziffert (`estimated — unverifiziert`).
+
+### 18.3 Glossar (Kurzform)
+
+| Kürzel | Deutsch | Definition (Quelle: Abschnitt) |
+|--------|---------|-------------------------------|
+| Δ / ∇ | Massen-/Volumenverdrängung | 12.1 |
+| A_w | Wasserlinienfläche | 12.2 |
+| C_w, C_b, C_m, C_p | Wasserlinien-/Block-/Hauptspant-/Schärfe-Koeffizient | 12.3 |
+| LCB | Längenschwerpunkt Auftrieb | 13 |
+| VCB/KB | Höhenschwerpunkt Auftrieb (ab Kiel) | 13 |
+| LCF | Längenschwerpunkt Wasserlinienfläche = Trimm-Drehpunkt | 13 |
+| BM / BM_L | Metazentrischer Radius quer/längs (I/∇) | 14.1 / 14.2 |
+| KM / KM_L | Metazentrum über Kiel quer/längs | 14 |
+| GM / GM_L | Metazentrische Höhe quer/längs | 14 |
+| KG | Höhe Massenschwerpunkt über Kiel | 14.1 |
+| TPC | Masse je 1 cm Paralleltauchung | 15.1 |
+| MCT1cm | Moment je 1 cm Trimmänderung | 15.2 |
+| COT | Change of Trim (Trimmänderung) | 15.3 |
+
+---
+
+## 19. Quellenverzeichnis (Ergänzung 1.1)
+
+**Normen (Titel/Scope verifiziert):**
+- ISO 7462:1985 — *Shipbuilding — Principal ship dimensions — Terminology and definitions for computer applications* — https://www.iso.org/standard/14197.html
+- ISO 8666:2020 — *Small craft — Principal data* — https://www.iso.org/standard/79071.html
+- ISO 12217-1:2022 / -2:2022 / -3:2022 — *Small craft — Stability and buoyancy assessment and categorization* — https://www.iso.org/standard/79072.html · /79073.html · /79074.html
+
+**Fachquellen (Formeln/Definitionen verifiziert):**
+- Marine Insight — *Ship Stability: Introduction to Hydrostatics* — https://www.marineinsight.com/naval-architecture/ship-stability-introduction-hydrostatics-stability-surface-ships/
+- Marine Insight — *Centre of Flotation* — https://www.marineinsight.com/naval-architecture/what-is-the-centre-of-floatation/
+- cultofsea — *Coefficients of Form* — https://www.cultofsea.com/ship-stability/coefficients-of-form-ships-waterplane-block-midship-and-prismatic-coefficient/
+- Ships2Ports — *Ship Specifications Explained* — https://ships2ports.com/ship-specifications-explained-dimensions-tonnage-stability-and-calculation-formulas/
+- MarineGyaan — *TPC* / *Trimming Moment (MCTC)* — https://marinegyaan.com/what-is-tonnes-per-centimeter-tpc/ · https://marinegyaan.com/what-is-trimming-moment-mctc/
+- Merchant Navy Decoded — *Trim of Ship* / *Transverse Stability* — https://www.merchantnavydecoded.com/trim-of-ship/ · https://www.merchantnavydecoded.com/transverse-stability-of-ship/
+- ShipCalculators — *Metacentric height (wall-sided)* — https://shipcalculators.com/wiki/metacentric-height
+- ScienceDirect Topics — *Draft Aft / Moment to Change Trim* — https://www.sciencedirect.com/topics/engineering/draft-aft
+- Morrish/Normand-Näherung (KB) — *Stability for Masters and Mates* — https://online.flipbuilder.com/ekxp/lzjw/files/basic-html/page114.html
+
+> Alle in Ergänzung 1.1 neu eingeführten faktischen Angaben sind web-verifiziert (`documented`). Nicht zweifelsfrei belegbare Größen wurden als `estimated — unverifiziert` markiert bzw. weggelassen; es wurden keine yacht-spezifischen Zahlenwerte, Grenzwerte oder Rechenbeispiele erfunden.
+
+---
+
+**Ergänzung Version 1.1 — 2026-07 — abgeschlossen.**  
+Kat 31.02 Hydrostatik — Version 1.1

@@ -843,5 +843,272 @@ def check_deflection_limit(
 
 ---
 
+# TEIL II — WERFT-TIEFE (web-verifiziert, 2025)
+
+> **Lese-Hinweis / Geltung.** Teil I (Abschnitte 1–9) enthält vereinfachte, teils heuristische Formeln (z. B. die Laminatdicken-Näherungen in 2.2, 4.3 und die Funktion `assess_laminat_thickness`). Diese sind **Faustformeln „estimated"** und **KEIN Nachweis nach ISO 12215**. Für einen CE-tauglichen Scantling-Nachweis ist ausschließlich die nachstehend beschriebene, normkonforme Methodik (ISO 12215-5 mit den zugehörigen Teilen) maßgebend. Teil II ergänzt Teil I um den **dokumentierten Normrahmen** und löst offene ⚠️-Flags soweit web-verifiziert auf. Wo ein exakter Normkoeffizient nur dem kostenpflichtigen Normtext zu entnehmen ist, wird das **ausdrücklich gesagt** statt eine Zahl zu erfinden.
+
+---
+
+## W1. Normativer Rahmen — die ISO-12215-Reihe (verifiziert)
+
+### W1.1 Warum ISO 12215 und nicht ISO 12217
+
+ISO **12215** ist die Reihe für **Rumpfbau und Scantlings** (Laminat-/Plattendicke, Steifenprofile, Bemessungsdruck). ISO **12217** ist **Stabilität** (Gewicht/Schwerpunkt/Freibord) und liefert **keine** Scantlings. Diese Verwechslung ist ein wiederkehrender Fehler in Quellmaterial — für Struktur immer 12215 zitieren.
+> Quelle: CLAUDE.md-Domänenhinweis; ISO 12215-5:2019 Scope. Confidence: **documented**.
+
+### W1.2 Aufbau der Reihe — Teil, Titel, Rolle
+
+Alle Titel verifiziert (BSI/ISO-Seriendaten). Für vollständige Scantlings eines Bootes ist **Teil 5 der Rechenkern**, ergänzt durch die materialspezifischen und bauteilspezifischen Teile.
+
+| Teil | Verifizierter Titel | Rolle im Nachweis |
+|------|---------------------|-------------------|
+| **12215-1** | Materials — Thermosetting resins, glass-fibre reinforcement, reference laminate | Materialkennwerte FRP, „Referenzlaminat" |
+| **12215-2** | Materials — Core materials for sandwich construction, embedded materials | Kernmaterial-Kennwerte (Scherfestigkeit etc.) |
+| **12215-3** | Materials — Steel, aluminium alloys, wood, other materials | Metall-/Holz-Kennwerte (Streckgrenze etc.) |
+| **12215-4** | Workshop and manufacturing | Fertigungsanforderungen |
+| **12215-5** | Design pressures for monohulls, design stresses, scantlings determination | **Rechenkern**: Bemessungsdruck → Bemessungsspannung → Scantling |
+| **12215-6** | Structural arrangements and details | Anbindung/Details: Stringer, Spanten, Schotten, Bonding Angles |
+| **12215-7** | Determination of loads for multihulls … using ISO 12215-5 (2020) | Mehrrumpf-Lasten |
+| **12215-8** | Rudders | Ruder & Ruderschaft |
+| **12215-9** | Sailing craft appendages | **Kiel/Anhänge** (Kielbolzen, Bodenwrangen) |
+| **12215-10** | Rig loads and rig attachment in sailing craft (2020) | Rigg-Lasten & Mast-/Wantanbindung |
+
+> Quellen: ISO-Seriendaten (iso.org/standard/69552 Teil 5; /55339 Teil 9; /42346 Teil 6; /73457 Teil 7; /67294 Teil 10) und BSI-Serienübersicht (BS EN ISO 12215). Confidence: **documented**.
+
+### W1.3 Geltungsbereich Teil 5 (verifiziert)
+
+ISO 12215-5:2019 legt Abmessungen, örtliche **Bemessungsdrücke**, mechanische Eigenschaften und **Bemessungsspannungen** für die Scantling-Ermittlung von **Einrumpf**-Kleinfahrzeugen mit Rumpflänge **L_H ≤ 24 m** fest. Anwendbar auf Sport-/Charterboote sowie kleine Berufs-/Arbeitsboote; **nicht** auf reine Profi-Rennboote. Die Mastdruck-, Ruder- und Kiellasten kommen aus Teil 10, 8 bzw. 9.
+> Quelle: ISO 12215-5:2019 Scope (iso.org/standard/69552). Confidence: **documented**.
+
+### W1.4 Einordnung in RCD/CE
+
+ISO 12215-5 ist die harmonisierte Norm, mit der der **Struktur-Konformitätsnachweis** unter der EU-Sportboot­richtlinie **2013/53/EU** geführt wird. Die vier CE-Entwurfskategorien A/B/C/D speisen den **Design-Kategorie-Faktor k_DC** (siehe W2.2). Kategorie-Definitionen (Wind/Welle) siehe CLAUDE.md / RCD.
+> Confidence: **documented** (Normrahmen); **estimated** für die genaue Modul-Verknüpfung im AYDI-`compliance`-Modul.
+
+---
+
+## W2. Wirkprinzip ISO 12215-5 — der druckbasierte Scantling-Nachweis
+
+### W2.1 Grundidee (Kette, verifiziert im Prinzip)
+
+ISO 12215-5 ist **druck-basiert**, nicht momentenbasiert wie Klassifikations-Längsfestigkeit. Der Ablauf je Bauteil (Platte/Panel bzw. Steife/Stiffener):
+
+```
+1. Grunddruck (base pressure)  aus Verdrängung/Länge/Geschwindigkeit
+2. × Design-Kategorie-Faktor  k_DC        (A>B>C>D)
+3. × Flächen-/Aspekt-Faktor   k_AR         (große Panels → kleinerer Druck)
+4. × Längsverteilungs-Faktor  k_L          (Position entlang LWL, Bug höher)
+   = örtlicher Bemessungsdruck  P  [kN/m²]
+5. Bemessungsspannung  σ_d = Faktor × Materialfestigkeit  (Sicherheitsanteil)
+6. Erforderliche Dicke/Profil aus P, Panel-Kurzmaß b und σ_d
+```
+
+> Die **Struktur** dieser Kette (Grunddruck × k_DC × k_AR × k_L) ist aus mehreren Sekundärzusammenfassungen des Normtexts konsistent belegt. Confidence: **documented** (Struktur). Die **exakten Zahlenkoeffizienten** der Grunddruck-Formeln stehen nur im kostenpflichtigen Normtext — hier bewusst **nicht** rekonstruiert (Erfindungsverbot).
+
+### W2.2 Design-Kategorie-Faktor k_DC (verifiziert, ISO 12215-5:2019)
+
+| Entwurfskategorie | k_DC |
+|-------------------|------|
+| A (Ocean) | **1,0** |
+| B (Offshore) | **0,8** |
+| C (Inshore) | **0,6** |
+| D (Sheltered) | **0,4** |
+
+> Quelle: ISO-12215-5:2019-Zusammenfassung Table 2 (mehrfach korroboriert). Confidence: **documented**. Hinweis: Die **2008er** Fassung nutzte teils andere Zahlen (z. B. 1,0/0,75/0,5/0,25 in bestimmten Faktoren) — für Neubauten die **2019er** k_DC-Werte verwenden.
+
+### W2.3 Dynamik-Lastfaktor n_CG (verifiziert, qualitativ)
+
+- **Definition:** n_CG ist die vertikale **Einzelamplituden-Beschleunigung am Schwerpunkt** in Vielfachen von g (1 g = 9,81 m/s²) — die Beschleunigung beim Slamming/Wellenaufprall. Confidence: **documented**.
+- **Gleitboote (Motor):** n_CG geht direkt in den Bodendruck ein; der Rechenwert ist **nach oben gedeckelt (n_CG ≤ 6)** — schnelle leichte Boote sonst unrealistisch hoch. Confidence: **documented** (Deckel-Wert korroboriert; genaue Formel nur im Normtext).
+- **Segelboote:** n_CG wird **nicht** zur Druckermittlung benutzt; er geht nur in k_L ein und ist dort mit **n_CG = 3** anzusetzen. Confidence: **documented**.
+
+### W2.4 Panel-Anpassungsfaktoren k_AR und k_L (verifiziert, qualitativ)
+
+- **k_AR (Flächen-/Aspekt-Reduktionsfaktor):** Große Panels erfahren den Spitzendruck nie über die volle Fläche gleichzeitig → k_AR < 1, mit **Untergrenze** (Größenordnung 0,25–0,4). Verhindert Überdimensionierung großer Felder. Confidence: **documented** (Rolle + Floor-Größenordnung); exakte Formel nur im Normtext.
+- **k_L (Längsverteilungsfaktor):** Positionsabhängig entlang LWL; **vorne (Bug) höherer** Druck als achtern; Überhänge übernehmen den k_L-Wert ihres LWL-Endes. Confidence: **documented**.
+
+---
+
+## W3. Bemessungsspannung & Panel-/Steifen-Dimensionierung (verifiziert, qualitativ)
+
+### W3.1 Bemessungsspannung σ_d als Bruchteil der Festigkeit
+
+ISO 12215-5 setzt **σ_d = Faktor × Materialfestigkeit**; der Sicherheitsanteil steckt in diesem Faktor (nicht in einem separaten globalen SF).
+
+| Werkstoff | Bezugsfestigkeit | Bemessungsfaktor | Confidence |
+|-----------|------------------|------------------|-----------|
+| FRP Einzelschale (single skin) | Bruch-**Biege**festigkeit σ_uf | **0,5 × σ_uf** | **documented** (mehrfach korroboriert) |
+| FRP Sandwich-Deckschicht | Zug-/Druckfestigkeit der Schale | ~0,5 × Festigkeit | **documented (Sekundärquelle)** — Normtext gegenprüfen |
+| Metall (Stahl/Alu) | Streckgrenze σ_y | ≈ 0,6 × σ_y (Größenordnung) | **estimated — Sekundärquelle**, im Normtext verifizieren |
+
+> Der FRP-Wert **0,5 × Bruch-Biegefestigkeit** ist die belastbarste Angabe. Metall-Faktoren nur aus Sekundärquelle — vor Nutzung im `structural`-Modul im Normtext (Table „design stresses") gegenprüfen. **Nicht** als Fakt in Reports ausgeben, solange nicht am Primärtext verifiziert.
+
+### W3.2 Erforderliche Plattendicke — Formstruktur (verifiziert)
+
+Für FRP-Einzelschale hat die ISO-12215-5-Dickenformel die klassische **Plattenbiegungs-Form**:
+
+```
+t_erf  ∝  b · sqrt( P · k2 / σ_d )     [mm]   (Biegefestigkeit)
+   b   = kurzes Panel-Maß (kürzere Seite des Feldes)
+   P   = örtlicher Bemessungsdruck (W2.1)
+   k2  = Panel-Aspekt-Koeffizient (Seitenverhältnis, aus Normtabelle)
+   σ_d = Bemessungsspannung (W3.1)
+zusätzlich separater Nachweis der Biege-STEIFIGKEIT (Koeffizient k3, E-Modul)
+```
+
+> Die **Proportionalität** (t ∝ b·√(P/σ_d)) und die Existenz der Aspekt-Koeffizienten **k2/k3** sind belegt (Normtext-Gleichungen für Einzelschale). Confidence: **documented** (Struktur). Die **Zahlentabellen für k2/k3** (Funktion des Seitenverhältnisses l/b) stehen nur im Normtext — hier **nicht** rekonstruiert. Wesentlich: Es zählt das **kurze** Panel-Maß b, nicht die Diagonale/Länge → engere Versteifung in einer Richtung senkt b und damit die erforderliche Dicke überproportional.
+
+### W3.3 Mittragende Breite (effective plating) für Steifen
+
+Bei der Steifen-Dimensionierung wird ein Teil der angrenzenden Beplankung als **mittragender Gurt** angesetzt (effective plating). Für FRP-Sandwich wird als effektive Breite eine Größenordnung von **20 × (t_Außenhaut + t_Innenhaut)** genannt.
+> Quelle: Fachforum-Diskussion zu ISO 12215 §11.6 (**Sekundärquelle**). Confidence: **estimated — unverifiziert**; im Normtext (Teil 5, effective plating) gegenprüfen, bevor als Rechenwert verwendet.
+
+---
+
+## W4. Kiel, Ruder, Rigg — die anschließenden Normteile (verifiziert)
+
+### W4.1 ISO 12215-9 — Segelboot-Anhänge (Auflösung des ⚠️-Flags in 6.8)
+
+Das ⚠️-Flag in Abschnitt **6.8 [F6.8]** ist hiermit normseitig eingeordnet: Eine Kiel-/Ballastanbindung wird **nicht** über einen einzelnen Vertikalfaktor bemessen, sondern über **mehrere definierte Lastfälle** mit je eigenem Spannungsfaktor. Verifizierte Lastfall-Struktur (ISO 12215-9:2012):
+
+| Lastfall | Inhalt | Spannungsfaktor (belegt) |
+|----------|--------|--------------------------|
+| **LC1** | Kiel seitlich (Knockdown/90°-Fall) — Kielbolzen | Kielbolzen **0,67**; festes Kiel metall **0,8**; FRP **0,9** |
+| **LC2** | Canting Keel | metall 0,8; FRP 0,9 |
+| **LC3** | Kiel **vertikaler Aufprall** (Grundberührung) | **1,0** |
+| **LC4** | Kielboot **Längsaufprall** (Grounding vorwärts) | **1,0** |
+| **LC5** | Jollen-Aufrichten nach Kenterung | 1,34 |
+| **LC6** | Schwert/Steckschwert Am-Wind | 1,0 |
+
+> Quellen: ISO 12215-9:2012 (iso.org/standard/55339) + Fach-Review der Revision. Confidence: **documented** (Lastfall-Liste & Spannungsfaktoren). **Maßgebend** für die Kiel-Rumpf-Anbindung ist i. d. R. der **seitliche 90°-Fall** (größtes Quer-Biegemoment) zusammen mit dem **vertikalen Grundberührungs-Fall**. Der Nutzer wählt zwischen einem fortgeschrittenen Ingenieurverfahren und den vereinfachten 2D-„strength of materials"-Gleichungen der Anhänge.
+> **Aktion für AYDI:** Die Faustwerte in 6.8 („1,2–1,5× g", „min. 1,5× statisch") **NICHT** als Nachweis verwenden — sie bleiben unverändert stehen, sind aber durch die o. g. ISO-12215-9-Lastfälle zu ersetzen, sobald eine Kielbemessung geführt wird. Die traditionelle Werftpraxis (bis 5:1 auf Kielbolzen/Bodenwrangen) ist konservativer als das Normminimum und bleibt zulässig.
+
+### W4.2 ISO 12215-8 / -10 — Ruder & Rigg
+
+- **Ruder (Teil 8):** liefert Ruderkraft und Ruderschaft-Scantling — die in Teil I 2.1 genannte „Torsion durch Ruderkräfte" wird hier normativ bemessen.
+- **Rigg (Teil 10):** liefert die Mast-/Wantlasten und die **Anbindung** — Grundlage für die Mastschuh-Durchdringung in Abschnitt **6.10 [F6.10]** (dort stehende Faustformeln bleiben „estimated").
+
+> Quellen: ISO 12215-8; ISO 12215-10:2020 (iso.org/standard/67294). Confidence: **documented** (Rolle/Scope).
+
+### W4.3 ISO 12215-6 — Anschlüsse & Details
+
+Teil 6 ergänzt Teil 5 um **Anbindungsregeln**: Ein Steifen-/Schott­element gilt nur als **lasttragend**, wenn es wirksam an die Beplankung angebunden ist — durch **Schweißen, Strukturkleben oder faserverstärkte Bonding Angles**. Beplankung ist durch Längs-/Quersteifen, **Strukturschotten**, tragende Möbel und Tray-Mouldings zu versteifen; die Geometrie muss einen **glatten Lastfluss** sicherstellen (keine harten Punkte — vgl. 6.6 [F6.6]).
+> Quelle: ISO 12215-6:2008/2018 Scope & Grundsätze (iso.org/standard/42346). Confidence: **documented**.
+
+---
+
+## W5. Fehlerbild-Atlas — Methodik-/Nachweisfehler (FB-31-03-NNN)
+
+> Eigener, **kollisionsfreier** ID-Raum `FB-31-03-NNN` (das Schema „F6.x" in Teil I bleibt unberührt). Diese Befunde adressieren die **Anwendung der Normmethodik** — die häufigste Fehlerquelle laut Audit war „dick-mit-erfundener-Gewissheit".
+
+### FB-31-03-001 — ISO 12217 statt ISO 12215 für Scantlings zitiert
+**Symptom:** Struktur-/Laminatnachweis verweist auf „ISO 12217". **Ursache:** Verwechslung Stabilität ↔ Struktur. **Folge:** kein gültiger Scantling-Nachweis. **Korrektur:** ISO **12215-5** als Rechenkern, Materialkennwerte aus 12215-1/-2/-3. **Prüfkriterium:** Struktur-Nachweis ohne 12215-5-Bezug → Fehler. Confidence: **documented**.
+
+### FB-31-03-002 — Falsche/fehlende Entwurfskategorie (k_DC nicht gesetzt)
+**Symptom:** Bemessungsdruck ohne k_DC oder mit falscher Kategorie. **Folge:** Kat-A-Boot mit Kat-C-Druck (Faktor 0,6 statt 1,0) → ~40 % Unterlast. **Korrektur:** k_DC = 1,0/0,8/0,6/0,4 (A/B/C/D) konsistent mit CE-Kategorie ansetzen. **Prüfkriterium:** k_DC fehlt oder ≠ CE-Kategorie → Fehler. Confidence: **documented**.
+
+### FB-31-03-003 — n_CG bei Gleitboot falsch/ungedeckelt
+**Symptom:** Bodendruck mit unrealistisch hohem n_CG (> 6) oder n_CG=0. **Folge:** massive Über-/Unterdimensionierung Boden. **Korrektur:** n_CG nach Norm ermitteln, Rechenwert **≤ 6** deckeln; Segelboot: n_CG nur in k_L, dort = 3. **Prüfkriterium:** n_CG > 6 im Rechengang → Fehler. Confidence: **documented**.
+
+### FB-31-03-004 — Flächenfaktor k_AR ignoriert (große Panels überdimensioniert)
+**Symptom:** großes Rumpffeld mit vollem Spitzendruck gerechnet. **Folge:** unnötig dick/schwer; Gewichtsbudget gesprengt. **Korrektur:** k_AR (mit Norm-Floor) anwenden. **Prüfkriterium:** k_AR = 1,0 bei großem Panel → Überprüfung. Confidence: **documented**.
+
+### FB-31-03-005 — Panel-Kurzmaß b falsch (Länge statt kurze Seite)
+**Symptom:** Dicke aus der langen Panel-Seite oder Diagonale gerechnet. **Folge:** grob zu dünn (t ∝ b). **Korrektur:** immer das **kurze** Feldmaß b zwischen den Steifen verwenden; enger versteifen senkt b. **Prüfkriterium:** b ≥ langes Feldmaß → Fehler. Confidence: **documented**.
+
+### FB-31-03-006 — Bemessungsspannung ohne Sicherheitsanteil (σ_d = Bruchfestigkeit)
+**Symptom:** t aus voller Bruchfestigkeit statt σ_d gerechnet. **Folge:** effektiver SF ≈ 1 → Bruchgefahr. **Korrektur:** FRP single skin **σ_d = 0,5 × Bruch-Biegefestigkeit**; Metall-Faktor am Normtext verifizieren. **Prüfkriterium:** σ_d ≥ Bruchfestigkeit → Fehler. Confidence: **documented**.
+
+### FB-31-03-007 — Kiel mit Einzel-Vertikalfaktor statt ISO-12215-9-Lastfällen
+**Symptom:** Ballast-/Kielanbindung nur über „x× g vertikal" bemessen (vgl. 6.8). **Folge:** maßgebender **90°-Seitenfall** (Quer-Biegemoment) und **Grundberührung** fehlen → Unterbemessung der Kiel-Rumpf-Anbindung/Bolzen. **Korrektur:** Lastfälle LC1/LC3/LC4 nach ISO 12215-9 führen; Kielbolzen-Spannungsfaktor 0,67. **Prüfkriterium:** Kielanbindung ohne 12215-9-Lastfälle → Fehler. Confidence: **documented**.
+
+### FB-31-03-008 — Materialkennwerte nicht aus 12215-1/-2/-3 (geschätzte Festigkeiten)
+**Symptom:** σ_uf / E-Modul / Kern-Scherfestigkeit frei geschätzt statt aus Prüf-/Referenzdaten. **Folge:** σ_d auf Sand gebaut. **Korrektur:** FRP aus Teil 1 (Referenzlaminat/Prüfung), Kern aus Teil 2, Metall/Holz aus Teil 3; Zug/Druck/Schub nach ISO 527 / ASTM D3039/D3410/D4255. **Prüfkriterium:** Festigkeit ohne Herkunftsnachweis → Überprüfung. Confidence: **documented**.
+
+### FB-31-03-009 — Steife ohne wirksame Anbindung als „tragend" gezählt
+**Symptom:** Stringer/Schott nur aufgelegt, im Modell aber lasttragend. **Folge:** angesetzte Steifigkeit real nicht vorhanden → Panel unterversteift. **Korrektur:** wirksame Anbindung (Schweißen/Strukturkleben/Bonding Angle) nach ISO 12215-6 sicherstellen; sonst nicht als tragend ansetzen. **Prüfkriterium:** tragendes Element ohne belegte Anbindung → Fehler. Confidence: **documented**.
+
+### FB-31-03-010 — Heuristik-Formel als Norm-Nachweis ausgegeben
+**Symptom:** Report nennt eine Faustformel (z. B. „t ≈ 4 + 0,1·LWL") als „ISO-12215-konform". **Folge:** Scheingenauigkeit, kein gültiger Nachweis (Audit-Kernbefund). **Korrektur:** Heuristik nur als Vorabschätzung „estimated" kennzeichnen; CE-Nachweis ausschließlich über die druckbasierte Methodik W2–W3. **Prüfkriterium:** Faustformel als Fakt/„konform" deklariert → Fehler. Confidence: **documented**.
+
+---
+
+## W6. Troubleshooting / Entscheidungsbaum Scantling-Nachweis
+
+```
+START: Struktur-Nachweis Sportboot (L_H ≤ 24 m)?
+  │
+  ├─ Rennboot (nur Profi-Racing)? ── ja → ISO 12215-5 NICHT anwendbar → Klassifikationsregel/Sondernachweis
+  │
+  ├─ nein → Entwurfskategorie A/B/C/D festlegen (RCD) → k_DC = 1,0/0,8/0,6/0,4
+  │
+  ├─ Boot-Typ?
+  │     ├─ Motor Gleiten ── n_CG ermitteln, Rechenwert ≤ 6 deckeln → geht in Bodendruck
+  │     ├─ Motor Verdränger ── Verdränger-Druckpfad
+  │     └─ Segel ── n_CG NUR in k_L (=3), Druck nicht n_CG-getrieben
+  │
+  ├─ Je Bauteil: Grunddruck × k_DC × k_AR × k_L = P
+  │     (exakte Grunddruck-Koeffizienten NUR aus Normtext — nicht raten)
+  │
+  ├─ Werkstoff → σ_d (FRP single skin 0,5·σ_uf; Metall am Normtext prüfen)
+  │
+  ├─ Panel: t_erf ∝ b·√(P·k2/σ_d)  +  separater STEIFIGKEITS-Nachweis (k3, E)
+  │     └─ b = KURZES Feldmaß zwischen Steifen
+  │
+  ├─ Steifen: Profil + mittragende Breite (effective plating) → Biege-/Schubnachweis
+  │
+  ├─ Kiel/Ruder/Rigg? → Lasten aus ISO 12215-9 / -8 / -10, dann in -5 einsetzen
+  │
+  └─ Anbindung/Details nach ISO 12215-6 (Bonding Angles, glatter Lastfluss, Radien)
+```
+
+---
+
+## W7. FAQ, Prüffristen, Glossar
+
+### W7.1 FAQ
+- **Gilt ISO 12215-5 auch für Katamarane?** Der Rechenkern (Drücke/Spannungen) ja; Mehrrumpf-**Lasten** kommen aus **Teil 7**, die dann in Teil 5 eingesetzt werden. Confidence: **documented**.
+- **Ist ein globaler Sicherheitsfaktor vorgeschrieben?** ISO 12215-5 arbeitet **nicht** mit einem einzelnen globalen SF, sondern mit **Bemessungsspannungen** (σ_d = Faktor × Festigkeit); der Sicherheitsanteil steckt in diesem Faktor (FRP single skin 0,5). Confidence: **documented**.
+- **Warum ist der Bug dicker?** k_L verteilt den Druck längs; vorne höher (Slamming) → höherer örtlicher Druck → dickere Beplankung. Confidence: **documented**.
+- **Darf ich die Faustformeln aus Teil I für die CE-Akte nehmen?** Nein — nur als Vorab-Schätzung. CE-Nachweis = druckbasierte Methodik W2–W3. Confidence: **documented**.
+
+### W7.2 Prüf-/Wiederholfristen (Nachweis-Governance, nicht ISO-normiert)
+| Anlass | Aktion |
+|--------|--------|
+| Neue Norm-Revision (z. B. 12215-9 Neufassung) | k-Werte/Lastfälle gegen Primärtext neu prüfen |
+| Konstruktionsänderung (Länge, Kategorie, Kiel, Antrieb) | Scantling-Nachweis neu führen |
+| Materialwechsel (Harz/Faser/Kern) | σ_uf/E/Kern-Scherfestigkeit aus Teil 1/2/3 neu ansetzen |
+> Confidence: **estimated** — Governance-Empfehlung, keine Normvorgabe.
+
+### W7.3 Glossar (verifizierte Begriffe)
+| Begriff | Bedeutung |
+|---------|-----------|
+| **Scantling** | Bauteil-Bemessungsgröße (Dicke/Profil/Abstand) |
+| **k_DC** | Design-Kategorie-Faktor (A 1,0 / B 0,8 / C 0,6 / D 0,4) |
+| **n_CG** | vertikale Bemessungsbeschleunigung am CG in g (Gleitboot ≤ 6) |
+| **k_AR** | Flächen-/Aspekt-Reduktionsfaktor (großes Panel → kleinerer Druck) |
+| **k_L** | Längsverteilungsfaktor (Bug höher als Heck) |
+| **σ_d** | Bemessungsspannung = Faktor × Materialfestigkeit |
+| **σ_uf** | Bruch-Biegefestigkeit (ultimate flexural strength) FRP |
+| **effective plating** | mittragende Breite der Beplankung am Steifengurt |
+| **Bonding Angle** | faserverstärkte Anbindungslasche Steife↔Beplankung (Teil 6) |
+| **L_H** | Rumpflänge (length of hull), Geltungsgrenze 24 m |
+
+---
+
+## W8. Quellen (Teil II)
+
+- ISO 12215-5:2019 — Design pressures for monohulls, design stresses, scantlings determination — iso.org/standard/69552 (Scope, k_DC).
+- ISO 12215 Serie (Teil-Titel) — BSI-Serienübersicht „BS EN ISO 12215" + ISO-Katalog.
+- ISO 12215-6:2008/2018 — Structural arrangements and details — iso.org/standard/42346.
+- ISO 12215-7:2020 — Multihull loads — iso.org/standard/73457.
+- ISO 12215-9:2012 — Sailing craft appendages (Lastfälle/Spannungsfaktoren) — iso.org/standard/55339 (+ Fach-Review der Revision).
+- ISO 12215-10:2020 — Rig loads and rig attachment — iso.org/standard/67294.
+- ISO 12215-5-Methodik-Zusammenfassungen (Sekundär, zur Korroboration von n_CG, k_AR, σ_d, k2/k3): idoc.pub / researchgate / boatdesign.net — als **Sekundärquellen** gekennzeichnet, Primärtext-Verifikation vorbehalten.
+
+> **Verifikations-Disziplin:** Alle in Teil II mit **documented** markierten Werte sind aus mindestens einer belastbaren Quelle korroboriert. Alles, was nur aus einer Sekundärzusammenfassung stammt oder dem kostenpflichtigen Normtext vorbehalten ist (exakte Grunddruck-Koeffizienten, k2/k3-Tabellen, Metall-σ_d-Faktor, effective-plating-Zahlwert), ist **ausdrücklich als „estimated/Sekundärquelle/Normtext-vorbehalten"** gekennzeichnet und **nicht** als Fakt ausgegeben. Erfindungsverbot eingehalten.
+
+---
+
 **Datei abgeschlossen.**  
-Kat 31.03 Strukturberechnung — Version 1.0 — 2025-01
+Kat 31.03 Strukturberechnung — Version 2.0 (Teil II Werft-Tiefe ergänzt, web-verifiziert) — 2025-01 / Rev. 2026-07
