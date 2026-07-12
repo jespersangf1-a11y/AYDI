@@ -892,7 +892,264 @@ class RaftInventoryReport(BaseModel):
 
 ---
 
+## 11. Verifizierter Normen-Rahmen (Korrektur & Vertiefung)
+
+> **Zweck dieses Abschnitts:** Die Abschnitte 1–10 oben enthalten historisch gewachsene, teils ungenaue Normbezüge (z. B. „ISO 9650 (2019)", „ISO 9650-3 = Inspektion", Vermischung von „Kategorie A/B" mit „Typ 1/2"). Dieser Abschnitt stellt den **web-verifizierten** Stand voran. Bei Widerspruch gilt der hier belegte Wortlaut. Bestand bleibt unverändert erhalten.
+
+### 11.1 ISO-9650-Reihe — korrekte Titel & Geltungsbereiche
+
+| Norm | Offizieller Titel | Geltungsbereich (verifiziert) | Confidence |
+|------|-------------------|-------------------------------|------------|
+| **ISO 9650-1:2022** | *Small craft — Inflatable liferafts — Part 1: Type 1 and type 2* | Mindestanforderungen an Konstruktion, Leistung, Kennzeichnung + Prüfverfahren für aufblasbare Rettungsinseln **Typ 1 und Typ 2**, Kapazität **4–16 Personen**, für Sportboote mit Rumpflänge **bis 24 m**, Aussetzen durch Überbordwerfen aus Höhe **≤ 6 m**. Ersetzt ISO 9650-1:2005 („Type I"). | documented |
+| **ISO 9650-2:2005** | *Small craft — Inflatable liferafts — Part 2: Type II* | Typ II, Kapazität **4–10 Personen**, Rumpflänge **bis 24 m**, Aussetzhöhe **≤ 4 m**, für Fahrten mit **mäßigen** Bedingungen (Küstengewässer, große Buchten, Ästuare, Seen, Flüsse), hoher Grad an Eigenständigkeit. | documented |
+| **ISO 9650-3:2005/2009** | *Small craft — Inflatable liferafts — Part 3: Material(s)* | Anforderungen + Prüfverfahren für die **Materialien** der Inseln nach Teil 1/2. **Nicht** die Inspektion. | documented |
+
+*Quellen: iso.org — [ISO 9650-1:2022 (std 80963)](https://www.iso.org/standard/80963.html), [ISO 9650-2:2005 (std 37479)](https://www.iso.org/standard/37479.html), [ISO 9650-3:2005 (std 37480)](https://www.iso.org/standard/37480.html) / [:2009 (std 45643)](https://www.iso.org/standard/45643.html).*
+
+> **Korrektur zu §4.1/§4.2:** Die dortigen Pydantic-Modelle sind mit „ISO 9650-3" überschrieben. **ISO 9650-3 regelt Materialien, nicht Inspektionsintervalle.** Serviceumfang/-frist ergeben sich aus der **Herstelleranweisung** und — für gewerbliche Fahrzeuge — aus **SOLAS Kap. III (LSA-Code)**, nicht aus ISO 9650-3. Der Code der Modelle bleibt gültig, nur der Normbezug im Docstring ist unpräzise.
+
+### 11.2 „Typ 1/2" ≠ „Kategorie A/B" ≠ „Group A/B" — Begriffsordnung
+
+Die Abschnitte 1–2 vermischen drei Ebenen. Sauber getrennt (verifiziert):
+
+- **Typ 1 (ISO 9650-1)** = Offshore/Hochsee. **Typ 2 (ISO 9650-2)** = Küste/Inshore. Das ist die **Norm-Ebene** (Aussetzhöhe 6 m vs. 4 m).
+- **Group A vs. Group B** ist eine Unterteilung **innerhalb ISO 9650-1 Typ 1** nach **Thermik/Boden**:
+  - **Group A:** isolierender **Doppelboden**, Aufblas-/Betriebs-Umgebungstemperatur **−15 °C bis +65 °C** → echte Hochsee/Kaltwasser.
+  - **Group B:** **Einfachboden** (keine Bodenisolierung), geprüft/betrieben **0 °C bis +65 °C** → wärmere Gewässer.
+  - *Quellen: [SeaCurity — ISO 9650-1 Group A](https://www.seacurity.de/en/products/rettungsinsel-iso-9650-1-group-a), [RYA — Liferaft](https://www.rya.org.uk/water-safety/safety-equipment/liferaft).* Confidence: documented.
+- **Kategorie A/B/C/D** ist die **CE-Entwurfskategorie (RCD 2013/53/EU)** des **Bootes**, nicht der Insel. Sie bestimmt, *welche* Insel-Klasse sinnvoll ist, ist aber kein Insel-Attribut.
+
+### 11.3 SOLAS / LSA-Code — verifizierte Kernanforderungen (gewerblich)
+
+SOLAS-Inseln fallen unter **SOLAS Kap. III** + **LSA-Code (Res. MSC.48(66))** — ein **eigenes Regime**, getrennt von ISO 9650 (Freizeit). Verifizierte Konstruktionsvorgaben für aufblasbare Rettungsinseln:
+
+| Anforderung | Wert (verifiziert) | Confidence |
+|-------------|--------------------|------------|
+| Hauptauftriebskammer | **≥ 2 getrennte Kammern**, jede über eigenes Rückschlagventil; bei Ausfall **einer** Kammer müssen die intakten die volle zugelassene Personenzahl mit **positivem Freibord** ringsum tragen | documented |
+| Personen-Referenzmasse | **75 kg** je Person (Auslegung) | documented |
+| Verdeck (Canopy) | schützt Insassen; **beim Aussetzen automatisch aufgestellt** | documented |
+| Fangleine (Painter) | verbindet Schiff↔Insel; so ausgelegt, dass die **sinkende** Insel nicht mitgezogen wird; Container so auftriebsstark, dass er die Painter herauszieht und den Aufblasmechanismus auslöst | documented |
+| Stabilität | **selbstaufrichtend** oder in Seegang/Ruhewasser **leicht aufrichtbar** | documented |
+
+*Quelle: LSA-Code, Kap. IV (Survival craft) — u. a. [LSA-Code (Racing Yacht Mgmt Mirror)](https://www.racingyachtmanagement.com/misc/lsa_code.pdf), [NeRF Maritime — LSA-Code](https://puc.overheid.nl/nsi/doc/PUC_2393_14/5/), [marineinspection.app — SOLAS Ch. III](https://marineinspection.app/blog/solas-life-saving-appliances-chapter-iii-requirements-inspection-guide).*
+
+### 11.4 RYA-Kaufberatung (verifiziert)
+
+- **ISO 9650** genügt für UK-/Küstenfahrt. **SOLAS** wird **dringend empfohlen** jenseits **150 sm** von der Küste und ist **verpflichtend für Fahrzeuge > 13,7 m** (RYA-Sicht) — SOLAS-Inseln sind schwerer, voluminöser, teurer.
+- Empfohlene Merkmale beim Kauf: **vier Wasserballasttaschen** (mind. **25 l/Person** bzw. **160 l** gesamt), **selbstaufstellendes Verdeck**, **Einstiegsrampe (boarding ramp)**, **Zweikammer-Auftrieb**, aufblasbarer/isolierter Boden.
+- **Treibanker/Drogue:** mind. **30 m** Leine, **6 mm Nylon** — für Stabilität essenziell.
+- Kapazität nach **realer Crewgröße** wählen, **nicht** nach Kojenzahl (weniger Personen = bessere Stabilität). Mehrere kleinere Inseln sind oft leichter auszusetzen.
+
+*Quelle: [RYA — Liferaft](https://www.rya.org.uk/water-safety/safety-equipment/liferaft).* Confidence: documented.
+
+---
+
+## 12. HRU (Hydrostatic Release Unit) — verifizierte Technik
+
+Der HRU ist das druckausgelöste Freigabegerät, das die Insel beim Sinken automatisch von der Halterung trennt. Marktreferenz: **CM Hammar H20** (SOLAS/MED/UKCA/USCG-zugelassen, weit verbreiteter Standard).
+
+| Parameter | Wert (verifiziert, Hammar H20) | Confidence |
+|-----------|--------------------------------|------------|
+| **Auslösetiefe** | **1,5–4 m** (SOLAS-Vorgabe: „nicht mehr als 4 m"; gelbes Label = SOLAS-Standardmodell) | documented |
+| **Wirkprinzip** | Wasserdruck drückt eine flexible Membran → Stift springt aus Kerbe → federbelastetes Messer durchtrennt die Zurring-/Fangleine → Insel schwimmt frei | documented |
+| **Weak Link Bruchlast** | **2,2 kN ± 0,4 kN** (rote Sollbruchstelle; hält die Painter nach Freigabe, reißt aber, damit die Insel nicht mit dem Schiff untergeht) | documented |
+| **Service-Life / Ersatz** | **H20 R: alle 24 Monate** ersetzen; **H20 RX: alle 30 Monate**. **Wartungsfrei/Einweg** — kein Jahresservice, keine Ersatzteile; **Bolzen wird mit der Einheit** getauscht | documented |
+| **Temperaturbeständigkeit** | **−30 °C bis +65 °C** (LSA-Code-Anforderung) | documented |
+
+*Quellen: [CM Hammar — H20 Release Units](https://www.cmhammar.com/h20-release-units/), [Hammar H20 SOLAS Produktdaten (Unisea)](https://www.unisea-mar.com/hammar-hru-h20-solas/), LSA-Code Kap. IV.*
+
+> **Auflösung/Präzisierung zu §2.2 und §6.1:** Die Primärspezifikation des HRU ist eine **Auslösetiefe (1,5–4 m)**, nicht ein Barwert. Die dort genannten „0,15–0,4 bar" sind eine grobe hydrostatische Umrechnung (1,5 m ≈ 0,15 bar, 4 m ≈ 0,4 bar) und als Näherung vertretbar; maßgeblich bleibt die **Tiefenangabe**. Der HRU ist **nicht „alle 2 Jahre zu kalibrieren"** (so §2.2/§7.4), sondern beim Hammar-Typ **als Einweg-Einheit alle 24/30 Monate zu ersetzen**.
+
+> **⚠️ ZU PRÜFEN — nicht verifiziert:** Die in §7.4 genannte „~2 % False-Positive-Rate" für HRU konnte in autoritativen Quellen (Hersteller/LSA) **nicht belegt** werden. Als Faktum **nicht verwenden**, bis quantifiziert; korrekt bleibt: HRU sind zuverlässig, wenn innerhalb des Service-Life und mit Ablauf-Freiheit über der Halterung montiert.
+
+---
+
+## 13. Verpackung & Stauung: Valise vs. Container/Cradle (verifiziert)
+
+| Kriterium | **Valise** (Softpack) | **Container/Kanister** (Hartschale) |
+|-----------|-----------------------|-------------------------------------|
+| Aufbau | flexible Tasche aus PVC/Nylon-Canvas mit verstärkten Griffen | starre, wasserdichte GFK-/Hartkunststoff-Schale |
+| Stauort | **nur trocken/geschützt**: unter Deck oder in wasserdichter Deckskiste | **an Deck** in Stahl-/GFK-**Cradle** (Deck-/Spiegelmontage) |
+| HRU-Eignung | i. d. R. **kein** HRU (manuell) | **HRU-fähig** — automatische Freigabe beim Sinken |
+| Aussetzen | zum Aussetzpunkt tragen, dann Painter ziehen | direkt aus der Cradle über Bord |
+| Gewicht/Handling | leichter, günstiger; > 4-Pers. für eine Person kaum tragbar | schwerer, teurer (Container **+** Cradle) |
+| Einsatzprofil | küstennah/kurze Törns, trockene Lagerung möglich | offshore/gewerblich/Charter, dauerhaft einsatzbereit |
+
+*Quellen: [Life Raft Professionals — Container vs. Valise](https://www.liferaftprofessionals.com/blogs/marine-safety-resource-hub/life-raft-in-a-container-canister-or-valise-whats-the-difference), [Morgan Marine — Valise vs Container](https://morganmarinechandlery.com/blogs/news/valise-or-container-liferaft-what-s-the-difference-and-which-should-you-choose), [VIKING — Storage & Installation](https://www.viking-life.com/industries/yachting/liferafts-yachting/choosing-your-liferaft/storage-and-installation/).* Confidence: documented.
+
+> **Faustregel:** Valise **muss** trocken gelagert werden — eine Valise dauerhaft offen an Deck oder in nasser Backskiste ist ein Mangel (siehe FB-29-02-004). Nur Container gehören in eine offene Cradle.
+
+---
+
+## 14. Ausrüstungspakete (Equipment Packs) — verifiziert
+
+Zwei parallele Paket-Systeme, je nach Norm-Regime:
+
+**ISO 9650 (Freizeit):**
+- Mindestens **Pack 1**. Für **ISO 9650-1 Typ 1 Group A** ist mindestens **Pack 2** vorgeschrieben. Hersteller vermarkten die Pakete häufig als **„< 24 h"** und **„> 24 h"** (Einsatzdauer-orientiert).
+- *Quelle: [World Sailing / ISAF — Liferaft Specification WP](https://www.sailing.org/tools/documents/SR0614420WPLiferaftSpecification-%5B17561%5D.pdf).* Confidence: documented.
+
+**SOLAS (gewerblich):**
+- Mindestens **SOLAS A**. **SOLAS B** ist ein **Upgrade-Paket**, das häufig auf ISO-9650-Freizeitinseln nachgerüstet wird.
+
+**Typischer Inhalt eines SOLAS-B-Pakets** (Beispiel-Bestückung Handelsware, verifiziert):
+Rettungswurfring + Leine, Schöpfeimer, Blasebalg-/Handpumpe, Reparaturkit, Signalpfeife, wasserdichte Taschenlampe, Überlebens-/Signaltafel, schwimmendes Sicherheitsmesser, Signalspiegel, Treibanker + Leine, 2× Paddel, 2× Schwämme, **2× rote Fallschirm-Signalraketen**, **3× rote Handfackeln**, 60× Seekrankheitstabletten, Seekrankheitsbeutel.
+
+*Quellen: [Ocean Safety — Ocean ISO Liferaft (SOLAS B)](https://www.oceansafety.com/all-categories/product/ocean-iso-liferaft-with-solas-b-pack), [Suffolk Marine Safety — Sea-Safe ISO 9650 SOLAS B](https://suffolkmarinesafety.com/product/8-person-sea-safe-iso-9650-khyf-liferaft-24hr-solas-b/).* Confidence: documented.
+
+> **Hinweis:** Der genaue Paketinhalt variiert nach Hersteller, Flaggenstaat und Fahrtgebiet. Die Liste oben ist eine **belegte Beispiel-Bestückung**, kein normativer Mindestkatalog — für den verbindlichen Inhalt gilt die jeweilige Produktzulassung.
+
+---
+
+## 15. Fehlerbild-Atlas — Ergänzung (IDs FB-29-02-NNN)
+
+> Neue, kollisionsfreie Kennungen im Schema **FB-29-02-NNN** (das Bestandsschema „Fehlerbild 3.x.y" in §3 bleibt unberührt). Diese Befunde ergänzen §3 um plattform-/normbezogene Mängel.
+
+**FB-29-02-001 — HRU über Service-Life nicht ersetzt**
+- Merkmal: HRU-Datumsstempel > 24 Monate (H20 R) bzw. > 30 Monate (H20 RX) alt; Einheit noch verbaut.
+- Ursache: Verwechslung mit „kalibrierbar"; Einweg-Prinzip nicht bekannt.
+- Behebung: **Komplett-Austausch** der HRU **inkl. Bolzen** durch Neueinheit; kein Nachkalibrieren möglich.
+- Norm/Quelle: Hammar H20 (24/30 Monate). Schweregrad: **KRITISCH** (keine Auto-Freigabe beim Sinken).
+
+**FB-29-02-002 — Weak Link falsch/gealtert**
+- Merkmal: Sollbruchstelle fehlt, falsche Bruchlast, UV-spröde.
+- Ursache: Nachrüstung mit ungeeigneter Leine; Überalterung.
+- Behebung: originale Weak Link mit **2,2 kN ± 0,4 kN** einsetzen.
+- Norm/Quelle: Hammar. Schweregrad: **HOCH** (entweder Insel wird mitgezogen oder Painter reißt zu früh).
+
+**FB-29-02-003 — Painter nicht an starkem Punkt / an Reling angeschlagen**
+- Merkmal: Fangleine an Seereling/schwacher Klampe statt am HRU-Schwachpunkt bzw. strukturellem Festpunkt.
+- Ursache: falsche Rigging-Praxis.
+- Behebung: Painter über HRU/Weak Link an strukturell tragfähigem Punkt anschlagen; freie Auslösung sicherstellen.
+- Norm/Quelle: LSA-Code Painter-System. Schweregrad: **KRITISCH**.
+
+**FB-29-02-004 — Valise falsch gelagert (nass/offen an Deck)**
+- Merkmal: Softpack-Valise dauerhaft an Deck oder in nasser/undichter Backskiste.
+- Ursache: Container/Valise-Unterschied ignoriert.
+- Behebung: Valise **trocken** unter Deck oder in **wasserdichter** Kiste stauen; sonst auf Container/Cradle umsteigen.
+- Norm/Quelle: Herstellervorgabe/VIKING, Life Raft Professionals. Schweregrad: **MITTEL-HOCH** (Materialdegradation, Fehlfunktion).
+
+**FB-29-02-005 — Cradle-Spannband / Pelican-Hook korrodiert oder blockiert**
+- Merkmal: Container-Cradle-Gurt/Schnellverschluss verrostet, klemmt, Draht gealtert.
+- Ursache: Salzwasser, fehlende Sichtprüfung.
+- Behebung: Cradle-Beschläge (316L) prüfen/ersetzen; Auslösung freigängig halten.
+- Schweregrad: **HOCH** (Insel löst sich nicht aus Cradle).
+
+**FB-29-02-006 — Auftriebs-Redundanz nicht gegeben**
+- Merkmal: nur eine Kammer hält Druck; zweite Kammer/Rückschlagventil defekt.
+- Ursache: Ventilalterung, Nahtschaden.
+- Behebung: bei Service — **jede** Kammer muss allein die volle Personenzahl mit positivem Freibord tragen; sonst Insel sperren.
+- Norm/Quelle: LSA-Code (≥ 2 Kammern, 75 kg/Person). Schweregrad: **KRITISCH**.
+
+**FB-29-02-007 — Wasserballasttaschen fehlend/beschädigt**
+- Merkmal: Ballast-Pockets unter dem Boden fehlen, zerrissen, verklebt.
+- Ursache: Verschleiß, Fehlmontage.
+- Behebung: Ballastsystem instand setzen (RYA-Richtwert: 4 Taschen, ≥ 25 l/Person bzw. ≥ 160 l).
+- Norm/Quelle: RYA. Schweregrad: **HOCH** (Kentergefahr im Seegang).
+
+**FB-29-02-008 — Verdeck stellt sich beim Aussetzen nicht selbst auf**
+- Merkmal: Canopy bleibt liegen, Bögen richten nicht auf.
+- Ursache: Bogenrohr defekt, Faltfehler nach Service.
+- Behebung: durch zugelassene Servicestation neu packen/instand setzen.
+- Norm/Quelle: LSA-Code (auto-erect canopy). Schweregrad: **HOCH** (Exposition/Hypothermie).
+
+**FB-29-02-009 — Serviceintervall überschritten (gewerblich)**
+- Merkmal: gewerbliche Insel > 12 Monate ohne Service (bzw. > herstellerdefiniertes Extended-Intervall).
+- Ursache: Wartungsversäumnis.
+- Behebung: Service bei zugelassener Station; SOLAS-Standard = jährlich, sofern nicht Extended-Interval-Zulassung (z. B. VIKING S30: jährliche Bordinspektion + Station alle 30 Monate).
+- Norm/Quelle: SOLAS Kap. III / VIKING. Schweregrad: **KRITISCH** (nicht rechtskonform, Zulassung erloschen).
+
+**FB-29-02-010 — Kapazität < Personen an Bord / falscher Group-Typ fürs Fahrtgebiet**
+- Merkmal: Insel-Nennkapazität kleiner als reale Crew; oder Group B / Typ 2 für Hochsee/Kaltwasser.
+- Ursache: Fehlauslegung.
+- Behebung: Kapazität ≥ Personenzahl (RYA: nach realer Crew wählen); Fahrtgebiet → Typ/Group anpassen (Kaltwasser/offshore = Typ 1 Group A).
+- Norm/Quelle: ISO 9650-1/-2, RYA. Schweregrad: **KRITISCH**.
+
+---
+
+## 16. Entscheidungsbaum: Welche Insel für welches Boot?
+
+```
+Fahrtgebiet & Regime?
+├─ Gewerblich / SOLAS-pflichtig / > 13,7 m / > 150 sm offshore
+│     → SOLAS-Insel (LSA-Code), Container + HRU, Service ≤ 12 Mon.
+│       (bzw. Extended-Interval-Typ mit Stationsservice ≤ 30 Mon.)
+├─ Freizeit, Hochsee / Blauwasser / Kaltwasser
+│     → ISO 9650-1 Typ 1 GROUP A (Doppelboden, −15 °C…+65 °C),
+│       Container + HRU empfohlen, > 24 h Equipment-Pack
+├─ Freizeit, Hochsee / warmes Wasser
+│     → ISO 9650-1 Typ 1 GROUP B (Einfachboden, 0 °C…+65 °C)
+└─ Freizeit, Küste / Buchten / Binnen (mäßige Bedingungen)
+      → ISO 9650-2 Typ 2 (Aussetzhöhe ≤ 4 m), Valise trocken gestaut
+
+Kapazität: ≥ reale Crewgröße (nicht Kojenzahl). Mehrere kleine
+Inseln > eine große (Redundanz + Aussetzbarkeit).
+Stauung: Valise NUR trocken/unter Deck. Container in Cradle an Deck.
+```
+
+*Grundlage: ISO 9650-1/-2 (iso.org), RYA-Kaufberatung, VIKING-Stauhinweise (verifiziert, §11–13).*
+
+---
+
+## 17. FAQ — Ergänzung (verifiziert)
+
+23. **Muss der HRU kalibriert oder ausgetauscht werden?**
+    Beim Marktstandard **Hammar H20** wird **nicht kalibriert, sondern ersetzt**: H20 R alle **24 Monate**, H20 RX alle **30 Monate**, inklusive Bolzen. Er ist wartungsfrei/Einweg. *(Quelle: CM Hammar.)*
+
+24. **Wie tief löst ein HRU aus?**
+    **1,5–4 m** Wassertiefe (SOLAS: „nicht mehr als 4 m"); Drains verhindern Fehlauslösung durch überkommende See. *(LSA-Code / Hammar.)*
+
+25. **Was ist der Unterschied zwischen ISO 9650-1 und -2?**
+    **-1 (Typ 1)** = Offshore, Aussetzhöhe **≤ 6 m**, 4–16 Pers.; unterteilt in **Group A** (Doppelboden, −15 °C) und **Group B** (Einfachboden, 0 °C). **-2 (Typ 2)** = Küste/mäßige Bedingungen, Aussetzhöhe **≤ 4 m**, 4–10 Pers. *(iso.org.)*
+
+26. **SOLAS A oder SOLAS B Pack — was brauche ich?**
+    SOLAS verlangt mindestens **Pack A**; **Pack B** ist ein Upgrade, das häufig auf ISO-9650-Freizeitinseln montiert wird (u. a. Fallschirmraketen, Handfackeln, Treibanker, Erste Hilfe). *(Ocean Safety / Suffolk Marine.)*
+
+27. **Wie viele Auftriebskammern muss eine Insel haben?**
+    **Mindestens zwei** getrennte Kammern; eine allein muss die volle Personenzahl (à 75 kg) mit positivem Freibord tragen. *(LSA-Code Reg. 4.2.)*
+
+28. **Container oder Valise?**
+    Valise nur bei **trockener** Stauung (unter Deck/wasserdichte Kiste), küstennah, leichter. Container für Deckstauung in Cradle, offshore/gewerblich, HRU-fähig. *(RYA / VIKING / Life Raft Professionals.)*
+
+---
+
+## 18. Glossar — Ergänzung (verifizierte Begriffe)
+
+| Englisch | Deutsch | Definition (verifiziert) |
+|----------|---------|--------------------------|
+| **Type 1 / Type 2** | Typ 1 / Typ 2 | ISO 9650-1 (Offshore, ≤ 6 m Aussetzhöhe) vs. ISO 9650-2 (Küste/mäßig, ≤ 4 m). |
+| **Group A / Group B** | Gruppe A / B | Innerhalb ISO 9650-1 Typ 1: Doppelboden −15 °C…+65 °C (A) vs. Einfachboden 0 °C…+65 °C (B). |
+| **Weak Link** | Sollbruchstelle | Rote Reißleine im HRU-Painter-System; Bruchlast **2,2 kN ± 0,4 kN** (Hammar). |
+| **Water Ballast Bag** | Wasserballasttasche | Taschen unter dem Boden, füllen sich mit Wasser gegen Kentern (RYA: 4×, ≥ 25 l/Pers.). |
+| **Drogue** | Treibanker/Drogue | Stabilisierungs-/Driftanker; RYA: ≥ 30 m Leine, 6 mm Nylon. |
+| **Painter** | Fangleine | Verbindung Schiff↔Insel; löst Aufblasung aus, reißt an der Weak Link. |
+| **Canister / Container** | Kanister/Container | Starre Hartschale für Deckstauung in Cradle, HRU-fähig. |
+| **Valise** | Valise/Softpack | Flexible Tasche; **nur trockene** Stauung unter Deck/in wasserdichter Kiste. |
+| **Cradle** | Cradle/Wiege | Deck-/Spiegelhalterung für Container, mit Spannband + Schnellverschluss. |
+| **Pack 1 / Pack 2** | ISO-Paket 1/2 | ISO-9650-Ausrüstungspakete; Typ 1 Group A verlangt ≥ Pack 2 (oft „> 24 h"). |
+| **SOLAS A / SOLAS B** | SOLAS-Paket A/B | SOLAS-Mindestpaket A; B als Upgrade (Raketen, Fackeln, Erste Hilfe u. a.). |
+
+---
+
+## Quellenverzeichnis (Web-Verifikation §11–18)
+
+- ISO 9650-1:2022 — iso.org/standard/80963.html
+- ISO 9650-2:2005 — iso.org/standard/37479.html
+- ISO 9650-3:2005/2009 — iso.org/standard/37480.html · /45643.html
+- LSA-Code (MSC.48(66)), Kap. IV — racingyachtmanagement.com/misc/lsa_code.pdf · puc.overheid.nl (NeRF)
+- SOLAS Kap. III / HRU 4 m — marineinspection.app
+- CM Hammar H20 — cmhammar.com/h20-release-units/ · unisea-mar.com
+- RYA Liferaft-Beratung — rya.org.uk/water-safety/safety-equipment/liferaft
+- ISO 9650 Group A/B Thermik — seacurity.de
+- Equipment Packs — sailing.org (World Sailing/ISAF), oceansafety.com, suffolkmarinesafety.com
+- Valise vs. Container — liferaftprofessionals.com, morganmarinechandlery.com, viking-life.com
+- Serviceintervalle (Extended) — viking-life.com (S30)
+
+Confidence-Legende: **documented** = an autoritativer Quelle (ISO/LSA/Hersteller/RYA) belegt · **⚠️ ZU PRÜFEN** = nicht zweifelsfrei verifiziert, nicht als Faktum verwenden.
+
+---
+
 **Autor:** AYDI Knowledge Base  
 **Kontakt:** knowledge@aydi.de  
-**Letzte Überarbeitung:** 2026-05-18  
+**Letzte Überarbeitung:** 2026-07-12 (web-verifizierte Erweiterung §11–18)  
 **Nächste Review:** 2027-05-18

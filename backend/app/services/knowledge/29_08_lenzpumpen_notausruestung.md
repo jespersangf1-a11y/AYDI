@@ -311,6 +311,313 @@ class BilgePumpInspection(BaseModel):
 
 ---
 
+# ERWEITERUNG — Werft-Tiefe (web-verifiziert, Stand 2026-07)
+
+> **Hinweis zur Methodik:** Der nachfolgende Teil wurde gegen autoritative Quellen (ISO, IMO/SOLAS, ABYC, World Sailing OSR, Cospas-Sarsat/NOAA, Hersteller-Datenblätter) recherchiert. Jeder Faktenblock nennt seine Quelle inline und ein Confidence-Tag (`documented` = Norm/Regel/Hersteller-Angabe, `measured` = Datenblatt-Messwert, `estimated` = fachlich plausibel, aber nicht quellenbelegt). **Nicht zweifelsfrei belegbare Zahlen aus den Abschnitten 1–7 sind unten explizit als unverifiziert gekennzeichnet** — sie wurden NICHT gelöscht (Bestandsschutz), aber relativiert.
+
+---
+
+## 8. Regulatorischer Rahmen — korrigiert & verifiziert
+
+### 8.1 Präzisierung zum Dokument-Kopf
+
+Der Kopf nennt „ISO 15083, IMO SOLAS, DNV GL". Präzisierung:
+
+- **ISO 15083** ist die maßgebliche Norm für Sportboote — korrekt. `documented`
+- **IMO SOLAS** gilt grundsätzlich **nicht** für Sportboote < 24 m. SOLAS Kap. II-1 (Reg. 21 / 35-1) fordert Lenzsysteme für **kommerzielle/gewerbliche Schiffe** (Fahrgastschiffe ≥ 3 kraftbetriebene Lenzpumpen, Frachtschiffe ≥ 2). Für ein Sportboot ist SOLAS nur *kontextuell* relevant (z. B. GMDSS-Funk auf großen Yachten). Quelle: MarineGyaan, SOLAS II-1 Reg. 21. `documented`
+- **„DNV GL"** existiert unter diesem Namen nicht mehr; die Klassifikationsgesellschaft firmiert seit 2021 als **DNV**. Für Sportboote < 24 m ist eine Klassifikation ohnehin die Ausnahme (meist CE/RCD über ISO 15083).
+
+### 8.2 ISO 15083 — verifizierter Scope
+
+| Merkmal | Verifizierte Angabe | Quelle |
+|---------|--------------------|--------|
+| Titel | ISO 15083:2020 „Small craft — Bilge-pumping systems" | iso.org/standard/72972 |
+| Aktuelle Fassung | ISO 15083:2020 **+ Amd 1:2022** | iso.org/standard/83709 |
+| Geltungsbereich | Rumpflänge L_H **bis 24 m** (L_H nach ISO 8666:2016) | iso.org |
+| Zweck | Entfernung **normaler** Bilgewasser-Mengen (Spritzwasser, Regen, Sickerwasser, Verschüttung) | iso.org (Scope-Abstract) |
+| **Ausdrücklich NICHT abgedeckt** | **Lecksicherung / Havariefall (damage control)** — dafür gilt ISO 15083 **nicht** | iso.org (Scope-Abstract) |
+| Entwurfskategorien | verweist auf ISO 12217-1/-2/-3:2015 | iso.org |
+
+Confidence: `documented` (Scope aus offiziellem ISO-Abstract). **Die genauen l/min-Grenzwerte pro Bootslänge stehen im kostenpflichtigen Normtext und konnten NICHT verifiziert werden** — siehe 8.5.
+
+> **⚠️ Kernaussage:** Die in Abschnitt 1.1 genannte Tabelle (z. B. „<10 m → 20 l/min", „2 Systeme pro Boot", „SOLAS ab >35 m") ließ sich **nicht** gegen den Normtext belegen und ist als **estimated — unverifiziert** zu behandeln. Belegbar ist stattdessen der herstellerseitige Sizing-Ansatz nach Bootslänge (Abschnitt 10).
+
+### 8.3 EN ISO 15083 im RCD-Kontext
+
+EN ISO 15083 ist die unter der **EU-Sportbootrichtlinie 2013/53/EU (RCD)** herangezogene harmonisierte Norm für Lenzsysteme; die CE-Konformität eines Bootes (Kat. A–D) stützt sich für den Lenz-Aspekt auf diese Norm. Quelle: iso.org / RCD-Normenpraxis. `documented`
+
+### 8.4 Weitere relevante Regelwerke (jeweils verifiziert)
+
+| Regelwerk | Kern-Anforderung (Lenz/Notausrüstung) | Quelle | Confidence |
+|-----------|--------------------------------------|--------|-----------|
+| **ABYC H-22** (DC bilge pumps) | §22.7.3: Boote mit **geschlossenem Wohnraum** benötigen einen **akustischen Hochwasser-Alarm**, der anzeigt, dass Bilgewasser den max. Pegel erreicht | stevedmarineconsulting.com; ABYC H-22 | `documented` |
+| **ABYC H-27** (Seacocks, Thru-Hull Fittings & Drain Plugs) | Konische **Weichholz-Stopfen sind KEIN normkonformer *dauerhafter* Seehahn-Verschluss** — dennoch als getetherter Notfall-Backup empfohlen | ANSI/ABYC H-27 Preview; NMMA | `documented` |
+| **World Sailing OSR 3.23** (Bilge Pumps) | Kat. 1 (Monohull): **zwei manuelle** Lenzpumpen; bedienbar bei geschlossenen Luken/Niedergang; **nicht** in den Cockpit entwässernd | sailing.org OSR 3.23 | `documented` |
+| **World Sailing OSR 4.03** (Soft Wood Plugs) | Ein **konischer Weichholz-Stopfen** ist an/neben **jedem** Rumpfdurchbruch (through-hull) zu befestigen | sailing.org OSR 4.03 | `documented` |
+| **IMO MSC.471(101)** | Leistungsstandard für **float-free 406-MHz-EPIRB**, verbindlich seit **1. Juli 2022** | wwwcdn.imo.org MSC.471(101); Ocean Signal | `documented` |
+| **Cospas-Sarsat 406 MHz** | EPIRB sendet digitales Notsignal mit **15-stelliger UIN**; Registrierung erforderlich (z. B. NOAA / nationale Behörde) | sarsat.noaa.gov | `documented` |
+
+### 8.5 Ehrliche Lücke
+
+Die exakten normativen Fördermengen-Untergrenzen (l/min) je Bootslänge/Kategorie aus **ISO 15083** liegen hinter Bezahlschranke und wurden **bewusst nicht erfunden**. Für Auslegung ist deshalb der **herstellerbestätigte Bootslängen-Bezug** (Abschnitt 10) heranzuziehen, der direkt auf ISO 15083 verweist.
+
+---
+
+## 9. Grundlagen: Nennleistung vs. reale Förderleistung (das wichtigste Missverständnis)
+
+**Wirkprinzip-Falle bei Kreiselpumpen (Tauchpumpen):** Alle zentrifugalen Bilge-/Tauchpumpen werden bei **Open Flow** angegeben — d. h. **ohne Schlauch, ohne Förderhöhe, ohne Gegendruck**. Die reale Förderleistung im Boot liegt deutlich darunter. Quelle: Rule/Xylem, Fisheries Supply. `documented`
+
+**Gemessene Abschläge (Herstellerangaben Rule):** `measured`
+
+| Förderhöhe (Head) | Rule 2000 GPH | Rule 3700 GPH |
+|-------------------|---------------|---------------|
+| 0,9 m (3 ft) | ~87 % der Nennleistung | ~87 % |
+| 1,8 m (6 ft) | ~70 % | ~75 % |
+| 2,7 m (9 ft) | ~55 % | ~62 % |
+
+Zusätzliche Verluste durch lange Schlauchwege, Bögen/Winkel, gewellte Schlauch-Innenwände. Quelle: rulebilge.com / Fisheries Supply.
+
+> **Auslegungsregel (documented, ABYC-Praxis):** Systeme nach **realer installierter Kapazität** bewerten, nicht nach der Zahl auf der Verpackung. Eine „3700 GPH"-Pumpe liefert bei 1,8 m Förderhöhe realistisch ~2775 GPH.
+
+**Manuelle Membran-/Kolbenpumpen** werden dagegen typischerweise **pro Hub (l/Hub)** und bei definierter Hubfrequenz (strokes/min) angegeben und sind stromunabhängig — ihr großer Vorteil im Havariefall.
+
+---
+
+## 10. Produkt-/Typenübersicht mit belegten Spezifikationen
+
+> Alle Werte sind **Open-Flow-/Maximalangaben** der Hersteller; für die reale Auslegung mit Abschlag nach Abschnitt 9 rechnen. Die ISO-15083-Bootslängen-Zuordnung stammt aus den Hersteller-Konformitätsangaben.
+
+### 10.1 Manuelle Lenzpumpen (Whale) — `measured`/`documented`
+
+| Modell | Max. Förderung | ISO-15083-Eignung (Herstellerangabe) |
+|--------|---------------|--------------------------------------|
+| Whale Compac 50 | bis 35 l/min | Kleinboote |
+| Whale Gusher Urchin | bis 55 l/min | Primärpumpe bis 12 m (25 mm) / ≥ 12 m (38 mm) |
+| **Whale Gusher Titan** | **bis 105 l/min** (18 US-GPM @ 45 Hübe/min; 28 US-GPM @ 70 Hübe/min), 38-mm-Schlauch | Primärpumpe für Boote **≥ 12 m** |
+| Whale Mk5 Universal | bis 66 l/min | Primärpumpe ≥ 12 m |
+| Whale Gusher 10 | bis 65 l/min | Primärpumpe ≥ 24 m |
+| Whale Smartbail | bis 67,7 l/min | Primärpumpe ≥ 12 m |
+
+Quelle: whale.navico.com (Bilge Pumps Range); Gusher-Titan-Datenblatt (svb-media). 
+
+### 10.2 Elektrische Lenzpumpen — `measured`/`documented`
+
+| Modell | Typ | Max. Förderung (Open Flow) | Quelle |
+|--------|-----|---------------------------|--------|
+| Whale Supersub / Supersub Smart | Kreisel, flach | bis 66 l/min | whale.navico.com |
+| Whale Orca Auto 1300 | Kreisel, mit Auto-Schalter | bis 82 l/min | whale.navico.com |
+| Whale Gulper 320 | Membran | bis 19 l/min | whale.navico.com |
+| Whale Bilge IC | Kreisel + intelligenter Sensor | bis 19 l/min | whale.navico.com |
+| Jabsco 34600-Serie | Elektr. Membran, selbstansaugend, dry-run-fähig | ~41 l/min (10,8 US-GPM); Saughöhe 3 m; 1″-Anschluss | depcopump.com Datenblatt 34600 |
+| Rule 2000 GPH | Tauch-Kreisel | ~126 l/min Open Flow (2000 US-GPH) | rulebilge.com |
+| Rule 3700 GPH | Tauch-Kreisel | ~233 l/min Open Flow (3700 US-GPH) | rulebilge.com |
+
+> **Wichtig:** Bei Rule-Tauchpumpen unbedingt Abschnitt 9 anwenden (real ~55–87 % je nach Höhe).
+
+### 10.3 Notsignal-/EPIRB-Grundlagen — `documented`
+
+| Merkmal | Angabe | Quelle |
+|---------|--------|--------|
+| Frequenz | 406 MHz digital an Cospas-Sarsat + 121,5 MHz Homing | sarsat.noaa.gov; oceansignal.com |
+| Kategorie I | **Float-free**, hydrostatische Auslösung (HRU), automatische Aktivierung beim Auftauchen | oceansignal.com; acrartex.com |
+| Kategorie II | Manuelle Aktivierung, Halterung | oceansignal.com |
+| Kennung | 15-stellige UIN / Hex-ID; **Registrierungspflicht** | sarsat.noaa.gov |
+| Neuer Standard | IMO MSC.471(101) float-free, verbindlich seit 01.07.2022 | imo.org |
+| **PLB** (Personal Locator Beacon) | personengebunden, kleiner, kürzere Batterielaufzeit/Sendedauer als EPIRB | oceansignal.com |
+
+---
+
+## 11. Fehlerbild-Atlas (FB-29-08-NNN) — Ergänzung
+
+> Neue, kollisionsfreie IDs. Ergänzen die bestehenden „Fehlerbild 3.x.x" (Abschnitt 3), die unverändert gültig bleiben.
+
+**FB-29-08-001 — Tauchpumpe nominell ausreichend, real unterdimensioniert**
+- Merkmal: Auslegung allein nach GPH-Aufdruck; Förderhöhe/Schlauchverluste ignoriert
+- Norm-Bezug: Herstellerangabe Open-Flow (Rule/Xylem) → real 55–87 % (Abschnitt 9)
+- Behebung: reale Kapazität bei tatsächlicher Förderhöhe rechnen; Pumpe/Schlauchquerschnitt anpassen
+- Schweregrad: HOCH
+
+**FB-29-08-002 — Kein Hochwasser-Alarm bei geschlossenem Wohnraum**
+- Merkmal: Boot mit Kajüte/geschlossenem Wohnraum ohne akustischen Hochwasser-Alarm
+- Norm-Bezug: ABYC H-22 §22.7.3 (documented)
+- Behebung: separaten Alarm-Schwimmerschalter knapp über dem Primär-Schwimmer + lauten Geber installieren
+- Schweregrad: KRITISCH (Flutung wird zu spät bemerkt)
+
+**FB-29-08-003 — Schwimmerschalter verklemmt/verschmutzt**
+- Merkmal: Automatikpumpe startet nicht (Schalter blockiert) oder läuft trocken (klemmt „ein")
+- Ursache: Öl/Haare/Schmutz in Bilge, mechanischer Schwimmer verkantet
+- Behebung: reinigen; Wechsel auf feldbewährten Schaltertyp; Sicherung gegen Trockenlauf
+- Schweregrad: HOCH
+
+**FB-29-08-004 — Keine getrennte Lenzung je wasserdichter Abteilung**
+- Merkmal: nur eine zentrale Absaugung, geflutete Abteilung bleibt ohne Saugstelle
+- Norm-Bezug: Prinzip aus SOLAS II-1 (nur Kontext für Großyachten); für Sportboote gute Praxis
+- Behebung: Saugstelle je tiefstem Punkt/Abteilung; ggf. Notlenz-Sauganschluss
+- Schweregrad: HOCH
+
+**FB-29-08-005 — Lenzpumpe über Hauptschalter geführt**
+- Merkmal: Automatikpumpe verliert Strom, wenn Batterie-Hauptschalter aus
+- Behebung: Automatik-Lenzpumpe **direkt** an Batterie mit eigener Sicherung, unabhängig vom Hauptschalter
+- Schweregrad: HOCH
+
+**FB-29-08-006 — Kein Weichholz-Stopfen am Rumpfdurchbruch**
+- Merkmal: an Seehähnen/Durchbrüchen kein getetherter konischer Notfall-Stopfen
+- Norm-Bezug: World Sailing OSR 4.03 (an/neben jedem through-hull); ABYC-Praxis (Backup, nicht Dauerverschluss)
+- Behebung: passenden konischen Weichholz-Stopfen mit ~45 cm Leine an jedem Durchbruch befestigen
+- Schweregrad: HOCH
+
+**FB-29-08-007 — EPIRB nicht registriert / Batterie oder HRU abgelaufen**
+- Merkmal: keine gültige Registrierung; Batterie- oder HRU-Verfallsdatum überschritten
+- Norm-Bezug: Cospas-Sarsat/NOAA-Registrierung; Batterie vor Herstellerdatum (typ. 5–10 J.); HRU alle 2 J. (manche 3 J.); jährlicher Test (SOLAS Ch. IV Reg. 15.9 für SOLAS-Schiffe; gute Praxis für alle)
+- Quelle: hzhmarine.com; t-iss.com; sarsat.noaa.gov
+- Behebung: registrieren; Batterie/HRU vor Ablauf tauschen; Jahres-Funktionstest
+- Schweregrad: KRITISCH (Notsignal versagt / falsche Halterzuordnung)
+
+**FB-29-08-008 — Float-free-EPIRB (Kat. I) kann nicht frei auftauchen**
+- Merkmal: Halterung verbaut/verstellt, Bimini/Aufbau über der Freigabebahn
+- Norm-Bezug: IMO MSC.471(101) float-free-Funktion
+- Behebung: Halterung so montieren, dass die Boje beim Sinken frei aufschwimmt; Freigabebahn frei halten
+- Schweregrad: HOCH
+
+**FB-29-08-009 — Keine Notruderung / Notpinne unerprobt**
+- Merkmal: keine Notpinne für den Ruderschaft bzw. Notlenz-Methode nie getestet
+- Norm-Bezug: World Sailing OSR (Notlenz-Anforderung Kat. 0/1); für Fahrtenyachten dringend empfohlen
+- Behebung: Notpinne bereithalten und **einmal real erproben**; Alternativ-Steuerung (Steuerung per Segeltrimm/Drogue) dokumentieren
+- Schweregrad: HOCH (Manövrierunfähigkeit)
+
+**FB-29-08-010 — Lenz-Auslass mit Cockpit-Entwässerung verbunden**
+- Merkmal: Lenzpumpe entwässert in/über den Cockpit oder teilt sich Leitung mit Cockpit-Drain
+- Norm-Bezug: World Sailing OSR 3.23 (Lenzpumpen dürfen nicht in den Cockpit entwässern und nicht mit Cockpit-Drains verbunden sein)
+- Behebung: eigener Lenz-Auslass mit belüftetem Anti-Siphon-Bogen (vgl. Fehlerbild 3.2.4)
+- Schweregrad: HOCH
+
+**FB-29-08-011 — Kein Saugkorb/Strum-Box an der Ansaugung**
+- Merkmal: offener Saugschlauch in der Bilge ohne Sieb → Impeller/Ventile verstopfen
+- Behebung: Saugkorb (Strum box) montieren; regelmäßig reinigen
+- Schweregrad: MITTEL–HOCH
+
+**FB-29-08-012 — Backup-Lenzung nicht wirklich unabhängig**
+- Merkmal: „zweite" Pumpe an gleicher Sicherung/gleichem Schwimmer/gleichem Auslass
+- Behebung: echte Redundanz: getrennte Stromquelle, getrennter Schalter, getrennte Saug-/Auslassstelle; zusätzlich stromunabhängige **manuelle** Pumpe
+- Schweregrad: HOCH
+
+---
+
+## 12. Notlenz & Lecksicherung — Verfahren und Entscheidungsbaum
+
+### 12.1 Sofort-Ablauf bei Wassereinbruch (documented Praxis; Reihenfolge nach Wirkung)
+
+```
+1. QUELLE FINDEN  → Wo kommt das Wasser rein? (Seehahn, Schlauch, Durchbruch, Stopfbuchse, Rumpfleck)
+2. ZUFLUSS STOPPEN → Seehahn schließen; Schlauch abklemmen; Weichholz-Stopfen eintreiben;
+                      Kollisionsmatte/Leckpolster von außen; Notpflaster von innen
+3. LENZEN MAX      → ALLE Pumpen an (elektr. + manuell) + Eimer; Motor-Kühlwasser-Ansaugung
+                      als Notlenz nutzen NUR wenn dafür ausgelegt (Y-Ventil/Notsaug)
+4. NOTRUF          → DSC-VHF Kanal 16 / DSC-Alarm; EPIRB aktivieren; Position durchgeben
+5. VORBEREITEN     → Rettungsinsel/Grab-Bag klar; Rettungswesten an; Abbruch vorbereiten,
+                      falls Zulauf > Lenzleistung
+```
+
+> **Faustregel (traditionelle Seemannsregel):** Die leistungsstärkste Notlenzeinrichtung an Bord ist oft **ein Eimer in entschlossener Hand** — hohe Förderleistung, keine Verstopfung, keine Stromabhängigkeit. Manuelle Pumpen und Eimer sind stromunabhängig und deshalb im Havariefall zentral. `documented` (seemännische Praxis; ISO 15083 erlaubt für kleine offene Boote Handschöpfgeräte als „alternative means").
+
+### 12.2 Entscheidungsbaum „Zulauf vs. Lenzleistung"
+
+```
+Steigt der Bilgepegel trotz voller Lenzung?
+├── NEIN → Zuflussquelle unter Kontrolle; Kurs auf nächsten sicheren Hafen; überwachen
+└── JA   → Zulauf > Lenzleistung
+          ├── Leck lokalisierbar & erreichbar? → Von innen/außen abdichten (Stopfen/Polster/Matte)
+          │                                       → danach erneut Pegel prüfen
+          └── Leck nicht beherrschbar → Notruf eskalieren (MAYDAY), Rettungsinsel vorbereiten,
+                                        Crew in Westen, Abbruchentscheidung treffen
+```
+
+### 12.3 Lecksicherungs-Mittel (Übersicht)
+
+| Mittel | Einsatz | Hinweis |
+|--------|---------|---------|
+| Konischer Weichholz-Stopfen | Rundes Leck an Seehahn/Durchbruch | An jedem Durchbruch getethert (OSR 4.03) |
+| Leckpfropfen/-kegel (Set versch. Größen) | Kleine runde Löcher | Weiches Holz quillt & dichtet |
+| Kollisionsmatte / Leckstoppdecke | Großflächiges Leck, von außen unter Rumpf gezogen | Wasserdruck presst Matte an |
+| Notpflaster / Epoxy-Schnellspachtel | Risse, kleine Durchbrüche innen | Aushärtezeit beachten (nass-härtend) |
+| Keil-/Spannplatten mit Dichtung | Mittlere/große Durchbrüche | Verstrebung gegen Wasserdruck |
+
+---
+
+## 13. Wartung & Prüffristen — verifizierte Ergänzung
+
+| Komponente | Intervall | Quelle / Confidence |
+|-----------|-----------|--------------------|
+| Manuelle & elektr. Lenzpumpe (Sichtprüfung) | monatlich | Praxis (Abschnitt 5) `estimated` |
+| Lenzpumpe unter Last testen | jährlich | Praxis `estimated` |
+| Schlauch/Rückschlagventile erneuern | alle 3–5 J. bzw. bei Verschleiß | Praxis `estimated` |
+| **EPIRB — Funktionstest** | **jährlich**, durch anerkannte Stelle | SOLAS Ch. IV Reg. 15.9 (SOLAS-Schiffe); gute Praxis alle | `documented` |
+| **EPIRB — Batterie** | vor markiertem Verfallsdatum (**typ. 5–10 Jahre**, herstellerabhängig) | hzhmarine.com | `documented` |
+| **EPIRB — HRU (hydrostat. Auslöser)** | alle **2 Jahre** (einige Typen 3 Jahre) | t-iss.com | `documented` |
+| Weichholz-Stopfen | Sitz/Vollständigkeit prüfen, jährlich | OSR-Praxis `estimated` |
+
+---
+
+## 14. FAQ — Ergänzung (verifiziert)
+
+6. **Warum liefert meine „2000-GPH"-Tauchpumpe im Boot viel weniger?**
+   Weil GPH/GPM **Open-Flow** (ohne Schlauch/Höhe) sind. Bei 1,8 m Förderhöhe real ~70 % (Rule 2000) bzw. ~75 % (Rule 3700). Quelle: rulebilge.com. `documented`
+
+7. **Ist ein Eimer/Handschöpfer eine „gültige" Lenzeinrichtung?**
+   Für kleine offene Boote lässt ISO 15083 Handschöpfgeräte als *alternative means* zu; als Notreserve auf jeder Yacht sinnvoll. `documented`
+
+8. **Muss ich meine EPIRB registrieren?**
+   Ja. Die 15-stellige UIN wird nur bei Registrierung (z. B. NOAA / nationale Behörde) einem Boot/Halter zugeordnet — sonst verzögert sich die Rettung. Quelle: sarsat.noaa.gov. `documented`
+
+9. **Wie oft muss die HRU/EPIRB-Batterie getauscht werden?**
+   HRU alle 2 Jahre (manche 3), Batterie vor markiertem Verfall (typ. 5–10 J.), jährlicher Funktionstest. Quelle: t-iss.com; hzhmarine.com. `documented`
+
+10. **Zählt eine Elektro-Tauchpumpe als „die zweite Pumpe" für Offshore?**
+    Nach World Sailing OSR 3.23 fordert Kat. 1 **zwei manuelle** Pumpen (stromunabhängig, bei geschlossenen Luken bedienbar) — eine Elektropumpe ersetzt diese nicht. Quelle: sailing.org OSR 3.23. `documented`
+
+11. **Warum darf der Lenz-Auslass nicht in den Cockpit gehen?**
+    OSR 3.23 untersagt Verbindung mit Cockpit-Drains bzw. Entwässerung in den Cockpit (Rückflut-/Verstopfungsrisiko). Quelle: sailing.org. `documented`
+
+---
+
+## 15. Glossar — Ergänzung
+
+| Englisch | Deutsch | Definition |
+|----------|---------|-----------|
+| **Open Flow** | Nennförderung (offen) | Herstellerangabe ohne Schlauch/Förderhöhe; reale Leistung liegt darunter. |
+| **Head / Lift** | Förderhöhe / Saughöhe | Höhendifferenz Pumpe↔Auslass; mindert die reale Förderung. |
+| **EPIRB** | Notfunkbake (Schiff) | Emergency Position-Indicating Radio Beacon, 406 MHz Cospas-Sarsat. |
+| **PLB** | Personen-Notfunkbake | Personal Locator Beacon; personengebunden, kleiner. |
+| **HRU** | Hydrostatischer Auslöser | Hydrostatic Release Unit; gibt Kat.-I-EPIRB/Rettungsinsel beim Sinken frei. |
+| **Cospas-Sarsat** | Cospas-Sarsat | Satelliten-System zur Ortung von 406-MHz-Notbaken. |
+| **UIN / Hex ID** | Baken-Kennung | 15-stellige eindeutige Kennung; registrierungspflichtig. |
+| **Float-free** | frei aufschwimmend | Kat.-I-EPIRB, die sich beim Sinken automatisch löst und aktiviert. |
+| **Float Switch** | Schwimmerschalter | Schaltet Automatik-Lenzpumpe pegelabhängig ein. |
+| **Strum Box** | Saugkorb | Sieb an der Ansaugung gegen Verstopfung. |
+| **Bailer** | Handschöpfer | Manuelles Schöpfgerät; ISO-15083-„alternative means" für Kleinboote. |
+| **DSC** | Digitaler Selektivruf | Digital Selective Calling; VHF-Notalarm (Kanal 70). |
+| **Damage Control** | Lecksicherung/Havarie | Havariefall — **nicht** von ISO 15083 abgedeckt. |
+
+---
+
+## 16. Quellenverzeichnis (Erweiterung 8–15)
+
+- ISO 15083:2020 & Amd 1:2022 — iso.org/standard/72972, /83709
+- ISO 8666:2016 (L_H-Definition), ISO 12217-1/-2/-3:2015 (Entwurfskategorien) — iso.org
+- RCD 2013/53/EU (harmonisierte Norm EN ISO 15083) — iso.org/RCD-Praxis
+- ABYC H-22 (§22.7.3 Hochwasser-Alarm) — stevedmarineconsulting.com; law.resource.org
+- ABYC H-27 (Seacocks/Thru-Hull/Drain Plugs) — webstore.ansi.org (Preview H-27); NMMA
+- World Sailing Offshore Special Regulations 3.23 (Bilge Pumps), 4.03 (Soft Wood Plugs) — sailing.org
+- SOLAS II-1 Reg. 21 / 35-1 (kommerzielle Schiffe) — marinegyaan.com
+- IMO MSC.471(101) float-free EPIRB — wwwcdn.imo.org; oceansignal.com; acrartex.com
+- Cospas-Sarsat / Beacon-Registrierung — sarsat.noaa.gov
+- EPIRB/HRU-Wartung — hzhmarine.com; t-iss.com
+- Rule/Xylem Tauchpumpen (Open-Flow-Abschläge) — rulebilge.com; fisheriessupply.com
+- Whale Bilge Pumps Range (Gusher Titan/Urchin/Mk5/Gusher 10/Smartbail/Compac 50; Supersub/Orca/Gulper/Bilge IC) — whale.navico.com; svb-media (Gusher-Titan-Datenblatt)
+- Jabsco 34600-Serie Elektro-Membranpumpe — depcopump.com Datenblatt
+
+---
+
 **Autor:** AYDI Knowledge Base  
 **Kontakt:** knowledge@aydi.de  
 **Letzte Überarbeitung:** 2026-05-18  

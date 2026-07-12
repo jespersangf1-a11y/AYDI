@@ -31,6 +31,8 @@
 - **SOLAS Kap. III / LSA-Code (Res. MSC.48(66)) — Pyrotechnik:** Raketen-Fallschirmsignale, Handfackeln, Rauchsignale; Prüfung nach IMO Res. MSC.81(70), Teil 1 §4
 - **Signalspiegel / visuelle Tagsignale (SOLAS/LSA-Code, Rettungsinsel-Ausrüstung):** Reflektoren, Spiegel, Farbtücher
 > ⚠️ **ZU PRÜFEN (Audit):** Frühere Zuordnung „EN 12402-4" ist falsch — EN ISO 12402-4 ist die Norm für 100-N-Rettungswesten, kein Signalmittel. Ebenso war „IMO A.810 (Flares)" falsch — IMO Res. A.810(19) ist die Leistungsnorm für frei aufschwimmende 406-MHz-Satelliten-EPIRBs. Signalspiegel sind als Rettungsinsel-/Rettungsboot-Ausrüstung im LSA-Code (SOLAS Kap. III) gefordert; eine eindeutige eigenständige ISO/EN-Prüfnorm für den Signalspiegel ließ sich nicht zweifelsfrei ermitteln — Normnummer verifizieren.
+>
+> ✅ **AUFGELÖST (2026-07, web-verifiziert):** Die maßgebliche Leistungs-/Konstruktionsnorm für SOLAS-Pyrotechnik (Fallschirmsignalraketen, Handfackeln, schwimmfähige Rauchsignale) ist der **International Life-Saving Appliance (LSA) Code**, angenommen mit **IMO Resolution MSC.48(66)** (04.06.1996), Kapitel III „Visual Signals". Die dazugehörige Prüf-/Kennzeichnungs-Grundlage ist **IMO Res. MSC.81(70)** (Revised Recommendation on Testing of LSA, ergänzt IMO Res. A.689(17)) sowie **ISO 15736:2006** „Ships and marine technology — Pyrotechnic life-saving appliances — Testing, inspection and marking of production units". *(Confidence: documented — imorules.com/MSC.48(66); iso.org/standard/41360.html)* Der Signalspiegel bleibt eine LSA-Code-Ausrüstungsposition ohne eigenständige, zweifelsfrei belegbare ISO-Prüfnorm — daher weiterhin **estimated — unverifiziert** hinsichtlich einer eigenen Normnummer.
 
 ### 1.2 Komponenten eines Signalmittel-Systems
 
@@ -670,7 +672,211 @@ class FlareInventory(BaseModel):
 
 ---
 
+# ERWEITERUNG — Werft-Tiefe (2026-07, web-verifiziert)
+
+> **Hinweis zur Methodik:** Alle folgenden Abschnitte wurden gegen autoritative Quellen (IMO/LSA-Code, ISO/IEC, Cospas-Sarsat, COLREGs, DGzRS/MRCC Bremen, Bundesnetzagentur, Herstellerangaben) verifiziert. Jeder Faktenblock trägt eine inline-Quellenangabe und ein Confidence-Tag (`documented` = Norm/Behörde; `measured` = Datenblatt-Messwert; `estimated — unverifiziert` = nicht zweifelsfrei belegbar, bewusst gekennzeichnet). Zahlenangaben ohne Beleg wurden **weggelassen**, nicht geraten.
+
+---
+
+## E1. Regulatorischer Rahmen — korrigiert & vertieft
+
+### E1.1 SOLAS-Pyrotechnik (Rahmen)
+
+| Instrument | Titel / Scope | Bedeutung für Signalmittel | Confidence |
+|---|---|---|---|
+| **IMO Res. MSC.48(66)** | International Life-Saving Appliance (LSA) Code, Kap. III „Visual Signals" (angenommen 04.06.1996) | Leistungsanforderungen für Fallschirmsignalraketen, Handfackeln, schwimmfähige Rauchsignale | documented |
+| **SOLAS Kap. III** | Life-Saving Appliances and Arrangements | Trägt LSA-Code als verbindliche Referenz; Mitführpflichten je Schiffstyp | documented |
+| **IMO Res. MSC.81(70)** | Revised Recommendation on Testing of LSA (ergänzt A.689(17)) | Prüfverfahren für pyrotechnische LSA | documented |
+| **ISO 15736:2006** | Ships and marine technology — Pyrotechnic life-saving appliances — Testing, inspection and marking of production units | Serien-Prüfung, Konformitätsbewertung, Kennzeichnung; ergänzt LSA-Code | documented |
+
+*Quellen: imorules.com/LSA.html, imorules.com/MSCRES_48.66.html, iso.org/standard/41360.html, dco.uscg.mil SOLAS Pyro Guide.*
+
+### E1.2 Elektronische Notsignale (EPIRB / SART / MOB)
+
+| Norm | Scope | Confidence |
+|---|---|---|
+| **IEC 61097-2** | Float-free satellite EPIRB (406 MHz) — operational/performance requirements | documented |
+| **IMO Res. A.810(19)** | Performance standards für frei aufschwimmende 406-MHz-EPIRBs (früher fälschlich als „Flare"-Norm zitiert) | documented |
+| **IEC 61097-1 / ITU-R M.1084** | Radar-SART (9-GHz-X-Band) | documented |
+| **IEC 61097-14** | AIS-SART (SART9) — 161,975 / 162,025 MHz | documented |
+| **IEC 63269 / EN 303 132 (Class M)** | Maritime survivor locating devices (AIS-MOB) | documented |
+| **IEC 60945** | Allgemeine Umwelt-/EMV-Anforderungen für Schiffsfunkgeräte | documented |
+
+*Quellen: gmdsstesters.com (EPIRB, MOB devices), en.wikipedia.org/wiki/AIS-SART, oceansignal.com/products/s200, acrartex.com.*
+
+### E1.3 Schallsignale (COLREGs Anlage III)
+
+Die technischen Details der Schallsignalgeräte regelt **COLREGs (KVR) Anlage III / Annex III** — nicht das früher im Dokument genannte „ISO 9908". *(Confidence: documented — cultofsea.com/colregs, navcen.uscg.gov navigation-rules-amalgamated, 33 CFR Part 86.)*
+
+> ⚠️ **ZU PRÜFEN:** Die im Abschnitt 1.2 Punkt 6 genannte „ISO 9908" ließ sich als Schall-/Pfeifen-Norm nicht verifizieren — Zuordnung offen. Maßgeblich für die technischen Kennwerte ist COLREGs Anlage III. **estimated — unverifiziert.**
+
+---
+
+## E2. SOLAS-Pyrotechnik — verifizierte Leistungs-Kennwerte
+
+Alle Werte aus **LSA-Code Kap. III** (IMO Res. MSC.48(66)). *(Confidence: documented — marineteacher.com LSA-Übersicht, marineinsight.com, dco.uscg.mil SOLAS Pyro Guide, cultofsea.com/safety/pyrotechnics.)*
+
+| Signaltyp | Kennwert | LSA-Code-Mindestanforderung |
+|---|---|---|
+| **Fallschirm-Signalrakete** (rocket parachute flare) | Steighöhe | ≥ 300 m (senkrecht abgefeuert) |
+| | Lichtstärke | ≥ 30 000 cd, hellrot, gleichmäßig |
+| | Brenndauer | ≥ 40 s |
+| | Sinkrate am Fallschirm | ≤ 5 m/s |
+| | Gehäuse | wasserbeständig, integrierte Zündung, Anwendungshinweise aufgedruckt |
+| **Handfackel** (hand flare) | Lichtstärke | ≥ 15 000 cd, hellrot, gleichmäßig |
+| | Brenndauer | ≥ 1 min |
+| | Wassertauch-Test | brennt nach 10 s unter 100 mm Wasser weiter |
+| | Gehäuse | wasserbeständig, selbst-enthaltene Zündung, keine gefährlichen Brennreste |
+| **Schwimmfähiges Rauchsignal** (buoyant smoke signal) | Rauchabgabe | ≥ 3 min gleichmäßig, gut sichtbare Farbe (orange), im ruhigen Wasser schwimmend |
+| | Flammenfreiheit | keine Flamme während der gesamten Rauchabgabe |
+| | Wassertauch-Test | gibt nach 10 s Untertauchen weiter Rauch ab |
+
+**Interpretation für die Werft/Skipper:** Fallschirmraketen sind das einzige Signal mit echter Fern-Alarmierungswirkung (Nacht, >10 nm); Handfackeln dienen der Nah-Ortung durch bereits anwesende Retter (Pinpointing); Rauchsignale sind Tagsignale zur Positionsmarkierung (Hubschrauber). Farbe **Rot** = Seenot (Pyrotechnik); **Orange Rauch** = Seenot am Tag. *(Confidence: documented — LSA-Code Kap. III Zweckbestimmung.)*
+
+---
+
+## E3. Verfallsdaten, Kennzeichnung & Entsorgung (Pyrotechnik)
+
+- **Regelhafte Gültigkeit:** SOLAS-Pyrotechnik trägt ein aufgedrucktes **Verfallsdatum**; branchenüblich **3 Jahre ab Herstellung** (Fallschirmraketen/Handfackeln/Rauchsignale). Abgelaufene Pyrotechnik ist im Port-State-Control-Kontext ein sofortiger Mangel. *(Confidence: documented — marinepublic.com SOLAS 2025 Visual Distress, marinecraft.my SOLAS LSA compliance; „3 Jahre" ist Marktstandard, das rechtsverbindliche Datum ist stets das **aufgedruckte**.)*
+- **Pflicht-Kennzeichnung je Einheit:** Herstellungsdatum, Verfallsdatum, Chargen-/Losnummer, Zulassungskennzeichen. *(Confidence: documented — ISO 15736:2006 Marking-Teil; USCG Domestic/SOLAS Pyro Guides.)*
+- **Ersatz-Regel bei fehlendem Datum:** Ist kein Verfallsdatum aufgedruckt, gilt eine Nutzungsgrenze von **4 Jahren** ab Herstellung. *(Confidence: estimated — als Betriebspraxis mehrfach zitiert, aber nicht zweifelsfrei einer einzelnen Norm zuzuordnen; im Zweifel aufgedrucktes Datum verwenden.)*
+- **Entsorgung:** Abgelaufene Pyrotechnik ist **Sprengstoff-/Gefahrgut** und darf nicht über den Hausmüll oder ins Wasser entsorgt werden. In Deutschland Rücknahme über Fachhändler/Behörden; **niemals** abgelaufene Signale „zum Üben" unkontrolliert abfeuern (Fehlalarm-Gefahr, Straftatbestand). *(Confidence: estimated — allgemeine Gefahrgut-Praxis; konkrete nationale Rücknahmestelle projektspezifisch zu verifizieren.)*
+
+---
+
+## E4. EPIRB 406 MHz & Cospas-Sarsat — vertieft
+
+### E4.1 Systemarchitektur (verifiziert)
+
+- **Sendefrequenz:** 406 MHz (digitaler Notruf mit codierter Beacon-ID); zusätzlicher **121,5-MHz-Homing-Sender** (Peil-Ton) für die Nah-Ortung durch SAR-Einheiten. **Wichtig:** 121,5 MHz wird von Cospas-Sarsat-Satelliten **nicht mehr detektiert** — nur noch als Peilsignal genutzt. *(Confidence: documented — sarsat.noaa.gov FAQ, acrartex.com.)*
+- **Satellitensegmente:** **LEOSAR** (niedrige Erdumlaufbahn), **GEOSAR** (geostationär), **MEOSAR** (mittlere Umlaufbahn). MEOSAR nutzt Transponder auf **46 mittelhohen Satelliten** (Orbit ca. 2 000–35 786 km) und liefert nahezu sofortige globale Detektion + verbesserte Ortungsgenauigkeit. *(Confidence: documented — eoportal.org, en.wikipedia.org/International_Cospas-Sarsat_Programme, rivieramm.com.)*
+- **Beacon-ID:** 15-stelliger Hexadezimal-Code; national codiert (Deutschland: MID **211**/**218**). *(Confidence: documented — svb.de, gruendl.de.)*
+
+### E4.2 Registrierung & Alarmweg in Deutschland
+
+- **Registrierung:** In Deutschland erfolgt Codierung/Registrierung der EPIRB (mit MMSI des Schiffes) über die **Bundesnetzagentur** (Außenstelle Hamburg vergibt MMSI); Eintrag in die Frequenzzuteilungsurkunde des Schiffes. **Nicht-Registrierung ist bußgeldbewehrt.** *(Confidence: documented — svb.de Notfunkbaken-Ratgeber, gruendl.de.)*
+- **Alarm-Koordination:** Maritime Seenotfälle in den deutschen Nord-/Ostsee-Gebieten koordiniert das **MRCC Bremen** (Seenotleitung Bremen der **DGzRS**, „Bremen Rescue Radio"). *(Confidence: documented — seenotretter.de, de.wikipedia.org/Rettungsleitstelle_See.)*
+
+> ⚠️ **ZU PRÜFEN:** Eine Quelle nennt zusätzlich das militärische **RCC Münster** als Empfänger für MMSI-211-Baken; die genaue Zuständigkeitsteilung MRCC Bremen ↔ RCC Münster für 406-MHz-Alarme ist projektspezifisch zu verifizieren. **estimated — unverifiziert.**
+
+### E4.3 Wartungs-/Verfallsfristen (verifiziert)
+
+| Bauteil | Frist | Confidence |
+|---|---|---|
+| **EPIRB-Batterie** | Austausch typ. alle **5 Jahre** (im Rahmen des Major-Service); Datum auf Gerät | documented (hzhmarine.com, acrartex.com) |
+| **Hydrostatischer Auslöser (HRU)** | begrenzte Lebensdauer typ. **2 Jahre**, Austausch vor aufgedrucktem Verfallsdatum | documented (acrartex.com HydroFix, toplicht.com) |
+| **Jährlicher Funktionstest / Systemtest** | jährlich (Selbsttest häufiger je Herstellervorgabe) | documented (hzhmarine.com SOLAS EPIRB guide) |
+
+> **Korrektur zu Abschnitt 3.2 / 5.1:** Der frühere Wert „SART-Batterie 8–10 Jahre" ist herstellerabhängig und nicht generalisierbar; maßgeblich ist stets das **aufgedruckte Verfallsdatum** des jeweiligen Geräts. **estimated — unverifiziert** (Herstellerangabe prüfen).
+
+---
+
+## E5. AIS-SART & AIS-MOB (elektronische Ortung, verifiziert)
+
+- **AIS-SART:** sendet Standard-AIS-Positionsmeldungen; einmal pro Minute **8 identische Meldungen** (4× auf 161,975 MHz, 4× auf 162,025 MHz); integrierter GNSS-Empfänger; typische Sichtlinien-Reichweite **10–15 nm**. Norm: **IEC 61097-14**. *(Confidence: documented — en.wikipedia.org/AIS-SART, gmdsstesters.com.)*
+- **AIS-MOB (Man-Overboard-Sender, z. B. Weste-integriert):** Class-M-Gerät nach **IEC 63269 / EN 303 132**; sendet AIS-Position (+ optional DSC/121,5-MHz-Homing je Modell). *(Confidence: documented — gmdsstesters.com, oceansignal.com S200, easyais.com.)*
+
+> **Abgrenzung (löst Missverständnis 6.4 weiter auf):** **EPIRB** = Satellit (406 MHz, weltweit, alarmiert MRCC) · **Radar-SART** = 9-GHz-X-Band (Radar-Sichtung durch Schiffe) · **AIS-SART/AIS-MOB** = VHF-AIS (Ortung durch AIS-Empfänger in Nähe). Drei getrennte Wirkprinzipien, nicht austauschbar.
+
+---
+
+## E6. Schallsignale — COLREGs Anlage III (verifiziert)
+
+*(Confidence: documented — cultofsea.com/colregs Annex III, navcen.uscg.gov, 33 CFR Part 86.)*
+
+**Pfeife/Signalhorn — Grundfrequenz nach Schiffslänge:**
+
+| Schiffslänge | Grundfrequenz (fundamental) |
+|---|---|
+| ≥ 200 m | 70–200 Hz |
+| 75 m bis < 200 m | 130–350 Hz |
+| < 75 m | 250–700 Hz |
+
+- **Hörbarkeitsbereich:** maßgebende Frequenzen 180–700 Hz (± 1 %) bei Schiffen ≥ 20 m; **180–2 100 Hz** (± 1 %) bei Schiffen < 20 m.
+- **Glocke/Gong:** Schalldruckpegel **≥ 110 dB in 1 m Abstand**.
+- **Sportboot-Praxis (< 12 m):** COLREGs Regel 33 verlangt Mittel zur Abgabe von Schallsignalen; eine feste, batterieunabhängige Signalpfeife bleibt das robusteste Backup (keine Alterung, keine Batterie). *(Confidence: documented — COLREGs Regel 33.)*
+
+> **Korrektur zu Abschnitt 1.2 Punkt 6 / Glossar:** Die dortigen Zahlenangaben („2–3 kHz, 110+ dB", „ISO 9908, 4 s Ton") sind **nicht durch COLREGs Anlage III gedeckt** und teils widersprüchlich (COLREGs-Pfeifen liegen im Bereich 70–700 Hz Grundfrequenz, nicht 2–3 kHz). Bis zur Klärung als **estimated — unverifiziert** behandeln; maßgeblich sind die obigen COLREGs-Werte.
+
+---
+
+## E7. Fehlerbild-Atlas (erweitert, kollisionsfreie IDs FB-29-04-NNN)
+
+> Die bestehenden Fehlerbilder (Abschnitt 3.x) bleiben unverändert gültig. Die folgenden IDs sind neu und kollisionsfrei fortlaufend nummeriert.
+
+| ID | Fehlerbild | Merkmal / Diagnose | Behebung | Schweregrad |
+|---|---|---|---|---|
+| **FB-29-04-001** | Pyrotechnik über aufgedrucktem Verfallsdatum | Datum auf Signal überschritten | Ersatz beschaffen; alte fachgerecht entsorgen (Gefahrgut) | KRITISCH |
+| **FB-29-04-002** | Fallschirmrakete: Steighöhe/Brenndauer im Test nicht plausibel dokumentiert | Kein Zulassungs-/Chargennachweis, keine Aufdrucke | Nur zugelassene SOLAS-Ware (LSA-Code) führen | HOCH |
+| **FB-29-04-003** | Handfackel-Zündung feucht/korrodiert | Zündkopf oxidiert, Gehäuse aufgequollen | Ersatz; trocken lagern | HOCH |
+| **FB-29-04-004** | Rauchsignal treibt nicht / kentert | Schwimmlage im Test instabil | Nur schwimmfähige Bauart (buoyant) verwenden | MITTEL |
+| **FB-29-04-005** | EPIRB nicht/falsch registriert (BNetzA) | MMSI nicht codiert, keine Frequenzzuteilung | Registrierung Bundesnetzagentur; Kontaktdaten aktuell halten | KRITISCH (Alarm nicht zuordenbar; bußgeldbewehrt) |
+| **FB-29-04-006** | EPIRB-HRU abgelaufen | Datum auf HRU überschritten (typ. 2 J.) | HRU tauschen (float-free-Funktion sonst unwirksam) | KRITISCH |
+| **FB-29-04-007** | EPIRB-Batterie-Serviceintervall überschritten | Batterie-Ablaufdatum > heute (typ. 5 J.) | Herstellerservice; Batterie tauschen | KRITISCH |
+| **FB-29-04-008** | 121,5-MHz-Homing schwach/defekt | Peilton im Test nicht messbar | Service; 406-Teil kann intakt sein, Nah-Ortung aber erschwert | HOCH |
+| **FB-29-04-009** | AIS-SART/AIS-MOB nicht in Bordsystem sichtbar | Testmeldung erscheint nicht im AIS-Empfänger | GNSS-Fix prüfen, MMSI/Gerät prüfen, ggf. Service | HOCH |
+| **FB-29-04-010** | Registrierungsdaten veraltet (Halter/Notfallkontakt) | SAR erreicht falschen Kontakt → Verzögerung | Beacon-Registrierung aktualisieren | MITTEL–HOCH |
+| **FB-29-04-011** | Signalpfeife: Frequenz außerhalb COLREGs-Bereich | Ton zu hoch/leise, nicht COLREGs-konform | Konforme Pfeife/Horn (70–700 Hz Grundfrequenz) | MITTEL |
+| **FB-29-04-012** | Pyrotechnik falsch gelagert (Nässe/Hitze) | Kondenswasser, verklebte Gehäuse | Trockene, kühle, separate Lagerung; ggf. Ersatz | HOCH |
+
+---
+
+## E8. Entscheidungsbaum — „Welches Signalmittel wann?"
+
+```
+Notfall erkannt
+ ├─ Nacht / Fernalarm (>5–10 nm) ──────► Fallschirm-Signalrakete (rot) + EPIRB 406 auslösen
+ ├─ Tag / Positionsmarkierung (Heli) ──► Schwimmfähiges Rauchsignal (orange)
+ ├─ Retter in Sichtweite (Pinpoint) ───► Handfackel (rot)
+ ├─ Person über Bord ──────────────────► AIS-MOB / PLB sofort; Pfeife zur Lokalisierung
+ ├─ Radar-Kontakt vorhanden ───────────► Radar-SART aktivieren (X-Band-Rückstrahl)
+ └─ Reduzierte Sicht / Schallwarnung ──► Signalpfeife/Horn nach COLREGs Anlage III
+```
+*(Zweckzuordnung: documented — LSA-Code Kap. III; COLREGs; Cospas-Sarsat.)*
+
+---
+
+## E9. FAQ — Ergänzung (verifiziert)
+
+11. **Wie hoch/hell/lang muss eine SOLAS-Fallschirmrakete sein?**
+    ≥ 300 m Steighöhe, ≥ 30 000 cd, ≥ 40 s Brenndauer, hellrot (LSA-Code). *(documented)*
+
+12. **Und eine SOLAS-Handfackel?**
+    ≥ 15 000 cd, ≥ 1 min Brenndauer, brennt nach 10 s unter 100 mm Wasser weiter. *(documented)*
+
+13. **Wird 121,5 MHz noch von Satelliten gehört?**
+    Nein — nur noch als Peil-/Homing-Signal am Einsatzort; die Satellitendetektion läuft ausschließlich über 406 MHz. *(documented — NOAA SARSAT.)*
+
+14. **Wo registriere ich meine EPIRB in Deutschland?**
+    Bei der Bundesnetzagentur (MMSI-Codierung, Frequenzzuteilung); Nicht-Registrierung ist bußgeldbewehrt. *(documented — svb.de.)*
+
+15. **Wer koordiniert den Seenotfall in deutschen Gewässern?**
+    MRCC Bremen / Seenotleitung Bremen der DGzRS („Bremen Rescue Radio"). *(documented — seenotretter.de.)*
+
+16. **Wie oft HRU und EPIRB-Batterie tauschen?**
+    HRU typ. alle 2 Jahre, Batterie typ. alle 5 Jahre — jeweils **vor** dem aufgedruckten Datum. *(documented.)*
+
+---
+
+## E10. Prüf-/Wartungsfristen — konsolidierte Übersicht (verifiziert)
+
+| Element | Frist | Grundlage / Confidence |
+|---|---|---|
+| SOLAS-Pyrotechnik (Raketen/Fackeln/Rauch) | Ersatz vor aufgedrucktem Verfallsdatum (branchenüblich 3 J.) | LSA-Code / Marktpraxis — documented/estimated |
+| EPIRB-Batterie | ~5 Jahre (Major-Service) | documented |
+| EPIRB-HRU (Float-free-Auslöser) | ~2 Jahre | documented |
+| EPIRB Funktions-/Systemtest | jährlich | documented |
+| EPIRB-Registrierung (BNetzA) | aktuell halten bei Halter-/Kontaktwechsel | documented |
+| Radar-SART / AIS-SART Batterie | vor aufgedrucktem Datum (herstellerabhängig) | documented (Datum maßgeblich) |
+| Signalpfeife/Horn | COLREGs-Konformität, Funktionsprüfung | documented (COLREGs Anlage III) |
+
+---
+
+**Quellen (Erweiterung):** imorules.com (LSA-Code / MSC.48(66)) · iso.org/standard/41360.html (ISO 15736:2006) · dco.uscg.mil SOLAS Pyrotechnic Guide · marineteacher.com · marineinsight.com · cultofsea.com (Pyrotechnics; COLREGs Annex III) · marinepublic.com (SOLAS 2025 Visual Distress) · sarsat.noaa.gov · eoportal.org (Cospas-Sarsat) · en.wikipedia.org (Cospas-Sarsat; AIS-SART) · acrartex.com · gmdsstesters.com · hzhmarine.com · svb.de · gruendl.de · seenotretter.de · de.wikipedia.org (Rettungsleitstelle See) · navcen.uscg.gov / 33 CFR Part 86.
+
+---
+
 **Autor:** AYDI Knowledge Base  
 **Kontakt:** knowledge@aydi.de  
-**Letzte Überarbeitung:** 2026-05-18  
-**Nächste Review:** 2027-05-18
+**Letzte Überarbeitung:** 2026-07-12 (Werft-Tiefe-Erweiterung E1–E10)  
+**Nächste Review:** 2027-07-12

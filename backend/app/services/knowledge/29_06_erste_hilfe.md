@@ -622,7 +622,328 @@ class FirstAidKitAnnual(BaseModel):
 
 ---
 
+## 9. Erweiterter Regulatorischer Rahmen (web-verifiziert 2026)
+
+> **NEUER ABSCHNITT (Werft-Tiefe-Ergänzung, 2026-07).** Alle Angaben unten sind einzeln an autoritativen Quellen verifiziert. Confidence-Tags: `documented` (Norm/amtliche Quelle), `estimated` (nur wo explizit gekennzeichnet). Der bestehende Inhalt (Abschnitte 1–8) bleibt unverändert erhalten.
+
+### 9.1 Geltungsbereich: Berufsschifffahrt vs. Sportboot
+
+**Wichtige Klarstellung:** Richtlinie 92/29/EWG und MLC 2006 sind **Vorschriften für die Berufsschifffahrt** (Seeleute / gewerbliche Schiffe), nicht für privat genutzte Sportboote. Für Sportboote gibt es EU-weit **keine** verpflichtende Bordapotheken-Norm aus der CE-Sportbootrichtlinie 2013/53/EU; die untenstehenden Kits (Abschnitte 2.1–2.3) sind daher **Empfehlungen bzw. Charter-/Rennanforderungen**, keine gesetzliche Pflicht für den Privateigner. `documented` — Richtlinie 92/29/EWG Art. 2 (Anwendungsbereich: Seeschiffe/Fischereifahrzeuge), EUR-Lex CELEX 31992L0029.
+
+### 9.2 Richtlinie 92/29/EWG — Schiffskategorien (korrigiert)
+
+Die Richtlinie definiert die Bordapotheken-Ausstattung anhand von **drei Schiffskategorien** (Anhang I), unterschieden nach Fahrtgebiet — **nicht** nach den in Abschnitt 1.1 impliziten BRT/Personen-Schwellen:
+
+| Kategorie | Definition | Bordapotheke |
+|-----------|-----------|--------------|
+| **Kategorie A** | Seeschiffe/Fischereifahrzeuge **ohne Fahrtgebiets-Begrenzung** (unbegrenzte Reisen) | Vollständigste Ausstattung |
+| **Kategorie B** | Reisen **< 150 sm** vom nächsten Hafen mit ausreichender medizinischer Ausrüstung | Reduziert |
+| **Kategorie C** | Küstennahe Fahrt / Hafen / Schiffe ohne Kabine, sehr kurze Reisen | Basis-Kit |
+
+*Quelle: `documented` — EU-OSHA-Zusammenfassung Directive 92/29/EEC (osha.europa.eu/en/legislation/directives/17); EUR-Lex CELEX 31992L0029, Anhang I.*
+
+**Weitere verbindliche Pflichten der 92/29/EWG (verifiziert):**
+- **Rettungsinsel/Rettungsboot:** wasserdichte Bordapotheke in jeder Rettungsinsel/jedem Rettungsboot mitzuführen. `documented`
+- **Jährliche Kontrolle:** Die Mitgliedstaaten stellen sicher, dass die Bordapotheken **jährlich** auf Richtlinien-Konformität kontrolliert werden (Bestand, Verfallsdaten). `documented`
+- **Schulung Kapitän/Beauftragte:** Sonderausbildung, **mindestens alle 5 Jahre** aktualisiert (Anhang V). `documented`
+- **Arzt an Bord:** Schiffe mit **≥ 100 Personen** auf **internationaler Reise > 3 Tage** müssen einen Arzt mitführen. `documented`
+- **Krankenraum (Sickbay):** Schiffe **> 500 BRT** mit **≥ 15** Besatzung auf Reisen **> 3 Tagen** benötigen geeignete Krankenraum-Einrichtungen. `documented`
+
+*Quelle: `documented` — EUR-Lex LEGISSUM c11126 „Medical treatment on board vessels".*
+
+### 9.3 Auflösung des Audit-Flags aus Abschnitt 1.1
+
+> ✅ **AUDIT-FLAG (Abschnitt 1.1) AUFGELÖST / VERIFIZIERT (2026-07):** Die Arzt-/Krankenraum-Pflicht ergibt sich **nicht** aus STCW (das nur Ausbildung/Zertifizierung regelt), sondern aus **Richtlinie 92/29/EWG** bzw. **MLC 2006, Regel 4.1**. Verifizierte Schwellen: Arzt ab **≥ 100 Personen** auf internationaler Reise **> 3 Tagen**; Krankenraum ab **> 500 BRT** mit **≥ 15** Besatzung und Reise **> 3 Tagen**. Die ursprüngliche Formulierung „≥ 1 Arzt ab > 500 BRT" ist damit **falsch** und durch obige Werte ersetzt. *Quelle: `documented` — EUR-Lex LEGISSUM c11126; edumaritime.net MLC 2006 Reg. 4.1.*
+
+### 9.4 MLC 2006, Regel 4.1 — Medizinische Betreuung an Bord
+
+Das Seearbeitsübereinkommen (Maritime Labour Convention, 2006) Regel 4.1 fordert für die Berufsschifffahrt:
+- **Arzt an Bord:** Schiffe mit **≥ 100 Personen** auf internationaler Reise **> 3 Tagen**. `documented`
+- **Ohne Arzt:** mindestens ein Seemann mit medizinischer Verantwortung als reguläre Aufgabe **oder** ein Seemann fähig zur medizinischen Ersten Hilfe (Ausbildung gemäß STCW). `documented`
+- **24-h-Funkberatung kostenlos:** Es müssen Vorkehrungen bestehen, um medizinische Anfragen per Funk/Satellit **24 Stunden/Tag, kostenlos** zu stellen und Beratung zu erhalten. `documented`
+
+*Quelle: `documented` — edumaritime.net „MLC 2006 Reg. 4.1"; ILO MLC 2006.*
+
+---
+
+## 10. Unterkühlung / Hypothermie-Management
+
+> **NEUER ABSCHNITT.** Klinische Angaben nach dem **Revised Swiss Staging System** (ERC / Resuscitation) und ERC-Leitlinien. Confidence `documented`.
+
+### 10.1 Stadien (Revised Swiss System, HT I–IV)
+
+Wenn die Körperkerntemperatur **nicht messbar** ist, erfolgt die Einstufung klinisch nach Bewusstsein / Kältezittern / Vitalzeichen (AVPU). Kerntemperaturen sind **Schätzbereiche** — ein Stadium wird primär klinisch bestimmt.
+
+| Stadium | Klinisches Bild | Kerntemperatur (ca.) | Basis-Maßnahme |
+|---------|-----------------|----------------------|----------------|
+| **HT I** (leicht) | Wach, orientiert, **Kältezittern** vorhanden | 35–32 °C | Passiv: Schutz vor Wind/Nässe, isolieren, warme (nicht heiße) süße Getränke wenn wach |
+| **HT II** (mäßig) | Bewusstsein getrübt, **kein** Kältezittern mehr | < 32–28 °C | Aktiv extern: Wärmepacks auf **Rumpf-Kernzonen**; horizontal lagern |
+| **HT III** (schwer) | Bewusstlos, **Vitalzeichen vorhanden** | < 28–24 °C | Atemwegsmanagement; sehr schonender Transport; ECMO-Zentrum anstreben |
+| **HT IV** (Kreislaufstillstand) | Keine Vitalzeichen (scheintot) | < 24 °C | CPR; Transport unter Reanimation zum Wiedererwärmungszentrum (ECLS/ECMO) |
+
+*Quelle: `documented` — Musi et al., „Clinical staging of accidental hypothermia: The Revised Swiss System", Resuscitation 2021; ERC Guidelines Special Circumstances; Survipedia Hypothermia Staging.*
+
+> **Achtung Kerntemperatur-Überschneidung:** Die Temperaturgrenzen sind **Näherungen**; im Feld zählt das klinische Bild. Ein Patient mit z. B. 30 °C kann noch zittern (→ eher HT I-Verhalten) oder nicht (HT II).
+
+### 10.2 Kritische Feld-Regeln (verifiziert)
+
+1. **Kern zuerst wärmen:** Wärmequellen auf **Achseln, Hals/Nacken, Leiste** — **nicht** zuerst auf Arme/Beine. Verhindert Rückstrom kalten peripheren Bluts zum Herzen. `documented`
+2. **Horizontal lagern und halten:** Aufrechte Haltung → Blutpooling → Kollaps-Risiko („Bergungstod"/rescue collapse). `documented`
+3. **Puls über volle 60 Sekunden prüfen:** Herzfrequenz kann bei tiefer Hypothermie extrem niedrig sein; kurze Kontrolle übersieht den Puls und löst unnötige CPR aus. `documented`
+4. **Extrem schonend bewegen:** Ruckartige Bewegungen können bei HT III/IV Kammerflimmern auslösen. `documented`
+5. **HT IV / Kreislaufstillstand:** CPR beginnen und **unter fortgesetzter Reanimation** in ein Zentrum mit extrakorporaler Wiedererwärmung (ECLS/ECMO) transportieren. Grundsatz der Notfallmedizin: *„No one is dead until warm and dead."* `documented`
+
+*Quelle: `documented` — Survipedia (Core-First / 60-s-Puls / horizontal); ERC Guidelines Special Circumstances in Resuscitation.*
+
+### 10.3 Afterdrop (Nachkühlungseffekt)
+
+**Definition:** Beginnt die Wiedererwärmung, weiten sich periphere Gefäße; kaltes Blut aus den Extremitäten strömt zum Kern zurück und lässt die **Kerntemperatur vorübergehend weiter fallen**, obwohl die Oberfläche bereits wärmer wird.
+
+- Dokumentierter Umfang: laut Quellen von rund **0,5–1 °C** (schonende Bergung) bis in Einzelfällen **5–6 °C** beschrieben. `documented` — Umfang quellenabhängig; als Bereich angegeben, nicht als Einzelwert.
+- **Gegenmaßnahme:** Kern-zuerst-Erwärmung, horizontale Lagerung, körperliche Anstrengung des Patienten vermeiden. Aktive Erwärmung reduziert den Afterdrop gegenüber rein passiver Erwärmung bei nicht mehr zitternden Patienten. `documented`
+
+*Quelle: `documented` — Survipedia; ERC Guidelines.*
+
+---
+
+## 11. Ertrinkungsrettung (Drowning)
+
+> **NEUER ABSCHNITT.** Nach ERC-Leitlinien (Ertrinken ist primär ein **hypoxischer** Notfall — Beatmung hat hohe Priorität). Confidence `documented`.
+
+### 11.1 Reanimations-Sequenz bei Ertrinken (weicht vom Standard-BLS ab)
+
+Ertrinken führt primär zu **Atemstillstand**, der in einen Kreislaufstillstand übergehen kann. Deshalb steht die **Wiederherstellung der Sauerstoffversorgung** im Vordergrund:
+
+1. **5 initiale Beatmungen** zuerst (überwindet wasserbedingte Atemwegsobstruktion, verbessert Oxygenierung — verbessert neurologisches Outcome). `documented`
+2. Danach **30 Thoraxkompressionen**, anschließend im Wechsel **2 Beatmungen : 30 Kompressionen**. `documented`
+3. Fortführen bis Vitalzeichen zurückkehren, der Retter erschöpft ist oder erweiterte Hilfe (ALS/AED) verfügbar ist. `documented`
+
+**Kontrast zum Standard-BLS:** Bei kardialem Kreislaufstillstand aus anderer Ursache gilt „Compressions first"; bei Ertrinken gilt wegen der Hypoxie **„Beatmung zuerst" (5 Atemhübe)**. `documented`
+
+*Quelle: `documented` — ERC Guidelines (Drowning); AHA/AAP 2024 Focused Update on Resuscitation Following Drowning, Circulation 2024.*
+
+### 11.2 In-Water Resuscitation (Beatmung im Wasser)
+
+- **In-Water-Beatmung** kann begonnen werden, **wenn** sie von entsprechend **trainierten** Rettern sicher durchführbar ist. `documented`
+- **Thoraxkompressionen erst an sicherem Ort** (fester Boden, Boot) — im Wasser sind sie nicht effektiv durchführbar. `documented`
+- **Eigenschutz zuerst:** Retter darf sich nicht selbst zum zweiten Opfer machen (Rettungsmittel/Leine/Boot nutzen). `documented`
+
+*Quelle: `documented` — ERC Guidelines (Drowning); AHA/AAP 2024.*
+
+### 11.3 Terminologie & „sekundäres Ertrinken"
+
+- **WHO-Konsens:** Die Begriffe *nass/trocken, aktiv/passiv, still, sekundär* (Ertrinken) sollen **nicht mehr** verwendet werden. `documented`
+- Es gibt **keine** medizinisch anerkannte Entität „secondary/dry drowning" bei zuvor **völlig symptomfreien** Patienten. `documented`
+- **Aber:** Symptomatische Gerettete (Husten, Atemnot, Bewusstseinstrübung) gehören überwacht — Patienten mit minimalen Symptomen bessern sich i. d. R. innerhalb von **4–8 Stunden**; klinische Beobachtung typischerweise **4–24 h** je nach Befund. `documented`
+
+*Quelle: `documented` — Cleveland Clinic Journal of Medicine „Dry drowning and other myths"; Red Cross; Medscape Drowning Clinical.*
+
+### 11.4 Kombinationsgefahr Ertrinken + Hypothermie
+
+Ertrinkungsopfer im kalten Wasser sind **fast immer hypotherm** → Regeln aus Abschnitt 10 gelten parallel: schonende Handhabung, langer Pulscheck (60 s), Reanimation bis warm. `documented` — ERC (Verknüpfung Drowning/Hypothermie).
+
+---
+
+## 12. Seekrankheit / Kinetose
+
+> **NEUER ABSCHNITT.** Medikamenten-Dosierungen einzeln verifiziert. Confidence `documented`. **Hinweis:** Verschreibungs-/Freiverkäuflichkeitsstatus ist länderabhängig; vor Bordmitnahme ärztlich/apothekerlich klären.
+
+### 12.1 Wirkstoff-Übersicht (verifiziert)
+
+| Wirkstoff | Form | Dosierung Erwachsene | Anwendungszeitpunkt | Status | Quelle |
+|-----------|------|----------------------|---------------------|--------|--------|
+| **Scopolamin (Hyoscin)** | Transdermales Pflaster | Pflaster (Reservoir 1,5 mg) gibt ~**1 mg über 72 h** ab (1 Pflaster hinter dem Ohr) | **4 h vor** Reisebeginn aufkleben | Rezeptpflichtig (viele Länder) | FDA-Label Transderm Scōp (1,5 mg → ~1 mg/3 d); Spinks & Wasiak, Cochrane/PMC7138049 `documented` |
+| **Dimenhydrinat** | Tablette | **50–100 mg** alle **4–6 h**; max. **400 mg/24 h** | **30–60 min vor** Reisebeginn | Meist OTC | GoodRx / US Pharmacist `documented` |
+| **Cinnarizin** | Tablette 15 mg | **30 mg (2 Tbl.)** ≥ **2 h vor** Reise, dann **15 mg alle 8 h** bei Bedarf | 2 h vorher | Meist OTC (z. B. Stugeron) | NHS „cinnarizine"; Stugeron SmPC (emc) `documented` |
+
+**Nebenwirkungen (verifiziert):** Scopolamin — v. a. **Mundtrockenheit** (in Studien ~35 % vs. 5 % Placebo), Sehstörungen/verschwommenes Sehen, Pupillenerweiterung, Herzrasen, Schläfrigkeit (anticholinerg). Cinnarizin/Dimenhydrinat — **Schläfrigkeit** (nicht fahren/keine Maschinen bedienen). `documented`
+
+> **Effektivität (verifiziert):** In einer Vergleichsstudie an Kriegsschiffbesatzungen war **Scopolamin dem Cinnarizin überlegen**; Scopolamin senkte den mittleren Seekrankheits-Score deutlich und verzögerte den Symptombeginn länger als Meclozin. `documented` — PMC7138049.
+
+### 12.2 Nicht-medikamentöse Maßnahmen (allgemein anerkannt, `documented`/`estimated`)
+
+- Blick auf den **Horizont**/festen fernen Punkt; an Deck an frischer Luft, mittschiffs (geringste Bewegung). `documented` — DAN „Seasickness Prevention".
+- **Beschäftigung/Ruder übernehmen**, nicht unter Deck lesen; ausreichend Schlaf, Alkoholverzicht.
+- **Dehydratation vermeiden:** Bei starkem Erbrechen droht Flüssigkeits-/Elektrolytverlust → kleine Schlucke, ggf. orale Rehydratation. `documented` (allgemeine klinische Empfehlung; Schweregrad-Verknüpfung zu Fehlerbild FB-29-06-011).
+
+---
+
+## 13. Funkmedizinische Beratung (TMAS / MRCC / CIRM)
+
+> **NEUER ABSCHNITT.** Kontakt- und Verfahrensangaben einzeln verifiziert. Confidence `documented`.
+
+### 13.1 TMAS Germany — MEDICO Cuxhaven
+
+- **Träger:** Helios Klinik/Krankenhaus Cuxhaven (Altenwalder Chaussee 10–12, 27472 Cuxhaven) im Auftrag des Bundesministeriums für Digitales und Verkehr. `documented`
+- **Leistung:** 24-h-Funkärztliche Beratung (Krankheit, Unfall, Seenotfall) für Seeleute per Funk, E-Mail, Telefon, Fax. `documented`
+- **Kontakt (verifiziert):** Notruf **+49 (0)4721 78-0** (24 h); Fax +49 (0)4721 78-1520; E-Mail **medico@tmas-germany.de**. `documented`
+- **Historie:** Funkärztliche Beratung aus Cuxhaven seit **1931**. `documented`
+- **DGzRS-Kopplung:** DGzRS-Rettungseinheiten seit den 1970ern per **Tele-EKG** direkt mit Medico Cuxhaven verbunden. `documented`
+
+*Quelle: `documented` — deutsche-flagge.de „TMAS"; Wikipedia „Maritime Telemedical Assistance Service"; tmas-germany.de.*
+
+### 13.2 MRCC Bremen — Bremen Rescue (DGzRS)
+
+- **Träger:** Deutsche Gesellschaft zur Rettung Schiffbrüchiger (DGzRS, seit 1865), betreibt MRCC Bremen / „Bremen Rescue Radio" für SAR in deutscher Nord- und Ostsee. `documented`
+- **Funkwache (verifiziert):** Hörwache auf **UKW/VHF Kanal 16** und **DSC Kanal 70**, sowie **DSC 2187,5 kHz** (Grenzwelle/MF) — 24/7 über > 20 Relaisstationen. `documented`
+- **Rolle:** Koordination von Evakuierungen kritisch Kranker/Verletzter, Vermittlung medizinischer Erstversorgung; leitet „Medico"-Funkgespräche ein. `documented`
+
+*Quelle: `documented` — seenotretter.de; Wikipedia „Maritime Rescue Coordination Centre Bremen".*
+
+### 13.3 CIRM Rom (Centro Internazionale Radio Medico)
+
+- **Gegründet 1935** (unter Vorsitz von Guglielmo Marconi); seit 1950 Non-Profit-Stiftung. `documented`
+- **Leistung:** **kostenlose** funkärztliche Beratung für Schiffe **ohne Arzt** an Bord, weltweit, mehrsprachig (u. a. Italienisch, Französisch, Englisch). `documented`
+
+*Quelle: `documented` — cirm-tmas.it; PubMed „Eighty years of CIRM" (Int Marit Health 2016).*
+
+### 13.4 Funkverfahren im medizinischen Notfall
+
+| Situation | Funkspruch | Kanal/Verfahren |
+|-----------|-----------|-----------------|
+| **Lebensgefahr / akute Bedrohung von Leben oder Schiff** | **MAYDAY** (Notverkehr) | VHF **Kanal 16** (156,8 MHz) + **DSC Kanal 70**; MF **2187,5 kHz** | 
+| **Dringlichkeit ohne unmittelbare Lebensgefahr, inkl. medizinischer Rat** | **PAN-PAN** (ggf. „PAN-PAN MEDICO") | VHF **Kanal 16** / DSC; danach Verbindung zu TMAS/MRCC | 
+
+- **DSC (Digital Selective Calling):** VHF-Notalarm auf **Kanal 70**; MF-Not-/Sicherheits-DSC auf **2187,5 kHz**. `documented` — seenotretter.de.
+- **VHF Kanal 16 = 156,8 MHz** ist der internationale Not-/Anruf-/Sicherheitskanal (GMDSS). `documented` — Standard GMDSS; MRCC Bremen Hörwache Ch 16.
+- Für **rein medizinische Beratung ohne Seenot** wird typischerweise **PAN-PAN (MEDICO)** genutzt und die Verbindung zu einem TMAS (Medico Cuxhaven / CIRM) hergestellt. `documented` — MLC 4.1 (24-h-Funkberatung); seenotretter.de (Medico-Gespräche).
+
+---
+
+## 14. Fehlerbild-Atlas — Klinische & Verfahrens-Befunde (FB-29-06-NNN)
+
+> **NEUER ABSCHNITT — kollisionsfreie IDs.** Der bestehende Abschnitt 3 nutzt das Schema „Fehlerbild 3.x.y" (Ausrüstungs-/Lagerbefunde); diese neuen Befunde nutzen das fortlaufende, eindeutige Schema **FB-29-06-001 …** und decken die klinischen Themen (Hypothermie, Ertrinken, Seekrankheit, Funkberatung) ab. Es besteht **keine ID-Überschneidung** mit Abschnitt 3.
+
+| ID | Fehlerbild | Merkmal | Ursache | Behebung | Schweregrad |
+|----|-----------|---------|---------|----------|-------------|
+| **FB-29-06-001** | Unterkühltes Opfer aufrecht bewegt/transportiert | Patient beim Bergen hingestellt/gesetzt | Unkenntnis des Bergungstod-Risikos | Strikt **horizontal** lagern & transportieren | KRITISCH |
+| **FB-29-06-002** | Extremitäten zuerst gewärmt (heiße Dusche/Massage der Glieder) | Wärme/Reiben auf Arme/Beine | Falscher Reflex | **Kern zuerst** (Achsel/Hals/Leiste); nicht reiben | HOCH |
+| **FB-29-06-003** | Zu kurzer Pulscheck → voreilige CPR bei perfundierendem Hypothermie-Patienten | Puls < 10 s geprüft | Standard-BLS-Reflex | Puls **volle 60 s** prüfen | HOCH |
+| **FB-29-06-004** | HT-IV-Reanimation vorzeitig abgebrochen | „Tot" erklärt trotz tiefer Hypothermie | Missachtung „warm and dead" | CPR **bis wiedererwärmt**; ECLS-Zentrum | KRITISCH |
+| **FB-29-06-005** | Ertrinkungs-CPR ohne initiale Beatmungen (nur Kompressionen) | Direkt Thoraxkompressionen | Standard-„compressions first" | **5 initiale Beatmungen** zuerst, dann 30:2 | KRITISCH |
+| **FB-29-06-006** | Thoraxkompressionen im Wasser versucht | Reanimation vor Erreichen fester Unterlage | Zeitdruck/Fehltraining | Erst an sicherem Ort (Boot/Land) komprimieren | HOCH |
+| **FB-29-06-007** | Retter ohne Eigenschutz ins Wasser → zweites Opfer | Kein Rettungsmittel/Leine | Panikreaktion | Rettungsmittel/Leine/Boot nutzen | KRITISCH |
+| **FB-29-06-008** | Symptomatischer Geretteter nicht überwacht/entlassen | Husten/Atemnot ignoriert | „secondary drowning"-Verwirrung | Symptomatische **4–8 h+** überwachen / TMAS | HOCH |
+| **FB-29-06-009** | Keine funkmedizinische Beratung eingeholt trotz unklarer Diagnose | Eigenbehandlung ohne Rat | Unkenntnis von TMAS | **TMAS (Medico Cuxhaven / CIRM)** kontaktieren | HOCH |
+| **FB-29-06-010** | Falscher Funk-Notruf-Grad (MAYDAY vs. PAN-PAN verwechselt) | Fehlender/falscher Notruf | Verfahrensunkenntnis | MAYDAY = Lebensgefahr; PAN-PAN(-MEDICO) = Dringlichkeit/Rat | MITTEL-HOCH |
+| **FB-29-06-011** | Dehydratation durch unbehandelte schwere Seekrankheit | Anhaltendes Erbrechen, keine Rehydratation | Unterschätzt | Kleine Schlucke/ORS; bei Bedarf ärztlicher Rat | MITTEL-HOCH |
+| **FB-29-06-012** | Seekrankheitsmittel zu spät genommen | Einnahme erst bei Übelkeit | Zeitpunkt unbekannt | **Vor** Ablegen: Scopolamin 4 h, Cinnarizin/Dimenhydrinat 0,5–2 h | MITTEL |
+| **FB-29-06-013** | Anticholinerges Risiko ignoriert (Scopolamin am Ruder) | Sehstörung/Schläfrigkeit beim Steuern | Nebenwirkung unbeachtet | Wirkung vor Wache/Steuern testen; Aufgaben anpassen | MITTEL |
+| **FB-29-06-014** | Keine dokumentierten Notruf-Frequenzen/TMAS-Kontakte an Bord | Fehlende Notfall-Funkkarte | Planungslücke | Karte mit Ch 16/70, 2187,5 kHz, Medico-Nr. anbringen | MITTEL (vgl. Fehlerbild 3.6.2) |
+
+*Quellen: `documented` — ERC Guidelines (Hypothermie/Drowning); AHA/AAP 2024; deutsche-flagge.de/seenotretter.de (Funk/TMAS). Schweregrade sind fachliche Einordnung im AYDI-Schema.*
+
+---
+
+## 15. Entscheidungsbäume / Troubleshooting
+
+> **NEUER ABSCHNITT.** Feld-Algorithmen als Kurzform der verifizierten Leitlinien (Abschnitte 10–13).
+
+### 15.1 Unterkühlung — Feldalgorithmus
+
+```
+Person kalt/apathisch aus Wasser oder Kälte?
+├─ Zittert, wach, orientiert? ............... HT I → isolieren, Wind/Nässe weg,
+│                                              warme süße Getränke (wenn wach)
+├─ Kein Zittern, benommen? ................. HT II → horizontal, Wärmepacks Kern
+│                                              (Achsel/Hals/Leiste), TMAS-Kontakt
+├─ Bewusstlos, aber Puls (60 s prüfen!)? .... HT III → Atemweg sichern, extrem
+│                                              schonend, ECMO-Zentrum anstreben
+└─ Keine Vitalzeichen? ..................... HT IV → CPR + Transport unter
+                                               Reanimation, "bis warm und tot"
+Immer: horizontal, schonend, Kern zuerst, langer Pulscheck.
+```
+*`documented` — ERC/Swiss Staging.*
+
+### 15.2 Ertrinken — Feldalgorithmus
+
+```
+Aus dem Wasser gerettet, reagiert nicht / atmet nicht normal?
+└─ 5 INITIALE BEATMUNGEN
+   └─ danach 30 Kompressionen : 2 Beatmungen (an sicherem Ort!)
+      └─ weiter bis Vitalzeichen / AED-ALS / Erschöpfung
+Kaltes Wasser? → zusätzlich Hypothermie-Regeln (Abschnitt 10).
+Symptomatisch, aber wach? → 4–8 h überwachen, TMAS.
+```
+*`documented` — ERC/AHA-AAP 2024.*
+
+### 15.3 „Wen rufe ich?" — Kommunikations-Entscheidung
+
+```
+Akute Lebensgefahr (Person/Schiff)? ── JA ─► MAYDAY, VHF Ch 16 + DSC Ch 70
+        │                                     (MF 2187,5 kHz), MRCC koordiniert
+        └─ NEIN
+           Dringend, aber kein Seenot / medizinischer Rat nötig?
+           └─► PAN-PAN (MEDICO) ─► Verbindung zu TMAS:
+               Medico Cuxhaven +49 4721 78-0 / CIRM Rom (kostenlos)
+```
+*`documented` — MLC 4.1; seenotretter.de; deutsche-flagge.de.*
+
+---
+
+## 16. FAQ — Ergänzung (klinische Themen)
+
+> **NEUER ABSCHNITT** (ergänzt Abschnitt 7).
+
+11. **Warum bei Ertrinken zuerst beatmen statt drücken?**  
+    Ertrinken ist ein **Sauerstoffmangel-Notfall**; 5 initiale Beatmungen stellen die Oxygenierung wieder her, bevor 30:2 folgen. `documented` — ERC.
+
+12. **Ab wann ist jemand „zu kalt zum Retten"?**  
+    Grundsatz: *„No one is dead until warm and dead."* Bei tiefer Hypothermie CPR fortsetzen und unter Reanimation zum Wiedererwärmungszentrum. `documented` — ERC.
+
+13. **Was ist Afterdrop und wie vermeide ich ihn?**  
+    Vorübergehender weiterer Kernabfall beim Wiedererwärmen. Vermeidung: Kern zuerst wärmen, horizontal lagern, Anstrengung vermeiden. `documented`
+
+14. **Gibt es „sekundäres Ertrinken" bei symptomfreien Personen?**  
+    Nein — bei zuvor völlig symptomfreien Personen ist das keine anerkannte Entität. Symptomatische aber 4–8 h+ überwachen. `documented` — WHO/CCJM.
+
+15. **Wann Scopolamin-Pflaster kleben?**  
+    **4 Stunden vor** Reisebeginn (Wirkung bis ~72 h). Cinnarizin ≥ 2 h, Dimenhydrinat 0,5–1 h vorher. `documented`
+
+16. **Wen rufe ich bei medizinischem Problem ohne Seenot?**  
+    Funkmedizinische Beratung (TMAS): **Medico Cuxhaven +49 4721 78-0** oder **CIRM Rom** (kostenlos), per PAN-PAN/Funk vermittelt über MRCC. `documented`
+
+---
+
+## 17. Glossar — Ergänzung (relevante klinische/maritime Begriffe)
+
+> **NEUER ABSCHNITT.** Fokussiertes Glossar zu den neuen Themen. (Hinweis: Das umfangreiche Alt-Glossar in Abschnitt 8 enthält viele **nicht fachrelevante** Wörterbuch-Einträge und sollte bei einer künftigen Überarbeitung bereinigt werden.)
+
+| Begriff | Definition | Quelle-Kontext |
+|---------|-----------|----------------|
+| **Hypothermie (HT I–IV)** | Klinische Stadieneinteilung der Unterkühlung nach dem Revised Swiss System | ERC/Resuscitation 2021 |
+| **Afterdrop** | Vorübergehender weiterer Kernabfall zu Beginn der Wiedererwärmung | ERC/Survipedia |
+| **Bergungstod (rescue collapse)** | Kreislaufkollaps bei aufrechter Handhabung/Bergung Unterkühlter | ERC |
+| **ECLS/ECMO** | Extrakorporale Wiedererwärmung bei HT III/IV | ERC |
+| **AVPU** | Bewusstseins-Schnellschema (Alert/Voice/Pain/Unresponsive) zur HT-Stadien-Einstufung | Swiss System |
+| **In-Water Resuscitation** | Beatmung im Wasser durch trainierte Retter vor Kompressionen an Land | ERC Drowning |
+| **TMAS** | Telemedical Maritime Assistance Service (funkärztliche Beratung) | MLC 4.1 |
+| **MEDICO (Cuxhaven)** | Deutscher TMAS, Helios Klinik Cuxhaven, 24 h | deutsche-flagge.de |
+| **CIRM** | Centro Internazionale Radio Medico, Rom (seit 1935, kostenlos) | cirm-tmas.it |
+| **MRCC** | Maritime Rescue Coordination Centre (Deutschland: MRCC Bremen, DGzRS) | seenotretter.de |
+| **DGzRS** | Deutsche Gesellschaft zur Rettung Schiffbrüchiger (seit 1865) | seenotretter.de |
+| **DSC** | Digital Selective Calling — VHF Ch 70 / MF 2187,5 kHz Notalarm | GMDSS/seenotretter.de |
+| **MAYDAY** | Notverkehr bei Lebensgefahr | GMDSS |
+| **PAN-PAN (MEDICO)** | Dringlichkeitsverkehr, u. a. für medizinische Beratung | GMDSS/MLC 4.1 |
+| **Kinetose** | Bewegungs-/Seekrankheit | DAN |
+
+---
+
+## 18. Quellenverzeichnis (neue Abschnitte 9–17)
+
+Alle unten stehenden Quellen wurden 2026-07 per WebSearch/WebFetch abgerufen und geprüft:
+
+1. **Richtlinie 92/29/EWG** — EUR-Lex CELEX 31992L0029; EU-OSHA Legislation Directive 17; EUR-Lex LEGISSUM c11126. (Schiffskategorien A/B/C, jährliche Kontrolle, Arzt-/Krankenraum-Schwellen)
+2. **MLC 2006, Regel 4.1** — edumaritime.net; ILO. (Arzt ab ≥100 Pers./>3 Tage; 24-h-Funkberatung kostenlos)
+3. **Revised Swiss Staging System** — Musi et al., *Resuscitation* 2021 (S0300-9572(21)00096-4); Survipedia „Hypothermia Staging"; ERC Guidelines Special Circumstances.
+4. **Ertrinken/Reanimation** — ERC Guidelines (Drowning); AHA/AAP 2024 Focused Update, *Circulation* 2024 (CIR.0000000000001274); Cleveland Clinic Journal of Medicine „Dry drowning and other myths"; American Red Cross.
+5. **Seekrankheit** — Spinks & Wasiak, Cochrane/PMC7138049 (Scopolamin); NHS „cinnarizine"; Stugeron SmPC (emc); DAN „Seasickness Prevention"; US Pharmacist; GoodRx.
+6. **TMAS/MRCC/CIRM** — deutsche-flagge.de „TMAS"; Wikipedia „Maritime Telemedical Assistance Service" & „MRCC Bremen"; seenotretter.de; cirm-tmas.it; PubMed „Eighty years of CIRM", *Int Marit Health* 2016.
+
+---
+
 **Autor:** AYDI Knowledge Base  
 **Kontakt:** knowledge@aydi.de  
 **Letzte Überarbeitung:** 2026-05-18  
+**Werft-Tiefe-Erweiterung (Abschnitte 9–18):** 2026-07-12 (web-verifiziert)  
 **Nächste Review:** 2027-05-18

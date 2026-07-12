@@ -785,6 +785,242 @@ class SafetyHarness(BaseModel):
 
 ---
 
+# TEIL B — VERIFIZIERTE ERWEITERUNG (Werft-Tiefe, 2026-07)
+
+> **Hinweis zur Methodik:** Alle Angaben in Teil B sind gegen autoritative Quellen (ISO, World Sailing OSR, MAIB, Hersteller-/Fachpublikationen) geprüft. Jeder Faktenblock trägt eine Confidence-Kennzeichnung und eine Quelle. Angaben, die nicht zweifelsfrei belegbar waren, sind als `estimated — unverifiziert` markiert oder wurden weggelassen. Teil A (oben) bleibt unverändert erhalten; Teil B **korrigiert** einzelne dort genannte Norm-Referenzen und ergänzt fehlende Substanz.
+
+---
+
+## 11. Regulatorischer Rahmen — verifiziert & korrigiert
+
+### 11.1 Leitnorm: EN ISO 12401:2009 [documented]
+
+**EN ISO 12401:2009 — „Small craft — Deck safety harness and safety line — Safety requirements and test methods"** (deutsch: „Kleine Wasserfahrzeuge — Deck-Sicherheitsgurt und Sicherheitsleine — Sicherheitstechnische Anforderungen und Prüfverfahren").
+
+- Regelt **Leistung, Größen, Kennzeichnung und Prüfverfahren** für Deck-Sicherheitsgurte (Harness) und Sicherheitsleinen (Tether) auf Sportbooten.
+- **Größen nach Körpermasse** (Mehrfach-Größen zulässig):
+  - **Size 1:** > 50 kg
+  - **Size 2:** > 20 kg ≤ 50 kg
+  - **Size 3:** ≤ 20 kg
+- **Nicht anwendbar** auf: Jollen-**Trapez**-Gurte, Windsurf-Gurte, Sitzgurte für schnelle Motorboote, sowie Gurte zum Schutz gegen Absturz aus der Höhe (PSA-Höhensicherung).
+- Zweck laut Norm: Der konforme Gurt/Tether gibt „reasonable assurance that the wearer will remain attached to the craft" (angemessene Sicherheit, dass der Träger mit dem Boot verbunden bleibt).
+
+*Quelle: ISO Katalog ISO 12401:2009 (iso.org/standard/46213.html); SECUMAR ISO-12401-Erläuterung (secumar.com/en/iso-12401). Confidence: documented.*
+
+> **KORREKTUR-NOTIZ zu Teil A, Kopf & Abschnitt 1:** Die in der ursprünglichen Kopfzeile genannten Referenzen **„EN 13340"** und **„ISO 23271"** (für Karabiner) konnten **nicht** als einschlägige Sicherheitsleinen-/Karabiner-Normen verifiziert werden und gelten hier als **unbelegt**. Die maßgebliche Norm ist **EN ISO 12401:2009**; für Karabiner/Snap-Hooks als Tether-Komponente gelten die Prüfanforderungen **innerhalb** von ISO 12401 (der Snap-Hook wird als Bestandteil der Sicherheitsleine geprüft), nicht eine separate ISO 23271. Bis zur Klärung sollten „EN 13340" und „ISO 23271" nicht als verbindliche Referenz zitiert werden. *Confidence: documented (Negativbefund gegenüber ISO-Katalog).* 
+
+> **KORREKTUR-NOTIZ zu Falltest-Werten (Teil A, 1.1 & Kap. 4.2):** Die in Teil A genannten Werte „Min. 5 kN" bzw. „1 m Sturz mit 100 kg" konnten in dieser Form **nicht** direkt am Norm-Volltext verifiziert werden und sind als `estimated — unverifiziert` zu behandeln. **Verifiziert** ist stattdessen: Eine normkonforme Sicherheitsleine hält bei **Längszug** eine Last von **über 1 Tonne (> ~10 kN)** aus (siehe 12.3). *Quelle: MAIB Safety Bulletin / Bericht CV30 (assets.publishing.service.gov.uk). Confidence: documented.*
+
+### 11.2 Trapez-Abgrenzung: ISO 10862:2009 [documented]
+
+Der **Jollen-/Katamaran-Trapez**-Gurt ist **ausdrücklich vom Geltungsbereich der ISO 12401 ausgenommen** (siehe 11.1). Für das sicherheitskritische **Schnellauslöse-System** des Trapezes gilt eine eigene Norm:
+
+**ISO 10862:2009 — „Small craft — Quick release system for trapeze harness"** (Schnellauslösesystem für Trapezgurte).
+- Zweck: die Schnellauslöse-Vorrichtung muss den Träger **rasch aus der Verhakung befreien** und das Ertrinkungsrisiko minimieren, falls die Lösung aus dem Trapezsystem auf anderem Wege versagt.
+- **Fachliche Abgrenzung:** Ein Trapezgurt hält den Segler *aktiv außenbords* (gewolltes Aushängen am Trapezdraht zur Erhöhung des aufrichtenden Moments) — er ist **kein** Absturzsicherungs-/Verbindungssystem. Ein Deck-Sicherheitsgurt (ISO 12401) hält den Träger dagegen *am Boot fest*. **Trapezgurt ≠ Deck-Harness; die beiden dürfen funktional nicht verwechselt werden.**
+
+*Quelle: ISO 10862:2009 (iso.org/standard/46202.html); ISO 12401 Scope-Ausschluss. Confidence: documented.*
+
+### 11.3 Betriebs-/Rennregeln: World Sailing Offshore Special Regulations (OSR) [documented]
+
+Die **World Sailing OSR** (früher ISAF Special Regs) sind das operative Regelwerk, das ISO 12401 im Renn-/Offshore-Betrieb konkretisiert und die **Anlegepunkte (Jackstays/Strong Points)** definiert. Relevante Kern-Definitionen:
+- **Jackstay (Strecktau):** fest verzurrtes Gurtband, Draht oder Tau, das der Crew erlaubt, sich zu bewegen, **ohne den Tether-Karabiner lösen zu müssen**.
+- **Tether (Sicherheitsleine):** Leine/Gurtband, das den Deck-Harness mit einem Strong Point oder Jackstay verbindet.
+- **Überlast-Regel:** Ein Tether, der **überlastet** wurde, **ist zu ersetzen** (nicht weiter zu verwenden).
+- **Fest installierte Beschläge:** Jackstay-Endpunkte und Clip-in-Punkte müssen **dauerhaft installiert** sein (keine Behelfslösungen).
+
+*Quelle: World Sailing Offshore Special Regulations 2026-2027 (sailing.org); Definitionsauszüge. Confidence: documented. Hinweis: OSR sind Renn-/Kategorie-abhängig; konkrete Kategorie-Anforderungen im jeweils gültigen OSR-Volltext prüfen.*
+
+---
+
+## 12. Bruchlasten, Anlegepunkte & Tether-Maße — verifizierte Zahlen
+
+### 12.1 Jackstays / Strecktaue — Werkstoff & Bruchlast [documented]
+
+| Ausführung | Spezifikation | Bruchlast | Bewertung |
+|-----------|---------------|-----------|-----------|
+| Edelstahldraht **1×19**, ⌀ 4 mm | unbeschichtet, ohne Ummantelung | **~1.400 kg** | **unzureichend** (unter OSR-Ziel) |
+| Edelstahldraht **1×19**, ⌀ 5 mm (3/16″) | unbeschichtet, ohne Ummantelung | **~2.190 kg** | **Minimum** empfohlen |
+| **Polyester-Gurtband**, hoch-denier / hoch-tenacity | UV-stabil, flach auf Deck | **≥ 2.000 kg** (bis ~3.000 kg) | Standard OSR |
+| **HMPE-Tau** (Dyneema o.ä.) | geringe Dehnung, leicht | herstellerabhängig ≥ 2.000 kg | zulässig |
+
+**Kern-Anforderung World Sailing:** Jackstays sollen **~2.040 kg (4.500 lb)** Bruchlast erreichen; als Draht **unbeschichteter, nicht ummantelter Edelstahl 1×19 mit Mindestdurchmesser 5 mm**, alternativ Gurtband oder HMPE-Tau mit **Mindestbruchlast 2.000 kg**.
+
+**Werkstoff-Regel:** **Polyester statt Nylon/Polyamid.** Polyester ist deutlich UV-beständiger und dehnt weniger. Nylon nimmt Wasser auf, dehnt stark und altert unter UV schneller — als Jackstay-Gurtband **ungeeignet**.
+
+*Quelle: Noonsite „Jackstays — Construction and Usage"; Jimmy Green Marine „Webbing Jackstays Guidance". Confidence: documented (Draht-Bruchlasten: measured aus Draht-Datenblättern zitiert).*
+
+### 12.2 Jackstay-Installation — Verlege-Regeln [documented]
+
+1. **Nahe der Mittellinie verlegen** („as near to the centre line as practicable") — damit man bei Sturz **nicht über die Reling** fällt, während man noch eingeklinkt ist. Ein außen an der Reling verlegter Jackstay lässt den Gestürzten außenbords im Wasser schleifen.
+2. **Straff halten:** Gurtband dehnt sich; ein durchhängender Jackstay vergrößert die Fallstrecke. Regelmäßig nachspannen.
+3. **Verhakungs-frei führen:** So verlegen, dass der Tether-Karabiner sich **nicht unter Decksbeschlägen** (Klampen, Poller, Schienen) verfangen kann (siehe MAIB 1/2018, Kap. 13).
+4. **Durchgehende Wege:** Von Cockpit bis Bug ohne Lücke, sodass die Crew ohne Ausklinken vor- und zurückgehen kann.
+
+*Quelle: Noonsite (unter Verweis auf MAIB Safety Bulletin 1/2018); Jimmy Green Marine. Confidence: documented.*
+
+### 12.3 Tether (Sicherheitsleine) — Maße & Lasten [documented]
+
+| Parameter | Wert | Quelle |
+|-----------|------|--------|
+| **Max. Tether-Länge** (inkl. Haken) | **2 m** (6′6″) | OSR (via Wichard) |
+| **Kurz-Tether / Zwischenhaken-Regel** | Crew muss entweder Tether **≤ 1 m** haben **oder** einen zusätzlichen selbstschließenden **Zwischenhaken** auf dem 2-m-Tether | OSR (via Wichard) |
+| **Längszug-Festigkeit (konform)** | **> 1 Tonne (~10 kN)** bei Längsbelastung | MAIB / ISO 12401 |
+| **Überlast-Indikator-Auslösung** | Warnflagge erscheint bei Last **> ~500 kg** → Tether **ersetzen** | Spinlock / Wichard |
+| **World-Sailing-Zielwert Ausrüstungsfestigkeit** | **4.500 lb ≈ 20 kN** | Practical Sailor / OSR |
+
+**Warum kurz besser ist:** Ein **1-m-Tether** hält den Träger bei einem Sturz **auf Deck** (kürzere Fallstrecke, geringeres Risiko, außenbords ins Wasser zu geraten und mitgeschleift zu werden). Der 2-m-Tether erhöht den Bewegungsradius, aber auch die Fall- und Schleif-Distanz — deshalb die Zwischenhaken-Regel: Bei langem Tether soll ein Zwischenpunkt einklinkbar sein.
+
+**Elastische Tether (2 m gedehnt):** komfortabler (weniger Stolpern), müssen aber **nahe der Bootsmitte** angeschlagen werden, da die gedehnte Länge die Reichweite über Bord vergrößert.
+
+**Konsequenz aus dem Überlast-Indikator:** Der Indikator (in die Naht eingenähte, unter Last aufreißende/sichtbar werdende Markierung) ist ein **Einweg-Signal**. Sobald er ausgelöst hat — nach hartem Ruck oder Sturz — ist der Tether **zwingend zu ersetzen**, nicht zu inspizieren-und-weiterverwenden. Das deckt sich mit der OSR-Regel „overloaded tether shall be replaced".
+
+*Quelle: Wichard „How to choose your tether" (marine.wichard.com); Spinlock Deckware Tether (West Marine / Defender Datenblätter); Practical Sailor „Safety Tether Caution"; MAIB. Confidence: documented; Indikator-Schwelle 500 kg: documented (Hersteller Spinlock).* 
+
+---
+
+## 13. Karabiner / Snap-Hooks — die Seitenlast-Problematik (kritisch)
+
+> Dieser Abschnitt ist der wichtigste sicherheitstechnische Zusatz: Die häufigste **tödliche** Versagensart von Tether-Haken ist **nicht** Zugbruch, sondern **Öffnen unter Querlast/Verhakung**.
+
+### 13.1 Der Fall CV30 (Clipper Race, 2017) & MAIB Safety Bulletin 1/2018 [documented]
+
+Am **18. November 2017** stürzte der Crew-Mitfahrer **Simon Speirs** von der Yacht **CV30** (Clipper Round the World Race) ca. 1.500 sm westlich von Fremantle über Bord. Sein **Tether-Haken verfing sich unter einer vorderen Festmacher-Klampe (mooring cleat)**, wurde dadurch **seitlich (lateral) belastet, verformte sich und öffnete** — der Segler löste sich vom Boot und ertrank.
+
+Die **MAIB** (UK Marine Accident Investigation Branch) veröffentlichte am **9. Januar 2018** das **Safety Bulletin 1/2018**. Kernaussage:
+- Die ISO-12401-Prüfungen unterstellen **Längsbelastung** (longitudinal); dabei hält der Tether **> 1 Tonne**.
+- Bei **Querlast/Verhakung** (Haken quer über einem Beschlag) versagt derselbe Haken bei einem **Bruchteil** dieser Last — genau dieser ungeprüfte Lastfall trat bei CV30 ein.
+- **Empfehlung:** Die Anschlagmethode des Tether-Endes ist so zu gestalten, dass sich der Haken **nicht mit Decksbeschlägen oder Ausrüstung verhaken** kann.
+
+*Quelle: MAIB Bericht CV30 (assets.publishing.service.gov.uk/media/…/2019-7-CV30.pdf); Maritime Executive; IIMS. Confidence: documented.*
+
+### 13.2 Haken-Vergleich unter Fehl-Last (Praxis-Test) [documented]
+
+Ein Vergleichstest (Practical Sailor) prüfte, ob sich Tether-Haken durch **Verdrehen, Anstoßen, Querzug** ungewollt öffnen lassen:
+
+| Haken-Typ | Befund unter Fehl-Last |
+|-----------|------------------------|
+| **Wichard Proline** | ließ sich mit ungünstig platziertem Fuß „aufhebeln"; öffnet, wenn rückwärts zwischen zwei Objekte gezogen |
+| **Kong Tango** | lässt sich „abkicken", wenn das Gate gegen etwas gedrückt wird |
+| **Spinlock- / Plastimo-Haken** | Gate mit ~**30 lb (~13,6 kg)** Zug aufdrückbar |
+| **Gibb-artiger Haken** | öffnete unter **< 30 lb** |
+| **ISC SH 903** | benötigt **drei separate Bedien-Aktionen**; im Test **nicht** unbeabsichtigt zu öffnen |
+| **Schraub-Karabiner (screw-lock)** | löste **nicht** unbeabsichtigt (erfordert bewusstes Verriegeln) |
+
+**Fazit des Tests:** Mit Ausnahme von **ISC SH 903** und **Schraub-Karabiner** ließ sich nahezu jeder Haken durch eine Kombination aus Drehen/Stoßen mit **< 30 lb** ungewollt öffnen. **Fast jedes Design hatte eine Achillesferse bei Quer-/Gate-Last.**
+
+*Quelle: Practical Sailor „Safety Tether Caution" (practical-sailor.com). Confidence: documented (Prüfbefund einer Fachpublikation, kein Norm-Wert).*
+
+### 13.3 Auswahl- & Handhabungs-Regeln (abgeleitet, belegt)
+
+1. **Doppel-/Dreifach-Aktions-Haken bevorzugen** (self-closing, self-locking; drei Aktionen wie ISC SH 903) oder verschließbare Schraub-Karabiner für Fixpunkte. *[documented — abgeleitet aus 13.2]*
+2. **Haken so anschlagen, dass Querlast/Verhakung ausgeschlossen ist** (MAIB 1/2018). Tether-Ende an einem Punkt fixieren, an dem der Haken frei längs zieht. *[documented]*
+3. **Nach Sturz/Überlast (Indikator ausgelöst) → Tether komplett ersetzen** (OSR). *[documented]*
+4. **Werkstoff:** salzwasserfest — Edelstahl **316L** oder eloxiertes/marinetaugliches Aluminium; Korrosion reduziert die Restfestigkeit erheblich. *[documented — Werkstoffprinzip; konkreter %-Verlust in Teil A ist `estimated`]*
+
+---
+
+## 14. Fehlerbild-Atlas (verifiziert) — FB-29-03-NNN
+
+> Neue, **kollisionsfreie** IDs (Teil A nutzt „Fehlerbild 3.x.x"; hier fortlaufend FB-29-03-001 ff.). Jedes Fehlerbild verweist auf Norm/Quelle.
+
+| ID | Fehlerbild | Merkmal | Ursache | Sofortmaßnahme | Schweregrad | Beleg |
+|----|-----------|---------|---------|----------------|-------------|-------|
+| **FB-29-03-001** | Tether-Haken **quer über Beschlag** anschlagbar | Haken kann über Klampe/Poller/Schiene laufen | Anschlagpunkt/Verlegung falsch | Anschlag so ändern, dass nur Längszug möglich | **KRITISCH** | MAIB 1/2018 |
+| **FB-29-03-002** | Haken **Gate mit < 30 lb** aufdrückbar | Gate öffnet bei Quer-/Anstoßlast | Einfach-Aktions-Haken, kein Self-Lock | Gegen Drei-Aktions-Haken/Schraub-Karabiner tauschen | **KRITISCH** | Practical Sailor |
+| **FB-29-03-003** | **Überlast-Indikator ausgelöst** (Flagge sichtbar) | rote/eingenähte Warnung sichtbar | Ruck/Sturz > ~500 kg | Tether **ersetzen**, nicht weiterverwenden | **KRITISCH** | Spinlock/OSR |
+| **FB-29-03-004** | Jackstay **außen an Reling** verlegt | Linie nahe Bordwand statt Mittellinie | Fehlplanung | Nach innen (Mittellinie) verlegen | **HOCH** | Noonsite/MAIB |
+| **FB-29-03-005** | Jackstay **durchhängend** | sichtbarer Durchhang, große Fallstrecke | nicht nachgespannt / Gurt gedehnt | Straffen; ggf. Polyester statt Nylon | **HOCH** | Jimmy Green |
+| **FB-29-03-006** | Jackstay-Gurtband ist **Nylon/Polyamid** | Gurt stark dehnend, UV-spröde | falscher Werkstoff | Gegen **Polyester** (hoch-denier) tauschen | **HOCH** | Noonsite |
+| **FB-29-03-007** | Draht-Jackstay **⌀ 4 mm** | zu dünner 1×19-Draht (~1.400 kg) | Unterdimensionierung | Min. **5 mm** 1×19 (~2.190 kg) | **HOCH** | Noonsite |
+| **FB-29-03-008** | Tether **> 2 m** ohne Zwischenhaken | zu langer Tether, keine Kurz-Option | Ausrüstung nicht OSR-konform | Zwischenhaken/≤1-m-Option ergänzen | **HOCH** | OSR/Wichard |
+| **FB-29-03-009** | **Trapezgurt** als Deck-Harness genutzt | Trapezgurt statt ISO-12401-Harness | Verwechslung Geräteklasse | Korrekten Deck-Harness (ISO 12401) einsetzen | **KRITISCH** | ISO 12401/10862 |
+| **FB-29-03-010** | Clip-in-Punkt **nicht fest installiert** | Behelfs-Anschlag, bewegliches Teil | fehlender Strong Point | Dauerhaften Strong Point montieren | **KRITISCH** | OSR |
+| **FB-29-03-011** | Haken/Beschlag **korrodiert** (nicht 316L) | Rost, Lochfraß, Verformung | falsche Legierung/keine Spülung | Gegen 316L/marinetaugl. Alu tauschen | **KRITISCH** | Werkstoffprinzip |
+
+*Confidence je Zeile gemäß Beleg (documented). „Estimated"-Schweregrade sind qualitativ und dienen der Priorisierung.*
+
+---
+
+## 15. Entscheidungsbaum: Tether/Jackstay-Freigabe vor Auslaufen
+
+```text
+START: Vor Auslaufen — Sicherheitsleinen-Check
+│
+├─ Ist ein Deck-Harness nach EN ISO 12401 vorhanden & passend (Größe n. Körpermasse)? 
+│     nein → STOP: Harness beschaffen/anpassen (kein Auslaufen offshore)
+│     ja ↓
+├─ Trapezgurt statt Deck-Harness? (FB-29-03-009)
+│     ja → STOP: falsche Geräteklasse, ISO-12401-Harness einsetzen
+│     nein ↓
+├─ Überlast-Indikator am Tether ausgelöst? (FB-29-03-003)
+│     ja → Tether ERSETZEN, dann weiter
+│     nein ↓
+├─ Tether ≤ 1 m ODER 2 m mit Zwischenhaken? (FB-29-03-008)
+│     nein → nachrüsten (OSR)
+│     ja ↓
+├─ Haken: Drei-Aktions/Self-Lock/Schraub-Karabiner? (FB-29-03-002)
+│     nein → gegen sicheren Haken tauschen (Quer-Öffnung!)
+│     ja ↓
+├─ Kann Haken sich an Deckbeschlag verhaken (Querlast)? (FB-29-03-001)
+│     ja → Anschlag/Verlegung ändern (MAIB 1/2018)
+│     nein ↓
+├─ Jackstay: Polyester ≥2.000 kg ODER Draht 1×19 ≥5 mm? (FB-29-03-006/007)
+│     nein → Jackstay ersetzen
+│     ja ↓
+├─ Jackstay nahe Mittellinie & straff? (FB-29-03-004/005)
+│     nein → umverlegen/straffen
+│     ja ↓
+├─ Clip-in-Punkte dauerhaft installiert? (FB-29-03-010)
+│     nein → Strong Points montieren
+│     ja ↓
+└─ FREIGABE: Sicherheitsleinen-System einsatzbereit
+```
+
+*Ableitung aus ISO 12401, World Sailing OSR, MAIB 1/2018. Confidence: documented (Struktur), qualitativ.*
+
+---
+
+## 16. FAQ-Ergänzung (verifiziert)
+
+**F: Wie lang darf ein Tether maximal sein?**
+Max. **2 m inklusive Haken**. Bei 2 m fordert die OSR zusätzlich entweder einen Kurz-Tether **≤ 1 m** oder einen **selbstschließenden Zwischenhaken**. *(OSR/Wichard — documented)*
+
+**F: Warum lieber ein kurzer 1-m-Tether?**
+Er hält den Träger **auf Deck**; kürzere Fallstrecke, geringeres Risiko, außenbords ins Wasser zu geraten und mitgeschleift zu werden. *(Wichard — documented)*
+
+**F: Der Überlast-Indikator zeigt an — reicht Inspektion?**
+Nein. Ausgelöster Indikator = **Tether ersetzen** (Einweg-Signal, OSR: „overloaded tether shall be replaced"). *(Spinlock/OSR — documented)*
+
+**F: Was ist die häufigste tödliche Versagensart?**
+**Querlast/Verhakung des Hakens** an einem Decksbeschlag — der Haken verformt sich und öffnet, obwohl er bei Längszug > 1 t hält (Fall CV30, MAIB 1/2018). *(MAIB — documented)*
+
+**F: Welcher Jackstay-Werkstoff?**
+**Polyester** (hoch-denier, ≥ 2.000 kg) oder **1×19-Edelstahldraht ≥ 5 mm** (~2.190 kg). **Nicht Nylon** (Dehnung, UV). *(Noonsite/Jimmy Green — documented)*
+
+**F: Wo wird der Jackstay verlegt?**
+So **nah wie möglich an der Mittellinie** und **straff**, damit man nicht über die Reling fällt. *(Noonsite/MAIB — documented)*
+
+**F: Trapezgurt = Deck-Harness?**
+Nein. Trapezgurte sind aus ISO 12401 **ausgenommen** (eigene Schnellauslöse-Norm **ISO 10862**). Ein Trapezgurt ist **keine** Absturz-/Verbindungssicherung. *(ISO — documented)*
+
+---
+
+## 17. Verwendete Quellen (Teil B)
+
+- **ISO 12401:2009** — Small craft — Deck safety harness and safety line (iso.org/standard/46213.html) — *documented*
+- **ISO 10862:2009** — Small craft — Quick release system for trapeze harness (iso.org/standard/46202.html) — *documented*
+- **SECUMAR**, ISO-12401-Erläuterung (secumar.com/en/iso-12401) — *documented*
+- **World Sailing Offshore Special Regulations 2026-2027** (sailing.org) — *documented*
+- **MAIB** Safety Bulletin 1/2018 & Untersuchungsbericht CV30/Simon Speirs (assets.publishing.service.gov.uk; maritime-executive.com; iims.org.uk) — *documented*
+- **Noonsite**, „Jackstays (deck safety lines): Understanding their Construction and Usage" — *documented*
+- **Jimmy Green Marine**, „Webbing Jackstays Guidance" / Jackstays & Jacklines — *documented*
+- **Wichard Marine**, „How to choose your tether" (marine.wichard.com) — *documented*
+- **Spinlock** Deckware Tether Datenblätter (West Marine, Defender) — *documented (Indikator-Schwelle 500 kg)*
+- **Practical Sailor**, „Safety Tether Caution" (Haken-Fehl-Last-Test) — *documented*
+
+---
+
 **Autor:** AYDI Knowledge Base  
 **Kontakt:** knowledge@aydi.de  
 **Letzte Überarbeitung:** 2026-05-18  

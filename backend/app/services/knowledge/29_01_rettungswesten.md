@@ -879,7 +879,229 @@ class JacketInventoryReport(BaseModel):
 
 ---
 
+## 11. WERFT-ERWEITERUNG — Web-verifizierter Normen- & Technik-Teil (2026)
+
+> Dieser Abschnitt wurde vollständig gegen autoritative Quellen (ISO, EU-Verordnung, SOLAS/LSA-Code, Hersteller CM Hammar / UML / Spinlock / SECUMAR, RYA) verifiziert. Jeder Faktenblock trägt eine Inline-Quelle und ein Confidence-Tag. Wo eine Angabe nicht zweifelsfrei belegbar war, ist sie als *estimated — unverifiziert* markiert oder weggelassen.
+
+### 11.1 Regulatorischer Rahmen — präzisiert und korrigiert
+
+**⚠️ Wichtige Korrektur zum Dokument-Header:** Rettungswesten selbst sind **kein** Gegenstand der Sportboot-Richtlinie 2013/53/EU (RCD). Die RCD regelt das **Boot**; die Rettungsweste ist **Persönliche Schutzausrüstung (PSA/PPE) der Kategorie III** und wird nach der **EU-Verordnung 2016/425** zertifiziert (früher Kategorie II, seit 2016/425 in Kat. III hochgestuft). Konformitätsbewertung: EU-Baumusterprüfung nach **Modul B** (Anhang V) durch eine Benannte Stelle, danach fortlaufende Überwachung nach **Modul C2** (Anhang VII) **oder Modul D** (Anhang VIII, jährliches Qualitätssystem-Audit).
+> Quelle: [TÜV — EU 2016/425 PPE](https://www.tuv.com/market-access-services/en/certification-filter/european-union-(eu)-regulation-2016-425-on-personal-protective-equipment-(ppe).html); [ce-check.eu — PPE Directive 2016/425 in Details](https://support.ce-check.eu/hc/en-us/articles/360008714079). Confidence: **documented**.
+
+Die Design-Kategorie des Bootes (A–D nach RCD) ist damit **kein rechtlich bindendes Mapping** auf eine Westen-Auftriebsstufe, sondern eine **Auswahl-Empfehlung**. Die normative Auswahlhilfe liefert **ISO 12402-10** (Selection and application). Verbindliche Mitführpflichten setzt die jeweilige **Flaggenstaat-/nationale Vorschrift**, nicht die ISO 12402 selbst.
+> Quelle: [ISO 12402-10:2020](https://www.iso.org/standard/60336.html). Confidence: **documented**.
+
+**Verifizierte ISO-12402-Teileliste (Titel wörtlich):**
+
+| Teil | Titel (EN) | Inhalt |
+|------|-----------|--------|
+| ISO 12402-2 | Lifejackets, performance level 275 — Safety requirements | Rettungsweste Stufe 275 N |
+| ISO 12402-3 | Lifejackets, performance level 150 — Safety requirements | Rettungsweste Stufe 150 N |
+| ISO 12402-4 | Lifejackets, performance level 100 — Safety requirements | Rettungsweste Stufe 100 N |
+| ISO 12402-5 | Buoyancy aids (level 50) — Safety requirements | Schwimmhilfe Stufe 50 N |
+| ISO 12402-6 | Special application lifejackets and buoyancy aids — Safety requirements and additional test methods | Sonderanwendungen |
+| ISO 12402-7 | Materials and components — Safety requirements and test methods | Materialien/Komponenten |
+| ISO 12402-8 | Accessories — Safety requirements and test methods | Zubehör (Spray-Hood, Licht …) |
+| ISO 12402-9 | Test methods | Prüfverfahren |
+| ISO 12402-10 | Selection and application of personal flotation devices and other relevant devices | Auswahl & Anwendung |
+> Quelle: [SECUMAR — ISO 12402 Overview](https://www.secumar.com/en/iso-12402/); [ISO 12402-6:2020](https://www.iso.org/standard/56686.html); [ISO 12402-8:2020](https://www.iso.org/standard/60335.html); [ISO 12402-10:2020](https://www.iso.org/standard/60336.html). Confidence: **documented**.
+> Hinweis: Der Header nennt zusätzlich „EN 399". EN 399 war die **frühere** europäische 275-N-Rettungswesten-Norm und wurde durch **EN ISO 12402-2** ersetzt/abgelöst; sie ist heute nicht mehr die anzuwendende Norm. Confidence: **estimated — Ablöse-Datum nicht zweifelsfrei belegt, EN-399-Bezug im Header nur historisch werten.**
+
+**Angrenzende Normen (verifiziert):**
+- **ISO 12401** — Deck safety harnesses and safety lines for use on recreational craft (Deck-Sicherheitsgurt & Lifeline). Wird eine Weste mit integriertem Sicherheitsgurt geliefert, muss dieser ISO 12401 erfüllen.
+  > Quelle: [Lalizas — Safety Harness ISO 12401](https://www.lalizas.com/product/146-inflatable-lifejackets-accessories/4603-safety-harness-iso-12401); [World Sailing OSR 5.01](https://sailing.org/tools/documents/SPSC4aaSR4111Lifejacketcrotchthighstraps-[11468].pdf). Confidence: **documented**.
+- **SOLAS / LSA-Code 2.2.3** — Rettungswesten-Licht: weißes Licht, Lichtstärke **≥ 0,75 cd**, Leuchtdauer **≥ 8 h**; bei Blitzlicht **50–70 Blitze/min**, im Wasser selbstauslösend. (Für SOLAS-Berufsschifffahrt verbindlich; ISO-12402-Freizeitwesten nach 2012 tragen üblicherweise ebenfalls ein Licht.)
+  > Quelle: [marineguru.in — SOLAS/LSA Code lifejacket](https://marineguru.in/lifejackets-solas-lsa-code-requirements-explained/); LSA-Code Kap. II 2.2.3. Confidence: **documented**.
+
+### 11.2 Auftriebsstufen im Detail (verifiziert)
+
+| Stufe | ISO-Teil | Mindest-Auftrieb | ≈ Auftriebsmasse | Einsatz / Selbstaufrichtung |
+|-------|----------|------------------|------------------|-----------------------------|
+| **275 N** | 12402-2 | ≥ 275 N | ≈ 27,5 kg | Offshore/extrem, **mit schwerer Schutzkleidung / Werkzeuggurt / zusätzlicher Last**; hält Mund/Nase frei auch bei luftfangender Kleidung |
+| **150 N** | 12402-3 | ≥ 150 N | ≈ 15 kg | Offshore/allgemein; dreht die **meisten** bewusstlosen Träger in Normalkleidung auf den Rücken |
+| **100 N** | 12402-4 | ≥ 100 N | ≈ 10 kg | Küstennah/geschützt; dreht **nicht unter allen** Bedingungen zuverlässig |
+| **50 N** | 12402-5 | ≥ 50 N | ≈ 5 kg | Schwimmhilfe für **geübte Schwimmer** in Ufernähe mit Hilfe in Reichweite; **keine** Selbstaufrichtung |
+> Quelle Auftriebsmasse & Stufen: [sMRT — buoyancy levels](https://www.smrtsos.com/faqs/lifejackets/what-are-the-different-levels-of-buoyancy). Quelle 275-N-Zweck (Schutzkleidung/Last/luftfangende Kleidung/Werkzeuggurt): [EN ISO 12402-2 Scope, Tower](https://wearetower.com/products/en-standards/en-iso-12402-2) und [ISO 12402-2:2020](https://www.iso.org/standard/60334.html). Confidence: **documented**. Die Merkmale zu 150/100/50 (Dreh-Zuverlässigkeit) folgen der Stufen-Definition der ISO-12402-Reihe; Formulierungen dort als „the majority of unconscious wearers"/„not under all conditions". Confidence: **documented** (150/275) bzw. **estimated** (genaue Bedingungsgrenzen 100/50).
+
+**Größen-/Gewichtsbereiche (ISO 12402):** Erwachsenen-Westen sind für Brustumfänge von **ca. 700–1350 mm** ausgelegt; Auswahl erfolgt nach Körpergewicht/Brustumfang laut Herstellerkennzeichnung (siehe 11.5).
+> Quelle: [ISO 12402 Marking, Suchergebnis ISO/obp](https://www.iso.org/obp/ui/#iso:std:iso:12402:-4:ed-1:en). Confidence: **estimated — genauer Brustumfang-Bereich modell-/normversionsabhängig; Angabe als Richtwert.**
+
+### 11.3 Auslösemechanismen aufblasbarer Westen — Vergleich (verifiziert)
+
+| System | Prinzip | Auslösung | Fehl-Auslösung durch Regen/Spray | Manueller Backup |
+|--------|---------|-----------|----------------------------------|------------------|
+| **CM Hammar MA1 (hydrostatisch)** | Wasser-sensitives Element **hinter hydrostatischem Ventil**; Ventil öffnet erst unter Wasserdruck | Bei **vollständiger Immersion ~10 cm** Wassertiefe; Feder treibt Cutter in die Gaspatrone | **Sehr gering** — Ventil bleibt bei Nässe/Spray geschlossen | Ja (Zugleine/Toggle) |
+| **UML Pro Sensor MK5 / Elite (bobbin)** | **Komprimiertes Zellulose-/Papierelement** löst sich bei Nässe auf, gibt gespannten Stift frei | Kappe so gestaltet, dass **Wasser aufwärts einströmen** muss; Auslösung typ. **~3 s** nach Untertauchen | Gering (Aufwärtsströmung nötig), aber höher als Hydrostat | Ja |
+| **Halkey-Roberts Auto (bobbin)** | Kapsel/Bobbin löst sich bei Wasserkontakt auf, gibt Schlagbolzen frei | Muss **geflutet**, nicht nur benetzt werden | Gering | Ja |
+| **Manuell (z. B. Spinlock ALTO)** | Kein Auto-Element | **Nur** Zug am Handgriff **oder** Mundventil | Keine Auto-Auslösung möglich | Handgriff / Mundventil |
+> Quelle: [CM Hammar Lifejacket Inflators](https://www.cmhammar.com/lifejacket-inflators/) & [Mullion — Hammar MA1](https://mullion-pfd.com/en/technical/inflation-systems/hammar-ma1-ec-hydrostatic-single-point-indicator-auto); [UML — MK5 / Automatic vs Manual](https://uml.co.uk/automatic-vs-manual-lifejacket-inflation-systems-understanding-uml-and-industry-differences/); [Spinlock — Inflation Systems Explained](https://www.spinlock.co.uk/en-GB/uk/support_articles/20-lifejacket-inflation-systems-explained). Confidence: **documented**.
+
+**Werft-Praxis-Regel:** Für Offshore (Kat. A/B) und Einsätze mit häufiger Deck-Überspülung ist der **hydrostatische Auslöser (Hammar-Typ)** wegen der geringsten Fehl-Auslösungsrate vorzuziehen; für Küsten-/Binnenbereich sind **Bobbin-Auto-Systeme (UML/HR)** verbreitet und leichter/günstiger neu zu bestücken.
+> Auswahl-Logik gemäß Hersteller-Empfehlungen (Spinlock/Hammar). Confidence: **documented** (Grundaussage), **estimated** (Reviereinteilung als Praxisrichtwert).
+
+### 11.4 Zubehör & Kombi-Ausstattung (ISO 12402-8 / ISO 12401)
+
+- **Spray-Hood (Spritzschutzhaube):** transparente Haube über Kopf/Gesicht gegen Ertrinken durch Gischt/Spray; nach **ISO 12402-8** geprüftes Zubehör, für Stufen ≥150 N verbreitet.
+  > Quelle: [Lalizas Sprayhood ISO 12402-8](https://www.lalizas.com/products/inflatable-lifejackets/lalizas-sprayhood-iso-12402-8-for-infl-lifejackets-iso-12402-3). Confidence: **documented**.
+- **Lifejacket-Light:** Rettungswesten-Licht (siehe LSA-Spez. 11.1: weiß, ≥0,75 cd, ≥8 h). ISO-Westen ab 1.1.2012 tragen üblicherweise Licht, Spray-Hood, Buddy-Line/Hebeschlaufe.
+  > Quelle: [Cruising Club Safety at Sea — Lifejacket recommendations](https://sas.cruisingclub.org/node/210). Confidence: **documented** (Licht-Spez.), **estimated** (Serien-Ausstattung ab 2012 als allgemeine Aussage).
+- **Crotch-/Thigh-Strap (Schritt-/Beingurt):** hält den Auftriebskörper unten, verhindert Hochrutschen über den Kopf. Ein vollständiger ISO-12401-Decksicherheitsgurt schließt eine solche Niederhaltevorrichtung ein.
+  > Quelle: [World Sailing OSR 5.01 crotch/thigh straps](https://sailing.org/tools/documents/SPSC4aaSR4111Lifejacketcrotchthighstraps-[11468].pdf). Confidence: **documented**.
+- **Integrierter Sicherheitsgurt (Harness):** nur zulässig als **voller** Decksicherheitsgurt nach **ISO 12401**; Anschlag über Lifeline/Sorgleine.
+  > Quelle: [Lalizas ISO 12401](https://www.lalizas.com/product/146-inflatable-lifejackets-accessories/4603-safety-harness-iso-12401). Confidence: **documented**.
+
+### 11.5 Kennzeichnung (Marking)
+
+Nach ISO 12402 (z. B. -2:2020) müssen an der Weste u. a. **Auftriebsstufe/Performance-Level, Norm-Referenz, Größen-/Brustumfang- bzw. Gewichtsbereich, Herstellerangaben, Anlege-Piktogramm und Farbcode** gekennzeichnet sein; die Brustumfang-Kennzeichnung steht unmittelbar neben/unter der Stufenangabe.
+> Quelle: [EN ISO 12402-2:2020 — marking/colour-code](https://standards.iteh.ai/catalog/standards/cen/3c1be039-f5a3-4bc6-b06e-76aa83f6933e/en-iso-12402-2-2020). Confidence: **documented** (Marking-Kategorien), **estimated** (vollständige Piktogramm-Detailliste ohne Normvolltext).
+
+### 11.6 Fehlerbild-Atlas FB-29-01-NNN (Werft-Ebene, kollisionsfrei zu Abschnitt 3)
+
+> Neue, eindeutige IDs im Schema **FB-29-01-NNN**; ergänzen die Befunde „Fehlerbild 3.x.x" aus Abschnitt 3, ohne diese zu ersetzen. Fokus: aufblasbare Systeme, Zubehör, Zertifizierung.
+
+**FB-29-01-001 — Hydrostatik-Auslöser abgelaufen (Verfallsdatum überschritten)**
+- Merkmal: aufgedrucktes Ablaufdatum (Hammar MA1 / UML-Kapsel) in der Vergangenheit; Serviceanzeige rot.
+- Ursache: Wasser-sensitives Element/Ventil altert; Auslöseverhalten nicht mehr garantiert.
+- Behebung: Auslöser bzw. Re-Arm-Kit tauschen (herstellerspezifisch), nicht „durchbenutzen".
+- Schweregrad: **KRITISCH** (Auto-Auslösung außerhalb Spezifikation).
+> Ablaufdatum/Re-Arm-Logik: [UML MK5](https://uml.co.uk/products/mk5-automatic-inflator/); [CM Hammar](https://www.cmhammar.com/lifejacket-inflators/). Confidence: **documented**.
+
+**FB-29-01-002 — Grün-Rot-Indikator des Auslösers auf ROT / nicht auf GRÜN**
+- Merkmal: Statusfenster (Single-Point-Indicator) zeigt Rot statt Grün → Patrone bereits angestochen oder Auslöser nicht scharf.
+- Ursache: vorangegangene (Teil-)Auslösung, lose Patrone, fehlender Auslöser.
+- Behebung: Patrone auf festen Sitz/Anstich prüfen, ggf. komplett neu bestücken; Indikator muss grün stehen.
+- Schweregrad: **KRITISCH**.
+> Single-Point-Indicator Grün/Rot: [Mullion — Hammar MA1 EC Single Point Indicator](https://mullion-pfd.com/en/technical/inflation-systems/hammar-ma1-ec-hydrostatic-single-point-indicator-auto). Confidence: **documented**.
+
+**FB-29-01-003 — CO₂-Patrone locker / nicht handfest angezogen**
+- Merkmal: Patrone lässt sich von Hand weiterdrehen; Gewinde nicht satt.
+- Ursache: Vibration, Nachlässigkeit beim Re-Arm.
+- Behebung: Patrone handfest (nicht mit Werkzeug überdrehen) anziehen, danach Grün-Indikator kontrollieren.
+- Schweregrad: **KRITISCH** (bei Auslösung entweicht Gas ungenutzt).
+> RYA-Wartungsgrundsatz „cylinder tight": [RYA — Look after your lifejacket](https://www.rya.org.uk/). Confidence: **documented** (Grundsatz), **estimated** (Detailwortlaut).
+
+**FB-29-01-004 — CO₂-Patrone unterdimensioniert für Auftriebsstufe**
+- Merkmal: verbaute Gramm-Zahl passt nicht zum geforderten Auftrieb (z. B. zu kleine Patrone in 275-N-Weste).
+- Ursache: falsches Re-Arm-Kit gekauft.
+- Behebung: nur das **modellspezifische** Re-Arm-Kit verwenden (Patronen-Gramm + passender Auslöser).
+- Schweregrad: **KRITISCH** (Soll-Auftrieb nicht erreicht).
+> Re-Arm-Kits modellspezifisch (16–60 g je Modell): [Spinlock — Inflation Systems Explained](https://www.spinlock.co.uk/en-GB/uk/support_articles/20-lifejacket-inflation-systems-explained). Confidence: **documented**.
+
+**FB-29-01-005 — Weste über zulässige Lebensdauer (>10 Jahre) hinaus im Dienst**
+- Merkmal: Herstelldatum-Etikett > 10 Jahre; Blase/Material versprödet, Nähte/Beschichtung altern.
+- Ursache: Material- und Klebstoffalterung unabhängig von Nutzung.
+- Behebung: Außerdienststellung; Ersatz. (Manche Hersteller erlauben mit jährlicher Prüfung Verlängerung, i. d. R. max. bis ~14 Jahre.)
+- Schweregrad: **HOCH**.
+> Lebensdauer 10 Jahre (aufblasbar & Schaum), Verlängerung mit jährlicher Prüfung: [SECUMAR — Limitation on the life-span of lifejackets](https://www.secumar.com/en/limitation-on-the-life-span-of-lifejackets/). Confidence: **documented**.
+
+**FB-29-01-006 — Servicedisk/Serviceintervall überfällig**
+- Merkmal: Serviceanzeige-Disk (FSR-Mitgliedsprodukte) zeigt überfälliges Datum; kein Prüfnachweis.
+- Ursache: versäumte Wartung.
+- Behebung: professioneller Service an anerkannter Servicestation inkl. Überdruck-Blasentest.
+- Schweregrad: **HOCH** (Berufs-/SOLAS-Einsatz: **rechtlicher** Mangel).
+> Serviceintervall & Überdruck-Test durch Servicestation: [Ocean Time Marine — Does my inflatable lifejacket need servicing](https://oceantimemarine.com/en/blog/2017/06/18/does-my-inflatable-lifejacket-need-to-be-serviced/); [tmsup — Annual Service Inspection](https://www.tmsup.com/pages/annual-service-inspection-immersion-suits-inflatable-life-jackets). Confidence: **documented**.
+
+**FB-29-01-007 — Spray-Hood fehlt/verklebt bei Offshore-Weste**
+- Merkmal: Haube nicht vorhanden, verklebt oder gerissen.
+- Ursache: Verschleiß, Weglassen bei Re-Pack.
+- Behebung: ISO-12402-8-Spray-Hood nachrüsten/tauschen.
+- Schweregrad: **MITTEL** (bei Gischt lebenswichtig, aber Kernauftrieb bleibt).
+> [Lalizas Sprayhood ISO 12402-8](https://www.lalizas.com/products/inflatable-lifejackets/lalizas-sprayhood-iso-12402-8-for-infl-lifejackets-iso-12402-3). Confidence: **documented**.
+
+**FB-29-01-008 — Kein Schritt-/Beingurt genutzt oder vorhanden**
+- Merkmal: Weste ohne Crotch-Strap oder Gurt lose/offen getragen.
+- Ursache: Komfort-Weglassen, fehlende Ausstattung.
+- Behebung: Crotch-Strap nachrüsten und im Betrieb schließen — verhindert Hochrutschen.
+- Schweregrad: **HOCH** (Dreh-/Freibordwirkung kompromittiert).
+> [World Sailing OSR 5.01](https://sailing.org/tools/documents/SPSC4aaSR4111Lifejacketcrotchthighstraps-[11468].pdf). Confidence: **documented**.
+
+**FB-29-01-009 — Rettungswesten-Licht ohne Funktion / Batterie abgelaufen**
+- Merkmal: Licht zündet nicht im Wassertest, Batterie-Ablaufdatum überschritten.
+- Ursache: Batteriealterung, Korrosion der Wasserkontakte.
+- Behebung: Licht/Batterie nach LSA-Spez. (≥0,75 cd, ≥8 h) ersetzen.
+- Schweregrad: **MITTEL** (Nacht-Auffindbarkeit).
+> LSA-Code Lichtspez.: [marineguru.in](https://marineguru.in/lifejackets-solas-lsa-code-requirements-explained/). Confidence: **documented**.
+
+### 11.7 Entscheidungsbaum — Auswahl & Freigabe
+
+```
+START: Welche Stufe?
+ ├─ Offshore (Kat. A/B) ODER schwere Ölzeug-/Schutzkleidung/Werkzeuglast?
+ │    └─ JA → Stufe 275 N (ISO 12402-2), Auto + Spray-Hood + Crotch-Strap + Licht
+ ├─ Küstennah/allgemein, Normalkleidung, Bewusstlos-Aufrichtung nötig?
+ │    └─ JA → Stufe 150 N (ISO 12402-3), Auto empfohlen
+ ├─ Geschützt/küstennah, Hilfe in Reichweite, überwiegend bewusst?
+ │    └─ JA → Stufe 100 N (ISO 12402-4)
+ └─ Geübte Schwimmer, Ufernähe, Wassersport?
+      └─ JA → 50 N Schwimmhilfe (ISO 12402-5) — KEINE Selbstaufrichtung
+
+AUSLÖSER: Häufige Deck-Überspülung / Offshore?
+ ├─ JA → Hydrostatisch (Hammar-Typ, ~10 cm)   ├─ NEIN → Bobbin-Auto (UML/HR) oder Manuell
+
+FREIGABE (jede Weste):
+ [ ] Grün-Indikator grün?         [ ] Patrone handfest & richtige Gramm-Zahl?
+ [ ] Auslöser-Ablaufdatum gültig? [ ] < 10 Jahre alt?  [ ] Service fällig? (Disk)
+ [ ] Größe passt (Brustumfang)?   [ ] Crotch-Strap + (Offshore) Spray-Hood + Licht?
+ → Alle JA = FREIGABE. Ein NEIN bei KRITISCH-Punkt = SPERREN.
+```
+> Auswahllogik nach ISO 12402-10 + Herstellerangaben (siehe 11.1–11.4). Confidence: **documented** (Norm-Kern), **estimated** (Baum-Zusammenstellung als Werft-Werkzeug).
+
+### 11.8 Wartung & Prüffristen — verifiziert und präzisiert
+
+| Aktivität | Intervall | Ausführung | Quelle |
+|-----------|-----------|-----------|--------|
+| Sichtprüfung durch Nutzer | wöchentlich / vor jeder Fahrt | Eigner: Gurte, Indikator, Beschädigung | RYA / Universal Safety |
+| Eigen-Check (aufblasen, Blase 24 h halten, Patrone/Auslöser prüfen) | jährlich | Eigner nach Herstelleranleitung | Ocean Time / RYA |
+| Professioneller Service inkl. **Überdruck-Blasentest** | ≤ 12 Monate (SOLAS/Berufsschifffahrt: **gesetzlich**), Freizeit je Hersteller (teils 2-jährlich) | Anerkannte Servicestation | tmsup / Ocean Time / SECUMAR |
+| Auslöser/Patrone (Re-Arm) | nach Auslösung sofort; sonst per Ablaufdatum | Modellspezifisches Kit | UML / Hammar |
+| Lebensdauer-Grenze | 10 Jahre (aufblasbar **und** Schaum) | Außerdienststellung | SECUMAR |
+> Quellen: [RYA](https://www.rya.org.uk/); [Universal Safety — How often to check](https://www.universalsafety.co.uk/blog/how-often-should-you-check-your-lifejacket); [Ocean Time Marine](https://oceantimemarine.com/en/blog/2017/06/18/does-my-inflatable-lifejacket-need-to-be-serviced/); [tmsup](https://www.tmsup.com/pages/annual-service-inspection-immersion-suits-inflatable-life-jackets); [SECUMAR Lifespan](https://www.secumar.com/en/limitation-on-the-life-span-of-lifejackets/). Confidence: **documented**.
+
+> **Widerspruchs-Hinweis zum bestehenden Text:** Abschnitt 1.1/4 nennt „Inspektion alle 24 Monate (ISO 12402-8)". (a) ISO 12402-8 ist **Zubehör**, nicht Prüffristen — das Prüfverfahren steht in **ISO 12402-9**. (b) Für Berufs-/SOLAS-Einsatz gilt **jährlicher** professioneller Service als gesetzliche Anforderung; 24 Monate ist bestenfalls ein herstellerabhängiges Freizeit-Intervall. Im Zweifel **jährlich** ansetzen. Confidence: **documented**.
+
+### 11.9 Ergänzende FAQ (web-verifiziert)
+
+21. **Fällt meine Rettungsweste unter die Sportboot-Richtlinie (RCD)?**  
+    Nein. Die Weste ist PSA Kategorie III nach **EU 2016/425** (Modul B + C2/D). Die RCD 2013/53/EU betrifft das Boot. Quelle: TÜV / ce-check.eu. Confidence: documented.
+
+22. **Warum löst der Hammar-Auslöser bei Regen nicht aus, mein alter Bobbin aber manchmal doch?**  
+    Der Hammar ist **hydrostatisch**: das wasser-sensitive Element sitzt hinter einem Ventil, das erst bei ~10 cm Wassertiefe öffnet. Bobbin-Systeme (UML/HR) lösen dagegen bei ausreichender Flutung des Auslöseelements aus. Quelle: CM Hammar / Spinlock. Confidence: documented.
+
+23. **Wie lange darf eine aufblasbare Weste maximal im Dienst bleiben?**  
+    Regel-Lebensdauer **10 Jahre** (aufblasbar und Schaum); mit jährlicher Prüfung erlauben manche Hersteller eine begrenzte Verlängerung. Quelle: SECUMAR. Confidence: documented.
+
+24. **Reicht Selbst-Sichtprüfung, oder braucht es professionellen Service?**  
+    Wöchentliche Sicht- und jährliche Eigen-Checks sind Pflicht des Eigners; der **Überdruck-Blasentest** und die Freigabe gehören jedoch in eine anerkannte Servicestation — im Berufs-/SOLAS-Bereich jährlich gesetzlich. Quelle: Ocean Time / tmsup / RYA. Confidence: documented.
+
+25. **Welchen Auftrieb brauche ich mit Ölzeug und Werkzeuggurt offshore?**  
+    **275 N (ISO 12402-2)** — genau für schwere/luftfangende Schutzkleidung und zusätzliche Lasten ausgelegt. Quelle: EN ISO 12402-2 Scope. Confidence: documented.
+
+26. **Was bringt der Schritt-/Beingurt wirklich?**  
+    Er hält den Auftriebskörper unten und verhindert das Hochrutschen über den Kopf — ohne ihn ist die Dreh-/Freibordwirkung kompromittiert. Quelle: World Sailing OSR 5.01. Confidence: documented.
+
+27. **Welches Licht muss dran sein?**  
+    SOLAS/LSA-Code: weiß, ≥0,75 cd, ≥8 h Leuchtdauer, Blitzlicht 50–70/min, wasseraktiviert. Quelle: LSA-Code 2.2.3. Confidence: documented.
+
+### 11.10 Ergänzendes Glossar (verifiziert)
+
+| Englisch | Deutsch | Definition (Quelle) |
+|----------|---------|---------------------|
+| **Performance Level** | Auftriebsstufe | 275/150/100/50 N nach ISO 12402-2..-5 (SECUMAR/ISO). |
+| **Hydrostatic Inflator (Hammar-Typ)** | Hydrostatischer Auslöser | Wasser-sensitives Element hinter Ventil; öffnet ~10 cm Tiefe (CM Hammar). |
+| **Bobbin / Water-sensitive Capsule** | Auslöse-Bobbin/-Kapsel | Zellulose-/Papierelement, löst sich bei Flutung auf (UML/HR). |
+| **Single-Point Indicator** | Grün-Rot-Statusanzeige | Grün = scharf/OK, Rot = ausgelöst/nicht scharf (Mullion/Hammar). |
+| **Re-Arm Kit** | Neu-Bestückungssatz | Modellspezifisch: CO₂-Patrone (16–60 g) + Auslöser (Spinlock). |
+| **Spray Hood** | Spritzschutzhaube | ISO-12402-8-Zubehör gegen Gischt-Ertrinken (Lalizas). |
+| **Crotch/Thigh Strap** | Schritt-/Beingurt | Niederhaltevorrichtung, hält Auftriebskörper unten (World Sailing OSR 5.01). |
+| **Deck Safety Harness** | Decksicherheitsgurt | Nach ISO 12401, mit Sorgleine/Lifeline (Lalizas). |
+| **LSA Code light** | Rettungswesten-Licht | Weiß ≥0,75 cd, ≥8 h, 50–70 Blitze/min (SOLAS/LSA 2.2.3). |
+| **PPE Cat III (EU 2016/425)** | PSA Kategorie III | Zertifizierung Modul B + C2/D für Rettungswesten (TÜV). |
+
+> **Zusammenfassung Verifikationsstatus:** Alle Normnummern/-titel, Auftriebswerte, Auslöser-Prinzipien (Hammar ~10 cm; UML/HR Bobbin), LSA-Lichtspez., PPE-Kategorie, Lebensdauer 10 Jahre und Zubehörnormen sind gegen die genannten Quellen belegt (**documented**). Als **estimated** markiert bleiben: exakte Bedingungsgrenzen der 100/50-N-Aufrichtung, vollständige Piktogramm-Detailliste ohne Normvolltext, das genaue Ablösedatum von EN 399, sowie Praxis-Reviereinteilungen der Auslöserwahl.
+
+---
+
 **Autor:** AYDI Knowledge Base  
 **Kontakt:** knowledge@aydi.de  
-**Letzte Überarbeitung:** 2026-05-18  
+**Letzte Überarbeitung:** 2026-07-12 (Werft-Erweiterung Abschnitt 11, web-verifiziert)  
 **Nächste Review:** 2027-05-18
