@@ -2162,10 +2162,10 @@ Für Boote mit US-Herkunft oder US-Material:
 | **ISO 12217** | Small craft — Stability and buoyancy | Berechnung von Gewicht und Schwerpunkt (Edelstahl-Materialgewichte) |
 | **ISO 15084** | Small craft — Anchoring, mooring and towing | Chainplate-Auslegung, Belastungen |
 | **ISO 10088** | Small craft — Permanently installed fuel systems | Edelstahl-Tanks (Spezifikation Wandstärke, Schweißung) |
-| **ISO 11591** | Windsurfing equipment — General safety requirements | Edelstahl-Mastbefestigung für Windsurfing-Boote |
+| **ISO 11591** | Small craft — Field of vision from the steering position (Sichtfeld vom Steuerstand) | Kein direkter Bezug zu Edelstahl-Halbzeugen (Norm regelt Sichtfeld, nicht Beschläge) |
 | **Classification Societies** (GL, DNV, BV, LR, ABS) | Schiffsklassifizierung | Für klassifizierte Yachten verbindliche Vorgaben |
 
-> ⚠️ **ZU PRÜFEN (Audit):** "ISO 11591 — Windsurfing equipment" (Zeile oben) ist falsch zugeordnet. ISO 11591 regelt "Kleine Wasserfahrzeuge — Sichtfeld vom Steuerstand", nicht Windsurfing. Die Zeile ist unverifiziert und für Edelstahl-Halbzeuge ohnehin nicht einschlägig.
+> ✅ Aufgelöst (Audit): ISO 11591 = "Small craft — Field of vision from the steering position" (Sichtfeld vom Steuerstand), nicht Windsurfing; Titel korrigiert und Zeile als nicht einschlägig für Edelstahl-Halbzeuge markiert. Quelle: ISO.org (ISO 11591:2020, iso.org/standard/80914.html).
 
 ### 16.5 Klassifikations-Regeln (Relevante Klassifikationen)
 

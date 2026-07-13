@@ -472,11 +472,10 @@ Die Schiebeleiste (Sliding Hatch) gleitet auf parallelen Schienen über dem Nied
 | Hersteller | Profil | Breite | Höhe | Shore A | Preis/m |
 |-----------|--------|-------|------|---------|---------|
 | Trim-Lok | Wiper Seal 100B | 5 mm | 15 mm | 70 | €4–7 |
-| EMKA | Typ 1011-49 | 8 mm | 12 mm | 65 | €5–8 |
 | Schlegel | Lip Seal Marine | 6 mm | 18 mm | 60 | €4–7 |
 (Confidence: documented)
 
-> ⚠️ **ZU PRÜFEN (Audit):** EMKA Typ 1011-49 ist hier als Lippendichtung 8×12 mm (Shore 65) geführt; in Anhang I dagegen als selbstklemmendes Schaumgummi-Profil 12×15 mm. Teilenummer-Widerspruch — siehe Anhang I.
+> ✅ **Aufgeloest (Audit):** EMKA 1011-49 ist KEINE Lippendichtung, sondern ein selbstklemmendes Schaumgummi-EPDM-Profil (65 ±5 Shore A, Stahlfederkern) — bestätigt durch den Hersteller. Der fehlerhafte Lippendichtungs-Eintrag (8×12 mm) wurde hier entfernt; korrekte Angabe siehe Anhang I.1. — Quelle: EMKA Produktkatalog (emka.com/products/1011-49, Katalogblatt 5A-130).
 
 ### 4.3 Vordere Schiebeleisten-Dichtung (Stirnseite)
 
@@ -2388,7 +2387,7 @@ Gesamt für 2 Kanten = 1.200 N ≈ 122 kg
 | Eckprofil | 1011-53 | L-förmig | EPDM | 65 | 12×12 | Für Rahmenecken |
 (Confidence: measured — EMKA Produktkatalog)
 
-> ⚠️ **ZU PRÜFEN (Audit):** Teilenr. **1011-49** wird hier als selbstklemmendes Schaumgummi-Profil **12×15 mm** geführt, in Abschnitt 4.2 dagegen als EPDM-**Lippendichtung 8×12 mm** (Shore 65). Widersprüchliche Profilart und Maße für dieselbe Teilenummer — Herstellerkatalog gegenprüfen; beide Angaben unverifiziert.
+> ✅ **Aufgeloest (Audit):** Profilart bestätigt — EMKA 1011-49 ist ein selbstklemmendes Schaumgummi-EPDM-Profil (65 ±5 Shore A, Stahlfederkern, Dichtballon), KEINE Lippendichtung. Der widersprüchliche Lippendichtungs-Eintrag in Abschnitt 4.2 (8×12 mm) war fehlerhaft und wurde entfernt. — Quelle: EMKA Hersteller (emka.com/products/1011-49, Katalogblatt 5A-130).
 
 ### I.2 Trelleborg Sealing Solutions — Hochleistungs-Marine-Dichtungen
 

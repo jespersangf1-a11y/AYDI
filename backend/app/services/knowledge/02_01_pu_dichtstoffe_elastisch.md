@@ -701,8 +701,8 @@ class MarineSealantTDS(BaseModel):
 | Fenster (Acrylglas) | Sikaflex 295i UV | 3M 4000UV, Sabatack 750 | Silikon (haftet nicht dauerhaft) |
 | Fenster (Mineralglas) | Sikaflex 295i UV | Soudaseal 270HS | PU ohne UV-Schutz |
 | Luken | Sikaflex 291i, 3M 4200 | Simson MSR | 3M 5200 |
-| Rumpf-Deck-Verbindung | Sikaflex 292i, 3M 5200 | Sikaflex 298 | 291i (zu weich) |
-| Kiel-Rumpf-Verbindung | 3M 5200, Sikaflex 292i | Sikaflex 298 | 291i (zu weich) |
+| Rumpf-Deck-Verbindung | Sikaflex 292i, 3M 5200 | — (strukturell; nur Primärprodukte) | 291i (zu weich), Sikaflex 298 (Teak-Bettungskleber, nicht strukturell) |
+| Kiel-Rumpf-Verbindung | 3M 5200, Sikaflex 292i | — (strukturell; nur Primärprodukte) | 291i (zu weich), Sikaflex 298 (Teak-Bettungskleber, nicht strukturell) |
 | Borddurchlässe | 3M 5200, Sikaflex 292i | Sikaflex 291i (nur Dichtung, nicht Verklebung) | Silikon |
 | Relingsfuß | Sikaflex 291i, 3M 4200 | Simson MSR | 3M 5200 |
 | Ankerkasten-Deckel | Sikaflex 291i | Simson MSR | — |
@@ -715,7 +715,7 @@ class MarineSealantTDS(BaseModel):
 | Innenraum (Möbelverklebung) | Sikaflex 291i | Simson MSR, BoatLIFE | 3M 5200 (overkill) |
 | Sanitär (Unterwasser) | 3M 5200, Sikaflex 292i | Polysulfid (Life-Calk) | Silikon |
 
-> ⚠️ **ZU PRÜFEN (Audit):** In den Zeilen „Rumpf-Deck-Verbindung" und „Kiel-Rumpf-Verbindung" ist **Sikaflex 298** als Alternative gelistet. Sikaflex 298 ist jedoch ein Teakdeck-Bettungsklebstoff (Shore A ~30, ~1,2 MPa, ~600 %) und **nicht** für strukturelle Rumpf-/Kielverklebung geeignet. Für strukturelle Verklebung sind die bereits als Primär gelisteten Produkte (Sikaflex 292i bzw. 3M 5200) zu verwenden. Empfehlung fachlich prüfen. (Confidence hier: estimated — unverifiziert)
+> ✅ Aufgeloest (Audit): Sikaflex 298 ist ein Teakdeck-Bettungsklebstoff (Shore A ~30, ~1,2 MPa, ~600 %) und **nicht** für strukturelle Rumpf-/Kielverklebung geeignet — aus den Alternativ-Spalten entfernt (in „NICHT verwenden" verschoben); strukturell gelten die Primärprodukte Sikaflex 292i bzw. 3M 5200. Quelle: Sika Product Data Sheet Sikaflex®-298, Version 03.01 (04-2023). (Confidence: documented)
 
 ### 4.2 Entscheidungsbaum: Welcher Dichtstoff?
 

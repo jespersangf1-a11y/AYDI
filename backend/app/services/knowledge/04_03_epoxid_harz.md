@@ -172,9 +172,9 @@ Epoxidharze (EP) bilden die technologisch anspruchsvollste Klasse duroplastische
 
 | Eigenschaft | Wert | Prüfnorm | Confidence |
 |---|---|---|---|
-| **Zugfestigkeit Reinharz** | 73.8 MPa | ASTM D638 | `estimated — unverifiziert` |
-| **Druckfestigkeit Reinharz** | 114 MPa | ASTM D695 | `estimated — unverifiziert` |
-| **Biegefestigkeit Reinharz** | 117 MPa | ASTM D790 | `estimated — unverifiziert` |
+| **Zugfestigkeit Reinharz** | 50.5 MPa (7 320 psi) | ASTM D638 | `documented` |
+| **Druckfestigkeit Reinharz** | 79.3 MPa (11 500 psi) | ASTM D695 | `documented` |
+| **Biegefestigkeit Reinharz** | 81.4 MPa (11 810 psi) | ASTM D790 | `documented` |
 | **Biege-E-Modul Reinharz** | 3.17 GPa | ASTM D790 | `measured` |
 | **Zugfestigkeit Laminat (E-Glas Biaxial)** | 420 MPa | ASTM D3039 | `measured` |
 | **Druckfestigkeit Laminat** | 310 MPa | ASTM D3410 | `measured` |
@@ -183,11 +183,7 @@ Epoxidharze (EP) bilden die technologisch anspruchsvollste Klasse duroplastische
 | **Wasseraufnahme (2 Wochen RT)** | 0.38% | ASTM D570 | `measured` |
 | **Schrumpf** | 1.8% | — | `measured` |
 
-> ⚠️ **ZU PRÜFEN (Audit):** Die **Reinharz**-Festigkeiten dieser 105/206-Tabelle widersprechen §43.3, §49.1 und der West-System-TDS 105/206:
-> • Zugfestigkeit hier **73.8 MPa** vs. TDS/§43.3/§49.1 **50.3 MPa** (7 300 psi).
-> • Druckfestigkeit hier **114 MPa** vs. TDS **79 MPa** (11 500 psi Compression yield) bzw. §43.3 76.1 MPa.
-> • Biegefestigkeit hier **117 MPa** vs. TDS **81.4 MPa** (11 800 psi) bzw. §43.3 78.6 MPa.
-> Reinharz-Werte um ~40 % zu hoch; als Bemessungsgrundlage nicht verwenden. Laminat-Werte (420/310/52 MPa) sind separat zu prüfen. Quelle: West System TDS 105/206 (Gougeon Brothers).
+> ✅ **Aufgelöst (Audit):** West 105/206 Reinharz (RT-gehärtet, 2 Wochen) — Zugfestigkeit **50.5 MPa** (7 320 psi), Druckfestigkeit **79.3 MPa** (11 500 psi, Compression yield), Biegefestigkeit **81.4 MPa** (11 810 psi). Die zuvor gelisteten 73.8/114/117 MPa waren ~40 % zu hoch. Laminat-Werte (420/310/52 MPa) hiervon unberührt. Quelle: WEST SYSTEM Epoxy, „Compare Epoxy Physical Properties" (westsystem.com/compare-epoxy-physical-properties/).
 
 > **Expertenzitat E-EP-03:** „West System 105/206 ist der Toyota Corolla der Marine-Epoxide: nicht aufregend, aber absolut zuverlässig. Seit 50 Jahren bewährt, weltweit verfügbar, einfach in der Anwendung." — Bootsbauer, 40 Jahre Erfahrung, 2024 | Confidence: `documented`
 
@@ -2149,7 +2145,7 @@ class EPPostCureCalculator(BaseModel):
 |---|---|---|---|
 | 1 | **EP hat die höchste Festigkeit und beste Faser-Haftung aller Duroplaste** | ILSS 45–65 MPa (vs. UP 25–35, VE 35–48) | `measured` |
 | 2 | **Mischverhältnis ist KRITISCH — ±5% Maximum** | Stöchiometrie, Abweichung = Unterhärtung | `measured` |
-| 3 | **Post-Cure hebt Tg um 40–70°C** | West 105/206: 58°C → 105–125°C ⚠️ ZU PRÜFEN | `estimated — unverifiziert` |
+| 3 | **Post-Cure hebt Tg systemabhängig — West 105 aber nur gering** | West 105/206: Onset-Tg 52°C → Ultimate-Tg 59°C (West-TDS, DSC) | `documented` |
 | 4 | **VE ist bessere Osmose-Barrier, EP ist besserer Kleber/Strukturharz** | Permeabilität VE 1.8 vs. EP 4.5 g·mm/(m²·24h) | `measured` |
 | 5 | **West System 105 ist der weltweite Marine-EP-Standard** | 50+ Jahre, 50+ Länder, beste Dokumentation | `documented` |
 | 6 | **Aminblush ist das EP-spezifische Problem** | Waschen mit warmem Wasser oder im Fenster überschichten | `measured` |
@@ -2158,7 +2154,7 @@ class EPPostCureCalculator(BaseModel):
 | 9 | **Bio-EP ist praxistauglich** | Entropy 31%, Sicomin 28–56% Bio-Content, identische Mechanik | `measured` |
 | 10 | **EP ist 3× teurer als UP, aber 2× fester und 25% leichter** | Langfristig wirtschaftlichste Lösung für Performance | `calculated` |
 
-> ⚠️ **ZU PRÜFEN (Audit):** Kernaussage 3 nennt für West 105/206 eine Post-Cure-Tg von „105–125 °C". Die West-System-TDS geben als **Ultimate Tg 59 °C (206) bzw. 47 °C (207)** an — West-105-Systeme erreichen diese Werte nicht. Aussage/Scoring-Bezug entsprechend auf die realen TDS-Werte korrigieren (vgl. Audit-Hinweise §4.3 u. §16.2).
+> ✅ **Aufgelöst (Audit):** West 105/206 erreicht laut West-System-TDS nur eine **Ultimate-Tg von 59 °C** (139 °F), Onset-Tg 52 °C (126 °F); 105/207 liegt bei 47 °C (116 °F). Kein Post-Cure hebt West-105-Systeme auf 105–125 °C. Kernaussage 3 entsprechend auf die realen TDS-Werte korrigiert. Quelle: WEST SYSTEM Epoxy, „Compare Epoxy Physical Properties" (westsystem.com/compare-epoxy-physical-properties/). (Die §16.2-Tg-Tabelle bleibt separat als ZU PRÜFEN markiert, da sie auch Fremdsysteme enthält.)
 
 <!-- model_config = {"from_attributes": True} — Pydantic v2 -->
 

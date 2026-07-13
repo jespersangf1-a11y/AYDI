@@ -748,8 +748,8 @@ Höhere Qualität als Rivnut, mit Sperr-Nase:
 
 **Fazit:** Rivnuts kostengünstig, schnell, wartungsfrei. Beste Lösung für GFK!
 
-**AYDI-Confidence:** estimated — unverifiziert — Rivnut/Nutsert Katalog, GFK-Reparatur-Best-Practice
-> ⚠️ **ZU PRÜFEN (Audit):** Der Normbezug „DIN 15051 (Blindnieten)" ist falsch — DIN EN 15051 betrifft die Staubungsmessung von Schüttgütern, NICHT Blindniete. Für Blindniete gilt DIN 7337 / ISO 15973–15979; für Blindnietmuttern existiert keine gleichnamige Norm. Falscher Bezug entfernt, Confidence zurückgestuft.
+**AYDI-Confidence:** estimated — Rivnut/Nutsert Katalog, GFK-Reparatur-Best-Practice
+> ✅ Aufgeloest (Audit): Falscher Normbezug „DIN 15051" bestätigt entfernt — DIN EN 15051 = „Workplace exposure — Measurement of the dustiness of bulk materials" (Staubungsmessung von Schüttgütern), NICHT Blindniete; maßgeblich für Blindniete sind DIN 7337 / ISO 15977 (bzw. ISO 15973–15979). Quelle: iso.org, en-standard.eu.
 ---
 
 ## 8. Epoxid-Methode (Flüssiggewinde)
@@ -2846,8 +2846,8 @@ Kombination aus Keil + Schraubensicherung für kritischste Anwendungen:
 
 **Fazit:** Keensert höher Preis, aber NULL Wartung über 10+ Jahre = ROI sehr günstig für kritische Anwendungen.
 
-**AYDI-Confidence:** estimated — unverifiziert — Howmet Aerospace Technical Data Sheets, DNV-GL Zertifikat
-> ⚠️ **ZU PRÜFEN (Audit):** „ISO 23143 (Keensert Standard)" ist falsch — ISO 23143 betrifft den BIM/GIS-Datenaustausch, nicht Gewindeeinsätze. Falscher Normbezug entfernt.
+**AYDI-Confidence:** estimated — Howmet Aerospace Technical Data Sheets, DNV-GL Zertifikat
+> ✅ Aufgeloest (Audit): Falscher Normbezug „ISO 23143" bestätigt entfernt — ISO 23143 = „Information exchange between BIM and GIS", nicht Gewindeeinsätze; Keensert ist ein proprietäres Howmet-Produkt ohne gleichnamige ISO-Norm. Quelle: iso.org (ISO 23143-1).
 
 ---
 
