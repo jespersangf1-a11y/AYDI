@@ -142,7 +142,7 @@ def fuse_zone_score(
         return {
             "zone_name": zone_name,
             "score": None,
-            "confidence": "insufficient",
+            "confidence": "visual_insufficient",
             "sources": [],
             "structured_component": None,
             "visual_component": None,
@@ -151,16 +151,26 @@ def fuse_zone_score(
 
     # Both available
     discrepancy = abs(structured_score - visual_score)
-    discrepancy_note = None
     if discrepancy > DISAGREEMENT_THRESHOLD:
-        discrepancy_note = (
-            f"Strukturdaten ({structured_score:.0f}) und Bildbewertung ({visual_score:.0f}) "
-            f"weichen um {discrepancy:.0f} Punkte ab. Bitte manuell pruefen."
-        )
+        # Flag, do not blend: report the structured (measurement) score and
+        # mark for manual review rather than averaging a conflict away.
+        return {
+            "zone_name": zone_name,
+            "score": round(structured_score, 1),
+            "confidence": structured_confidence,
+            "sources": ["structured", "visual"],
+            "structured_component": round(structured_score, 1),
+            "visual_component": round(visual_score, 1),
+            "needs_review": True,
+            "discrepancy_note": (
+                f"Strukturdaten ({structured_score:.0f}) und Bildbewertung ({visual_score:.0f}) "
+                f"weichen um {discrepancy:.0f} Punkte ab. Bitte manuell pruefen."
+            ),
+        }
 
     fused = structured_score * sw + visual_score * vw
 
-    # Confidence: best of both
+    # Confidence: best (highest-rank) of the two canonical codes.
     conf_rank = {
         "measured": 5, "calculated": 4, "visual_high": 4,
         "visual_medium": 3, "estimated": 2, "documented": 3,
@@ -171,11 +181,12 @@ def fuse_zone_score(
     return {
         "zone_name": zone_name,
         "score": round(fused, 1),
-        "confidence": best_conf if not discrepancy_note else "discrepant",
+        "confidence": best_conf,
         "sources": ["structured", "visual"],
         "structured_component": round(structured_score, 1),
         "visual_component": round(visual_score, 1),
-        "discrepancy_note": discrepancy_note,
+        "needs_review": False,
+        "discrepancy_note": None,
     }
 
 
@@ -193,22 +204,36 @@ def _fuse_both(
     """Fuse when both structured and visual results are available."""
     s_score = structured_result["overall_score"]
     v_score = visual_result["score"]
+    s_conf = structured_result.get("confidence", "measured")
+    v_confidence = visual_result.get("confidence", "visual_medium")
 
-    # Disagreement check
     disagreement = abs(s_score - v_score)
-    disagreement_flag: dict | None = None
     if disagreement > DISAGREEMENT_THRESHOLD:
-        disagreement_flag = {
-            "message": (
-                f"Strukturelle und visuelle Bewertung weichen um "
-                f"{disagreement:.0f} Punkte ab — manuelle Pruefung empfohlen."
-            ),
+        # Reliability rule: on CAD-vs-photo disagreement, FLAG — do NOT blend
+        # into a single misleading number. Report the more authoritative
+        # structured (measurement) score with its own confidence, surface both
+        # raw scores, and set needs_review for human-in-the-loop assessment.
+        return {
+            "fused_score": round(s_score, 1),
+            "confidence": s_conf,
+            "data_sources": ["structured", "visual"],
             "structured_score": round(s_score, 1),
             "visual_score": round(v_score, 1),
+            "fusion_weights": {"structured": 1.0, "visual": 0.0},
+            "nominal_weights": {"structured": sw, "visual": vw},
+            "visual_confidence": v_confidence,
+            "needs_review": True,
+            "disagreement": {
+                "message": (
+                    f"Strukturelle und visuelle Bewertung weichen um "
+                    f"{disagreement:.0f} Punkte ab — manuelle Pruefung empfohlen."
+                ),
+                "structured_score": round(s_score, 1),
+                "visual_score": round(v_score, 1),
+            },
         }
 
-    # Adjust visual weight by confidence
-    v_confidence = visual_result.get("confidence", "medium")
+    # Agreement: blend, discounting the visual weight by its confidence.
     discount = CONFIDENCE_DISCOUNT.get(v_confidence, 0.5)
     effective_vw = vw * discount
     effective_sw = 1.0 - effective_vw
@@ -221,9 +246,13 @@ def _fuse_both(
 
     fused_score = s_score * effective_sw + v_score * effective_vw
 
+    # Canonical confidence = the confidence code of the dominant source
+    # (avoids the non-canonical "measured+visual").
+    fused_conf = s_conf if effective_sw >= effective_vw else v_confidence
+
     return {
         "fused_score": round(fused_score, 1),
-        "confidence": "measured+visual",
+        "confidence": fused_conf,
         "data_sources": ["structured", "visual"],
         "structured_score": round(s_score, 1),
         "visual_score": round(v_score, 1),
@@ -233,7 +262,8 @@ def _fuse_both(
         },
         "nominal_weights": {"structured": sw, "visual": vw},
         "visual_confidence": v_confidence,
-        "disagreement": disagreement_flag,
+        "needs_review": False,
+        "disagreement": None,
     }
 
 
@@ -256,7 +286,7 @@ def _visual_only(visual_result: dict, sw: float, vw: float) -> dict:
     """Return result when only visual analysis is available."""
     return {
         "fused_score": round(visual_result["score"], 1),
-        "confidence": "visual_only",
+        "confidence": visual_result.get("confidence", "visual_medium"),
         "data_sources": ["visual"],
         "structured_score": None,
         "visual_score": round(visual_result["score"], 1),
@@ -271,7 +301,7 @@ def _no_data(sw: float, vw: float) -> dict:
     """Return result when no analysis data is available."""
     return {
         "fused_score": None,
-        "confidence": "insufficient",
+        "confidence": "visual_insufficient",
         "data_sources": [],
         "structured_score": None,
         "visual_score": None,

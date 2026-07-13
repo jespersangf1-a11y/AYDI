@@ -223,7 +223,9 @@ Selbstpolierende Antifoulings (SPC — Self-Polishing Copolymer) basieren auf ei
 | Interprotect | 2K Epoxy-Primer | Osmoseschutz + Primer | Gelcoat, Epoxy-Lamination | Micron-Serie | YPA400/YPA401 | ~100–120 EUR |
 | Gelshield 200 | 2K Epoxy | Osmoseschutz | Gelcoat (nach Trocknung) | Primocon/Interprotect | GS200 | ~90–110 EUR |
 
-> Confidence: `measured`
+> ⚠️ **ZU PRÜFEN (Audit):** Gelshield 200 Art.-Nr. „GS200" (hier) vs. „YPA149" (Anhang N, Kompatibilitätstabelle) — Artikelnummer widersprüchlich und nicht zweifelsfrei belegt. International führt Gelshield 200 farbabhängig (Grün/Grau); korrekten Farb-/Artikelcode beim Hersteller verifizieren.
+
+> Confidence: `estimated — unverifiziert` (Gelshield-200-Art.-Nr. zu verifizieren; übrige Zeilen `measured`)
 
 ### 2.7 International Verdünner/Reiniger
 
@@ -596,7 +598,9 @@ Selektope (Medetomidin) aktiviert den Oktopamin-Rezeptor von Seepocken-Larven (C
 | Boero Mistral 640 | SPC Premium | Cu₂O + DCOIT | ~42% | 750 ml, 2,5 l | ~135–155 EUR |
 | Boero Aquarius 693 | SPC kupferfrei | Econea + ZPT | 0% | 750 ml, 2,5 l | ~145–170 EUR |
 
-> Confidence: `measured`
+> ⚠️ **ZU PRÜFEN (Audit):** „Boero Altura 630 Plus" (hier + Anhang-Vergleichstabelle) vs. „Boero Altura 001" (Anhang J.11, N, S) — Produktbezeichnung widersprüchlich. Boero führt eine Hartmatrix-Linie „Altura" (z.B. Altura 619 Plus) UND eine SPC-Linie „Magellan 630"; die Zuordnung „Altura 630 Plus (SPC)" ist nicht zweifelsfrei belegt. Bezeichnung/Artikelnummer beim Hersteller verifizieren.
+
+> Confidence: `estimated — unverifiziert` (Boero-Altura-Produktname zu verifizieren; übrige Zeilen `measured`)
 
 ### 7.2 Veneziani (Italien)
 
@@ -2344,13 +2348,13 @@ class HauloutPlan(BaseModel):
 
 ### L.1 FAQ 41: Kann ich Antifouling im Winter auftragen?
 
-**Frage:** Ist es möglich, Antifouling bei Temperaturen unter 10°C aufzutragen?
+**Frage:** Ist es möglich, Antifouling bei Temperaturen unter 5°C aufzutragen?
 
-**Antwort:** Grundsätzlich NEIN. Die meisten SPC-Antifoulings benötigen Mindesttemperaturen von +10°C (Luft UND Untergrund) und <80% relative Luftfeuchtigkeit. Unter 10°C:
+**Antwort:** Grundsätzlich NEIN. Die meisten SPC-Antifoulings benötigen Mindesttemperaturen von +5°C (Luft UND Untergrund) und <80% relative Luftfeuchtigkeit. Unter 5°C:
 - Lösemittel verdunsten zu langsam → Läufer, schlechte Filmbildung
 - Bindemittel polymerisiert nicht vollständig → reduzierte Haftung
 - Taupunkt-Risiko → Feuchtigkeit unter der Schicht = Enthaftung
-Ausnahme: Hempel Olympic kann laut TDS ab +5°C verarbeitet werden (mit verlängerter Trocknungszeit).
+Hinweis: Auch knapp oberhalb von +5°C (z.B. Hempel Olympic laut TDS) verlängern sich Trocknungs- und Überarbeitungszeiten deutlich; nicht bei Frost oder auf feuchtem Untergrund auftragen (Taupunkt beachten).
 
 > → siehe Glossar Kap. 18: Taupunkt, Nassfilmdicke
 > Confidence: `documented`
@@ -2591,7 +2595,7 @@ Lösung: Mehr fahren! Oder: Bei Hafenliegern einen Taucher alle 2 Monate den Rum
 | Bootstyp | UWS-Formel (m²) |
 |----------|-----------------|
 | Segelboot | LWL × (B + T) × 0,75 |
-| Motorboot | LWL × (B + T) × 0,50 |
+| Motorboot | LWL × (B + T) × 0,85 |
 | Katamaran | LWL × (B_Rumpf + T) × 0,75 × 2 |
 
 Verbrauch pro Schicht: 8–12 m²/L (je nach Produkt, siehe TDS)
@@ -3057,7 +3061,7 @@ class HauloutPlanDetailed(BaseModel):
     # Zeitplanung
     days_on_hard: int = Field(default=5, ge=1, description="Tage an Land")
     weather_window_needed: bool = Field(default=True, description="Wetterfenster nötig?")
-    min_temp_c: int = Field(default=10, description="Mindesttemperatur °C")
+    min_temp_c: int = Field(default=5, description="Mindesttemperatur °C")
 
     confidence: str = Field(default="estimated", description="AYDI Confidence Level")
 ```

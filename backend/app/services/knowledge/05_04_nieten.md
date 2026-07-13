@@ -1294,6 +1294,8 @@ In der Praxis werden oft Kombinationen eingesetzt:
 | Strukturniet Monel | 4,8mm | 5.200 | 4.800 |
 | Strukturniet Monel | 6,4mm | 8.900 | 7.600 |
 
+> ⚠️ **ZU PRÜFEN (Audit):** A4/A4 4,8mm — hier 2.600N (Scherkraft) / 2.300N (Zugkraft), aber §8.2 (Goebel A4/A4) nennt 3.200N / 2.800N und §9.3 nennt 3.000–3.600N Scherkraft für dieselbe Niet. Interner Widerspruch bei einem lastrelevanten Wert; extern nicht zweifelsfrei auflösbar (reale 4,8mm-A4-Blindnieten liegen herstellerabhängig teils höher). Wert unverifiziert — nicht als "measured" verwenden.
+
 ### 20.3 Sicherheitsfaktoren
 
 | Belastungsart | Sicherheitsfaktor | Beispiel |
@@ -2342,7 +2344,7 @@ Diese Betriebe verkaufen oft:
 
 | Lieferant | Lokation | Spezialität | Bekanntheit | Website |
 |-----------|----------|------------|------------|---------|
-| **Davey & Company** | Liverpool/UK | Kupfer, Messing, Nieten | Legendär (seit 1848!) | daveyandc.com |
+| **Davey & Company** | Colchester, Essex | Kupfer, Messing, Nieten | Legendär (seit 1885!) | daveyandc.com |
 | **Holt, Renfrew & Co.** | London | Marine Hardware | Traditionsreich | holtrenfrewco.co.uk |
 | **Westlake Nameplates** | Oxfordshire | Schiffe-Namensschilder | Spezialist | westlakeplates.co.uk |
 | **Blind Rivet Supply** | Manchester | Monel, Alu, Bronze | Modern | blindrivetsupply.co.uk |
@@ -2351,7 +2353,7 @@ Diese Betriebe verkaufen oft:
 | **Forespar Marine** | Distributor | Kunststoff + Hardware | Spezialist | forsparmarine.co.uk |
 
 **Besonderheit Davey & Company:**
-- Gegründet 1848 (ältester Niet-Lieferant Europas!)
+- Gegründet 1885 (ältester Niet-Lieferant Europas!)
 - Kupfernieten + Roves nach Original-Spezifikationen
 - Berühmte Boote: HMS Victory (Restauration), Classic Sailing Yachts
 - Preis: £35–50 pro 50 Stk. Monel (teuer, aber Qualität garantiert)
@@ -4026,13 +4028,15 @@ Für Vibrations-beanspruchte Verbindungen:
 | VDI 2236 | Verarbeitungsrichtlinie |
 | prEN ISO 14588 | Terminologie |
 
+> ⚠️ **ZU PRÜFEN (Audit):** „EN ISO 15973" ist hier als „Allgemeine Anforderungen" für Gewindeblindnieten angegeben — doch §59.1 (und die reale ISO 15973) definieren ISO 15973 als Blindniet-Produktnorm (Open-End, Flachrundkopf). Interner Widerspruch / falsche Normzuordnung. Die korrekte Normnummer für Gewindeblindniet-Anforderungen ist nicht zweifelsfrei belegbar; Angabe unverifiziert.
+
 ### 59.4 Materialprüfung
 
 | Norm | Beschreibung |
 |------|-------------|
-| ISO 14589 | Scherfestigkeit Blindnieten |
-| ISO 14590 | Zugfestigkeit Blindnieten |
-| ISO 14591 | Scherfestigkeit unter Kopf |
+| ISO 14589 | Mechanische Prüfung Blindnieten (Scherkraft, Zugkraft, Dornauszug — deckt alle Prüfungen ab) |
+| ISO 14589 | Zugfestigkeit Blindnieten (Teil der mechanischen Prüfung nach ISO 14589) |
+| ISO 14589 | Scherfestigkeit unter Kopf (Teil der mechanischen Prüfung nach ISO 14589) |
 
 ---
 

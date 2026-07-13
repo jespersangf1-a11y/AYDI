@@ -38,8 +38,13 @@ def get_spatial_analysis_prompt(
             "helm": "Steuerstand",
             "engine": "Maschinenraum",
         }
-        label = zone_labels.get(zone_type, zone_type)
-        zone_instruction = f"\nDieses Bild zeigt speziell: {label}. Bewerte mit Fokus auf die typischen Anforderungen dieses Raumtyps."
+        label = zone_labels.get(zone_type)
+        if label is None:
+            # Unknown zone_type: do NOT interpolate the raw user value into the
+            # prompt (prompt-injection guard); use a neutral phrasing instead.
+            zone_instruction = "\nBewerte mit Fokus auf die typischen Anforderungen des dargestellten Raumtyps."
+        else:
+            zone_instruction = f"\nDieses Bild zeigt speziell: {label}. Bewerte mit Fokus auf die typischen Anforderungen dieses Raumtyps."
 
     extra_context = ""
     if context:

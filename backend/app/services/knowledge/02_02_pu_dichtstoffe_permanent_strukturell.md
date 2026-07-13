@@ -2031,7 +2031,11 @@ class Sealant5200RemovalEstimator:
 
 **WICHTIG:** Immer Werft-/Herstellerangaben beachten! Diese Werte sind Richtwerte.
 
-(Confidence: documented — DIN EN ISO 898-1, Bolzen-Festigkeitsklassen, Richtwerte)
+**Materialklasse:** Diese Tabelle gilt für Bolzen der Festigkeitsklasse **A4-80** (kaltverfestigtes 316/316L, Rm min. 800 MPa, Rp0.2 min. 600 MPa). Weiches/geglühtes 316L (Rm ~500 MPa, entspr. Klasse ~A4-50) verträgt nur rund ein Drittel dieses Drehmoments — siehe die niedrigeren Werte in Anhang AO.4.
+
+> ⚠️ **ZU PRÜFEN (Audit):** I.2 (A4-80, z. B. M24 = 600–770 Nm) vs. AO.4 (316L, M24 = 230 Nm) — Faktor ~2–3. KEIN Fehler, sondern festigkeitsklassenabhängig: A4-80 = höherfest (Rm 800 MPa) → höheres Moment. Vor dem Anziehen die tatsächliche Festigkeitsklasse (Kopfprägung, z. B. A4-70/A4-80) und die Werftvorgabe prüfen; bei GFK-Flanschen begrenzt oft die zulässige Laminatpressung das Moment.
+
+(Confidence: documented — DIN EN ISO 898-1 / ISO 3506-1, Bolzen-Festigkeitsklassen, Richtwerte)
 
 ---
 
@@ -3443,7 +3447,9 @@ class ThruHullLifetimePredictor:
 (Confidence: documented — Sika Technical Bulletin + 3M FAQ)
 
 ### FAQ 37: Warum empfehlen viele Werften Sikaflex 292i statt 3M 5200?
-**Antwort:** 292i bietet vergleichbare Festigkeit (12.0 vs. 13.8 MPa Scherfestigkeit), ist aber deutlich besser dokumentiert (Sika bietet umfangreiche TDS, Primer-Kompatibilitätslisten, technische Hotline). Außerdem ist die Primer-Systemkompatibilität bei Sika eindeutig definiert. 3M hat weniger marine-spezifische technische Unterstützung in Europa.
+**Antwort:** 292i hat laut Kernvergleich (Abschn. 2.2.2) sogar die höhere Scherfestigkeit (3.5 MPa vs. 1.7 MPa bei 5200) und ist zudem deutlich besser dokumentiert (Sika bietet umfangreiche TDS, Primer-Kompatibilitätslisten, technische Hotline). Außerdem ist die Primer-Systemkompatibilität bei Sika eindeutig definiert. 3M hat weniger marine-spezifische technische Unterstützung in Europa.
+
+> ⚠️ **ZU PRÜFEN (Audit):** 12.0 vs. 13.8 MPa (ursprünglich) vs. 3.5 vs. 1.7 MPa (Kernvergleich Abschn. 2.2.2) — die "12.0/13.8 MPa" sind fehlplatzierte Werte von 2K-Strukturklebern (Plexus/West), NICHT von den 1K-PU-Dichtstoffen 292i/5200. Auf die dokumentierten 292i/5200-Scherfestigkeiten korrigiert.
 
 (Confidence: documented — Werft-Befragung 2024, Hersteller-Vergleich)
 
@@ -3458,7 +3464,9 @@ class ThruHullLifetimePredictor:
 (Confidence: documented — Marine-Surveyor-Checkliste)
 
 ### FAQ 40: Was ist der Unterschied zwischen "fast cure" (FC) und Standard bei 3M 5200?
-**Antwort:** 3M 5200 FC (Fast Cure) härtet in 24h aus (vs. 5–7 Tage Standard). Dafür ist die Endfestigkeit ~10% geringer (12.4 vs. 13.8 MPa). FC ist akzeptabel für Anwendungen wo schnelle Wasserfähigkeit nötig ist (Borddurchlass-Tausch im Wasser). Für Kielbolzen: IMMER Standard-5200 oder besser 292i verwenden.
+**Antwort:** 3M 5200 FC (Fast Cure) härtet in 24h aus (vs. 5–7 Tage Standard). Zur Endfestigkeit gibt es widersprüchliche Angaben: Abschn. 2.1.3 nennt sie identisch zum Standard-5200 (Zug 2.8 MPa, Scher 1.7 MPa), einzelne Quellen nennen sie geringfügig niedriger. FC ist akzeptabel für Anwendungen wo schnelle Wasserfähigkeit nötig ist (Borddurchlass-Tausch im Wasser). Für Kielbolzen: IMMER Standard-5200 oder besser 292i verwenden.
+
+> ⚠️ **ZU PRÜFEN (Audit):** 12.4 vs. 13.8 MPa (ursprünglich) — fehlplatzierte Strukturkleber-Werte (West/Plexus), NICHT die Festigkeit von 5200FC/5200 (beide ~1.7 MPa Scher / 2.8 MPa Zug). Ob FC gegenüber dem Standard eine geringere Endfestigkeit hat, ist herstellerseitig nicht eindeutig belegt (Abschn. 2.1.3 = identisch).
 
 (Confidence: documented — 3M 5200/5200FC TDS Vergleich)
 
@@ -3805,7 +3813,11 @@ LECKAGE ENTDECKT
 
 **Hinweis:** Werte gelten für trockene Gewinde MIT Dichtstoff (292i). Bei Gewindepaste (Duralac): -15%. Bei trockenem Gewinde: -20% (höhere Reibung = weniger Vorspannkraft bei gleichem Drehmoment).
 
-(Confidence: documented — ISO 898-1 + Marine-Engineering-Tabellen)
+**Materialklasse:** Die Spalte "316L" gilt für Standard-/geglühtes 316L (Rm ~500 MPa, entspr. ~A4-50/A4-70). Für hochfeste, kaltverfestigte **A4-80**-Bolzen (Rm min. 800 MPa) gelten die deutlich höheren Momente aus Anhang I.2 — vor dem Anziehen die Festigkeitsklasse prüfen.
+
+> ⚠️ **ZU PRÜFEN (Audit):** AO.4 (316L, M24 = 230 Nm) vs. I.2 (A4-80, M24 = 600–770 Nm) — Faktor ~2–3. Materialklassenabhängig, KEIN Widerspruch: höhere Festigkeitsklasse → höheres zulässiges Moment. Maßgeblich sind die konkrete Bolzen-Kennzeichnung und die Werftvorgabe.
+
+(Confidence: documented — ISO 3506-1 / ISO 898-1 + Marine-Engineering-Tabellen)
 
 ---
 

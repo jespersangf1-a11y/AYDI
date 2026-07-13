@@ -373,6 +373,8 @@ Wobei:
 - σ_zul = 0,6 × Rm für 316L (= 0,6 × 485 MPa = 291 MPa)
 - SF = 1,5 (zusätzlicher Sicherheitsfaktor zum Rigg)
 
+> ⚠️ **ZU PRÜFEN (Audit):** Formel widerspricht der Tabelle 3.2.2. Nach A_min = F/(σ_zul × SF) ergäbe sich für Ø8 mm (F = 49 kN) nur ~112 mm², die Tabelle nennt aber 235 mm². Die Tabellenwerte folgen A_min = F × SF / σ_zul (zulässige Spannung ≈ σ_zul/SF ≈ 208 MPa). Die geschriebene Formel würde die Chainplate um ~Faktor 2 UNTERdimensionieren — sicherheitskritisch. Korrekte Formelform unverifiziert → für die Auslegung die Tabelle 3.2.2 verwenden, nicht die Formel. Confidence: estimated — unverifiziert.
+
 #### 3.2.3 Chainplate-Spaltkorrosion — Das größte Risiko
 
 **WARNUNG: Chainplate-Versagen durch Spaltkorrosion ist die häufigste Ursache für Rigg-Verlust auf Segelyachten über 15 Jahre.**
@@ -677,6 +679,8 @@ Sicherheitsfaktor: 1,5–2,0 für marine Anwendung
 - 30 kW Yacht: Ø = 37,3 × 30^0,333 ≈ 37,3 × 3,11 ≈ 116 → Ø 25–28mm Standard
 - 60 kW Yacht: Ø = 37,3 × 60^0,333 ≈ 37,3 × 3,91 ≈ 146 → Ø 30–35mm empfohlen
 
+> ⚠️ **ZU PRÜFEN (Audit):** Die Formel ist inkonsistent mit ihren eigenen Beispielen — 37,3 × 15^0,333 ≈ 92, der Text leitet daraus aber "Ø 20–22 mm" ab (Faktor ~4–4,5 Abweichung). Konstante/Exponent bzw. ein fehlender Drehzahl-Term (der Wellen-Ø hängt von Leistung UND Drehzahl ab) sind unverifiziert. Formel NICHT zur Auslegung verwenden — Wellendurchmesser nach den Tabellen in 4.8 wählen. Confidence: estimated — unverifiziert.
+
 ### 4.10 Zusatz-Komponenten: Wellenlager und Zubehör
 
 **Kugellager (NSK/FAG Standard für marine Wellen):**
@@ -839,6 +843,8 @@ Für Reparaturen und kleine Projekte empfohlen:
 - **ISO 12217-1** — Stabilität und Tankauslegung für Segelyachten
 - **DIN EN 12494** — Industrie-Spezifikation für kleine Druckbehälter
 - **ABS / DNV-GL Regeln** — Für klassifizierte Yachten
+
+> ⚠️ **ZU PRÜFEN (Audit):** Norm-Zuordnungen unzutreffend. "DIN EN 12494" ist "Atmosphärische Eislast auf Bauwerken" (entspricht ISO 12494), NICHT kleine Druckbehälter. ISO 12217 regelt Stabilität/Auftrieb, nicht die Tank-Druckauslegung. Beide Referenzen unverifiziert — nicht als gesichert verwenden.
 
 ### 5.8 Zuschnitt und Oberflächenbearbeitung — Service-Optionen
 
@@ -1237,9 +1243,9 @@ Beispiel: Alu-Rumpf + SS-Bolzen
 
 Für spezielle Einsatzszenarien (hochbelastete Wellen, extrem korrosive Umgebungen, Regatta-Gewichtseinsparung) sind Speziallegie rungen jenseits von Standard-316L erforderlich.
 
-### 9.1 Nitronic 50 (XM-19, UNS S20910, 1.4318) — Kielbolzen-Premium
+### 9.1 Nitronic 50 (XM-19, UNS S20910, 1.3964) — Kielbolzen-Premium
 
-**Zusammensetzung:** 20–23 % Cr, 7–9 % Ni, 5–7 % Mn, 0,2–0,35 % N (Stickstoff-Härtung)
+**Zusammensetzung:** 20–23 % Cr, 11,5–13,5 % Ni, 5–7 % Mn, 0,2–0,35 % N (Stickstoff-Härtung)
 
 | Eigenschaft | Wert | Vergleich 316L |
 |-------------|------|---|
@@ -1391,6 +1397,8 @@ Edelstahl-Tanks sind für Langfahrt-Yachten essentiell (Frischwasser, Diesel, Ab
 | **Grauwasser-Tank** | Spülwasser, Duschen | 316L oder 304 | 1,5 mm | WIG | — | Weniger kritisch als Schwarzwasser |
 | **Ballasttank** | Gewicht/Stabilität | 316L | 2,0 mm | WIG | Klassifikation (GL/DNV) | Druckbeständig, antimagnetisch (für Kompass) |
 | **Jauche-Tank** (Landanlage) | Biologische Abbauprodukte | 316L | 2,5 mm | WIG + epoxy coating | — | Höchste Korrosionsbeständigkeit |
+
+> ⚠️ **ZU PRÜFEN (Audit):** Norm-Zuordnung "Frischwassertank → EN 12764" ist falsch. EN 12764 ist "Sanitärgegenstände — Whirlpoolwannen" und passt nicht zum Scope Trinkwasser-/Frischwassertank an Bord. Korrekte Norm unverifiziert — Zuordnung nicht als gesichert verwenden.
 
 **Wandstärke-Bemessung (allgemein):**
 ```
@@ -2108,6 +2116,8 @@ Normen und Standards legen fest, wie Edelstahl-Materialien und ihre Verarbeitung
 | EN 10060 | Rundstahl (Warmgewalzt) — Toleranzen | Maßtoleranzen für Rundstahl (Ø10, Ø16 etc.) | Kielbolzen, Propellerwellen-Zurichtung |
 | EN 10058 / 10060 | Allgemeine Toleranzen für Halbzeuge | Wie genau müssen Abmessungen sein? | Typisch h9 oder h11 Toleranz-Grade |
 
+> ⚠️ **ZU PRÜFEN (Audit):** "EN 10217-13" (Zeile oben) existiert nicht — die Reihe EN 10217 (geschweißte Stahlrohre für Druckzwecke) umfasst nur die Teile 1–7 (Teil 7 = nichtrostend, Teil 2 = elektrisch/HF-geschweißt). Die Teilnummer -13 ist unverifiziert.
+
 ### 16.2 Amerikanische Normen (ASTM)
 
 Für Boote mit US-Herkunft oder US-Material:
@@ -2152,8 +2162,10 @@ Für Boote mit US-Herkunft oder US-Material:
 | **ISO 12217** | Small craft — Stability and buoyancy | Berechnung von Gewicht und Schwerpunkt (Edelstahl-Materialgewichte) |
 | **ISO 15084** | Small craft — Anchoring, mooring and towing | Chainplate-Auslegung, Belastungen |
 | **ISO 10088** | Small craft — Permanently installed fuel systems | Edelstahl-Tanks (Spezifikation Wandstärke, Schweißung) |
-| **ISO 11591** | Windsurfing equipment — General safety requirements | Edelstahl-Mastbefestigung für Windsurfing-Boote |
+| **ISO 11591** | Small craft — Field of vision from the steering position (Sichtfeld vom Steuerstand) | Kein direkter Bezug zu Edelstahl-Halbzeugen (Norm regelt Sichtfeld, nicht Beschläge) |
 | **Classification Societies** (GL, DNV, BV, LR, ABS) | Schiffsklassifizierung | Für klassifizierte Yachten verbindliche Vorgaben |
+
+> ✅ Aufgelöst (Audit): ISO 11591 = "Small craft — Field of vision from the steering position" (Sichtfeld vom Steuerstand), nicht Windsurfing; Titel korrigiert und Zeile als nicht einschlägig für Edelstahl-Halbzeuge markiert. Quelle: ISO.org (ISO 11591:2020, iso.org/standard/80914.html).
 
 ### 16.5 Klassifikations-Regeln (Relevante Klassifikationen)
 
@@ -2718,16 +2730,18 @@ Diese Datenblätter bieten einen Überblick über die wichtigsten Edelstahl-Legi
 
 ---
 
-### A.3 Aquamet 22 (Swedish Custom Martensitic Stainless) — Für Propellerwellen
+### A.3 Aquamet 22 (US-Herkunft, austenitischer stickstoffverfestigter Edelstahl) — Für Propellerwellen
 
-**Besonderheit:** Nicht austenitischer Edelstahl (wie 316L), sondern martensitisch gehärtet.
+**Besonderheit:** Austenitischer, stickstoffverfestigter Edelstahl (nitrogen-strengthened 316-Typ), nicht-magnetisch. Die Festigkeit stammt aus Stickstoff + Kaltverfestigung, NICHT aus martensitischer Härtung.
 
 **Zusammensetzung:**
 | Element | % min. | % max. |
 |---------|--------|--------|
-| Chromium (Cr) | 13,0 | 15,0 |
-| Nickel (Ni) | 1,5 | 2,5 |
-| Molybdän (Mo) | 0,5 | 1,0 |
+| Chromium (Cr) | 20,5 | 23,5 |
+| Nickel (Ni) | 11,5 | 13,5 |
+| Molybdän (Mo) | 1,5 | 3,0 |
+| Mangan (Mn) | 4,0 | 6,0 |
+| Stickstoff (N) | 0,20 | 0,40 |
 
 **Mechanische Eigenschaften (gehärtet, geölt):**
 | Eigenschaft | Einheit | Wert |
@@ -2760,13 +2774,13 @@ Diese Datenblätter bieten einen Überblick über die wichtigsten Edelstahl-Legi
 
 ---
 
-### A.4 Nitronic 50 (XM-19, S20910, 1.4318) — Für Kielbolzen
+### A.4 Nitronic 50 (XM-19, S20910, 1.3964) — Für Kielbolzen
 
 **Zusammensetzung:**
 | Element | % |
 |---------|-----|
 | Chromium (Cr) | 20,0–23,0 |
-| Nickel (Ni) | 7,0–9,0 |
+| Nickel (Ni) | 11,5–13,5 |
 | Mangan (Mn) | 5,0–7,0 |
 | Stickstoff (N) | 0,20–0,35 |
 

@@ -12,7 +12,7 @@ import re
 from pathlib import Path
 
 from app.core.config import settings
-from app.core.retry import retry_async, get_circuit_breaker, NonRetryableError
+from app.core.retry import retry_async, get_circuit_breaker, NonRetryableError, RetryableError
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +59,9 @@ class VisualAnalyzer:
         if self._client is None:
             try:
                 import anthropic
-                self._client = anthropic.Anthropic()
+                # Pass the configured key explicitly; if None the SDK falls back
+                # to the ANTHROPIC_API_KEY env var (so .env config is honoured).
+                self._client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
             except ImportError:
                 logger.warning("anthropic SDK not installed — visual analysis unavailable")
                 self._client = None
@@ -113,8 +115,11 @@ class VisualAnalyzer:
         if self.client is None:
             return self._unavailable_result(image_path, image_type, boat_class)
 
-        # Check cache
-        cache_key = self.cache.get_cache_key(image_path, image_type, boat_class, analysis_depth)
+        # Check cache — zone_type and context change the prompt, so include them.
+        cache_key = self.cache.get_cache_key(
+            image_path, image_type, boat_class, analysis_depth,
+            zone_type=zone_type, context=context,
+        )
         cached = self.cache.get(cache_key)
         if cached is not None:
             logger.info("Cache hit for %s (%s)", image_path, image_type)
@@ -151,8 +156,8 @@ class VisualAnalyzer:
         breaker = get_circuit_breaker(
             "anthropic_vision_api", failure_threshold=5, recovery_timeout=60.0
         )
-        if breaker.is_open:
-            logger.warning("Circuit breaker OPEN for Anthropic Vision API — skipping call")
+        if not breaker.allow_request():
+            logger.warning("Circuit breaker not admitting calls for Anthropic Vision API — skipping")
             return self._error_result(
                 image_path, image_type,
                 "API vorübergehend nicht verfügbar (Circuit Breaker offen). Bitte später erneut versuchen.",
@@ -185,14 +190,19 @@ class VisualAnalyzer:
                     ],
                 )
             except Exception as e:
-                # Map known non-retryable errors
+                # Classify so the retry layer actually acts: permanent errors
+                # (auth, 400 bad request) must NOT be retried; transient ones
+                # (429 rate limit, 5xx, timeouts, connection) MUST be re-raised
+                # as RetryableError — otherwise retry_async treats the raw SDK
+                # exception as non-retryable and aborts on the first failure.
                 error_str = str(e).lower()
-                if "invalid_api_key" in error_str or "authentication" in error_str:
+                status_code = getattr(e, "status_code", None)
+                if status_code in (401, 403) or "invalid_api_key" in error_str or "authentication" in error_str:
                     raise NonRetryableError(f"Authentication error: {e}") from e
-                if "invalid_request" in error_str or "400" in error_str:
+                if status_code == 400 or "invalid_request" in error_str:
                     raise NonRetryableError(f"Invalid request: {e}") from e
-                # All other errors are retryable (rate limits, timeouts, 500s)
-                raise
+                # Everything else (429, 5xx, timeouts, connection resets) is transient.
+                raise RetryableError(f"Transient API error: {e}") from e
 
         retry_result = await retry_async(
             _call_claude_api,
@@ -205,14 +215,15 @@ class VisualAnalyzer:
 
         if not retry_result.success:
             breaker.record_failure()
-            error_msg = f"API-Aufruf fehlgeschlagen nach {retry_result.attempts} Versuchen"
-            if retry_result.error:
-                error_msg += f": {str(retry_result.error)[:200]}"
             logger.error(
                 "Claude API call failed for %s after %d attempts (%.0fms): %s",
                 image_path, retry_result.attempts, retry_result.total_time_ms, retry_result.error,
             )
-            return self._error_result(image_path, image_type, error_msg)
+            # Generic client-facing message — internal error details stay in logs.
+            return self._error_result(
+                image_path, image_type,
+                "Die visuelle Analyse ist fehlgeschlagen. Bitte später erneut versuchen.",
+            )
 
         breaker.record_success()
         response = retry_result.value
@@ -226,11 +237,14 @@ class VisualAnalyzer:
         # Parse JSON
         parsed = self._parse_json_response(response_text)
         if parsed is None:
-            logger.warning("Could not parse JSON from API response for %s", image_path)
+            # Log the raw response for debugging but never return it to the client.
+            logger.warning(
+                "Could not parse JSON from API response for %s: %s",
+                image_path, response_text[:500],
+            )
             return self._error_result(
                 image_path, image_type,
                 "KI-Antwort konnte nicht verarbeitet werden",
-                raw_response=response_text,
             )
 
         # Get image metadata for confidence assessment
@@ -494,7 +508,7 @@ class VisualAnalyzer:
             "boat_class": boat_class,
             "analysis": None,
             "confidence": {
-                "level": "insufficient",
+                "level": "visual_insufficient",
                 "is_usable": False,
                 "factors": ["Anthropic SDK nicht installiert — visuelle Analyse nicht verfuegbar"],
                 "image_quality": 0.0,
@@ -510,15 +524,18 @@ class VisualAnalyzer:
         image_path: str,
         image_type: str,
         error_message: str,
-        raw_response: str | None = None,
     ) -> dict:
-        """Return a structured error result."""
-        result = {
+        """Return a structured error result.
+
+        ``error_message`` must be a generic, client-safe string — raw model
+        output and internal exception text are logged, never returned here.
+        """
+        return {
             "image_path": image_path,
             "image_type": image_type,
             "analysis": None,
             "confidence": {
-                "level": "insufficient",
+                "level": "visual_insufficient",
                 "is_usable": False,
                 "factors": [error_message],
                 "image_quality": 0.0,
@@ -528,6 +545,53 @@ class VisualAnalyzer:
             "score": None,
             "error": error_message,
         }
-        if raw_response is not None:
-            result["raw_response"] = raw_response[:2000]  # Truncate for safety
-        return result
+
+
+# ---------------------------------------------------------------------------
+# Module-level convenience wrapper
+#
+# Routes import `analyze_image` from this module (a plain function), while the
+# real logic lives on the async `VisualAnalyzer.analyze_image` method. This
+# wrapper bridges the two: it maps the route-facing `file_path` argument to the
+# analyzer's `image_path` parameter and drives the coroutine to completion.
+# ---------------------------------------------------------------------------
+
+_default_analyzer: "VisualAnalyzer | None" = None
+
+
+def _get_default_analyzer() -> "VisualAnalyzer":
+    """Return a process-wide shared VisualAnalyzer instance."""
+    global _default_analyzer
+    if _default_analyzer is None:
+        _default_analyzer = VisualAnalyzer()
+    return _default_analyzer
+
+
+def analyze_image(
+    file_path: str,
+    image_type: str,
+    boat_class: str,
+    zone_type: str | None = None,
+    analysis_depth: str = "standard",
+    context: dict | None = None,
+    boat_dna: object | None = None,
+) -> dict:
+    """Synchronous wrapper around ``VisualAnalyzer.analyze_image``.
+
+    IMPORTANT: must be called OFF the event loop (e.g. via ``asyncio.to_thread``)
+    — it uses ``asyncio.run`` and would raise inside an already-running loop.
+    This also keeps the blocking Anthropic SDK call off the main event loop.
+    """
+    import asyncio
+
+    return asyncio.run(
+        _get_default_analyzer().analyze_image(
+            image_path=file_path,
+            image_type=image_type,
+            boat_class=boat_class,
+            zone_type=zone_type,
+            analysis_depth=analysis_depth,
+            context=context,
+            boat_dna=boat_dna,
+        )
+    )

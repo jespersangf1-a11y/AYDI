@@ -174,6 +174,8 @@ Polyester-Harz (ungesättigtes Polyesterharz, UP-Harz) ist das mit Abstand meist
 
 **Scott Bader Standorte**: Wellingborough (UK), Amiens (Frankreich), Pietermaritzburg (Südafrika), Dubai (VAE), Kolkata (Indien)
 
+> ⚠️ **ZU PRÜFEN (Audit):** Crystic 491PA hier als „Iso, NPG-modifiziert", Tg 90°C — im DSC/DMA-Anhang (Abschn. 73) jedoch als „Ortho-UP", Tg 68°C geführt (Typ- und Tg-Widerspruch). Crystic 65PA hier als Gelcoat-Harz, Tg 95°C — im Tooling-Anhang (Abschn. 31.2) als Tooling-Harz, Tg 120°C. Herstellerangaben nicht zweifelsfrei verifiziert.
+
 <!-- Confidence: measured — Scott Bader Crystic Product Guide 2024, TDS-Datenblätter -->
 
 ### 4.2 Reichhold (USA/Global) — Polylite / Dion
@@ -214,11 +216,13 @@ Polyester-Harz (ungesättigtes Polyesterharz, UP-Harz) ist das mit Abstand meist
 |---|---|---|---|---|---|---|---|
 | Hetron 922L-25 | Vinylester, Premium | 250 | 42 | 84 | 120 | Marine-Premium, Chemie-Behälter | `measured` |
 | Hetron FR992 | VE, Brandschutz | 350 | 38 | 72 | 110 | IMO-zertifiziert, Brandschutz Marine | `measured` |
-| Derakane 411-350 | VE, Epoxid-Novolak | 350 | 45 | 86 | 145 | Hochtemperatur, chemisch extrem beständig | `measured` |
+| Derakane 411-350 | VE, Epoxid-Novolak | 350 | 45 | 86 | 145 | Hochtemperatur, chemisch extrem beständig | `estimated — unverifiziert` |
 | Derakane 470-300 | VE, Novolak | 300 | 42 | 80 | 155 | Höchste Chemikalienbeständigkeit | `measured` |
 | Derakane 8084 | VE, elastifiziert | 200 | 40 | 75 | 95 | Flexible Laminate, Schlagzähigkeit | `measured` |
 
 **Ashland-Hinweis**: Ashland hat 2022 das Composites-Geschäft an INEOS/AOC abgegeben. Derakane/Hetron werden unter AOC/INEOS weitergeführt.
+
+> ⚠️ **ZU PRÜFEN (Audit):** Derakane 411-350 hier mit Tg 145°C — an anderen Stellen (Abschn. 4.8, 31.1, 73) konsistent 118–120°C. TDS-Referenz: HDT ≈100°C (ASTM D648), Tg (DMA) ~120°C+; die 145°C sind ein Ausreißer (näher an Derakane 470 Novolak) und nicht belegt.
 
 <!-- Confidence: measured — Ashland/AOC Derakane TDS, Hetron Product Guide -->
 
@@ -372,7 +376,7 @@ Polyester-Harz (ungesättigtes Polyesterharz, UP-Harz) ist das mit Abstand meist
 | 30°C | 0.8–1.2% | 7–12 | 180–240 | 1–3 | VORSICHT: Exotherm überwachen! | `measured` |
 | 35°C | 0.8–1.0% | 5–10 | 200–260 | 1–2 | GEFAHR: Exotherm kann unkontrolliert werden! | `measured` |
 
-**WARNUNG**: Bei >30°C und >5mm Laminatdicke: Exothermie-Risiko! Harz kann sich selbst entzünden oder Styrol verdampfen.
+**WARNUNG**: Bei dicken nass-in-nass-Aufbauten steigt das Exothermie-Risiko stark an — Harz kann sich selbst entzünden oder Styrol verdampfen. Einzelschicht bei Ortho-PE ≤3mm halten (≤2mm bei >30°C Umgebung), dickere Laminate in mehreren Gängen mit Zwischenaushärtung aufbauen. Siehe Exothermie-Risiko-Tabelle (Abschn. 21) und Fehlerbild F-PH-017.
 
 ### 6.2 Mischungsverhältnis-Rechner
 
@@ -1294,7 +1298,9 @@ class OsmosisAssessment:
 | 8–12 | 220–300°C | SEHR HOCH | NICHT IN EINEM GANG! Aufteilen | `measured` |
 | >12 | >300°C | EXTREM — BRANDGEFAHR! | VERBOTEN in einem Arbeitsgang | `measured` |
 
-**Faustregel**: NIEMALS mehr als 5–8mm Polyester-Laminat in einem Arbeitsgang. Bei >25°C Umgebung: max. 3–5mm.
+**Faustregel**: Die o.g. Tabelle bezieht sich auf die **kumulative Dicke pro Arbeitsgang** (nass-in-nass, ohne Zwischenaushärtung). Sicherheitsseitig maßgeblich ist die **Einzelschicht-Grenze**: ≤3mm bei Ortho-PE, ≤5mm bei Iso/VE (höhere Exotherm-Toleranz). Grund: Die Reaktionswärme kann bei zu dicken nass-in-nass-Aufbauten nicht abgeführt werden (Wärmestau) → überproportionaler Exotherm-Peak → Thermal Runaway/Brand (vgl. F-PH-017, CS-PH-027). Dicke Laminate in mehreren Gängen aufbauen und zwischen den Gängen abkühlen/anhärten lassen.
+
+> ⚠️ **ZU PRÜFEN (Audit):** „NIEMALS mehr als 5–8mm in einem Arbeitsgang" (frühere Faustregel/Tabelle Abschn. 21) vs. ≤3mm Einzelschicht (Ortho) an mehreren anderen Stellen — die Werte betreffen unterschiedliche Bezugsgrößen (kumulativ pro Gang vs. Einzellage) und sind harztyp-abhängig; der niedrigere Einzelschicht-Wert gilt sicherheitsseitig. Exakte zulässige Gang-Dicke nicht zweifelsfrei extern belegt.
 
 ---
 
@@ -1691,7 +1697,7 @@ Für Unterwasserschiff: JA. VE-Skin-Coat (2 Lagen) = +200–500€ bei 10–14m 
 
 | Hersteller | Produkt | Typ | Tg (°C) | Schrumpfung (%) | HDT (°C) | Besonderheit | Confidence |
 |---|---|---|---|---|---|---|---|
-| Scott Bader | Crystic 65PA | NPG-Iso Tooling | 120 | 4.5 | 110 | Formenbau Standard | `measured` |
+| Scott Bader | Crystic 65PA | NPG-Iso Tooling | 120 | 4.5 | 110 | Formenbau Standard | `estimated — unverifiziert` |
 | Scott Bader | Crystic 92PA | Iso Tooling | 100 | 5.0 | 95 | Budget-Formenbau | `measured` |
 | Büfa | Oldopal TG 90-E-001 | Iso Tooling | 115 | 4.8 | 105 | Deutsche Formenbauer | `measured` |
 | Polynt | Norsodyne TG 12560 | Iso Tooling | 110 | 5.0 | 100 | Italien, Standard | `measured` |
@@ -2463,7 +2469,7 @@ Indirekt: Gelcoat-Oberfläche glatt = weniger Bewuchs. Beschädigter Gelcoat = r
 | **Bezeichnung** | Exothermer Durchbrand / Thermal Runaway | `measured` |
 | **Beschreibung** | Unkontrollierte exotherme Reaktion mit Rauchentwicklung/Brand | `measured` |
 | **Häufigkeit** | Selten aber katastrophal, besonders bei dicken Laminaten | `documented` |
-| **Ursache** | Zu viel Härter (>3%), zu dicke Einzelschicht (>5mm), hohe Umgebungstemperatur | `measured` |
+| **Ursache** | Zu viel Härter (>3%), zu dicke Einzelschicht (>3mm bei Ortho, >5mm bei Iso/VE), hohe Umgebungstemperatur | `measured` |
 | **Erkennung** | Temperaturanstieg >80°C in Masse, Rauchentwicklung, Verfärbung | `measured` |
 | **Bewertung** | KATASTROPHAL: Totalverlust des Bauteils, Brandgefahr | `measured` |
 | **Prävention** | Max 2% MEKP, Schichtdicke ≤3mm, Kühlung bei >25°C Umgebung | `measured` |
@@ -3680,7 +3686,7 @@ class BezugsquellenEintrag(BaseModel):
 | **Flammpunkt** | 32°C (Styrol-Anteil) | Entzündbare Flüssigkeit Kat 3 (H226) | `measured` |
 | **Explosionsgrenze unten** | 1.1 Vol-% (Styrol) | — | `measured` |
 | **Explosionsgrenze oben** | 6.1 Vol-% (Styrol) | — | `measured` |
-| **MAK-Wert Styrol** | 20 ppm TWA (EU), 50 ppm TWA (US OSHA) | — | `measured` |
+| **MAK-Wert Styrol** | 20 ppm TWA (EU), 100 ppm TWA (US OSHA PEL) | — | `measured` |
 | **Hautreizung** | Ja — H315 | Hautreizung Kat 2 | `measured` |
 | **Augenreizung** | Ja — H319 | Augenreizung Kat 2 | `measured` |
 | **Einatmung** | Ja — H332, H335 | Gesundheitsschädlich, Atemwege Kat 3 | `measured` |
@@ -3711,7 +3717,7 @@ class BezugsquellenEintrag(BaseModel):
 
 | Harztyp | Produkt (Referenz) | Tg DSC °C | Tg DMA (tan δ) °C | Resthärtung % (frisch) | Resthärtung % (28d RT) | Post-Cure 4h/80°C | Confidence |
 |---|---|---|---|---|---|---|---|
-| Ortho-UP | Crystic 491PA | 68 | 75 | 8.5 | 3.2 | 0.5 | `measured` |
+| Ortho-UP | Crystic 491PA | 68 | 75 | 8.5 | 3.2 | 0.5 | `estimated — unverifiziert` |
 | Iso-UP | Crystic 2-8300 | 82 | 90 | 6.2 | 2.1 | 0.3 | `measured` |
 | Iso-NPG | Synolite 1967-N-1 | 98 | 108 | 5.8 | 1.8 | 0.2 | `measured` |
 | DCPD | Norsodyne DCPD-21800 | 72 | 80 | 7.5 | 2.8 | 0.4 | `measured` |

@@ -386,6 +386,8 @@ class YellowingPhenomenon(BaseModel):
 
 **WARNUNG:** Pre-Accelerated Gelcoats haben KURZE Haltbarkeit! Crystic 65PA: nur 3 Monate bei 20°C. Kühl lagern (10-15°C) verlängert auf 6 Monate.
 
+> ⚠️ **ZU PRÜFEN (Audit):** Wasseraufnahme hier „<0.6% (ISO 62, 28 Tage)" widerspricht Abschnitt 16.1 „0.8-1.2% (28 Tage)". Das offizielle Scott Bader TDS (Crystic Gelcoat 65PA, Eng – Jun 2017) nennt Wasseraufnahme nur als 18 mg nach 24 h (BS EN ISO 62 Teil 6.2) und keinen 28-Tage-%-Wert — beide %-Angaben sind daher unverifiziert (estimated — unverifiziert).
+
 <!-- Confidence: documented — Quelle: Scott Bader TDS Crystic 65PA, Rev. 2023 -->
 
 ### 2.8 Duratec / Hawkeye Industries
@@ -1653,6 +1655,8 @@ class GelcoatRefinishDecision(BaseModel):
 
 > **„Crystic 65PA ist seit Jahrzehnten der Standard-Referenz-Gelcoat für ISO-NPG-Reparaturen im Marinbereich. Kein anderer Reparatur-Gelcoat hat so viele dokumentierte Langzeitergebnisse."**
 > — Scott Bader Application Engineering, Technical Seminar Düsseldorf boot 2023
+
+> ⚠️ **ZU PRÜFEN (Audit):** Wasseraufnahme (28 Tage) „0.8-1.2%" widerspricht Abschnitt 2.7.3 „<0.6% (28 Tage)". Das offizielle Scott Bader TDS (Crystic Gelcoat 65PA, Eng – Jun 2017) gibt Wasseraufnahme nur als 18 mg nach 24 h an (BS EN ISO 62 Teil 6.2), keinen 28-Tage-%-Wert. Ebenso weichen Zugfestigkeit (hier 55–65 MPa vs. TDS 75 MPa) und Bruchdehnung (hier 1.8–2.5% vs. TDS 3%) vom offiziellen TDS ab — Werte unverifiziert (estimated — unverifiziert).
 
 <!-- Confidence: documented — Quelle: Scott Bader Crystic 65PA TDS Rev. 14 + Practical Sailor Gelcoat Test 2023 -->
 
@@ -2970,7 +2974,7 @@ class GelcoatMaintenanceCostScenario(BaseModel):
 | Eigenschaft | Wert | Quelle |
 |---|---|---|
 | **Chemischer Name** | Methylethylketonperoxid (MEKP) | CAS 1338-23-4 |
-| **Konzentration (handelsüblich)** | 30-40% aktiver Sauerstoff | — |
+| **Konzentration (handelsüblich)** | 30-40% MEKP (in Dimethylphthalat gelöst); aktiver Sauerstoff ~9% | — |
 | **Flammpunkt** | 82°C | SDS |
 | **Zündtemperatur** | Zersetzung ab 60°C (NICHT thermisch stabil!) | — |
 | **GHS-Klassifizierung** | Ox. Liq. 2, Acute Tox. 4, Eye Dam. 1, STOT SE 3 | GHS/CLP |

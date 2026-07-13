@@ -229,7 +229,9 @@ Für: Großflächige Reinigung, Umweltzonen, Innenräume. Owatrol Deck Cleaner, 
 - Längere Ablüftzeit als Cleaner-205 beachten (Wasseranteil!)
 - Ideal vor Teakdeck-Abdichtung mit Sikaflex 298
 
-> Confidence: `measured`
+> ⚠️ **ZU PRÜFEN (Audit):** Flammpunkt `>60°C` vs. GHS `H226` — H226 (entzündbare Flüssigkeit Kat. 3) gilt gemäß CLP nur für Flammpunkt 23–60 °C; ein Flammpunkt >60 °C schließt H226 aus. Einer der beiden Werte ist falsch (korrekte Richtung nicht zweifelsfrei belegbar).
+
+> Confidence: `estimated — unverifiziert (Audit: Flammpunkt/GHS-Widerspruch)`
 
 ### 2.4 Sika Aktivator-205 (als Reiniger/Aktivator-Kombi)
 
@@ -873,8 +875,8 @@ Silikonentferner sind eine eigene Produktkategorie — sie enthalten spezielle L
 
 | Produkt | Hersteller | Typ | Wirkstoff | Gebinde | Preis | Bemerkung |
 |---------|-----------|-----|-----------|---------|-------|-----------|
-| Star brite Teak Cleaner Step 1 | Star brite | Säure | Phosphorsäure | 946ml | $16 | Vergrauung entfernen |
-| Star brite Teak Brightener Step 2 | Star brite | Lauge | Oxalsäure | 946ml | $16 | Aufhellen/Neutralisieren |
+| Star brite Teak Cleaner Step 1 | Star brite | Lauge | Alkalisch (TSP-Typ) | 946ml | $16 | Vergrauung entfernen |
+| Star brite Teak Brightener Step 2 | Star brite | Säure | Oxalsäure | 946ml | $16 | Aufhellen/Neutralisieren |
 | Te-Ka A+B | Te-Ka (NL) | 2-Kompo | Säure + Lauge | Set 1L | 28 € | Profi-Standard EU |
 | Semco Teak Cleaner | Semco (US) | 2-Kompo | Mildsäure | Set 1qt | $32 | Premium |
 | BoatLife Teak Brite | BoatLife | 1-Kompo | Oxalsäure | 946ml | $18 | Einfach in Anwendung |

@@ -652,8 +652,10 @@ class EngineHoseKit(BaseModel):
 | J20R3 | −40°C bis +100°C | Heizung, Overflow | Textil | EPDM (leichtere Ausführung) |
 | J20R4 | −40°C bis +125°C | Wie R1, aber flexibler | Textil (Aramid) | EPDM |
 
-**SAE J2006 — Small Diameter Coolant Hoses:**
-Für Innendurchmesser < 16mm (Heizungsschläuche, Bypass, Expansion). Gleiche Temperatur-Anforderungen wie J20, aber dünnwandiger.
+**SAE J2006 — Marine Exhaust Hose:**
+SAE J2006 ist die SAE-Norm für **marine Nass-Abgasschläuche** (Wet Exhaust) — vom Motor-Abgaskrümmer bis zum Bord-/Überbord-Durchbruch, dieselbe Anwendung wie ISO 13363. Sie ist KEINE Norm für dünnwandige Kühlwasserschläuche. Kleine Kühlwasserschläuche (< 16mm ID: Heizung, Bypass, Expansion) fallen unter SAE J20 (insbesondere J20R3), nur dünnwandiger ausgeführt.
+
+> ✅ Aufgeloest (Audit): SAE J2006 = „Marine Exhaust Hose" (Nass-Abgas), nicht Kleindurchmesser-Kühlwasser; kleine Kühlwasserschläuche gehören zu SAE J20. Quelle: SAE International, sae.org/standards/j2006.
 
 **ISO 7840:2021 — Kraftstoff- und Ölschläuche (Feuerresistenz):**
 Nicht direkt für Kühlwasser, aber relevant für Abgasschläuche (Wet Exhaust), die Feuerbeständigkeit benötigen. Typ A1 = feuerbeständig, Typ A2 = feuerbeständig + benzinresistent.
@@ -684,7 +686,7 @@ EPDM quillt bei Kontakt mit Mineralöl, Diesel oder Kraftstoff. NIEMALS EPDM-Sch
 
 | Eigenschaft | Wert |
 |------------|------|
-| Temperaturbereich | −60°C bis +200°C (Dauerbetrieb +230°C) |
+| Temperaturbereich | −60°C bis +200°C (kurzzeitig +230°C) |
 | Härte (Shore A) | 50–70 (neu) |
 | Beständigkeit Wasser/Glykol | Ausgezeichnet |
 | Beständigkeit Seewasser | Gut |
@@ -743,7 +745,7 @@ EPDM quillt bei Kontakt mit Mineralöl, Diesel oder Kraftstoff. NIEMALS EPDM-Sch
 **Standard-Markierung (aufgedruckt oder geprägt):**
 
 ```
-GATES 28440 SAE20R1 3/4" 19mm 125°C 1.5BAR MARINE 2024Q2
+GATES 28425 SAE20R1 3/4" 19mm 125°C 1.5BAR MARINE 2024Q2
 |      |      |       |    |     |      |      |       |
 |      |      |       |    |     |      |      |       Produktionsdatum
 |      |      |       |    |     |      |      Marine-Zulassung
@@ -1824,9 +1826,11 @@ Perforierte Bandschellen (Löcher im Band für die Schnecke) SCHNEIDEN in den Sc
 | Schlauchgröße ID | Einzelschelle | Doppelschelle | Anmerkung |
 |------------------|-------------|-------------|-----------|
 | < 19mm (3/4") | Akzeptabel | Empfohlen | ABYC H-27 |
-| 19–32mm (3/4"–1-1/4") | Nur über WL | PFLICHT unter WL | ISO 8846/ABYC |
+| 19–32mm (3/4"–1-1/4") | Nur über WL | PFLICHT unter WL | ISO 9093/ABYC H-27 |
 | > 32mm (> 1-1/4") | NEIN | PFLICHT überall | Mindestens T-Bolt |
 | Wet Exhaust (> 40mm) | NEIN | PFLICHT + T-Bolt | Hochtemperatur + Vibration |
+
+> ✅ Aufgeloest (Audit): Korrekte Norm ist ISO 9093 (Seacocks and through-hull fittings — regelt „hose connections, their fittings and their installation"), nicht ISO 8846 (elektrischer Zündschutz); Doppelschellen unter WL nach ABYC H-27. Quelle: iso.org/standard/75179 — ISO 9093:2020; iso.org/standard/87197 — ISO 8846.
 
 **Erfahrungsbericht — thehulltruth.com, User "ClampNazi", 2021:**
 > "I inspect hundreds of boats a year. #1 cause of sinking at the dock: single perforated hose clamp on a below-waterline connection. It corrodes, the band breaks, the hose slips off. Use double SOLID BAND 316 stainless clamps on EVERYTHING below the waterline."
@@ -1967,11 +1971,11 @@ D = Schlauchdurchmesser (m)
 **Praktisches Beispiel:**
 - Motor-Rohwasser-Schlauch: 80 L/min, 25mm ID, 5 Meter lang
 - v = 2,7 m/s (von obiger Berechnung)
-- ΔP = (0,03 × 5 × 1000 × 2,7²) / (2 × 0,025) = 1,47 bar
+- ΔP = (0,03 × 5 × 1000 × 2,7²) / (2 × 0,025) = 21 870 Pa ≈ 0,22 bar
 
-**Interpretation:** 1,47 bar ist zu hoch! Lösung:
-- Schlauch-Durchmesser vergrößern (32mm) → ΔP fällt auf 0,5 bar ✓
-- ODER: Schlauchlänge verkürzen
+**Interpretation:** 0,22 bar liegt deutlich unter dem Grenzwert von 0,5–1,0 bar → unkritisch, kein Handlungsbedarf. Erst bei deutlich längeren Leitungen, kleineren Durchmessern oder höheren Durchflüssen (v > 4 m/s) steigt der Druckverlust in den kritischen Bereich; dann Durchmesser vergrößern oder Schlauchlänge verkürzen.
+
+> ✅ Aufgeloest (Audit): ΔP ≈ 0,22 bar (21 870 Pa), nicht 1,47 bar — arithmetische Korrektur der Darcy-Weisbach-Rechnung mit den angegebenen Werten; Druckverlust damit unkritisch, die „Lösung" (Durchmesser vergrößern) entfällt für dieses Beispiel. Quelle: Nachrechnung Darcy-Weisbach-Formel.
 
 ### Mindest-Biegeradius nach Schlauch-ID
 
@@ -1987,6 +1991,8 @@ Zu scharfe Biegungen verursachen Knicke und reduzieren Durchfluss.
 | 38 | 160 | 250 | Gates J20 |
 | 45 | 200 | 300 | Gates/Continental |
 | 50 | 250 | 380 | Gates/Continental |
+
+> ⚠️ **ZU PRÜFEN (Audit):** Für ID 38/45/50 mm weichen die Mindest-Biegeradien hier (160/200/250 mm) von ANHANG C („Mindest-Biegeradien nach ID", EPDM-Spalte: 150/180/200 mm) ab — interner Widerspruch. Die kleineren IDs (12–32 mm) stimmen überein. Korrekte Richtung nicht zweifelsfrei; vor Nutzung als Auslegungswert abgleichen.
 
 **Praktischer Check:** Schlauch sollte sich mit beiden Händen bewegen lassen — nicht zu scharf knicken!
 
@@ -2687,7 +2693,7 @@ Material-Preis: Ja, 300–400% teurer pro Meter. ABER: Gesamtkostenbetrachtung �
 | XLPE | Cross-Linked Polyethylene | Vernetztes PE, Innenliner hochwertiger Schläuche |
 | Shore A | Shore A Hardness | Härte-Skala für Elastomere (höher = härter) |
 | SAE J20 | SAE J20 Standard | Society of Automotive Engineers — Kühlwasserschlauch-Norm |
-| SAE J2006 | SAE J2006 Standard | SAE-Norm für dünnwandige Kühlwasserschläuche (<16mm ID) |
+| SAE J2006 | SAE J2006 Standard | SAE-Norm für marine Nass-Abgasschläuche (Wet Exhaust), nicht Kühlwasser |
 | ISO 7840 | ISO 7840 Standard | Feuerbeständigkeits-Norm für Kraftstoff-/Ölschläuche |
 | ISO 13363 | ISO 13363 Standard | Norm für marine Nass-Abgas-Schläuche |
 | Verstärkung | Reinforcement | Einlage aus Textil, Draht oder Aramid im Schlauch |
@@ -3206,6 +3212,8 @@ Die EU-Richtlinie 2013/53/EU (Recreational Craft Directive) schreibt vor, dass a
 | **Temperatur-Beständigkeit** | SAE J20 | Minimum J20R1 (125°C) oder J20R2 (100°C) je nach Position |
 | **Dokumentation** | ISO 14731 | Technische Datenblätter müssen an Bord verfügbar sein |
 
+> ⚠️ **ZU PRÜFEN (Audit):** Zwei Normnummern in dieser Tabelle sind falsch zugeordnet. **ISO 6162** regelt hydraulische Flanschverbindungen („Hydraulic fluid power — flange connections"), NICHT die Dichtheitsprüfung von Kühl-/Abgasschläuchen. **ISO 14731** ist „Welding coordination — Tasks and responsibilities" (Schweißaufsicht) und betrifft keine Datenblatt-Dokumentation an Bord. Dieselbe ISO-6162-Fehlzuordnung erscheint auch unter „Werft-Inspektion" (Dichtheitsprüfung/Helium-Leck-Test) und in der Burst-Test-Tabelle. (Quellen: iso.org/standard/68567 — ISO 6162; iso.org/standard/68893 — ISO 14731.)
+
 **Praktische Implikationen für Bootseigner:**
 - OEM-Schläuche sind typischerweise CE-konform zertifiziert
 - Aftermarket-Schläuche (Gates, Continental) sind CE-konform wenn EU-sourced
@@ -3216,7 +3224,7 @@ Die EU-Richtlinie 2013/53/EU (Recreational Craft Directive) schreibt vor, dass a
 
 ABYC ist der amerikanische Standard-Setzungsorganistaion. Viele Versicherer und Werften weltweit nutzen ABYC.
 
-**ABYC H-27 — Marine Diesel Engine Installation**
+**ABYC H-27 — Seacocks, Thru-Hull Fittings, and Drain Plugs**
 
 Kritische Anforderungen an Kühlwasserschläuche:
 
@@ -3232,6 +3240,8 @@ Kritische Anforderungen an Kühlwasserschläuche:
 
 **ABYC H-28 — Fuel Systems**
 Nicht direkt für Kühlwasser, aber: Kraftstoff-Schläuche müssen von Kühlwasser-Schläuchen isoliert sein (mind. 2 Zoll = 5cm Abstand).
+
+> ⚠️ **ZU PRÜFEN (Audit):** Norm-Nummer prüfen — die ABYC-Kraftstoff-Standards sind H-24 (Gasoline Fuel Systems), H-25 (Portable Fuel Systems) und H-33 (Diesel Fuel Systems). Ein ABYC „H-28 — Fuel Systems" ist nicht belegt. (Quelle: abycinc.org Standards-Liste.)
 
 ### Lloyd's Register & DNV-GL Standards
 

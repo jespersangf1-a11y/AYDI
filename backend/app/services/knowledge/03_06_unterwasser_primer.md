@@ -2252,7 +2252,7 @@ GFK nach Osmose-Reparatur muss KOMPLETT trocken sein bevor Primer aufgetragen wi
 | 26 | **ISO 12944** | Korrosionsschutz von Stahlbauten durch Beschichtungssysteme. Glossar-Referenz: ISO-12944 |
 | 27 | **NORSOK M-501** | Norwegischer Offshore-Standard für Beschichtungen. Glossar-Referenz: NORSOK |
 | 28 | **SSPC** | Society for Protective Coatings — US-Standards. Glossar-Referenz: SSPC |
-| 29 | **C5-M** | Höchste Korrosivitätsklasse (Marine/Offshore) nach ISO 12944. Glossar-Referenz: C5-M |
+| 29 | **C5-M** | Sehr hohe Korrosivitätsklasse (Marine) nach ISO 12944; höchste Klasse ist CX (extrem/Offshore, seit ISO 12944-2:2017 — ersetzt die frühere Bezeichnung C5-M). Glossar-Referenz: C5-M |
 | 30 | **Glasflocken** | Dünne Glasplättchen in Epoxid-Matrix für maximale Barriere. Glossar-Referenz: Glasflocken |
 | 31 | **PAK** | Polyzyklische Aromatische Kohlenwasserstoffe — in Kohleteer, gesundheitsrelevant. Glossar-Referenz: PAK |
 | 32 | **BPR** | Biozid-Produkte-Verordnung EU 528/2012. Glossar-Referenz: BPR |

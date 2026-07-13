@@ -1,3 +1,4 @@
+import logging
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -14,6 +15,8 @@ from app.services.analysis.ergonomics import run_ergonomics_analysis
 from app.services.analysis.volume_storage import run_volume_storage_analysis
 from app.services.analysis.emotional import run_emotional_analysis
 from app.services.analysis.market import run_market_analysis
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["quick-analysis"])
 
@@ -198,10 +201,32 @@ async def create_quick_analysis(
 
             analysis_result = module_info["fn"](
                 zones, passages, specs.boat_class,
+                data_source="estimated",
                 **extra_kwargs,
             )
 
-            score = float(analysis_result.get("overall_score", 50.0))
+            # Honour the module skip contract: a module that cannot produce a
+            # reliable result returns {"available": False, ...}. Never turn that
+            # (or a missing score) into a fabricated 50/100 "estimated" result
+            # (Reliability rule: "never present uncertain results as facts").
+            if analysis_result.get("available") is False:
+                module_results[module_name] = {
+                    "available": False,
+                    "reason": analysis_result.get("reason", "Analyse nicht m\u00f6glich."),
+                }
+                continue
+            if "overall_score" not in analysis_result:
+                logger.warning(
+                    "Quick-analysis module %s returned no overall_score; marking unavailable.",
+                    module_name,
+                )
+                module_results[module_name] = {
+                    "available": False,
+                    "reason": "Kein Ergebnis (unerwartetes Modul-Format).",
+                }
+                continue
+
+            score = float(analysis_result["overall_score"])
             available_scores.append(score)
 
             module_entry: dict = {
@@ -220,18 +245,11 @@ async def create_quick_analysis(
             module_results[module_name] = module_entry
 
         except Exception:
+            logger.exception("Quick-analysis module %s failed", module_name)
             module_results[module_name] = {
-                "available": True,
-                "score": 50.0,
-                "confidence": "estimated",
-                "key_findings": [
-                    {
-                        "finding": "Analyse konnte nicht vollst\u00e4ndig durchgef\u00fchrt werden.",
-                        "severity": "info",
-                    }
-                ],
+                "available": False,
+                "reason": "Analyse fehlgeschlagen.",
             }
-            available_scores.append(50.0)
 
     # 3. Mark Level 2-only modules as unavailable
     for module_name, reason in LEVEL2_ONLY_MODULES.items():

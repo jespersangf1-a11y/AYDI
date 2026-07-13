@@ -326,8 +326,8 @@ def test_materials_config_overrides():
 
 
 def test_materials_empty_input():
-    """No material assignments -> degraded scores, no crash."""
+    """No material assignments -> module reports unavailable (no fabricated score)."""
     result = run_materials_analysis([], [], "cruising_sail", materials=[])
-    assert 0 <= result["overall_score"] <= 100
-    assert len(result["sub_scores"]) == 8
-    assert len(result["warnings"]) > 0
+    assert result["available"] is False
+    assert "reason" in result
+    assert "overall_score" not in result

@@ -1586,7 +1586,7 @@ Wassereinbruch festgestellt?
 
 **Thread: "Seacock Replacement DIY Guide" (2023)**
 - 89 Antworten, detaillierte DIY-Anleitungen
-- Konsens: Sikaflex 291 (NICHT 292i für Borddurchlässe, zu starr)
+- Konsens: Sikaflex 291 für Composite-/Kunststoff-Flansche (Marelon/TruDesign) — elastischer (Shore A 40, Dehnung ~700%); 292i (steifer/fester, Shore A ~50, strukturell) für starre Bronze-Flansche üblich, wie an Blauwasseryachten
 - User "NautiCat": 3M 5200 bereut — Fitting nie wieder rausbekommen
 - User "Pacific Bliss": Butyl-Band als Rumpf-Flansch-Dichtung funktioniert NICHT
 (Confidence: documented)
@@ -1620,7 +1620,7 @@ Wassereinbruch festgestellt?
 
 **Thread: "Sikaflex oder was anderes für Borddurchlässe?" (2024)**
 - 38 Antworten
-- Klarer Konsens: Sikaflex 291 (NICHT 292i, zu steif) oder 3M 4200
+- Klarer Konsens: Sikaflex 291 oder 3M 4200 für Composite-/Kunststoff-Flansche (elastisch); das steifere/festere 292i bleibt starren Bronze-Flanschen (Blauwasseryachten) vorbehalten
 - Mehrere Berichte über Silikon-Versagen (haftet nicht auf GFK)
 - Soudal Fix All als günstige Alternative mit guten Berichten
 (Confidence: documented)

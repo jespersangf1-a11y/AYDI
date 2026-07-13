@@ -79,10 +79,10 @@ Hartantifouling ist die richtige Wahl in folgenden Situationen:
 | Kupfer(I)-oxid (Cu₂O) | Cu₂O | Breitband-Biozid, tötet Algen + Seepocken + Muscheln | 20–75% | Rot/Braun | Trilux 33, Hard Racing, Vivid |
 | Kupferthiocyanat (CuSCN) | CuSCN | Wie Cu₂O, aber heller → ermöglicht helle Farben (Weiß, Blau) | ~30% Cu-Äquivalent | Variabel | Trilux, Vivid Free, VC 17m Extra |
 | Zineb | Zineb | Pilz-/Algenwirkung, Cu-frei | 0% | Gelblich | Micron 350 (SPC), manche Hart-AF |
-| Econea (Tralopyril) | C₉H₃Cl₃FNO | Breitband, Cu-frei, EU BPR-zugelassen | 0% | — | Hempel Hard Racing Xtra |
+| Econea (Tralopyril) | C₁₂H₅BrClF₃N₂ | Breitband, Cu-frei, EU BPR-zugelassen | 0% | — | Hempel Hard Racing Xtra |
 | DCOIT (SeaNine 211) | C₁₁H₁₇Cl₂NOS | Booster-Biozid, oft in Kombination | 0% | — | Diverse (als Zusatz) |
 | Zinkpyrithion (ZPT) | Zn(C₅H₄NOS)₂ | Anti-Algen, Booster | 0% | — | Diverse (als Zusatz) |
-| Tolylfluanid | C₁₀H₁₃Cl₂FN₂O₂S | Fungizid/Algizid, EU-Verbot diskutiert | 0% | — | Ältere Produkte |
+| Tolylfluanid | C₁₀H₁₃Cl₂FN₂O₂S₂ | Fungizid/Algizid, EU-Verbot diskutiert | 0% | — | Ältere Produkte |
 
 > → siehe Glossar Kap. 18: Cu₂O, CuSCN, Econea, Leaching
 > Confidence: `measured`
@@ -101,7 +101,8 @@ Hartantifoulings unterliegen denselben Biozid-Regulierungen wie SPC (EU BPR 528/
 | Dänemark (Binnengewässer) | Miljøstyrelsen | Cu₂O-Verbot für <25m in Ostsee |
 | Bodensee | IGKB | Biozid-Verbot → kein Hart-AF mit Biozid erlaubt |
 
-> Confidence: `measured`
+> ⚠️ **ZU PRÜFEN (Audit):** Die Dänemark-Zeile („Cu₂O-Verbot für <25m in Ostsee") widerspricht Anhang Y.1 („Dänemark: Cu₂O erlaubt mit BPR") und ist in sich inkonsistent (Kopf „Binnengewässer" vs. Inhalt „Ostsee"). Auch die schwedische „<12m"-Längengrenze ist unbelegt (KemI unterscheidet Ost-/Westküste, keine klare Längengrenze). Länderspezifische Kupfer-Verbote hier nicht verifiziert.
+> Confidence: `estimated — unverifiziert` (länderspezifische Kupfer-Verbote; die Rahmen-Aussagen EU-BPR/IMO-AFS/VOC-Richtlinie/Bodensee bleiben belegt)
 
 ---
 

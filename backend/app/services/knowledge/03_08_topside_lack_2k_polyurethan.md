@@ -154,7 +154,7 @@ Die Yacht-Industrie hat sich seit den 1980er Jahren auf 2K-PU als Standard-Topsi
 | **Hauptgefahr** | Isocyanat-Aerosole und -Dampf verursachen Berufsasthma |
 | **Sensibilisierung** | Einmalige Exposition kann lebenslange Allergie auslösen |
 | **GHS-Einstufung** | H334 (Sensibilisierung Atemwege), H317 (Hautsensibilisierung) |
-| **MAK-Wert** | HDI: 0.005 ppm (5 µg/m³) — extrem niedrig |
+| **MAK-Wert** | HDI: 0.005 ppm (≈ 0.035 mg/m³ = 35 µg/m³) — extrem niedrig |
 | **Latenzzeit** | Symptome können 4–12 Stunden nach Exposition auftreten |
 | **Irreversibilität** | Isocyanat-induziertes Asthma ist NICHT reversibel |
 
@@ -662,7 +662,8 @@ Die Yacht-Industrie hat sich seit den 1980er Jahren auf 2K-PU als Standard-Topsi
 | **Ergiebigkeit** | 10.5 m²/l bei 35 µm DFT |
 | **Preis (DE)** | ~€75–90 / 750ml Kit (Basis + Converter) |
 
-> Confidence: `measured`
+> ⚠️ **ZU PRÜFEN (Audit):** Preis-Widerspruch — Haupttext „~€75–90 / 750ml Kit" (≈ €100–120/l) steht im Konflikt zu Anhang A (Produktvergleichsmatrix: „75–95 €/l") und FAQ 13 („€55–70/l"). Einheit (750ml-Kit vs. Liter) und Zahlenbereiche nicht zweifelsfrei — vor Freigabe verifizieren.
+> Confidence: `measured` (technische Daten) · Preis: `estimated — unverifiziert`
 
 ### 17.2 International Perfection — Verdünner-Auswahl
 
@@ -760,7 +761,8 @@ Die Yacht-Industrie hat sich seit den 1980er Jahren auf 2K-PU als Standard-Topsi
 | **Preis (DE)** | ~€120–150 / Liter Kit |
 | **Besonderheit** | Aus Industriemarine-Sparte — extrem robust, große Topfzeit |
 
-> Confidence: `measured`
+> ⚠️ **ZU PRÜFEN (Audit):** Preis-Widerspruch — Haupttext „~€120–150 / Liter Kit" steht im Konflikt zu Anhang A (Produktvergleichsmatrix: „90–110 €/l"). Differenz nicht zweifelsfrei — vor Freigabe verifizieren.
+> Confidence: `measured` (technische Daten) · Preis: `estimated — unverifiziert`
 
 ### 20.2 Hempathane — Verarbeitung Rolle+Tip
 
@@ -837,7 +839,7 @@ Die Yacht-Industrie hat sich seit den 1980er Jahren auf 2K-PU als Standard-Topsi
 | **Glanz** | >80 GU bei 60° |
 | **Topfzeit** | 4h bei 20°C |
 | **Recoat** | 8h–7 Tage |
-| **Temperaturbereich** | 0–40°C (breitester Bereich aller getesteten Produkte!) |
+| **Temperaturbereich** | 5–40°C Substrat (Standard-Variante lt. Jotun-Datenblatt, Applikation ab min. 5°C). Für tiefere Temperaturen separate Winter-Variante *Hardtop XPF* |
 | **Besonderheit** | Aus Industriemarine, extrem robust, riesiger Temperaturbereich |
 | **Yacht-Eignung** | Gut als robuster Topcoat, Glanz unter Awlgrip/Alexseal |
 
@@ -2161,7 +2163,7 @@ Roll & Tip ist die bevorzugte DIY-Applikationsmethode für 2K-PU-Topside-Lacke. 
 | **>15°C** | Optimal — alle Produkte funktionieren |
 | **10–15°C** | Möglich mit langsamen Härtern/Verdünnern |
 | **5–10°C** | Nur Jotun Hardtop, Hempathane (mit Vorsicht), Heizzelt |
-| **0–5°C** | Nur Jotun Hardtop XP (einziges Produkt!) |
+| **0–5°C** | Nur Jotun Hardtop XPF (Winter-Variante); Hardtop AX härtet lt. Datenblatt ebenfalls bis 0°C Substrat |
 | **<0°C** | NICHT möglich — Isocyanat-Reaktion stoppt |
 
 > Confidence: `measured`

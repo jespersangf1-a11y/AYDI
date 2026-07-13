@@ -1916,6 +1916,8 @@ Der Junker-Test (VDI 2230, NAS 3350) hat gezeigt, dass Federringe:
 
 **Reibwert-Annahmen:** Geschmiert (Tef-Gel, Anti-Seize): μ = 0,10–0,12. Trocken: μ = 0,14–0,20.
 
+> ⚠️ **ZU PRÜFEN (Audit):** Für **M8 A4-80 (geschmiert)** nennt dieses Dokument uneinheitliche Sollmomente: **10 Nm** (diese Tabelle & ANHANG A.2, beruhend auf konservativer Klemmkraft 10,5 kN ≈ 48 % Streckgrenze), **20 Nm** (Klampe / Seeventil-Flansch) und **25 Nm** (Winsch-Basis & Sandwich-Montage, Abschn. 30.5). Die eigene Berechnungsfunktion (ANHANG A.5) liefert bei Standard-Ausnutzung 90 % Rp0,2 und μ = 0,10 ≈ 21 Nm. Publizierte Referenzwerte für M8 A4-80 liegen je nach Ziel-Vorspannung (65–75 % Streckgrenze) und Reibwert bei ≈ 19 Nm (µ = 0,10) bis ≈ 34 Nm (µ = 0,30) [BSSA / TR Fastenings]. Der korrekte Wert ist somit **vorspannungs- und reibwertabhängig** und nicht zweifelsfrei auf eine Zahl festzulegen — ein einheitlicher Referenzwert (samt Ausnutzungsgrad) ist ingenieurtechnisch festzulegen. Zahlen bis dahin **unverändert**.
+
 ### 29.2 Wichtige Anmerkungen
 
 1. **IMMER geschmiert anziehen!** Trockenes Anziehen von Edelstahl → Galling-Risiko PLUS unberechenbare Klemmkraft
@@ -2002,7 +2004,7 @@ Sandwich-Konstruktion (außen GFK + innen GFK mit Balsa- oder Schaum-Kern) ist h
    - Wartezeit: 24h vor Montage
 
 5. **Drehmoment reduzieren:**
-   - Standard-Drehmoment für M8 A4-80: 25 Nm
+   - Standard-Drehmoment für M8 A4-80: 25 Nm — ⚠️ **ZU PRÜFEN (Audit):** weicht von der Referenztabelle 29.1 (dort 10 Nm geschmiert) ab; der M8-A4-80-Sollwert ist vorspannungsabhängig, siehe Audit-Hinweis in Abschn. 29.1. Zahl unverändert.
    - In Sandwich mit Balsa: **nur 15–18 Nm** verwenden
    - Mehr nicht! Kern-Kompression reversibel bis 20 MPa, danach Schaden
 
@@ -3000,12 +3002,12 @@ Geschmiert (Tef-Gel, Öl): niedrigerer Reibwert μ → bei gleichem Drehmoment H
 | Bedingung | Korrekturfaktor | Anmerkung |
 |-----------|----------------|-----------|
 | **Geschmiert (Tef-Gel, Anti-Seize)** | 1,0 (Referenz) | Standard |
-| **Trocken** | 0,70 (Drehmoment × 0,70 für gleiche Klemmkraft) | ⚠️ Galling-Risiko! |
-| **Nass (Salzwasser)** | 0,85 | Höhere Reibung als geschmiert |
-| **Loctite 243 (blau)** | 0,90 | Leicht erhöhte Reibung |
-| **Loctite 263 (rot)** | 0,85 | Höhere Reibung |
-| **Cadmium-beschichtet** | 1,15 | Niedrigere Reibung |
-| **Galvanisch verzinkt** | 0,95 | Ähnlich geschmiert |
+| **Trocken** | 1,40 (Drehmoment × 1,40 für gleiche Klemmkraft) | Höhere Reibung → mehr Drehmoment für gleiche Klemmkraft. ⚠️ Galling-Risiko! |
+| **Nass (Salzwasser)** | 1,15 | Höhere Reibung als geschmiert |
+| **Loctite 243 (blau)** | 1,10 | Leicht erhöhte Reibung |
+| **Loctite 263 (rot)** | 1,15 | Höhere Reibung |
+| **Cadmium-beschichtet** | 0,85 | Niedrigere Reibung |
+| **Galvanisch verzinkt** | 1,05 | Ähnlich geschmiert |
 
 ### A.5 Python-Berechnungsfunktion
 

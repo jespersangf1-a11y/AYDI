@@ -40,12 +40,12 @@ def _make_balanced_items(total: float = 320_000.0) -> list[dict]:
 
 
 def test_empty_cost_items():
-    """No cost items provided -> overall score 50, info warning, no crash."""
+    """No cost items provided -> module reports unavailable (no fabricated score)."""
     result = run_cost_analysis([], [], "cruising_sail", cost_items=None)
     assert result["module"] == "cost"
-    assert result["overall_score"] == 50.0
-    assert all(v == 50.0 for v in result["sub_scores"].values())
-    assert any(w["severity"] == "info" for w in result["warnings"])
+    assert result["available"] is False
+    assert "reason" in result
+    assert "overall_score" not in result
 
 
 # ---------------------------------------------------------------------------

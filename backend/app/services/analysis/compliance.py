@@ -31,6 +31,18 @@ except ImportError:
     STABILITY_DATABASE = {}
     GAS_INSTALLATION_DATABASE = {}
 
+# Import central knowledge retrieval for markdown compliance knowledge
+try:
+    from app.services.knowledge.knowledge_retrieval import (
+        get_knowledge_for_compliance as _get_md_compliance_knowledge,
+        MARKDOWN_LOADER_AVAILABLE as _MD_AVAILABLE,
+    )
+except ImportError:
+    _MD_AVAILABLE = False
+
+    def _get_md_compliance_knowledge(*a, **kw):
+        return {}
+
 BOAT_CLASS_DEFAULTS = {
     "small_sail": {
         "min_escape_width_mm": 600,
@@ -308,7 +320,7 @@ BOAT_CLASS_DEFAULTS = {
             "ISO_11812": "2001",
         },
         "weights": {
-            "escape_routes": 0.21,
+            "escape_routes": 0.23,
             "fire_safety": 0.19,
             "stability": 0.09,
             "railing": 0.09,
@@ -1310,7 +1322,13 @@ def analyze_companionway_sill(
     warnings: list[dict] = []
 
     ce_category = config.get("ce_category", "A")
-    min_sill = config.get("companionway_sill_mm", _CE_SILL_HEIGHT_MM.get(ce_category, 300))
+    # A per-class override may only be STRICTER than the CE-category minimum,
+    # never weaker — otherwise a boat below the CE requirement would falsely
+    # pass (e.g. catamaran_sail Cat A must still meet 300 mm, not 250).
+    min_sill = max(
+        config.get("companionway_sill_mm", 0),
+        _CE_SILL_HEIGHT_MM.get(ce_category, 300),
+    )
 
     if min_sill <= 0:
         return 100.0, warnings, {"sills_checked": 0, "sills_compliant": 0}
@@ -1535,6 +1553,36 @@ def run_compliance_analysis(
 
     all_warnings.sort(key=lambda w: SEVERITY_ORDER.get(w.get("severity", "info"), 2))
 
+    # =========================================================================
+    # MARKDOWN KNOWLEDGE ENRICHMENT — compliance/safety data from 72 files
+    # =========================================================================
+
+    knowledge_enrichment = {}
+    if _MD_AVAILABLE:
+        try:
+            md_compliance = _get_md_compliance_knowledge(
+                propulsion=config.get("propulsion", "sail"),
+                length_m=config.get("length_m", 12.0),
+            )
+            md_compliance_data = md_compliance.get("markdown_compliance_data", [])
+            knowledge_enrichment["markdown_compliance_data"] = md_compliance_data
+
+            # Add compliance-relevant FAQ items as info warnings
+            for cd in md_compliance_data[:10]:
+                for faq in cd.get("compliance_faq", [])[:1]:
+                    all_warnings.append({
+                        "code": "MD_COMPLIANCE_FAQ",
+                        "severity": "info",
+                        "message": (
+                            f"[Wissensdatenbank: {cd.get('title', '')}] "
+                            f"{faq.get('q', '')}"
+                        ),
+                        "suggestion": faq.get("a", "")[:200],
+                        "source": f"markdown:{cd.get('slug', '')}",
+                    })
+        except Exception:
+            logger.exception("Error enriching compliance with markdown knowledge")
+
     return {
         "module": "compliance",
         "overall_score": round(overall, 1),
@@ -1545,4 +1593,5 @@ def run_compliance_analysis(
         "config_used": config,
         "confidence": data_source,
         "confidence_note": "Basiert auf geschätzten Werten aus öffentlichen Spezifikationen." if data_source == "estimated" else None,
+        "knowledge_enrichment": knowledge_enrichment if knowledge_enrichment else None,
     }

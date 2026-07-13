@@ -492,7 +492,7 @@ Salzgehalt (Salinität) beeinflusst die Leitfähigkeit des Wassers und damit die
 - boote-forum.de (Deutschsprache, Mittelmeer + Baltik focus)
 
 **Forschungsartikel und Standards (wissenschaftlich):**
-- ASTM G71: Conducting Cyclic Polarization Measurements (Labor-Corrosion Testing)
+- ASTM G71: Conducting and Evaluating Galvanic Corrosion Tests in Electrolytes (Labor-Corrosion Testing)
 - ISO 12944: Paints and Coatings for Protection (Marine Coating Specifications)
 - NACE SP0169: Control of External Corrosion on Underground Metallic Piping Systems (adaptierbar auf Schiffe)
 
@@ -3040,7 +3040,7 @@ Salzwasser-Standard: Zink 5kg = 10–12 Monate (mittlerer Verbrauch), 6–8 Mona
 | Graphit-Packing | Graphite Packing | Dichtungsmaterial in Wellenlagerungen (Graphit ist extrem edel! Galvanische Gefahr) |
 | Potentialverlauf | Potential Gradient | Potentialdifferenz-Verteilung längs einer Struktur (Messung mit Referenzelektrode) |
 | Referenzelektrode | Reference Electrode | Vergleichselektrode (typ. Cu/CuSO₄) für Potentialmessung gegen Standard |
-| SCE | Saturated Calomel Electrode | Standardreferenzelektrode für Meerwasser-Messungen (−0,24V vs. SHE) |
+| SCE | Saturated Calomel Electrode | Standardreferenzelektrode für Meerwasser-Messungen (+0,24V vs. SHE) |
 | Schenkelbindung | Padeye Bonding | Verbindung von Festigkeitsknoten (Schäkel) zum Bonding-System |
 | Isolierplatte | Isolation Washer / Bearing Isolator | Plastik-/GFK-Scheibe zwischen Metallen zur galvanischen Trennung |
 | Tef-Gel | (Proprietary) | Hochleistungs-Schmiermittel + Isolant von Lanocote (Standard für Marine-Anwendungen) |
@@ -3056,7 +3056,7 @@ Salzwasser-Standard: Zink 5kg = 10–12 Monate (mittlerer Verbrauch), 6–8 Mona
 | Spaltkorrosion-Anfälligkeit | Crevice Corrosion Susceptibility | Material-Eigenschaft, in Spalten zu korrodieren (316L besser als 304) |
 | DZR-Test | Dezincification Resistant Test | ASTM-Verfahren zum Prüfen von Messinglegierungen auf Dezinkifizierungsfestigkeit |
 | Schutzpotential | Protection Potential | Elektrisches Potential, bei dem ein Metall kathodisch geschützt ist (typ. −800 bis −900 mV für Stahl) |
-| Ag/AgCl | Silver/Silver Chloride | Meerwasser-Referenzelektrode, Standardpotential −0,222V vs. SHE |
+| Ag/AgCl | Silver/Silver Chloride | Meerwasser-Referenzelektrode, Standardpotential +0,222V vs. SHE |
 | SHE | Standard Hydrogen Electrode | Absolute Referenz für Elektrodenpotentiale (0,000V per Definition) |
 | Cu/CuSO₄ | Copper/Copper Sulfate Electrode | Boden-/Süßwasser-Referenzelektrode, +0,318V vs. SHE |
 | Polarisation | Polarization | Potential-Verschiebung eines Metalls durch Stromfluss (kathodisch = edler, anodisch = unedler) |
@@ -3657,7 +3657,7 @@ Warnung: Ein Boot mit falschem Anodentyp verbrauchte Anoden 3× schneller als er
 
 **Lehre:** Charter-Operatoren MÜSSEN Alu-Boot-Spezifika verstehen. Falsche Anoden sind wirtschaftlich katastrophal. Einkaufs-Druck ("Alu-Anoden sind €30 günstiger als Zink") darf nicht zu technischer Unkenntnis führen.
 
-**Regulatory-Punkt:** ISO 12217 (Stabilität für Segelboote) erwähnt Anodentyp nicht. ISO 9094 (Thru-Hull-Komponenten) ebenso nicht — das ist eine **AYDI-Knowledge-Lücke**, die gefüllt werden muss!
+**Regulatory-Punkt:** ISO 12217 (Stabilität für Segelboote) erwähnt Anodentyp nicht. ISO 9093 (Thru-Hull-Komponenten) ebenso nicht — das ist eine **AYDI-Knowledge-Lücke**, die gefüllt werden muss!
 
 **Confidence:** documented (Lloyd's Surveyor Report, Reparaturrechnung)
 

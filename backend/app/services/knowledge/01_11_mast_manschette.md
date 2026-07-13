@@ -3082,7 +3082,9 @@ START → Mast-Hersteller bekannt?
 | C456 | 580 | Medium (91200) | 610 | Deckskragen +30 | 17–21m, unteres Ende von Large ebenfalls OK |
 | C504 | 640 | Large (91400) | 670 | Deckskragen +30 | 20–25m |
 
-(Confidence: estimated — Berechnet aus Seldén Sektionsdaten, SSI-Größentabelle)
+> ⚠️ **ZU PRÜFEN (Audit):** Sämtliche Zuordnungen in dieser Tabelle unterschreiten den SSI-Mindest-Mastumfang aus ANHANG R (Small ≥445mm, Medium ≥584mm, Large ≥762mm — per SSI-Datenblatt bestätigt: 17,5"/23"/30" Mindest-Mastumfang). Beispiele: C253 (320mm)→Small, C334 (425mm)→Small (Mindest 445mm), C377 (480mm)→Medium (Mindest 584mm), C504 (640mm)→Large (Mindest 762mm). Zuordnung unterschreitet SSI-Mindest-Mastumfang aus ANHANG R — Größe am SSI-Datenblatt für den konkreten Mastumfang verifizieren. Für Mastumfänge <445mm ist KEINE SSI-Universalgröße spezifiziert (DIY-/EPDM-Lösung prüfen). Richtige Größe nicht zweifelsfrei aus ANHANG R ableitbar → nicht automatisch korrigiert.
+
+(Confidence: estimated — unverifiziert, widersprüchlich zu ANHANG R (siehe Audit-Hinweis); ursprünglich berechnet aus Seldén Sektionsdaten, SSI-Größentabelle)
 
 ### AI.2 Sparcraft → Passende Universal-Manschetten
 
@@ -3104,7 +3106,9 @@ START → Mast-Hersteller bekannt?
 | FM250 | 450 | Small/Medium | 480 |
 | FM285 | 510 | Medium (91200) | 540 |
 
-(Confidence: estimated — Berechnet aus Sparcraft Katalog, SSI-Größentabelle)
+> ⚠️ **ZU PRÜFEN (Audit):** Die meisten Zuordnungen unterschreiten den SSI-Mindest-Mastumfang aus ANHANG R (Small ≥445mm, Medium ≥584mm, Large ≥762mm). Betroffen u.a.: S150 (270mm)→Small (175mm unter Mindest), S255 (460mm)→Medium (Mindest 584mm), S370 (670mm)/S400 (725mm)→Large (Mindest 762mm), FM285 (510mm)→Medium. NICHT betroffen: S340 (615mm)→Medium (≥584mm OK). FM250 (450mm): nur Small (≥445mm) zulässig, Medium unterschreitet. Zuordnung unterschreitet SSI-Mindest-Mastumfang aus ANHANG R — Größe am SSI-Datenblatt für den konkreten Mastumfang verifizieren. Für <445mm keine SSI-Universalgröße spezifiziert. Richtige Größe nicht zweifelsfrei aus ANHANG R ableitbar → nicht automatisch korrigiert.
+
+(Confidence: estimated — unverifiziert, widersprüchlich zu ANHANG R (siehe Audit-Hinweis); ursprünglich berechnet aus Sparcraft Katalog, SSI-Größentabelle)
 
 ### AI.3 Z-Spars → Passende Universal-Manschetten
 
@@ -3117,7 +3121,9 @@ START → Mast-Hersteller bekannt?
 | Z260 | 475 | Medium (91200) | 505 |
 | Z300 | 550 | Medium (91200) | 580 |
 
-(Confidence: estimated — Berechnet aus Z-Spars Sektions-PDF)
+> ⚠️ **ZU PRÜFEN (Audit):** Alle Zuordnungen unterschreiten den SSI-Mindest-Mastumfang aus ANHANG R (Small ≥445mm, Medium ≥584mm): Z145 (260mm)/Z170 (310mm)/Z190 (350mm)/Z230 (420mm)→Small (Mindest 445mm), Z260 (475mm)/Z300 (550mm)→Medium (Mindest 584mm). Zuordnung unterschreitet SSI-Mindest-Mastumfang aus ANHANG R — Größe am SSI-Datenblatt für den konkreten Mastumfang verifizieren. Für <445mm keine SSI-Universalgröße spezifiziert. Richtige Größe nicht zweifelsfrei aus ANHANG R ableitbar → nicht automatisch korrigiert.
+
+(Confidence: estimated — unverifiziert, widersprüchlich zu ANHANG R (siehe Audit-Hinweis); ursprünglich berechnet aus Z-Spars Sektions-PDF)
 
 ---
 

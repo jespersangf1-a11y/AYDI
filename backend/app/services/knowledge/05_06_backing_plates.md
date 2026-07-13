@@ -624,6 +624,8 @@ Output: Spannungsverteilung (MPa), Verformung (mm), Sicherheitsfaktor
 - Backing Plate-Größe: 250×250 mm G10 12,7 mm
 - FEA-Ergebnis: Max. Spannung = 45 MPa (G10-Festigkeit ca. 310 MPa) → Sicherheit ✓
 
+> ⚠️ **ZU PRÜFEN (Audit):** Backing-Plate-Dicke für Winsch #56 hier G10 12,7 mm vs. G10 19 mm in den Dimensionierungstabellen (§4.2.1, Anhang B.1, Anhang H.4) — Widerspruch, empfohlener Standard für #56 ist 19 mm.
+
 **Praxis:** DIY-Eigner brauchen FEA selten. Dimensionierung nach Tabellen reicht für 95 % der Fälle.
 
 ### 3.7 Praxis-Beispiele: Nachrüstung real boats
@@ -2078,7 +2080,7 @@ Aber: Der Kern (Balsa oder Schaumstoff) hat KEINE Druckfestigkeit für Punktlast
 | EN 573-3 | Aluminium and aluminium alloys — Chemical composition and form of products — Part 3: Chemical composition and form of wrought products | 2013 | 5083-H321 Legierung Spezifikation | DIN/CEN |
 | EN 755 | Aluminium and aluminium alloys — Extruded rod/bar, tube and profiles — Specifications | 2008 | 5083 Profil-Spezifikationen | DIN/CEN |
 | BS 1088 | Marine plywood — Specification | 2003 (Rev. 2015) | Holz-Backing Plates für traditionelle Boote (speziel Marine-Sperrholz) | BSI (UK) |
-| EN ISO 1049-1 | Non-destructive testing — Penetrant testing — Part 1: General principles | 2016 | Inspektions-Verfahren für Backing Plates (Rissnachweis) | ISO/CEN |
+| EN ISO 3452-1 | Non-destructive testing — Penetrant testing — Part 1: General principles | 2013 (Rev. 2021) | Inspektions-Verfahren für Backing Plates (Rissnachweis) | ISO/CEN |
 | 2013/53/EU | Richtlinie über die Inverkehrbringung von Sportbooten | 2013 | CE-Kennzeichnung: Sportboote müssen ISO-Anforderungen erfüllen | EU Officiel Journal |
 
 **Verwendung:**

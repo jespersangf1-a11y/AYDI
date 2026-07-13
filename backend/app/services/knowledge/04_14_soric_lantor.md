@@ -684,7 +684,7 @@ Standard-Soric ist ein **ausgezeichneter Isolator**. Keine zusätzlichen Schutzm
 | Harzaufnahme | ~0,8 | 1,0 | ~1,2 | ~1,6 | ~2,0 | ~2,4 | ~4,0 | kg/m² |
 | Druckfest. (10%) | 8,0 | 8,0 | 8,0 | 8,0 | 8,0 | 8,0 | 8,0 | MPa |
 | Scherfestigkeit | 3,5 | 3,5 | 3,5 | 3,5 | 3,5 | 3,5 | 3,5 | MPa |
-| Biegemodul | ~1.232 | ~1.232 | ~1.232 | ~1.232 | ~1.232 | ~1.232 | ~1.232 | psi |
+| Biegemodul | ~1.232 | ~1.232 | ~1.232 | ~1.232 | ~1.232 | ~1.232 | ~1.232 | MPa |
 | Imp. Dichte | ~600 | ~600 | ~500 | ~500 | ~500 | ~500 | ~500 | kg/m³ |
 | Dickenverlust | <10% | <10% | <10% | <10% | <10% | <10% | <10% | — |
 
@@ -1680,6 +1680,8 @@ Typisch: ΔP = 2–4 bar = 200.000–400.000 Pa
 | **Harz-Affinität** | Hydrophil (liebt Harz, saugt sofort) | Hydrophob (Harz läuft ab, muss gedrückt werden) |
 | **Nassverarbeitung** | ✅ Sofort mit Roller verdichtbar | ❌ Muss auf Vakuum warten |
 | **Luftentfernung** | ✅ Roller drückt Luft aus offenen Poren | ❌ Kanäle halten Luft (Vakuum nötig) |
+
+> ⚠️ **ZU PRÜFEN (Audit):** Die Materialbeschreibung von Soric in dieser Tabelle ("Polyethylen-Schaumstoff … geschlossenzellig … hydrophob (PE-Material)") widerspricht dem übrigen Dokument, das Soric durchgängig als **Polyester-/PET-Vlies mit eingebetteten Mikrohohlkugeln** definiert (Abschnitte 1.1, 3.2, FAQ F8/F22). "Polyethylen (PE)" und "Polyethylenterephthalat (PET)" sind nicht dasselbe Material. Materialangabe unverifiziert — die darauf gestützte Hydrophob-Begründung gegen das Lantor-TDS prüfen.
 
 #### Herstellungsprozess-Unterschied
 
@@ -3310,6 +3312,8 @@ ELSE:
 | **Wassereintritt (Feuchte)** | ISO 62 | ISO/IEC | Wasseraufnahme nach 24h; PET hygroskopisch: ~0,5–1% Massenfeuchte |
 | **Farb-Stabilität (UV)** | ASTM G154 | ASTM | Xenon Arc oder QUV; Soric SF/TF: Bleichung <5% ΔE über 500h |
 
+> ⚠️ **ZU PRÜFEN (Audit):** Die Kennwerte in dieser Tabelle (Druckfestigkeit ~2–3 MPa, Scherfestigkeit ~0,5 MPa, Biegemodul ~0,15 GPa) widersprechen den Produkt-Datentabellen dieses Dokuments (Abschnitte 5–8 und 15: Druckfestigkeit 4–8 MPa, Scherfestigkeit 3–7 MPa, Biegemodul ~1.015–1.232 MPa). Ursache vermutlich Verwechslung "Soric trocken/allein" vs. "imprägniert im Laminat" — Richtung nicht eindeutig verifizierbar. Beide Wertesätze unverifiziert; nicht ohne Abgleich mit dem Lantor-TDS als measured verwenden.
+
 ### 36.4 Lloyd's Register — Type Approval Details
 
 | Kriterium | Anforderung | Soric-Status |
@@ -3862,6 +3866,8 @@ Wenn PET-Vlies ähnliche Stabilität wie Coremat zeigt, erwartete Lebensdauer >3
 
 ### F1: Ist Soric ein Kernmaterial?
 **A:** Ja, aber ein NICHT-STRUKTURELLES Kernmaterial. Es erhöht die Steifigkeit eines Laminats durch Separation der Faserschichten und fungiert gleichzeitig als Fließhilfe (Flow-Aid) bei Vakuuminfusion. Es ist KEIN Ersatz für strukturelle Sandwichkerne (PVC, SAN, Balsa, Honeycomb) und darf NICHT nach ISO 12215-5 als Sandwich-Kern berechnet werden. Die typische Druckfestigkeit von Soric (3–8 MPa) liegt weit unter strukturellen Kernen (PVC H80: 85+ MPa). Soric erhöht die Biegesteifigkeit eines Laminats um 30–50%, während strukturelle Sandwichkerne Steigerungen von 300–1000% erreichen. Soric ist eine Optimierungsmaterial, nicht ein tragender Kern.
+
+> ⚠️ **ZU PRÜFEN (Audit):** "PVC H80: 85+ MPa" Druckfestigkeit widerspricht den eigenen Tabellen dieses Dokuments (PVC H80 ≈ 1,0 MPa; Soric 4–8 MPa; siehe Abschnitte 1.3 und 24.1) sowie der Herstellerangabe (Divinycell H80: Druckfestigkeit ≈ 1,4 MPa; Druck*modul* ≈ 90 MPa — hier offenbar Modul mit Festigkeit verwechselt). Folglich ist auch die Aussage, Sorics Druckfestigkeit liege "weit unter" PVC H80, sachlich falsch — Soric liegt darüber. Der strukturelle Vorteil von PVC beruht auf Schubfestigkeit + Kerndicke im Sandwich, nicht auf Druckfestigkeit. Wert unverifiziert — nicht als Fakt verwenden.
 
 ### F2: Kann ich Soric in meinem Handlaminat verwenden?
 **A:** Nein. Soric funktioniert AUSSCHLIESSLICH unter Vakuum oder positiven Druck (Infusion, RTM, Prepreg-Autoklav). Die Struktur der Soric erfordert eine geschlossene Formumgebung, um die Druckstabilität zu bewahren. Bei Handlaminat (offene Form) würde Soric unter dem Druck der Walze zusammengedrückt und verliert all seine Funktionsfähigkeit. Für Handlaminat existieren spezialisierte Produkte: Lantor **Coremat Xi** oder **Coremat XM** (beide vakuumstabil nicht erforderlich, offenformkompatibel). Coremat funktioniert mit Walze, Bürste oder Sprühlaminat.
@@ -4511,9 +4517,9 @@ Wenn PET-Vlies ähnliche Stabilität wie Coremat zeigt, erwartete Lebensdauer >3
 56. ISO 844:2020 — "Rigid Cellular Plastics — Determination of Compressive Properties" (2020)
 57. ISO 1922:2012 — "Rigid Cellular Plastics — Determination of Shear Strength" (2012)
 58. ISO 178:2019 — "Plastics — Determination of Flexural Properties" (2019)
-59. ISO 9094:2015 — "Small Craft — Inboard Petrol Engine — Safety" (2015)
-60. ISO 13297:2000 — "Electrical Installations in Ships and Other Floating Structures, Part 1: General Conditions" (2000)
-61. ISO 10133:2015 — "Electrical Installations in Ships and Other Floating Structures, Part 2: Wiring Systems" (2015)
+59. ISO 9094:2015 — "Small Craft — Fire Protection" (2015)
+60. ISO 13297:2000 — "Small Craft — Electrical Systems — Alternating Current Installations" (2000)
+61. ISO 10133:2012 — "Small Craft — Electrical Systems — Extra-Low-Voltage DC Installations" (2012)
 62. EU Directive 2013/53/EU — "Recreational Craft Directive: Technical Requirements" (2013)
 63. DNV-GL Rules for Classification of Boats — Part 5, Mechanical Systems (2024)
 64. Lloyd's Register — "Rules and Regulations for the Classification of Yachts" (2023)

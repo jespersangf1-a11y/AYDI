@@ -1623,13 +1623,15 @@ AYDI Claude Vision Prompt — Primer Failure Analysis:
 |---|---|---|
 | ISO 8339:2005 | Bestimmung des Zugverhaltens von Dichtstoffen | Haftzugprüfung inkl. Primer-Effekt |
 | ISO 8340:2005 | Bestimmung der Zugverformbarkeit | Elastizität der Fuge mit/ohne Primer |
-| ISO 9664:1993 | Bestimmung der Zugadhäsion/Kohäsion bei verschiedenen Temperaturen | Primer-Langzeitstabilität |
+| ISO 9047:2001 | Bestimmung der Zugadhäsion/Kohäsion bei verschiedenen Temperaturen | Primer-Langzeitstabilität |
 | ISO 10590:2005 | Bestimmung der Zugadhäsion/Kohäsion nach Wasserlagerung | Marine-relevantester Test |
 | ASTM C794 | Standard Test Method for Adhesion-in-Peel | Schälhaftung mit Primer |
 | ASTM C1135 | Standard Test Method for Adhesion | Adhäsionsprüfung |
 | EN 1392:2007 | Klebstoffe — Prüfung der Schälfestigkeit | EU-Norm Schälfestigkeit |
 | DIN 53281 | Prüfung der Klebfestigkeit | Deutsche Norm Klebprüfung |
 > Confidence: `measured`
+>
+> ⚠️ **ZU PRÜFEN (Audit):** EN 1392 ist „Klebstoffe für Leder und Schuhwerkstoffe — Prüfung der Klebfestigkeit" (Schuhindustrie), NICHT eine allgemeine Norm für die Schälfestigkeit von Dichtstoffen/Klebungen. Für Schälhaftung im Marine-Bereich ist ASTM C794 (bereits in dieser Tabelle) einschlägig; eine europäische Schäl-Norm wäre eher ISO 8510 bzw. EN 1464 — korrekte Normnummer unverifiziert.
 
 ### G.2 Hersteller-Prüfberichte — Primer-Effekt auf Haftzugfestigkeit
 
@@ -3502,7 +3504,7 @@ Offene_Zeit = 2 × 0,4 = 0,8h = 48 Min → Dichtstoff muss innerhalb 48 Min aufg
 
 ### Praxisbericht 68: Container-Import Primer für Werft in Türkei
 **Werft:** Eigenrefit-Community Marmaris/Fethiye
-**Lösung:** Sammelbestellung 10 Eigner, Import über lokalen Schiffsausrüster (Kuş Marin, Marmaris). Sika 210 T 1-Liter-Kanister: 45 € statt 75 € Einzelpreis. Lieferzeit: 3 Wochen ex Hamburg. Zoll: keine Probleme da Nicht-Gefahrgut (Flammpunkt >60°C bei 210 T Ausnahme). 3M Primer 94 über Amazon.com.tr verfügbar.
+**Lösung:** Sammelbestellung 10 Eigner, Import über lokalen Schiffsausrüster (Kuş Marin, Marmaris). Sika 210 T 1-Liter-Kanister: 45 € statt 75 € Einzelpreis. Lieferzeit: 3 Wochen ex Hamburg. Zoll/Transport: Sika 210 T ist Gefahrgut (Flammpunkt 31°C < 60°C, vgl. Praxisbericht 24) und muss als entzündbare Flüssigkeit deklariert und versendet werden. 3M Primer 94 über Amazon.com.tr verfügbar.
 > Confidence: `documented`
 
 ---
@@ -3525,6 +3527,8 @@ Offene_Zeit = 2 × 0,4 = 0,8h = 48 Min → Dichtstoff muss innerhalb 48 Min aufg
 | PMMA Scheibe | Sikaflex 295UV | 210 T | 100% | 93% | 82% | 65% | Spannungsrissbildung PMMA |
 
 > Confidence: `documented`
+>
+> ⚠️ **ZU PRÜFEN (Audit):** Die Primer-Spalte dieser Tabelle nennt für Aluminium (blank/eloxiert) `209 D` und für Teak `206 G+P` — das widerspricht den primären Kompatibilitätsmatrizen dieses Dokuments (Abschn. 3.1, 4.3, 11.3, 12.1 sowie Mega-Matrix Anhang AP), die für Aluminium `210 T` und für Teak `215` (bzw. `210 T` unbehandelt) vorgeben. Laut diesem Dokument ist `209 D` der Glas-/Kunststoff-Primer und `206 G+P` der Glas-/Lack-Primer, nicht der Metall- bzw. Holz-Primer. Dieselbe Abweichung findet sich in Anhang BA (Tropen: „Alu: Sika 209 D") und Anhang BE (Galvanik-Matrix: „209 D auf Alu"). Primer-Zuordnung für Alu/Teak unverifiziert — vor Verwendung gegen Hersteller-TDS prüfen.
 
 **Interpretation:** Geprimerte Verbindungen behalten nach 20 Jahren 65–92% ihrer Festigkeit. Ungeprimerte Verbindungen (GFK/Sikaflex ohne Primer) verlieren bis zu 70% — das ist der ökonomische Business Case für Primer.
 

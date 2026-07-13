@@ -979,25 +979,17 @@ def run_cost_analysis(
 
     items = cost_items or []
 
-    # Early exit when no cost data at all
+    # Early exit when no cost data at all: report as unavailable rather than
+    # fabricating a 50/100 score for data that was never provided
+    # (Module-Skip-Logik + "never present uncertain results as facts").
     if not items:
         return {
             "module": "cost",
-            "overall_score": 50.0,
-            "sub_scores": {k: 50.0 for k in weights},
-            "warnings": [{
-                "code": "COST_NO_DATA",
-                "severity": "info",
-                "message": "Keine Kostenpositionen vorhanden — Analyse nicht möglich.",
-                "suggestion": "Kostenpositionen erfassen, um eine vollständige Kostenkalkulation zu erhalten.",
-            }],
+            "available": False,
+            "reason": "Keine Kostenpositionen vorhanden — Kostenanalyse nicht möglich.",
             "suggestions": [
                 "Kostenpositionen erfassen, um eine vollständige Kostenkalkulation zu erhalten."
             ],
-            "metrics": {},
-            "config_used": config,
-            "confidence": data_source,
-            "confidence_note": "Basiert auf geschätzten Werten aus öffentlichen Spezifikationen." if data_source == "estimated" else None,
         }
 
     sub_scores: dict[str, float] = {}

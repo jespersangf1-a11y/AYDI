@@ -21,6 +21,8 @@ AYDI (AI Yacht Design Intelligence) is a domain-specific analysis platform for y
 
 Both levels use the same analysis engine. Level 1 infers missing data from boat-class templates. Level 2 uses exact measurements. Every result shows which level it came from.
 
+Level 2 is the authenticated boundary and maps onto subscription tiers (FREE/PRO/ENTERPRISE) with server-side module gating — see **Platform Architecture → Authentication** and **→ Subscription Tiers** below.
+
 ---
 
 ## Three Analysis Pipelines
@@ -65,6 +67,11 @@ Layout implications: Category A requires more emergency exits, larger escape hat
 | ISO 11812 (2020) | Cockpits | Cockpit volume, drain sizing, sill heights |
 | ISO 12216 (2020) | Windows/hatches | Opening sizes, emergency exit dimensions |
 | ISO 10133/13297 | Electrical | Panel access, cable routing, battery ventilation |
+| ISO 12215 (2019, Parts 1–9) | Hull construction & scantlings | Laminate/plate thickness, stiffener spacing, panel dimensioning — **basis of the `structural` module** |
+| ISO 12215-8 | Rudders | Rudder force & stock scantling |
+| ISO 12215-9 | Keels & appendages | Keel-attachment loads, ballast-fixing safety factors |
+
+> **Note:** ISO 12217 is *stability* (weight/CG), NOT structure. Structural scantlings are ISO 12215. Do not cite 12217 for laminate/scantling questions (a recurring confusion in source material).
 
 ### Build Quality Standards by Boat Class
 
@@ -109,6 +116,16 @@ Layout implications: Category A requires more emergency exits, larger escape hat
 | Estimated | `estimated` | Inferred from specs/class averages | Gray badge |
 | Benchmark | `benchmark` | From aggregated industry data | Gray badge |
 | Documented | `documented` | From service reports/text | Blue badge |
+
+**Fusion-derived codes** (emitted by `score_fusion.py` when combining structured + visual):
+
+| Level | Code | Meaning | Display |
+|-------|------|---------|---------|
+| Measured + Visual | `measured+visual` | Both sources agree, fused | Green badge |
+| Visual only | `visual_only` | No structured data, visual carried it | Amber badge |
+| Discrepant | `discrepant` | Sources disagree > threshold → flagged, **not averaged** (returns structured score + `needs_review`) | Orange badge |
+
+Per-finding visual confidence returned by the Vision prompts is the AI's own German self-assessment (`hoch`/`mittel`/`niedrig`; materials: `sicher`/`wahrscheinlich`/`vermutet`) — the frontend normalizes these to hide low-confidence findings by default. This is distinct from the canonical `visual_*` gatekeeper codes above.
 
 ### Reliability Rules (Non-Negotiable)
 
@@ -174,7 +191,7 @@ Score fusion combines structured + visual results per module.
 ### Compliance — CE Documentation Support
 - **Escape hatch dimensions**: ISO 12216 min 400×520mm for emergency escape.
 - **Cockpit drain capacity**: ISO 11812 drain_capacity = cockpit_volume × 2 (seconds).
-- **Companionway sill heights**: Cat A=300mm, B=250mm, C=150mm, D=0mm.
+- **Companionway sill heights**: Cat A=300mm, B=250mm, C=150mm, D=0mm. These are the CE **floor**; a per-boat-class override (`companionway_sill_mm`) may only make the requirement *stricter*, never fall below the category minimum (`compliance.py` uses `max(override, CE-floor)`).
 - **Ventilation requirements**: engine room = max(0.05, engine_kw × 0.0003) m².
 
 ### Materials — Lifecycle Analysis
@@ -192,6 +209,44 @@ Score fusion combines structured + visual results per module.
 
 ### Cost — Parametric Estimation
 - **Parametric cost models**: base_cost_per_m × LOA with category breakdown per boat class.
+
+---
+
+## Platform Architecture
+
+The analysis engine (above) runs inside a platform layer. These subsystems are load-bearing and enforced in code — treat them as spec, not incidental.
+
+### Authentication & Authorization
+- **AuthN**: JWT (HS256, PyJWT), `access_token` + `refresh_token`. Passwords hashed with **bcrypt** via passlib `CryptContext`. Core: `app/core/auth.py`, routes: `app/api/routes/auth.py`.
+- **AuthZ — roles**: `admin`, `user`, `viewer` (`app/core/permissions.py`, `require_role(*roles)`). Admin-only endpoints (e.g. `/collaborate/sessions`) gate on this.
+- **AuthZ — ownership**: mutating/reading resources verify the resource chains back to `user_id` (Layout → Project → user). Never trust a client-supplied owner.
+- **`SECRET_KEY` is mandatory in production.** `config.py` refuses to boot (`_enforce_production_security`) if `ENVIRONMENT=production` and the secret is still the default, or if `COOKIE_SECURE` is False. Never ship the default secret. Startup logs a warning if the default is in use.
+- **Two auth transports**: bearer token (Authorization header) and httpOnly cookie + CSRF token for mutating requests. Level 1 (Schnellanalyse) is unauthenticated; Level 2 is the authenticated boundary.
+
+### Subscription Tiers (server-side gating)
+`app/core/subscription.py`. Gating is enforced **server-side** — frontend hiding is never sufficient. Tiers are cumulative:
+- **FREE** — Level-1 quick analysis + a subset of modules (ergonomics, volume, emotional, market) with `estimated` results.
+- **PRO** — Level-2 full analysis, all modules, full knowledge base, visual analysis, CAD import, collaboration, versioning, multi-language, imperial units, benchmark DB.
+- **ENTERPRISE (Werft)** — Pro + fleet management, API access, multi-tenancy, custom reports, priority support.
+
+The **orchestrator** filters modules by tier: `get_allowed_modules(context.tier)`; disallowed modules are recorded in `tier_gated`, not executed. `context.tier` is populated from the authenticated user. Use `require_feature` / `require_module` at route boundaries.
+
+### Boat Classes (13, not 4)
+`BoatClass` enum (`schemas/schemas.py`) has **13** values — everything calibrates on these:
+`small_sail, cruising_sail, racing_sail, daysailer, motorsailer, catamaran_sail, catamaran_motor, small_motor, large_motor, sport_cruiser, trawler, explorer, superyacht`.
+Every module ships `BOAT_CLASS_DEFAULTS` keyed on all 13. **Historical design docs under `docs/superpowers/` that describe only 4 classes are archival, not current** — do not derive enums/tests from them.
+
+### Internationalization
+`app/core/i18n.py`. Locales: **DE (default)**, EN, ES, FR (`Locale` enum). Request-scoped via `contextvars`; set in middleware. `t(key, **kwargs)` for translations; locale-aware number/currency/date formatting. Unknown locale → falls back to DE. German remains the canonical UX language; other locales are additive.
+
+### Knowledge System
+- **252** numbered research documents across **31** categories under `app/services/knowledge/` (`NN_MM_slug.md`, ~840K lines total). Loaded by `markdown_knowledge_loader.py`.
+- Slug collisions are stored under a `{category}_{subcategory}_{slug}` composite key (never silently overwritten).
+- `KNOWLEDGE_INDEX.py` is the completeness reference; its category counts must track the real corpus (252/31).
+- Analysis modules enrich results from this corpus (`markdown:*` sources) — see `compliance.py`, `materials.py`, `structural.py`, `production.py`.
+
+### Deployment
+See `DEPLOY.md` and `INTEGRATION_ANWEISUNG.md`. Docker Compose (`docker-compose.yml`, `docker/Dockerfile.backend`). **Production checklist must set `SECRET_KEY` and `COOKIE_SECURE=true`** or the app refuses to start (see AuthN above).
 
 ---
 

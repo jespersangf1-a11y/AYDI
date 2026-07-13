@@ -277,11 +277,13 @@ Jede OEM-Manschette trägt einen eingeprägten oder aufgedruckten Datumscode:
 
 | Modell | Öl-Typ | Füllmenge | Wechselintervall |
 |---|---|---|---|
-| 110S, MS25S | Volvo Penta VDS 4.5 (oder API GL-5 75W-90) | 0,4 L | Jährlich |
-| 120S-A/B/C/D | VDS 4.5 (oder API GL-5 75W-90) | 0,45 L | Jährlich |
+| 110S, MS25S | Volvo Penta Original-Getriebeöl (s. Anhang AC.1) | 0,4 L | Jährlich |
+| 120S-A/B/C/D | Volvo Penta Original-Getriebeöl (s. Anhang AC.1) | 0,45 L | Jährlich |
 | 120S-E | Volvo Penta 75/90 IPS Synthetic | 0,45 L | Jährlich |
-| 130S alle | VDS 4.5 (oder API GL-5 75W-90) | 0,65 L | Jährlich |
-| 150S alle | VDS 4.5 (oder API GL-5 75W-90) | 0,85 L | Jährlich |
+| 130S alle | Volvo Penta Original-Getriebeöl (s. Anhang AC.1) | 0,65 L | Jährlich |
+| 150S alle | Volvo Penta Original-Getriebeöl (s. Anhang AC.1) | 0,85 L | Jährlich |
+
+**Öl-Wahl (WICHTIG):** Für neuere Saildrives (ab 120S) schreibt Volvo Penta sein eigenes Original-Getriebeöl vor (Teilenummern und Mengen: **Anhang AC.1**). Ein generisches „API GL-5 75W-90" ist **NICHT pauschal gleichwertig** und allenfalls Notersatz — die genaue Ölvorgabe hat sich über die Baujahre geändert (Volvo Penta Service Bulletin 2010: neuere 130S/150S auf Motoröl SAE 15W-40 umgestellt; 120S-E: synthetisches Getriebeöl GL-5 75W-90). **Maßgeblich ist der Aufkleber am Öl-Einfülldeckel des jeweiligen Antriebs.** Nicht freigegebenes Öl kann Synchronringe und Dichtungen schädigen und die **Garantie** erlöschen lassen.
 
 **Ölkontrolle als Manschetten-Check**: Milchiges Getriebeöl = Wasser im Saildrive = Manschette oder Wellendichtung undicht!
 
@@ -293,12 +295,12 @@ Jede OEM-Manschette trägt einen eingeprägten oder aufgedruckten Datumscode:
 |---|---|---|
 | Anzugsmoment M6 Allen-Schrauben | **26 Nm** | Gleichmäßig, über Kreuz |
 | Anzugsmoment M8 Schrauben | **25 Nm** | Gleichmäßig, über Kreuz |
-| Dichtmittel | **KEINES!** | KEIN Sikaflex, KEIN Silikon, KEIN Polysulfid |
+| Dichtmittel (Manschette/Klemmring) | **KEINES!** | KEIN Sikaflex/Silikon/Polysulfid auf Gummimembran oder Klemmring — Dichtung nur durch Klemmkraft. (Die Flansch-zu-Rumpf-Verschraubung ist eine ANDERE Verbindung: dort Sikaflex 291i, siehe Anhang AA.1) |
 | Schmiermittel | Synthetisches Marinefett (im Kit) | Nur auf Nuten und Wulste |
 | Schrauben-Wiederverwendung | **NEIN** — immer neue Schrauben | Im Kit enthalten |
 | Bolt-Tightening-Sequenz | Progressive Über-Kreuz-Folge | Nicht eine Seite zuerst! |
 
-**KRITISCHE REGEL**: Volvo Penta verbietet ausdrücklich jegliches Dichtmittel! Die Dichtung erfolgt ausschließlich durch Klemmkraft. Dichtmittel verhindert korrekten Sitz und führt zu Leckagen!
+**KRITISCHE REGEL**: Volvo Penta verbietet ausdrücklich jegliches Dichtmittel an der **Manschetten-Klemmverbindung** (Gummimembran gegen Klemmring). Hier erfolgt die Dichtung ausschließlich durch Klemmkraft — Dichtmittel verhindert korrekten Sitz und führt zu Leckagen! **Nicht zu verwechseln** mit der **Flansch-zu-Rumpf-Verschraubung** (Saildrive-Gehäuse gegen Rumpf): Das ist eine andere Verbindung, für die Volvo Sikaflex 291i vorschreibt (siehe Anhang AA.1).
 
 (Confidence: measured — Volvo Penta Workshop Manual)
 
@@ -893,7 +895,7 @@ Bukh hat Saildrive-kompatible Motoren, verwendet aber in der Regel ZF- oder Tech
 
 | Fehler | Konsequenz | Vermeidung |
 |---|---|---|
-| Dichtmittel (Sikaflex etc.) verwendet | Falsche Dichtung, spätere Leckage, erschwertes Lösen | NIEMALS Dichtmittel! Nur Klemmkraft |
+| Dichtmittel auf Manschette/Klemmring (Sikaflex etc.) | Falsche Dichtung, spätere Leckage, erschwertes Lösen | NIEMALS Dichtmittel auf Manschette/Klemmring — nur Klemmkraft! (Flansch-zu-Rumpf ist separat: dort Sikaflex 291i, siehe Anhang AA.1) |
 | Schrauben ungleichmäßig angezogen | Manschette verzogen, lokale Leckage | Über-Kreuz-Schema, Drehmomentschlüssel |
 | Alte Schrauben wiederverwendet | Materialermüdung, Bruchgefahr | IMMER neue Schrauben (im Kit) |
 | Auflageflächen nicht gereinigt | Gummi dichtet nicht plan | Gründlich reinigen, Grate entfernen |

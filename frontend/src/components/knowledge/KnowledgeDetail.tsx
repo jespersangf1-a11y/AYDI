@@ -1,4 +1,5 @@
 import { AlertTriangle, AlertCircle, Info, CheckCircle, TrendingDown, Wrench, X } from 'lucide-react'
+import DOMPurify from 'dompurify'
 import type { KnowledgeDetail } from '../../types'
 
 
@@ -78,7 +79,7 @@ export default function KnowledgeDetailPanel({ data, onClose }: KnowledgeDetailP
             <div className="animate-fade-in-up prose prose-invert max-w-none" style={{ animationDelay: '100ms' }}>
               <div
                 className="text-navy-600 space-y-4"
-                dangerouslySetInnerHTML={{ __html: data.content_html }}
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(data.content_html) }}
               />
             </div>
           )}

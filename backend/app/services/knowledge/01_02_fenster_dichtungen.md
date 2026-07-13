@@ -67,6 +67,21 @@
 57. [ANHANG M — Klimazonen-Empfehlungen](#anhang-m--klimazonen-empfehlungen)
 58. [ANHANG N — Zusätzliche Fallstudien](#anhang-n--zusätzliche-fallstudien)
 59. [ANHANG O — Weitere Erfahrungsberichte](#anhang-o--weitere-erfahrungsberichte)
+60. [ANHANG P — Erweiterte Forum-Thread-Referenzen mit URLs](#anhang-p--erweiterte-forum-thread-referenzen-mit-urls)
+61. [ANHANG Q — Erweiterte YouTube-Ressourcen](#anhang-q--erweiterte-youtube-ressourcen)
+62. [ANHANG R — Erweiterte Fallstudien](#anhang-r--erweiterte-fallstudien)
+63. [ANHANG S — Erweiterte Fehlerbilder](#anhang-s--erweiterte-fehlerbilder)
+64. [ANHANG T — Erweiterte FAQ](#anhang-t--erweiterte-faq)
+65. [ANHANG U — Erweiterte Bezugsquellen](#anhang-u--erweiterte-bezugsquellen)
+66. [ANHANG V — Erweiterte Erfahrungsberichte](#anhang-v--erweiterte-erfahrungsberichte)
+67. [ANHANG W — Verglasungs-Dichtbänder Detailvergleich](#anhang-w--verglasungs-dichtbänder-detailvergleich)
+68. [ANHANG X — Sealant-Kompatibilitätsmatrix (Erweitert)](#anhang-x--sealant-kompatibilitätsmatrix-erweitert)
+69. [ANHANG Y — Erweiterte Experten-Referenzen](#anhang-y--erweiterte-experten-referenzen)
+70. [ANHANG Z — Produktvergleich Kompakttabellen](#anhang-z--produktvergleich-kompakttabellen)
+71. [ANHANG AA — Schritt-für-Schritt Einbau-Anleitungen](#anhang-aa--schritt-für-schritt-einbau-anleitungen)
+72. [ANHANG AB — Wartungsplan und Lebensdauer-Management](#anhang-ab--wartungsplan-und-lebensdauer-management)
+73. [ANHANG AC — Regionale Bezugsquellen-Übersicht](#anhang-ac--regionale-bezugsquellen-übersicht)
+74. [ANHANG AD — Normen-Auszüge und Prüfverfahren](#anhang-ad--normen-auszüge-und-prüfverfahren)
 
 ---
 
@@ -160,8 +175,8 @@ Bei modernen Yachten sind 60–80% aller Fenster verklebt (Direct Glazing). Der 
 | Simson ISR 70-03 | Bostik | PUR | Ja | Marine-Verglasung, in NL populär | measured |
 | 3M Marine Adhesive 5200 | 3M | PUR | **NEIN — Crazing bei PMMA!** | NUR für Glas, NICHT für Acryl | measured |
 | Sikaflex 291i | Sika | PUR (1K) | Ja (mit Primer) | Rahmendichtung (nicht Verglasung) | measured |
-| Butylband (Bed-It Tape) | Diverse | Butyl | Ja | Unter Schraubrahmen, Notfall | documented |
-| Terostat IX | Henkel/Teroson | Butyl | Ja | OEM-Verglasung bei einigen Werften | documented |
+| Butylband (Bed-It Tape) | Diverse | Butyl | Nur als Rahmendichtung — NICHT direkt auf PMMA-Scheibe (Weichmacher-Migration → Crazing; s. Anhang W.2/X.2) | Unter Schraubrahmen (Rahmen-/Bettungsdichtung), Notfall | documented |
+| Terostat IX | Henkel/Teroson | Butyl | Nur als Rahmendichtung / auf Glas — NICHT auf PMMA-Scheibe (Weichmacher-Migration; s. Anhang W.2/X.2) | OEM-Verglasung (Glas) bei einigen Werften | documented |
 
 ### 2.3 Profilgeometrie — Kritische Maße für Fensterdichtungen
 
@@ -354,7 +369,7 @@ Crazing ist ein Netzwerk feiner Haarrisse in Acrylglas (PMMA/Plexiglas), das dur
 | Sikaflex 295 UV | **KEIN Risiko** | Standard-Fensterverklebung | measured |
 | Dow 795 | **KEIN Risiko** | Premium-Fensterverklebung | measured |
 | Sikaflex 291i | **KEIN Risiko** | Rahmendichtung | measured |
-| Butylband | **KEIN Risiko** | Unter Schraubrahmen | measured |
+| Butylband | **KEIN Risiko als Rahmendichtung — RISIKO direkt auf PMMA-Scheibe** (Weichmacher-Migration → Crazing) | Rahmen-/Bettungsdichtung sicher; NIE direkt auf Acrylglas-Scheibe (s. Anhang W.2/X.2) | documented |
 | Talkum-Puder | **KEIN Risiko** | Anti-Kleb-Mittel | measured |
 
 ### 4.3 Crazing-Prävention — Goldene Regeln

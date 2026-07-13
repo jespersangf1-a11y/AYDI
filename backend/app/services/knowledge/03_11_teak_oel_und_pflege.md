@@ -543,7 +543,7 @@ class TreatmentDecision(BaseModel):
 | **Hersteller** | Teak Wonder (USA/Italien) |
 | **Vertrieb** | International, stark in Superyacht-Segment |
 | **Webseite** | teakwonder.com |
-| **Spezialität** | 4-Stufen-Teakdeck-Pflegesystem, Superyacht-Standard |
+| **Spezialität** | 3-Stufen-Teakdeck-Pflegesystem, Superyacht-Standard |
 
 <!-- Confidence: documented — Quelle: teakwonder.com -->
 
@@ -2199,7 +2199,7 @@ class TeakDeckLifecycleCost(BaseModel):
 |---|---|---|---|
 | 1 | Teak schleifen | P120-P180 | Oberfläche anrauen |
 | 2 | Teak reinigen | Aceton | Fett und Staub entfernen |
-| 3 | Epoxid mischen | WEST 105/207 (5:1) | Gründlich 2 Min mischen |
+| 3 | Epoxid mischen | WEST 105/207 (3:1) | Gründlich 2 Min mischen |
 | 4 | Verdünnte Grundierung | 105/207 + 10% Aceton | Dünne Schicht, tief eindringend |
 | 5 | 1. Schicht auftragen | Verdünntes Epoxid | Pinsel, dünn |
 | 6 | 2. Schicht (nass-in-nass) | Unverdünntes 105/207 | Nach 4-6h (klebrig) |

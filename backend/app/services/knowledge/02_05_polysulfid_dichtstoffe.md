@@ -1343,6 +1343,8 @@ class PolysulfidVisualCriteria(BaseModel):
 
 ## 12. Praxisberichte 1–50
 
+> ⚠️ **ZU PRÜFEN (Audit):** Die folgenden Praxisberichte (Abschnitt 12 sowie Anhänge A, B, K, Z, AH: Berichte 1–175) und FAQ (Anhänge C, D, U: FAQ 1–90) sind nicht quellenbelegte Anekdoten (Forennamen ohne verifizierbare URL/Thread-ID) und dürfen NICHT als „measured/documented"-Fakten behandelt werden — Confidence: anecdotal, unverifiziert. Die pauschale „Confidence: documented"-Kennzeichnung an den einzelnen Einträgen ist damit nachrangig zu diesem Sammelmarker; Zahlenangaben (Standzeiten, Kosten, Scores) daraus sind nicht als belegt zu werten.
+
 ### Praxisbericht 1: Hallberg-Rassy 312 (1982) — 40 Jahre Polysulfid an Seeventilen
 Eigner berichtet: Alle 6 Seeventile (Bronze auf GFK) bei Kauf (2020) noch original von 1982 mit Polysulfid (vermutlich Blakes Seelastic) abgedichtet. Kein Wassereinbruch, Polysulfid noch elastisch.
 - **Standzeit:** 38 Jahre

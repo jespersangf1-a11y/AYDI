@@ -297,7 +297,9 @@ Osmose im Kontext von GFK-Booten (Glasfaserverstärkter Kunststoff) ist ein elek
 
 > „Gelshield 200 ist der Evolution der Gelshield-Familie — höchster Feststoff, niedrigster VOC, dickste Schichten. Für GFK-Osmoseschutz gibt es nichts Besseres von International." — Applikationsleiter, AkzoNobel
 
-> Confidence: `measured`
+> ⚠️ **ZU PRÜFEN (Audit):** Max. Überarbeitung Gelshield Plus steht hier mit „30 Tage" (ebenso Anhang A), aber mit „7 Tage" in FAQ 57, Anhang Q und Anhang R. Herstellerseitig nicht zweifelsfrei verifizierbar; die 3 Fundstellen mit „7 Tage" deuten darauf hin, dass „30 Tage" versehentlich aus der Gelshield-200-Spalte übernommen wurde.
+
+> Confidence: `estimated — unverifiziert (Überarbeitungszeit Gelshield Plus widersprüchlich)`
 
 ### 4.6 Eigner-Erfahrungen Gelshield 200
 
@@ -2742,6 +2744,8 @@ class BarrierSystemDesign(BaseModel):
 
 > „Gelshield 200 wurde als Vinylester-Harz-basierter Barrier entwickelt, weil Vinylester die beste Wasserbeständigkeit aller marktüblichen Harze bietet. Die lamellar angeordneten Pigmente in Gelshield 200 schaffen ein Labyrinth für Wassermoleküle."
 
+> ⚠️ **KORREKTUR (Audit):** Gelshield 200 ist laut Hersteller ein 2-Komponenten-**Epoxid**-Primer (siehe Abschnitt 4.1/4.2), kein Vinylester-Produkt. Die Formulierung „Vinylester-Harz-basiert" ist sachlich falsch; dieselbe Verwechslung findet sich in Expertenzitat 43. Quelle: International/AkzoNobel Gelshield 200 TDS (yachtpaint.international, svb24.com).
+
 > Confidence: `documented`
 
 ### Expertenzitat 29: Dr. Peter Vanderburght, Osmose-Forschung Universität Gent
@@ -2967,7 +2971,7 @@ class BarrierSystemDesign(BaseModel):
 | **Mikroskop-Methode** | Probe entnehmen, Querschnitt unter Mikroskop messen |
 | **Keil-Schnitt-Methode** | ISO 2808 Keilschnitt, unter Lupe messen |
 | **Nassfilm-Messung** | Nur bei Applikation, nicht nachträglich |
-| **Empfehlung** | Elcometer 456 mit GFK-Sonde für zerstörungsfreie Messung |
+| **Empfehlung** | Ultraschall-Messgerät (Elcometer 500 / PosiTector 200) für zerstörungsfreie Messung auf GFK — magnetische Geräte wie das Elcometer 456 messen nur auf Metall (vgl. Abschnitt 27.1, FAQ 20) |
 
 > Confidence: `measured`
 
@@ -3067,7 +3071,9 @@ class BarrierSystemDesign(BaseModel):
 | **Interprotect** | 330 | Hoch — in manchen Regionen eingeschränkt |
 | **Trend** | EU-VOC-Richtlinie drückt Hersteller zu lösemittelfreien Systemen |
 
-> Confidence: `measured`
+> ⚠️ **ZU PRÜFEN (Audit):** Diese VOC-Werte widersprechen den Produktabschnitten: Gelshield Plus „125" vs. 220 g/L (Abschnitt 5.1/4.5, Anhang A); Interprotect „330" vs. 290 g/L (Abschnitt 4.5/4.2, Anhang A). Nicht zweifelsfrei verifizierbar — Werte hier daher zurückgestuft.
+
+> Confidence: `estimated — unverifiziert (VOC-Werte widersprüchlich)`
 
 ### FAQ 49: Wie lagere ich Barrier-Coat-Produkte richtig?
 
@@ -3291,7 +3297,7 @@ class BarrierSystemDesign(BaseModel):
 | 10 | Recoat-Fenster einhalten | Innerhalb max. Recoat-Zeit | ☐ |
 | 11 | Amin-Blush entfernen (WS) | Nur West System: Warmwasser + Pad | ☐ |
 | 12 | Weitere Schichten | Bis Soll-DFT erreicht (300–600 µm) | ☐ |
-| 13 | DFT messen (Trockenfilm) | Elcometer 456 mit GFK-Sonde | ☐ |
+| 13 | DFT messen (Trockenfilm) | Ultraschall-Gerät (Elcometer 500 / PosiTector 200) auf GFK — nicht magnetisches Elcometer 456 | ☐ |
 | 14 | Durchhärtung prüfen | Härtetest (Fingernagel), Aceton-Test | ☐ |
 | 15 | Dokumentation | Fotos, DFT-Protokoll, Material-Chargen | ☐ |
 
@@ -3311,7 +3317,7 @@ class BarrierSystemDesign(BaseModel):
 | 8 | Laminatreparatur | Beschädigte Stellen mit Epoxid-Laminat reparieren | ☐ |
 | 9 | Oberfläche vorbereiten | P80 schleifen, staubfrei, lösemittelfrei | ☐ |
 | 10 | Barrier aufbauen | 4–6 Schichten Epoxid-Barrier (500–750 µm) | ☐ |
-| 11 | DFT prüfen | Elcometer 456, Mindest-DFT 400 µm | ☐ |
+| 11 | DFT prüfen | Ultraschall-Gerät (Elcometer 500 / PosiTector 200), Mindest-DFT 400 µm | ☐ |
 | 12 | Durchhärtung (7+ Tage) | Volle Aushärtung vor Antifouling | ☐ |
 | 13 | Antifouling aufbauen | 2–3 Schichten AF-System nach Wahl | ☐ |
 | 14 | Dokumentation | Komplettes Sanierungsprotokoll mit Fotos | ☐ |

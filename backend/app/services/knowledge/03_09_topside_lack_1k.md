@@ -2727,7 +2727,7 @@ class TopsideLackVergleich(BaseModel):
 |---|---|
 | Frage | 1K-Topside-Lack auf Aluminium-Rumpf |
 | Antwort | Ja, mit speziellem Primer-System |
-| Primer-Pflicht | Etch-Primer / Wash-Primer (International Interprotect, Primocon) |
+| Primer-Pflicht | Etch-Primer / Wash-Primer (z.B. International Etch Primer bzw. Primewash 353/354); danach Epoxid-Primer (Interprotect) |
 | Schichtaufbau | Etch-Primer → Epoxid-Primer (2×) → 1K-Topcoat (2–3×) |
 | Warnung | NIEMALS 1K-Lack direkt auf Aluminium — galvanische Korrosion |
 | Bester 1K für Alu | Brightside oder Mono-urethane (PU-Anteil = bessere Haftung) |

@@ -167,7 +167,7 @@ Zone 4: SCHLOSS-BEREICH (Lock Area)
 | B (Küste) | 250 mm | Verschluss von innen obligatorisch | Spritzwasserdicht, Sicherung empfohlen |
 | C (Küstennah) | 150 mm | Verschluss von innen | Regendicht |
 | D (Geschützt) | 0 mm | Einfacher Verschluss | Regendicht |
-(Confidence: measured — EU-Richtlinie 2013/53/EU, ISO 12216:2020)
+(Confidence: measured — EU-Richtlinie 2013/53/EU; Schwellenhöhe nach ISO 11812:2020, Luken-/Verschluss-Dichtheit nach ISO 12216:2020)
 
 ---
 
@@ -472,9 +472,10 @@ Die Schiebeleiste (Sliding Hatch) gleitet auf parallelen Schienen über dem Nied
 | Hersteller | Profil | Breite | Höhe | Shore A | Preis/m |
 |-----------|--------|-------|------|---------|---------|
 | Trim-Lok | Wiper Seal 100B | 5 mm | 15 mm | 70 | €4–7 |
-| EMKA | Typ 1011-49 | 8 mm | 12 mm | 65 | €5–8 |
 | Schlegel | Lip Seal Marine | 6 mm | 18 mm | 60 | €4–7 |
 (Confidence: documented)
+
+> ✅ **Aufgeloest (Audit):** EMKA 1011-49 ist KEINE Lippendichtung, sondern ein selbstklemmendes Schaumgummi-EPDM-Profil (65 ±5 Shore A, Stahlfederkern) — bestätigt durch den Hersteller. Der fehlerhafte Lippendichtungs-Eintrag (8×12 mm) wurde hier entfernt; korrekte Angabe siehe Anhang I.1. — Quelle: EMKA Produktkatalog (emka.com/products/1011-49, Katalogblatt 5A-130).
 
 ### 4.3 Vordere Schiebeleisten-Dichtung (Stirnseite)
 
@@ -1433,6 +1434,8 @@ Schlegel ist einer der weltweit führenden Hersteller von Dichtungsprofilen. Ihr
 | ABYC H-12 | Ventilation (US) | Belüftung bei geschlossenem Niedergang |
 (Confidence: measured)
 
+> ⚠️ **ZU PRÜFEN (Audit):** Zwei Normnummern passen nicht zum Scope (web-verifiziert). **EN 13906-2** normt *Zugfedern* (cylindrical helical extension springs), NICHT Gasfedern/Gasdruckfedern. **ABYC H-12** existiert nicht als Lüftungsnorm — ABYC-Lüftung ist H-2 (Benzin) bzw. H-32 (Diesel), die zudem Motor-/Kraftstoffraum-Entlüftung normen, nicht Kabinen-Belüftung bei geschlossenem Niedergang. Beide Zeilen unverifiziert.
+
 ### 23.2 Prüfverfahren für Niedergangs-Dichtungen
 
 | Prüfung | Norm | Methode | Akzeptanzkriterium |
@@ -2295,12 +2298,13 @@ Für 50% Kompression: 2,5 / 0,5 = 5,0 mm → Neoprene-Streifen 5mm wählen
 F = Druck × Fläche
 F = 0,3 MPa × 20 cm² × 10⁻⁴ m²/cm²
 F = 0,3 × 10⁶ Pa × 20 × 10⁻⁴ m²
-F = 600 Pa × m² = 6 N pro Board-Kante
+F = 600 N pro Board-Kante
 
-Gesamt für 2 Kanten = 12 N ≈ 1,2 kg
-→ Cam Cleat oder einfacher Riegel reicht aus
+Gesamt für 2 Kanten = 1.200 N ≈ 122 kg
+→ Einfacher Riegel (200–500 N) reicht NICHT allein — Cam Lock oder mehrere Cam Cleats erforderlich (vgl. Anhang AP.3)
 ```
 (Confidence: calculated)
+> ✅ **Audit-Korrektur:** Rechenfehler behoben — 0,3 MPa × 2.000 mm² = 600 N (nicht 6 N); Gesamt ≈ 1.200 N ≈ 122 kg. Damit konsistent mit Anhang AP.3 (einfacher Barrel Bolt allein unzureichend). Die ursprüngliche Schlussfolgerung "einfacher Riegel reicht aus" war Folge des Rechenfehlers und wurde korrigiert.
 
 ---
 
@@ -2325,6 +2329,8 @@ Gesamt für 2 Kanten = 12 N ≈ 1,2 kg
 | EU 2013/53/EU | Sportboote-Richtlinie | 2013 | CE-Konformität |
 | EN 13906-2 | Gasfedern | 2001 | Bei Gasfeder-Unterstützung |
 (Confidence: measured)
+
+> ⚠️ **ZU PRÜFEN (Audit):** **EN 13906-2** normt *Zugfedern* (extension springs), nicht Gasfedern — Scope-Fehler (web-verifiziert). **ABYC H-12** ist keine gültige ABYC-Lüftungsnorm (real: H-2 Benzin, H-32 Diesel; TH-12 = Outboard Engine Mounting). Beide Normnummern unverifiziert. Siehe auch Abschnitt 23.1.
 
 ---
 
@@ -2380,6 +2386,8 @@ Gesamt für 2 Kanten = 12 N ≈ 1,2 kg
 | Hohlkammerprofil | 1011-52 | P-Profil | EPDM | 60 | 10×16 | Hohe Rückfederung |
 | Eckprofil | 1011-53 | L-förmig | EPDM | 65 | 12×12 | Für Rahmenecken |
 (Confidence: measured — EMKA Produktkatalog)
+
+> ✅ **Aufgeloest (Audit):** Profilart bestätigt — EMKA 1011-49 ist ein selbstklemmendes Schaumgummi-EPDM-Profil (65 ±5 Shore A, Stahlfederkern, Dichtballon), KEINE Lippendichtung. Der widersprüchliche Lippendichtungs-Eintrag in Abschnitt 4.2 (8×12 mm) war fehlerhaft und wurde entfernt. — Quelle: EMKA Hersteller (emka.com/products/1011-49, Katalogblatt 5A-130).
 
 ### I.2 Trelleborg Sealing Solutions — Hochleistungs-Marine-Dichtungen
 

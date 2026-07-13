@@ -172,7 +172,7 @@ Schaden am GFK-Boot erkannt
 | **Harz** | 105 Epoxid (2× Beutel) | Polyester Resin | Polyester Resin | Polyester | Polyester (styrolarm) |
 | **Härter** | 205 Fast (2× Beutel) | MEKP | MEKP | MEKP Cream | MEKP |
 | **Glasfaser** | 9 oz Gewebe | Woven Cloth + CSM | CSM + Cloth | CSM | CSM 300 g/m² |
-| **Füller** | 406 + 407 Proben | — | — | — | — |
+| **Füller** | 404 + 407 Proben | — | — | — | — |
 | **Mischbecher** | ✅ | ✅ | ✅ | — | — |
 | **Rührstäbe** | ✅ | ✅ | ✅ | ✅ | — |
 | **Handschuhe** | ✅ (2 Paar) | ✅ | ✅ | — | ✅ |
@@ -340,7 +340,7 @@ Welcher Schaden?
 
 ### 4.1 Über West System
 
-West System (Western System Epoxy, seit 1969, Gougeon Brothers, Bay City, Michigan) ist der weltweite Marktführer für Marine-Epoxid. Das 105/205-System ist der Industriestandard. Verfügbar in 90+ Ländern.
+West System (WEST = "Wood Epoxy Saturation Technique", seit 1969, Gougeon Brothers, Bay City, Michigan) ist der weltweite Marktführer für Marine-Epoxid. Das 105/205-System ist der Industriestandard. Verfügbar in 90+ Ländern.
 
 ### 4.2 Reparatur-Sets
 
@@ -2193,7 +2193,7 @@ Bei der Auswertung von Forum-Empfehlungen muss AYDI folgende Faktoren berücksic
 |------|---------|----------------------|
 | **ISO 12215-5 (2019)** | Rumpfkonstruktion — Bauprinzipien | Dimensionierung der Reparatur-Laminatdicke; Festigkeitswerte |
 | **ISO 12215-6 (2008)** | Strukturelle Arrangements | Stringer, Schotten, Kiel-Verbindung — wie Reparatur anknüpfen |
-| **ISO 12215-7 (2020)** | Beurteilung der Strukturfestigkeit | Prüfmethoden für reparierte Bereiche |
+| **ISO 12215-7 (2020)** | Lasten & lokale Scantlings für Mehrrümpfe (mit ISO 12215-5) | Reparatur-Dimensionierung bei Katamaranen/Trimaranen |
 | **ISO 12216 (2020)** | Fenster, Bullaugen, Luken | Für Reparaturen an Deck-Öffnungen |
 | **ISO 15084 (2003)** | Verankerung | Klampen-/Poller-Befestigung am GFK-Deck |
 | **ISO 9094 (2015)** | Brandschutz | Materialwahl bei motornahen Reparaturen |
@@ -2212,7 +2212,7 @@ Bei der Auswertung von Forum-Empfehlungen muss AYDI folgende Faktoren berücksic
 
 | Standard | Bereich | Region |
 |----------|---------|--------|
-| **ABYC H-27** | Composite Construction | USA |
+| **ABYC H-27** | Seacocks, Thru-Hull-Beschläge & Drain Plugs | USA |
 | **ABYC H-25** | Fuel Systems | USA (Tankreparaturen) |
 | **Lloyd's SSC Rules** | Yachtbau/Reparatur | UK/International |
 | **DNV GL Yacht Rules** | Klassifizierungsregeln | International |

@@ -1051,6 +1051,8 @@ Nomex ist **hygroskopisch** — es nimmt Feuchtigkeit aus der Umgebungsluft auf.
 | 4,8 mm (3/16") | 15–25 | 0,5–1,0 | 15–30 | 0,4–0,7 | 6–10 |
 | 9,5 mm (3/8") | 8–20 | 0,3–0,7 | 10–25 | 0,2–0,5 | 4–8 |
 
+> ⚠️ **ZU PRÜFEN (Audit):** Die Spalten **Druckmodul (20–35 MPa)** und **Schermodul (8–12 MPa)** sind für Aluminium-Honeycomb physikalisch unplausibel und widersprechen dem Datenblatt in Anhang B.3 (Plascore PAMG-XR1 5052: Druckmodul 345–896 MPa, Schermodul L 221–538 MPa) sowie der Hersteller-TDS (Plascore PAMG-XR1 5052, 1/8″-Zelle, 3,1 pcf ≈ 50 kg/m³: Druckmodul ≈ 517 MPa / 75 ksi, Schermodul L ≈ 310 MPa / 45 ksi). Die hier genannten Modul-Werte liegen um Faktor ~10–20 zu niedrig (Größenordnung von PP-Kernen) → Confidence: estimated — unverifiziert. Die Festigkeitsspalten (Druck-/Scherfestigkeit) bleiben plausibel.
+
 ### 15.2 Sandwich-Effekt
 
 - Kernsteifigkeit = f(Kerndicke)³
@@ -1625,6 +1627,8 @@ PP-Honeycomb ist thermoplastisch → formbar zu gekrümmten Paneelen (Vorteil ge
 | **Erfahrung** | 20+ Jahre Reparaturerfahrung: "extensive Dellen und Delaminationen" in Powerboats |
 | **Prävention** | Nicht für Rumpfboden/Laufende Flächen, dickere Skins in Impact-Zonen |
 
+> ⚠️ **ZU PRÜFEN (Audit):** "Niedrige Druckfestigkeit (0,5 MPa)" — 0,5 MPa (72,5 psi) ist die Scher-/Zugfestigkeit von H8PP, nicht die Druckfestigkeit. Die Druckfestigkeit liegt laut Anhang B.2 bei 1,20 MPa bzw. Hersteller-TDS (3M/Nida-Core H8PP) bei 1,3 MPa (188 psi). Die Kernaussage (impact-/punktlastempfindlich) bleibt gültig, der genannte Zahlenwert ist jedoch die falsche Kenngröße.
+
 ### 26.4 Schlechte Schraubenhaltung
 
 | Aspekt | Detail |
@@ -1798,7 +1802,9 @@ PP-Honeycomb ist thermoplastisch → formbar zu gekrümmten Paneelen (Vorteil ge
 | **Reparierbarkeit** | Mittel | Mittel | Mittel |
 | **Kosten (€/m²)** | 18–45 | 8–25 | 3–8 |
 | **Typische Anwendung** | Racing, Superyacht | Möbel, Schotten, Militär | Serie, Decks, Interieur |
-| **Confidence** | measured | measured | measured |
+| **Confidence** | measured | measured | estimated — unverifiziert (s. Hinweis) |
+
+> ⚠️ **ZU PRÜFEN (Audit):** PP **Druckfestigkeit 0,5 MPa** widerspricht dem eigenen Datenblatt (Anhang B.2: 1,20 MPa) und der Hersteller-TDS (3M/Nida-Core H8PP: 1,3 MPa / 188 psi). 0,5 MPa (72,5 psi) ist die Scher- bzw. Zugfestigkeit von H8PP, nicht die Druckfestigkeit — mutmaßliche Verwechslung. Vgl. Abschnitt 23.3 (PP 80–100 kg/m³ → 1,0–2,0 MPa) und 26.3. Da last-/dimensionierungsrelevant, hier NICHT angehoben, sondern markiert und Confidence zurückgestuft.
 
 ### 29.2 Stärken-Profil (Spinnennetz)
 

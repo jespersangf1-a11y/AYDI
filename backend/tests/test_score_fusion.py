@@ -34,7 +34,7 @@ def test_fuse_both_high_confidence():
     )
     assert result["fused_score"] is not None
     assert result["data_sources"] == ["structured", "visual"]
-    assert result["confidence"] == "measured+visual"
+    assert result["confidence"] == "measured"  # canonical: dominant source (structured)
     # ergonomics: sw=0.75, vw=0.25, high discount=1.0 -> effective same
     expected = 80.0 * 0.75 + 90.0 * 0.25
     assert abs(result["fused_score"] - round(expected, 1)) < 0.2
@@ -168,7 +168,7 @@ def test_no_data():
     """Neither source -> fused_score None, confidence insufficient."""
     result = fuse_module_scores(None, None, "ergonomics", "cruising_sail")
     assert result["fused_score"] is None
-    assert result["confidence"] == "insufficient"
+    assert result["confidence"] == "visual_insufficient"
     assert result["data_sources"] == []
     assert result["structured_score"] is None
     assert result["visual_score"] is None
@@ -190,11 +190,12 @@ def test_cost_module_zero_visual_weight():
 
 
 def test_emotional_module_visual_dominates():
-    """Emotional module: vw=0.75 so visual has major influence."""
+    """Emotional module: vw=0.75 so visual has major influence (agreeing scores)."""
+    # Scores within the disagreement threshold so the weighted blend applies.
     result = fuse_module_scores(
-        _structured(60.0), _visual(90.0, "high"), "emotional", "cruising_sail"
+        _structured(60.0), _visual(80.0, "high"), "emotional", "cruising_sail"
     )
-    expected = round(60.0 * 0.25 + 90.0 * 0.75, 1)
+    expected = round(60.0 * 0.25 + 80.0 * 0.75, 1)
     assert result["fused_score"] == expected
     assert result["nominal_weights"]["structured"] == 0.25
     assert result["nominal_weights"]["visual"] == 0.75

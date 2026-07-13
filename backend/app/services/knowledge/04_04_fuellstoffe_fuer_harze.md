@@ -363,7 +363,7 @@ Füllstoffe (engl. fillers, additives) sind der Schlüssel zur Anpassung von Har
 | 3M K37 | Borosilikatglas | 0,37 | 20,7 | 45 | Tiefsee-Auftrieb, Hochdruck | `measured` |
 | 3M K46 | Borosilikatglas | 0,46 | 41,4 | 40 | Extreme Druckbelastung | `measured` |
 | 3M S22 | Natron-Kalk-Glas | 0,21 | 2,8 | 35 | Preisgünstige Alternative zu K15 | `measured` |
-| 3M S32 | Natron-Kalk-Glas | 0,32 | 7,6 | 40 | Mittlere Belastung, guter Preis | `measured` |
+| 3M S32 | Natron-Kalk-Glas | 0,32 | 13,8 | 40 | Mittlere Belastung, guter Preis | `measured` |
 | 3M S38 | Natron-Kalk-Glas | 0,38 | 27,6 | 40 | Höhere Belastung | `measured` |
 | 3M iM16K | Borosilikatglas | 0,46 | 110 | 20 | Tiefsee >3.000m | `measured` |
 
@@ -2872,10 +2872,12 @@ class FillerCostCalculator(BaseModel):
 | Nicht-ausgehärtete Harz-Füllstoff-Mischung | Sondermüll | Kommunaler Schadstoff-Sammelpunkt | NICHT in Hausmüll oder Ausguss | `documented` |
 | Ausgehärtete Harz-Füllstoff-Teile | Baurestmasse | Bauschuttdeponie oder Restmüll | Kein Sondermüll wenn voll ausgehärtet | `documented` |
 | Trockener Füllstoff (Aerosil, Microballoons) | Staubförmiger Abfall | Dicht verpackt zum Wertstoffhof | Nie lose entsorgen — Staubentwicklung | `documented` |
-| Aluminiumpulver-Reste | Gefahrgut Klasse 4.3 | Spezial-Entsorgung über Gefahrgut-Betrieb | Wasserreaktiv, brandgefährlich | `measured` |
+| Aluminiumpulver-Reste | Gefahrgut Klasse 4.3 | Spezial-Entsorgung über Gefahrgut-Betrieb | Wasserreaktiv, brandgefährlich | `estimated — unverifiziert` |
 | Schleifstaub (Fairing) | Gemischter Abfall | Sondermüll wenn Epoxid enthalten | Filterstaub aus Absaugung separat sammeln | `documented` |
 | Leere Verpackungen (Füllstoff) | Verpackungsabfall | Gelber Sack / Wertstoffhof | Restanhaftungen ausklopfen | `documented` |
 | Kontaminierte Schutzkleidung | Sondermüll | Kommunaler Schadstoff-Sammelpunkt | Einweg-Overalls separat entsorgen | `documented` |
+
+> ⚠️ **ZU PRÜFEN (Audit):** Gefahrgutklasse Aluminiumpulver — hier 4.3 (wasserreaktiv) vs. Abschnitt 68.2 „GEFAHRGUT Kl. 4.1". Beide Klassen existieren: beschichtetes Al-Pulver = UN 1309, Klasse 4.1 (entzündbarer Feststoff); unbeschichtetes/atomisiertes Al-Pulver = UN 1396, Klasse 4.3 (entwickelt in Kontakt mit Wasser entzündbare Gase). Die korrekte Klasse hängt von der Beschichtung des konkreten Produkts ab (SDB prüfen) — Richtung nicht zweifelsfrei, daher hier nicht korrigiert und Confidence auf „estimated — unverifiziert" zurückgestuft.
 
 ## 57. AYDI-Integration — Detaillierte Score-Regeln
 

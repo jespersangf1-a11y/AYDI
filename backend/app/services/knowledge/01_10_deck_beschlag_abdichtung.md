@@ -1624,6 +1624,8 @@ class DeckRebeddingProject(BaseModel):
 
 (Confidence: documented — Harken/Lewmar/Andersen Installationsanleitungen, allgemeiner Konsens)
 
+> ⚠️ **ZU PRÜFEN (Audit):** Anklerwinsch-Drehmoment in dieser Tabelle "M10/M12 × 4–6 | 30–40 Nm" widerspricht den drei anderen Fundstellen im Dokument: A.1 (M12 mit Dichtstoff 50–60 Nm), AA.1 (M12: 50–60 Nm) und AG.4 (Lewmar V700/V1500, Quick Aleph, Lofrans Kobra, Maxwell/Muir M12: 50–60 Nm). Für die höchstbelastete Deckskomponente ist die 30–40-Nm-Angabe für M12 vermutlich zu niedrig (Unteranzug-/Lockerungsrisiko). Wert NICHT geraten korrigiert — verbindliche Herstellervorgabe der konkreten Winsch prüfen. Der Bereich 30–40 Nm passt nur zu M10 (A.1: M10 mit Dichtstoff 30–35 Nm).
+
 ---
 
 ## Anhang B: Dichtstoff-Kompatibilitätsmatrix
@@ -3661,7 +3663,7 @@ class DeckDiscolorationAssessment(BaseModel):
 | Magnettest | 304 kann leicht magnetisch sein nach Kaltverformung, 316L nicht |
 | Tea Staining | Oberflächliche braune Flecken auf 316L — kosmetisch, nicht strukturell |
 | Tef-Gel Schutz | Ultra Safety Systems Tef-Gel auf Bolzen und Kontaktflächen |
-| Duralac Green | Traditionell in UK, DTD 369B Spezifikation, zinkchromatbasiert |
+| Duralac Green | Traditionell in UK, DTD 369B Spezifikation, chromatfrei (enthält kein Barium-/Zinkchromat) |
 | Laufzeit Tef-Gel | 5–7 Jahre bei korrekter Anwendung |
 | Laufzeit Duralac | 8–10 Jahre, schwerer zu entfernen als Tef-Gel |
 | AYDI Scoring | Score 30–50 (strukturelles Risiko, wenn Bolzen geschwächt) |

@@ -126,9 +126,19 @@ async def import_dxf(
 ):
     await _get_project(project_id, _user, db)
 
-    content = await file.read()
+    # Validate the extension BEFORE buffering the whole file, and bound the read
+    # so an oversized upload cannot exhaust memory before any check runs.
     if not file.filename or not file.filename.lower().endswith(".dxf"):
         raise HTTPException(status_code=400, detail="Nur DXF-Dateien werden unterstützt")
+    _MAX_DXF_BYTES = 25 * 1024 * 1024  # 25 MB
+    content = await file.read(_MAX_DXF_BYTES + 1)
+    if len(content) > _MAX_DXF_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail=f"Datei zu gross. Maximal {_MAX_DXF_BYTES // (1024 * 1024)} MB erlaubt.",
+        )
+    if not content:
+        raise HTTPException(status_code=400, detail="Leere Datei hochgeladen.")
 
     custom_layer_map = None
     if layer_map:
@@ -400,6 +410,10 @@ async def run_full_analysis_endpoint(
         zones=layout.zones or [],
         passages=layout.passages or [],
         boat_class=project.boat_class,
+        # Enforce the caller's real subscription tier server-side. Without this
+        # the context defaulted to "pro", so free-tier users received every
+        # paid Level-2 module (paywall bypass).
+        tier=_user.tier,
         length_m=project.length_m,
         beam_m=project.beam_m,
         deck_height_mm=layout.deck_height_mm or 2100,

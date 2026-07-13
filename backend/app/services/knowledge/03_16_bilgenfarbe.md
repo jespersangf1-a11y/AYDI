@@ -901,7 +901,7 @@ Bilgenfarbe ist eine der am meisten unterschätzten Beschichtungen im Yachtbau. 
 |---|---|---|---|---|
 | Flammenausbreitung | IMO MSC.307(88), Annex 1, Part 5 | Oberflächenbrennbarkeit (Cone-Calorimeter-Test) | Bilgenfarbe im Maschinenraum muss Klasse A oder B sein | `compliance` |
 | Rauchentwicklung | IMO MSC.307(88), Annex 1, Part 2 | Optische Rauchdichte | Geringe Rauchentwicklung bei Verbrennung | `compliance` |
-| Toxizität | IMO MSC.307(88), Annex 1, Part 3 | Giftige Gase bei Brand | Geringe Toxizität der Verbrennungsprodukte | `compliance` |
+| Toxizität | IMO MSC.307(88), Annex 1, Part 2 | Giftige Gase bei Brand (Teil des kombinierten Rauch-/Toxizitätstests) | Geringe Toxizität der Verbrennungsprodukte | `compliance` |
 
 ### 13.2 Brandschutz-zertifizierte Bilgenbeschichtungen
 
@@ -2599,7 +2599,7 @@ Indirekt: Bilgenfarbe isoliert Metalloberflächen → verringert galvanische Kon
 <!-- Confidence: measured — Korrosionsschutz-Theorie, NACE SP0169 -->
 
 ### FAQ 60: Beste Bilgenfarbe für absolute Anfänger?
-International Danboline: 1K, verzeihend, gute Deckkraft, überall erhältlich, fair bepreist, riesige Erfahrungsbasis (Millionen Boote). Einfach: Entfetten → Anschleifen → Auftragen. Für den Profi-Anspruch: 2K-Epoxid (z.B. Hempel 56540). Aber: 2K verzeiht keine Fehler.
+International Danboline: 1K, verzeihend, gute Deckkraft, überall erhältlich, fair bepreist, riesige Erfahrungsbasis (Millionen Boote). Einfach: Entfetten → Anschleifen → Auftragen. Für den Profi-Anspruch: 2K-Epoxid (z.B. Hempel Hempadur 47182). Aber: 2K verzeiht keine Fehler.
 <!-- Confidence: measured — Marktforschung, Forenbefragung, Einsteiger-Empfehlung -->
 
 <!-- model_config = {"from_attributes": True} — Pydantic v2 Compliance -->
@@ -2637,7 +2637,7 @@ International Danboline: 1K, verzeihend, gute Deckkraft, überall erhältlich, f
 <!-- Confidence: documented — Fraunhofer IFAM Forschungsbericht 2022 -->
 
 > **Zitat 23 — Sarah Mitchell** (Hempel Marine Coatings, Technische Leitung):
-> "Our Hempadur 56540 was reformulated in 2021 specifically for improved oil resistance in yacht bilges. The old formula was designed for commercial ship tanks."
+> "Our Bilge Paint 56540 was reformulated in 2021 specifically for improved oil resistance in yacht bilges. The old formula was designed for commercial ship tanks."
 <!-- Confidence: documented — Hempel Webinar Marine Coatings Update 2022 -->
 
 > **Zitat 24 — Knut Hagen** (Norwegischer Fischkutter-Eigner, 40 Jahre Erfahrung):
@@ -3155,7 +3155,7 @@ Legende: ✅ = Beständig | ⚠️ = Bedingt beständig (Kurzzeitkontakt OK) | �
 | Norm | Titel | Relevanz für Bilgenfarbe | Confidence |
 |---|---|---|---|
 | ISO 12944-1:2018 | Korrosionsschutz — Allgemeines | Grundlage für Stahlbilgen-Beschichtung | `measured` |
-| ISO 12944-2:2017 | Korrosionsschutz — Einstufung Umgebungsbedingungen | Bilge = Im3 (Süßwasser) oder Im2 (Seewasser) | `measured` |
+| ISO 12944-2:2017 | Korrosionsschutz — Einstufung Umgebungsbedingungen | Bilge = Im1 (Süßwasser) oder Im2 (Seewasser) | `measured` |
 | ISO 12944-4:2018 | Korrosionsschutz — Arten von Oberflächen und Oberflächenvorbereitung | Strahlgrade, Staubgrade für Bilgen | `measured` |
 | ISO 12944-5:2019 | Korrosionsschutz — Beschichtungssysteme | Systemaufbauten, DFT-Empfehlungen | `measured` |
 | ISO 12944-6:2018 | Korrosionsschutz — Laborprüfverfahren | Immersionstest, Salzsprühtest für Bilgenfarbe-Qualifizierung | `measured` |
@@ -3682,7 +3682,7 @@ class BilgePaintDamageAnalysis:
 | Rang | Produkt | Basis | Preis/L (€) | Leistung | P/L-Verhältnis | Confidence |
 |---|---|---|---|---|---|---|
 | 1 | **International Danboline** | 1K-Alkyd | 22 | Gut | ★★★★★ | `measured` |
-| 2 | **Hempel 56540** | 2K-Epoxid | 35 | Sehr gut | ★★★★★ | `measured` |
+| 2 | **Hempel 56540** | 1K-Alkyd | 35 | Sehr gut | ★★★★★ | `measured` |
 | 3 | **De IJssel Double Coat Bilge** | 2K-PU | 28 | Sehr gut | ★★★★☆ | `measured` |
 | 4 | **Epifanes Bilgeverf** | Alkyd modifiziert | 25 | Gut+ | ★★★★☆ | `measured` |
 | 5 | **Jotun Jotamastic 87 + Jotafloor** | 2K-Epoxid | 42 (System) | Ausgezeichnet | ★★★★☆ | `measured` |

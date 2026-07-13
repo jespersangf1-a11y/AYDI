@@ -168,9 +168,9 @@ E-Glas (Electrical Glass, Alumino-Borosilikat) ist das mit Abstand wichtigste Ve
 
 | Produkt | Hersteller/Lieferant | Flächengewicht (g/m²) | Fadenstärke Kette | Fadenstärke Schuss | Breite (cm) | Dicke (mm) | Preis (EUR/m²) | Art.-Nr. | Confidence |
 |---|---|---|---|---|---|---|---|---|---|
-| Style 7500 | BGF/Hexcel | 48 | EC5-11 1/0 | EC5-11 1/0 | 127 | 0,05 | 6,50–8,00 | 7500 | `measured` |
-| Style 7520 | BGF/Hexcel | 81 | EC6-68 1/0 | EC6-68 1/0 | 127 | 0,08 | 5,50–7,00 | 7520 | `measured` |
-| Style 7533 | BGF/Hexcel | 163 | ECG-75 1/0 | ECG-75 1/0 | 127 | 0,15 | 4,00–5,50 | 7533 | `measured` |
+| Style 7500 | BGF/Hexcel | 48 | EC5-11 1/0 | EC5-11 1/0 | 127 | 0,05 | 6,50–8,00 | 7500 | `estimated — unverifiziert` |
+| Style 7520 | BGF/Hexcel | 81 | EC6-68 1/0 | EC6-68 1/0 | 127 | 0,08 | 5,50–7,00 | 7520 | `estimated — unverifiziert` |
+| Style 7533 | BGF/Hexcel | 163 | ECG-75 1/0 | ECG-75 1/0 | 127 | 0,15 | 4,00–5,50 | 7533 | `estimated — unverifiziert` |
 | Style 7544 | BGF/Hexcel | 200 | ECG-75 1/2 | ECG-75 1/2 | 127 | 0,19 | 3,80–5,00 | 7544 | `measured` |
 | Style 7628 | BGF/Hexcel | 303 | ECG-75 1/0 | ECG-75 1/0 | 127 | 0,25 | 3,50–4,50 | 7628 | `measured` |
 | GFK-Gewebe 80 PW | R&G | 80 | 68 tex | 68 tex | 100/125 | 0,08 | 4,50–6,00 | 100 080 | `measured` |
@@ -186,6 +186,8 @@ E-Glas (Electrical Glass, Alumino-Borosilikat) ist das mit Abstand wichtigste Ve
 | 6 oz Cloth | Fibre Glast | 202 (6 oz/yd²) | — | — | 127 (50") | 0,19 | 3,50–5,00 USD | 572 | `measured` |
 | 10 oz Cloth | Fibre Glast | 340 (10 oz/yd²) | — | — | 127 (50") | 0,30 | 3,00–4,50 USD | 573 | `measured` |
 | Style 1522 | JPS Composite | 136 (4 oz/yd²) | ECE-225 1/0 | ECE-225 1/0 | 97 (38") | 0,10 | 5,00–7,00 USD | 1522 | `measured` |
+
+> ⚠️ **ZU PRÜFEN (Audit):** BGF/Hexcel-Style-Flächengewichte widersprüchlich — Style 7500/7520/7533 hier 48/81/163 g/m², in §30.2/30.3 dagegen 163/200/302 g/m² (beide ursprünglich „measured"). Herstellerdatenblätter (Hexcel HexForce / BGF / Rock West): Style 7500 ≈ 319 g/m², 7520 ≈ 284 g/m², 7533 ≈ 191 g/m² (alle Plain Weave); Style 7628 ≈ 203 g/m² (hier durchgängig 303). Beide Tabellen weichen von den Datenblättern ab — Werte in diesen Zeilen auf „estimated — unverifiziert" zurückgestuft, vor Nutzung mit Datenblatt prüfen.
 
 ### 5.2 Twill Weave (Köperbindung 2/2)
 
@@ -784,7 +786,7 @@ E-Glas (Electrical Glass, Alumino-Borosilikat) ist das mit Abstand wichtigste Ve
 | ISO 2078 | Textile glass — Yarns — Designation | Garn-Bezeichnungssystem | `measured` |
 | ISO 1889 | Textile glass — Yarns — Linear density | Tex-Bestimmung | `measured` |
 | ISO 3341 | Textile glass — Yarns — Breaking force/strength | Garnfestigkeit | `measured` |
-| ISO 1887 | Textile glass — Staple fibres and filaments — Diameter | Filamentdurchmesser | `measured` |
+| ISO 1888 | Textile glass — Staple fibres and filaments — Diameter | Filamentdurchmesser | `measured` |
 | ISO 2559 | Textile glass — Mats — Designation | Matten-Bezeichnung | `measured` |
 | ASTM D578 | Standard specification for glass fiber strands | US-Äquivalent Garn-Spezifikation | `measured` |
 
@@ -1661,6 +1663,8 @@ class FVGCalculator(BaseModel):
 | 18 | **3B HiPer-tex Twill** | 3B-Fibreglass | 200 g/m² | 12/10 | 0.17 | 136 | Silan HP | 1270 | 36% | 48% | 55% | 310 | 300 | 21.5 | 43 | Sehr gut | 8.80 | High Performance |
 | 19 | **Taishan TW200** | Taishan Fiberglass | 200 g/m² | 12/10 | 0.17 | 136 | Silan EP | 1270 | 34% | 46% | 53% | 278 | 268 | 19.7 | 37 | Sehr gut | 3.20 | Budget |
 
+> ⚠️ **ZU PRÜFEN (Audit):** Style 7725 hier mit 200 g/m² geführt (Zeile 1), in §15.1 (HexForce 7725) dagegen 296 g/m² — beide „measured". Herstellerdatenblätter (BGF/Hexcel/JPS/ACP): Style 7725 (2×2 Twill) ≈ 296 g/m² (≈ 8,5–8,8 oz/yd²), d. h. der §15.1-Wert (296) ist korrekt und deckt sich mit der hier separat geführten Zeile „Style 7725H = 296"; die 200 g/m² in dieser Zeile sind unverifiziert.
+
 <!-- Confidence: measured — Kombinierte Datenblatt-Werte und Praxiserfahrung -->
 <!-- Pydantic: model_config = {"from_attributes": True} — TwillWeaveSelector -->
 
@@ -2392,14 +2396,14 @@ class MarineLaminateLayup(BaseModel):
 | 104 | Warum ist Biax ±45° so wichtig? | Biax ±45° trägt Schublasten. Ohne Schubträger versagt jedes Sandwich-Laminat durch Kern-Scherung. Mindestens 1 Lage ±45° je Seite des Kerns. | measured |
 | 105 | Was kostet eine Rumpfinfusion an Material? | Für 12m Segelboot: ~€3.000–5.000 Textil + ~€2.000–3.500 Harz + ~€800–1.500 Verbrauchsmaterial = ~€6.000–10.000 Material. | calculated |
 | 106 | Wie teste ich den FVG meines Laminats? | Burn-Off Test (LOI): Probe wiegen → Muffelofen 625°C 1h → Rückstand wiegen. FVG = (Glasmasse/Probenmasse) × 100%. Alternativ: Dichtevergleich. | measured |
-| 107 | Kann ich CSM mit Epoxy verwenden? | Nur mit emulsionsgebundenem CSM und Epoxy-kompatibler Schlichte. Pulvergebundenes CSM + Epoxy funktioniert nicht — der Pulverbinder löst sich nicht in Epoxy. | measured |
+| 107 | Kann ich CSM mit Epoxy verwenden? | Nur mit PULVERgebundenem CSM (Pulverbinder ist Epoxy-kompatibel). Emulsionsgebundenes CSM (PVAc-Binder) funktioniert NICHT mit Epoxid — der PVAc-Binder ist styrol-löslich (nur für UP/VE) und wird von Epoxid nicht angelöst → unvollständige Tränkung, Delaminationsrisiko. | measured |
 | 108 | Was ist Crowfoot Satin? | Eine 1/3 Satin-Bindung (auch Crow's Foot genannt). Drapierbarkeit zwischen Twill 2/2 und Satin 4HS. Weniger gebräuchlich im Bootsbau. | measured |
 | 109 | Warum delaminiert mein Laminat? | Häufigste Ursachen: 1. Kontamination der Klebefläche, 2. Falsche Schlichte/Harz-Kombination, 3. Unvollständige Tränkung, 4. Thermische Spannung, 5. Wasser-Ingress. Diagnose: Klopftest + Ultraschall. | measured |
 | 110 | Wie repariere ich einen Osmoseschaden? | Osmose-Sanierungsprotokoll: 1. Gelcoat entfernen, 2. Blasen öffnen und spülen, 3. Trocknen bis <3% Feuchte (Wochen bis Monate), 4. VE-Barriere-Beschichtung, 5. Neues Antifouling. | measured |
 | 111 | Was ist Race-Tracking bei der Infusion? | Harz fließt bevorzugt an Kanten und Rändern, wo der Widerstand geringer ist. Lösung: Tacky-Tape als Damm, Peel-Ply an Kanten, Angussplanung mit Randdichtung. | measured |
 | 112 | Kann ich E-Glas nachträglich tempern? | Ja, Post-Cure erhöht Tg und Festigkeit. Typisch: 8h bei 60°C für UP, 4h bei 80°C für VE, 2h bei 120°C für EP. Langsam aufheizen (2°C/min) und abkühlen! | measured |
 | 113 | Was bedeutet Marinisierung einer Schlichte? | Marine-Schlichten (z.B. Silan FK800) sind speziell formuliert für Feuchtebeständigkeit. Sie haben höheren Hydrolyse-Widerstand als Standard-Silan-Schlichten. | measured |
-| 114 | Wie erkenne ich E-Glas vs S-Glas? | Optisch kaum zu unterscheiden. S-Glas hat höhere Dichte (2.49 vs 2.54 g/cm³ — minimal). Sicherste Methode: Zertifikat prüfen. Zugversuch zeigt ~30% höhere Festigkeit bei S-Glas. | measured |
+| 114 | Wie erkenne ich E-Glas vs S-Glas? | Optisch kaum zu unterscheiden. S-Glas hat geringere Dichte (2.49 vs 2.54 g/cm³ — minimal). Sicherste Methode: Zertifikat prüfen. Zugversuch zeigt ~30% höhere Festigkeit bei S-Glas. | measured |
 | 115 | Wann nehme ich ECR-Glas statt E-Glas? | Bei allen Unterwasser-Anwendungen, Osmose-kritischen Bereichen, und chemisch belasteten Umgebungen. Mehrkosten ~30%, aber Langzeitperformance deutlich besser. | measured |
 | 116 | Was ist eine Schäftung (Scarf Joint)? | Konisch geschliffene Reparaturstelle. Verhältnis Länge:Dicke = 12:1 für strukturelle Reparaturen (z.B. 4mm Laminat → 48mm Schäftlänge). Festigkeit 85–95% des Originals. | measured |
 | 117 | Kann ich E-Glas per Filament Winding verarbeiten? | Ja, Filament Winding mit E-Glas-Rovings ist Standard für Rohre, Tanks, und Masten. FVG bis 70% erreichbar. Für Rümpfe weniger geeignet (nur Rotationskörper). | measured |
@@ -2763,7 +2767,7 @@ START
 | ISO 2559 | Textile glass — Mats — Basis for specification | Spezifikation | CSM-Beschaffung | measured |
 | ISO 3374 | Textile glass — Mats — Determination of mass per unit area | Prüfung | CSM IQC | measured |
 | ISO 9163 | Textile glass — Rovings — Manufacture of test specimens | Prüfung | Roving-Qualifizierung | measured |
-| EN 13417 | Multiaxial multi-ply fabrics — Specification | Spezifikation | NCF-Beschaffung | measured |
+| EN 13417 | Woven fabrics — Specification | Spezifikation | Gewebe-Beschaffung | measured |
 | EN 13473 | Multiaxial multi-ply fabrics — Determination of mass/area | Prüfung | NCF IQC | measured |
 
 ### 55.3 Laminatnormen — Prüfverfahren

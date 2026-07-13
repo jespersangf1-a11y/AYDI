@@ -7,6 +7,7 @@ Integrates:
 - Partial failure handling
 """
 import asyncio
+import inspect
 import logging
 from datetime import datetime, timezone
 from dataclasses import dataclass, field
@@ -49,6 +50,9 @@ class AnalysisContext:
     community_patterns: list[dict] = field(default_factory=list)
     # Subscription tier for gating (defaults to "pro" for backward compat)
     tier: str = "pro"
+    # Provenance of the input data — drives the confidence code modules emit
+    # ("measured" for CAD/DB Level-2 data, "estimated" for Level-1 inference).
+    data_source: str = "measured"
     # Results from previous tiers (populated during execution)
     module_results: dict[str, dict] = field(default_factory=dict)
 
@@ -176,8 +180,9 @@ async def run_full_analysis(
 
             for name, result in zip(module_names, tier_results):
                 if isinstance(result, Exception):
-                    logger.error("Module %s failed: %s", name, result)
-                    errors[name] = {"error": str(result), "type": type(result).__name__}
+                    logger.error("Module %s failed: %s", name, result, exc_info=result)
+                    # Detail is logged; do not leak the raw exception text to the client.
+                    errors[name] = {"error": "Modulanalyse fehlgeschlagen", "type": type(result).__name__}
                 elif isinstance(result, dict) and result.get("available") is False:
                     skipped[name] = result.get("reason", "Nicht verfuegbar")
                 elif isinstance(result, dict):
@@ -259,6 +264,14 @@ async def _run_single_module(
     dispatched to a thread-pool executor to avoid blocking the event loop.
     """
     kwargs = _build_module_kwargs(name, context)
+
+    # Thread the data provenance to modules that accept it, so estimated
+    # Level-1 inputs are not reported with a green "measured" confidence badge.
+    _params = inspect.signature(runner).parameters
+    if "data_source" in _params or any(
+        p.kind is inspect.Parameter.VAR_KEYWORD for p in _params.values()
+    ):
+        kwargs.setdefault("data_source", context.data_source)
 
     loop = asyncio.get_event_loop()
     result = await loop.run_in_executor(
