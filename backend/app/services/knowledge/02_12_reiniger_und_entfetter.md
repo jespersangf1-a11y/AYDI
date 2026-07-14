@@ -206,14 +206,14 @@ Für: Großflächige Reinigung, Umweltzonen, Innenräume. Owatrol Deck Cleaner, 
 | **Typ** | Reiniger für poröse Substrate |
 | **Basis** | Alkohol + Wasser |
 | **Farbe** | Farblos |
-| **Flammpunkt** | >60°C |
+| **Flammpunkt** | 14°C |
 | **Dichte** | 0.87 g/cm³ |
 | **VOC-Gehalt** | ~350 g/l |
 | **Anwendungstemperatur** | +5°C bis +40°C |
 | **Ablüftzeit** | 30–60 min |
 | **Gebinde** | 1000 ml Dose |
 | **Haltbarkeit** | 12 Monate |
-| **GHS** | H226, H319 |
+| **GHS** | H225, H319, H336 |
 | **Preis DE** | 1000ml: 28–38 € |
 | **Verfügbarkeit** | EU: sofort, International: über Sika-Vertrieb |
 
@@ -229,9 +229,9 @@ Für: Großflächige Reinigung, Umweltzonen, Innenräume. Owatrol Deck Cleaner, 
 - Längere Ablüftzeit als Cleaner-205 beachten (Wasseranteil!)
 - Ideal vor Teakdeck-Abdichtung mit Sikaflex 298
 
-> ⚠️ **ZU PRÜFEN (Audit):** Flammpunkt `>60°C` vs. GHS `H226` — H226 (entzündbare Flüssigkeit Kat. 3) gilt gemäß CLP nur für Flammpunkt 23–60 °C; ein Flammpunkt >60 °C schließt H226 aus. Einer der beiden Werte ist falsch (korrekte Richtung nicht zweifelsfrei belegbar).
+> ✅ Aufgeloest (Audit): Flammpunkt 14 °C (nicht >60 °C), GHS H225/H319/H336 — Sika Cleaner-226 ist isopropanol-basiert (IPA 90–100 % + Alkyltitanat, UN1219, Flammability Class FLAM), somit hoch entzündbare Flüssigkeit Kat. 2 (H225), nicht Kat. 3. Quelle: Sika Corporation MSDS „Sika Cleaner 226" (MSDS-Nr. 3555).
 
-> Confidence: `estimated — unverifiziert (Audit: Flammpunkt/GHS-Widerspruch)`
+> Confidence: `measured` (Sika MSDS „Sika Cleaner 226", Nr. 3555)
 
 ### 2.4 Sika Aktivator-205 (als Reiniger/Aktivator-Kombi)
 

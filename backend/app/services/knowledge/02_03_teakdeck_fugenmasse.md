@@ -24,9 +24,9 @@ Traditionelle Holzschiffe verwendeten Baumwolle + Pech (Oakum + Pitch) als Kalfa
 | Aushärtung | Feuchtigkeitshärtend | Feuchtigkeitshärtend |
 | Farbe | Schwarz (Standard) | Schwarz (Standard), Teak-Optik (290 DC PRO Teak) |
 | Kartusche | 300 ml (Standardkartusche) | 300 ml + 600 ml Schlauchbeutel |
-| Shore-A-Härte | 25–35 | 25–35 |
+| Shore-A-Härte | 40 | 40 |
 | Bruchdehnung | >400% | >400% |
-| Zugfestigkeit | 1.5 MPa | 1.5 MPa |
+| Zugfestigkeit | 3 MPa | 3 MPa |
 | Hautbildungszeit (23°C/50% r.F.) | ca. 45–60 min | ca. 30–45 min |
 | Durchhärtung | ca. 3 mm/24h | ca. 3 mm/24h |
 | Verarbeitungstemperatur | +10°C bis +35°C | +10°C bis +40°C |
@@ -43,7 +43,7 @@ Traditionelle Holzschiffe verwendeten Baumwolle + Pech (Oakum + Pitch) als Kalfa
 | Haltbarkeit ungeöffnet | 12 Monate (bei 10–25°C) | 15 Monate (bei 5–25°C) |
 | Verpackungseinheit Profi | Karton à 12 Kartuschen | Karton à 12 Kartuschen |
 
-> ⚠️ **ZU PRÜFEN (Audit):** Das aktuelle Sika-Produktdatenblatt für 290 DC PRO nennt Shore-A ≈ **40** (ISO 48-4) und Zugfestigkeit ≈ **3 N/mm²** (ISO 527) — nicht die hier gelisteten 25–35 bzw. 1,5 MPa. Da die Härte-Argumentation dieses Dokuments (290 DC angeblich „weicher" als Soudaseal/3M mit 35–40) auf dem niedrigeren Wert beruht, vor Nutzung gegen das TDS verifizieren. (Bruchdehnung „>400 %" bleibt korrekt: real ≈ 600 %.) Confidence dieser Spalte daher: estimated — unverifiziert.
+> ✅ Aufgelöst (Audit): Shore-A = **40** (ISO 48-4), Zugfestigkeit = **3 MPa** (ISO 527), Bruchdehnung ≈ 600 % — die zuvor gelisteten 25–35 bzw. 1,5 MPa waren falsch und wurden in der Tabelle korrigiert. Quelle: Sika PRODUCT DATA SHEET Sikaflex-290 DC PRO (Version 03.02, 05-2025).
 
 **Produktvarianten:**
 
@@ -337,7 +337,7 @@ Einige Profis verwenden Clear Penetrating Epoxy Sealer (CPES) von Smith & Co. al
 
 | Produkt | Basis | Shore-A | Dehnung | Preis/300ml | Primer nötig | Teak-Spezialist | UV-Beständig |
 |---|---|---|---|---|---|---|---|
-| Sikaflex 290 DC PRO | PU | 25–35 | >400% | €19–25 | Ja (3 N) | ★★★ | Gut |
+| Sikaflex 290 DC PRO | PU | 40 | >400% | €19–25 | Ja (3 N) | ★★★ | Gut |
 | Simson MSR Teak Caulk | MS-Polymer | 20–30 | >350% | €14–18 | Ja (MSR) | ★★★ | Sehr gut |
 | Simson Teak & Deck | MS-Polymer | 20–30 | >400% | €15–20 | Ja (MSR) | ★★★ | Sehr gut |
 | TDS Caulk Classic | 2K Polysulfid | 20–25 | >250% | €28–35 | Ja (P) | ★★★ | Gut |

@@ -1846,14 +1846,14 @@ SZENARIO 3: "Erste Entformung Katastrophe"
 | QK-Punkt | Messmethode | Norm/Standard | Akzeptanz | Häufigkeit | Dokumentation |
 |---------|-----------|--------------|-----------|-----------|--------|
 | **Glanz (Glosswert)** | Glossmeter (60° Geometrie) | ASTM D523 / DIN 67530 | >80 GU (neu), >70 GU (wartungsbedingt) | Wöchentlich | QK-Protokoll GU-Messung |
-| **Oberflächenrauheit Ra** | Oberflächenmessgerät (Taststift) | DIN 4768 / ASTM B462 | <1,0 µm (neu), <1,5 µm (wartungsbedingt) | Monatlich | Ra-Kurve (Trend) |
+| **Oberflächenrauheit Ra** | Oberflächenmessgerät (Taststift) | DIN 4768 / ISO 21920 (ASME B46.1) | <1,0 µm (neu), <1,5 µm (wartungsbedingt) | Monatlich | Ra-Kurve (Trend) |
 | **Kontaktwinkel (Hydrophobizität)** | Kontaktwinkelmessgerät (Wassertropfen-Test) | ISO 19403-2 / ASTM D7334 | >90° (ausreichend benetzbar); <70° = Sealer-Degradation | Monatlich | Kontaktwinkel-Datenbank |
 | **Visuelle Oberflächenkontrolle** | Inspektionslupe 10× + Beleuchtung | Betriebsstandard | Keine Kratzer >0,2 mm, keine Verfärbung | Täglich vor Produktion | Inspektionsprotokoll |
 | **Entformungs-Qualität (Haftung)** | Prozessbeobachtung: Entformungszeit + Widerstand | DIN 16901 (Laminat-Qualität) | Entformungszeit ±10% vs. Baseline | Jede Entformung | Produktionslog |
 | **Trennmittel-Transfer** | Visuelle/taktile Kontrolle entformtes Bauteil | Betriebsstandard | Kein sichtbarer Wachsfilm; bei Haftproblemen = Fehler | Stichproben 10% | Mängelprotokoll |
 | **Umgebungs-Parameter** | Hygrometer + Thermometer | ASTM D4169 (Lagerumgebung) | 20–25°C, 40–60% r.F. (optimal) | Täglich 3× | Klimakontroll-Blatt |
 
-> ⚠️ **ZU PRÜFEN (Audit):** In der Zeile "Oberflächenrauheit Ra" ist **ASTM B462** falsch zitiert — das ist die "Standard Specification for Forged or Rolled Nickel Alloy Pipe Flanges, Forged Fittings, and Valves" (Rohrflansche für korrosive Hochtemperatur-Anwendungen), keine Rauheits-/Oberflächentextur-Norm. Für Ra gilt ASME B46.1 bzw. ISO 21920 (früher ISO 4287); die daneben genannte DIN 4768 (Rauheit Ra/Rz) ist korrekt. Quelle: ASTM Webstore (B462).
+> ✅ Aufgelöst (Audit): Für Ra gilt DIN 4768 / ISO 21920 (früher ISO 4287) bzw. ASME B46.1 — die Fehlzitierung ASTM B462 (Nickel-Alloy-Rohrflansche) wurde ersetzt. Quelle: astm.org/b0462-25.html (B462 = Nickel Alloy Pipe Flanges); ISO 21920-2:2021 (Oberflächenrauheit, ersetzt ISO 4287:1997).
 
 ### 28a.2 Glossmeter-Messprotokolle (ASTM D523)
 

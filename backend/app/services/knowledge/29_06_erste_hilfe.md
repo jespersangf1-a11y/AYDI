@@ -31,11 +31,12 @@
 | Sprüh-Desinfektions-Mittel | 1 | 100 ml | Desinfektion |
 
 **IMO STCW (Standards of Training, Certification and Watchkeeping for Seafarers, 1978):**
-- Medizinisches Personal (≥1 Arzt für Schiffe >500 BRT)
-- Erste-Hilfe-Training alle 5 Jahre (Zertifikat erforderlich)
+- Regelt **Ausbildung/Zertifizierung**, nicht die Bordbesetzung: medizinische Erste Hilfe (STCW-Code A-VI/4-1) und medizinische Betreuung an Bord (A-VI/4-2)
+- Erste-Hilfe-/Sanitäts-Ausbildung mit Auffrischung (Zertifikat erforderlich)
 - Bridge-Personal muss Grundlagen-Reanimation können (CPR)
+- **Arzt-/Krankenraum-Pflicht** folgt NICHT aus STCW, sondern aus MLC 2006 Reg. 4.1 / Richtlinie 92/29/EWG — siehe Abschnitt 9
 
-> ⚠️ **ZU PRÜFEN (Audit):** Die Arzt-/Sanitäter-Pflicht ergibt sich nicht aus dem STCW-Übereinkommen (STCW regelt Ausbildung/Zertifizierung, u.a. medizinische Erste-Hilfe- und Krankenpflege-Ausbildung, nicht die Bordbesetzung). Die Schiffsarzt-Pflicht richtet sich nach Richtlinie 92/29/EWG bzw. MLC 2006, Reg. 4.1: Arzt erst bei Besatzung ≥100 auf Auslandsreise >3 Tage; Krankenraum ab >500 BRT bei Besatzung ≥15 und Reise >3 Tagen — nicht generell „≥1 Arzt ab >500 BRT". Zahlen unverändert; Zuordnung und Schwellenwert prüfen.
+> ✅ Aufgeloest (Audit): Die Arzt-/Krankenraum-Pflicht ergibt sich nicht aus STCW (das nur Ausbildung/Zertifizierung regelt), sondern aus MLC 2006 Reg. 4.1 bzw. Richtlinie 92/29/EWG. Verifizierte Schwellen: Arzt ab ≥100 Personen auf internationaler Reise >3 Tagen; separater Krankenraum ab >500 BRT mit ≥15 Besatzung und Reise >3 Tagen. Die frühere Formulierung „≥1 Arzt ab >500 BRT" (STCW zugeordnet) war falsch und ist damit korrigiert. Quelle: MLC 2006 Reg. 4.1 (edumaritime.net „MLC Regulation 4.1"; ILO MLC 2006); EUR-Lex LEGISSUM c11126; STCW-Code A-VI/4 (edumaritime.net). Details siehe Abschnitt 9.3.
 
 ---
 

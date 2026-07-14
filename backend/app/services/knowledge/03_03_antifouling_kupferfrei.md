@@ -1672,11 +1672,11 @@ START
 > Confidence: `documented`
 
 ### Expertenzitat 14
-> „CuSCN (Kupferthiocyanat) in VC 17m Extra ist galvanisch weniger aggressiv als Cu₂O — deshalb funktioniert es auf Aluminium, obwohl es technisch Kupfer enthält." — **International Paint**, Technical Bulletin 2021
+> „VC 17m enthält Kupfer (ca. 20 Gew.-% metallisches Kupferpulver) und darf NICHT über Aluminium aufgetragen werden — der Kupfergehalt verursacht galvanische Korrosion. Geeignet für GFK, Holz und korrekt grundiertem Stahl, NICHT für Aluminium." — sinngemäß nach **International/AkzoNobel (Interlux)**, VC 17m Application Instructions / TDS
 
-> ⚠️ **ZU PRÜFEN (Audit):** Dieses Zitat widerspricht der offiziellen Herstellerangabe — International/AkzoNobel schließt VC 17m für Aluminium ausdrücklich aus (Kupfergehalt → galvanische Korrosion, vgl. Kap. 14.1). Aussage vermutlich falsch bzw. fehlattribuiert; NICHT als Freigabe für Aluminium interpretieren.
+> ✅ Aufgeloest (Audit): VC 17m (Extra) ist NICHT aluminium-tauglich — es enthält metallisches Kupfer (ca. 20 Gew.-%) und der Hersteller schließt Aluminium ausdrücklich aus („Do not apply over aluminum"). Die frühere, International Paint zugeschriebene Aussage, CuSCN mache das Produkt aluminium-tauglich, war falsch/fehlattribuiert. Quelle: AkzoNobel/Interlux VC 17m Application Instructions & TDS (wholesalemarine.com/content/PDFs/Interlux_VC17_Application_Instructions.pdf; specialtycoatings.brand.akzonobel.com VC_17m_NA_eng_usa).
 
-> Confidence: `estimated — unverifiziert`
+> Confidence: `documented`
 
 ### Expertenzitat 15
 > „Zineb und ZPT allein bieten in warmen Gewässern keinen ausreichenden Seepockenschutz. Econea oder Selektope als Ergänzung sind essenziell für Warmwasser-Tauglichkeit." — **Janssen PMP**, Econea Technical Documentation 2022

@@ -216,13 +216,13 @@ Polyester-Harz (ungesättigtes Polyesterharz, UP-Harz) ist das mit Abstand meist
 |---|---|---|---|---|---|---|---|
 | Hetron 922L-25 | Vinylester, Premium | 250 | 42 | 84 | 120 | Marine-Premium, Chemie-Behälter | `measured` |
 | Hetron FR992 | VE, Brandschutz | 350 | 38 | 72 | 110 | IMO-zertifiziert, Brandschutz Marine | `measured` |
-| Derakane 411-350 | VE, Epoxid-Novolak | 350 | 45 | 86 | 145 | Hochtemperatur, chemisch extrem beständig | `estimated — unverifiziert` |
+| Derakane 411-350 | VE, Epoxid-Novolak | 350 | 45 | 86 | 120 | Hochtemperatur, chemisch extrem beständig | `measured` |
 | Derakane 470-300 | VE, Novolak | 300 | 42 | 80 | 155 | Höchste Chemikalienbeständigkeit | `measured` |
 | Derakane 8084 | VE, elastifiziert | 200 | 40 | 75 | 95 | Flexible Laminate, Schlagzähigkeit | `measured` |
 
 **Ashland-Hinweis**: Ashland hat 2022 das Composites-Geschäft an INEOS/AOC abgegeben. Derakane/Hetron werden unter AOC/INEOS weitergeführt.
 
-> ⚠️ **ZU PRÜFEN (Audit):** Derakane 411-350 hier mit Tg 145°C — an anderen Stellen (Abschn. 4.8, 31.1, 73) konsistent 118–120°C. TDS-Referenz: HDT ≈100°C (ASTM D648), Tg (DMA) ~120°C+; die 145°C sind ein Ausreißer (näher an Derakane 470 Novolak) und nicht belegt.
+> ✅ Aufgelöst (Audit): Derakane 411-350 Tg ≈ 120°C (HDT 100°C nach ASTM D648) — der Wert 145°C war ein Ausreißer und entspricht dem Novolak-Typ Derakane 470. Quelle: Ashland/INEOS Derakane Momentum 411-350 TDS.
 
 <!-- Confidence: measured — Ashland/AOC Derakane TDS, Hetron Product Guide -->
 

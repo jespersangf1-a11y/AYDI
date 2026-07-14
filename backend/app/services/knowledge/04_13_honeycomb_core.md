@@ -1622,12 +1622,12 @@ PP-Honeycomb ist thermoplastisch → formbar zu gekrümmten Paneelen (Vorteil ge
 
 | Aspekt | Detail |
 |--------|--------|
-| **Ursache** | Niedrige Druckfestigkeit (0,5 MPa), Punktlasten |
+| **Ursache** | Begrenzte Druckfestigkeit (1,3 MPa / 188 psi), Punktlasten |
 | **Symptome** | Sichtbare Dellen, weiße Stressmarken, Wassereinbruch bei Skin-Riss |
 | **Erfahrung** | 20+ Jahre Reparaturerfahrung: "extensive Dellen und Delaminationen" in Powerboats |
 | **Prävention** | Nicht für Rumpfboden/Laufende Flächen, dickere Skins in Impact-Zonen |
 
-> ⚠️ **ZU PRÜFEN (Audit):** "Niedrige Druckfestigkeit (0,5 MPa)" — 0,5 MPa (72,5 psi) ist die Scher-/Zugfestigkeit von H8PP, nicht die Druckfestigkeit. Die Druckfestigkeit liegt laut Anhang B.2 bei 1,20 MPa bzw. Hersteller-TDS (3M/Nida-Core H8PP) bei 1,3 MPa (188 psi). Die Kernaussage (impact-/punktlastempfindlich) bleibt gültig, der genannte Zahlenwert ist jedoch die falsche Kenngröße.
+> ✅ Aufgeloest (Audit): Druckfestigkeit H8PP = 1,3 MPa (188 psi); die zuvor genannten 0,5 MPa (72,5 psi) sind die Scher-/Zugfestigkeit, nicht die Druckfestigkeit. Kernaussage (impact-/punktlastempfindlich) bleibt gültig. Quelle: 3M/Nida-Core H8PP Technical Data Sheet (multimedia.3m.com), bestätigt durch Anhang B.2 (ASTM C365: 1,20 MPa).
 
 ### 26.4 Schlechte Schraubenhaltung
 
@@ -1786,7 +1786,7 @@ PP-Honeycomb ist thermoplastisch → formbar zu gekrümmten Paneelen (Vorteil ge
 | Eigenschaft | Nomex | Aluminium | PP |
 |-------------|-------|-----------|-----|
 | **Dichte (typisch)** | 48 kg/m³ | 30–50 kg/m³ | 80 kg/m³ |
-| **Druckfestigkeit** | 2,4 MPa | 0,7–1,2 MPa (5052) | 0,5 MPa |
+| **Druckfestigkeit** | 2,4 MPa | 0,7–1,2 MPa (5052) | 1,3 MPa (188 psi) |
 | **Scherfestigkeit (L)** | 1,25 MPa | 0,5–0,8 MPa | 0,5 MPa |
 | **Gewicht** | Leichtester | Mittel | Leicht (aber höhere Dichte) |
 | **Feuchteaufnahme** | Hygroskopisch ⚠️ | 0% (Kern) | ~0% (Kern) |
@@ -1802,9 +1802,9 @@ PP-Honeycomb ist thermoplastisch → formbar zu gekrümmten Paneelen (Vorteil ge
 | **Reparierbarkeit** | Mittel | Mittel | Mittel |
 | **Kosten (€/m²)** | 18–45 | 8–25 | 3–8 |
 | **Typische Anwendung** | Racing, Superyacht | Möbel, Schotten, Militär | Serie, Decks, Interieur |
-| **Confidence** | measured | measured | estimated — unverifiziert (s. Hinweis) |
+| **Confidence** | measured | measured | measured |
 
-> ⚠️ **ZU PRÜFEN (Audit):** PP **Druckfestigkeit 0,5 MPa** widerspricht dem eigenen Datenblatt (Anhang B.2: 1,20 MPa) und der Hersteller-TDS (3M/Nida-Core H8PP: 1,3 MPa / 188 psi). 0,5 MPa (72,5 psi) ist die Scher- bzw. Zugfestigkeit von H8PP, nicht die Druckfestigkeit — mutmaßliche Verwechslung. Vgl. Abschnitt 23.3 (PP 80–100 kg/m³ → 1,0–2,0 MPa) und 26.3. Da last-/dimensionierungsrelevant, hier NICHT angehoben, sondern markiert und Confidence zurückgestuft.
+> ✅ Aufgeloest (Audit): PP-Druckfestigkeit = 1,3 MPa (188 psi); die zuvor eingetragenen 0,5 MPa (72,5 psi) sind die Scher-/Zugfestigkeit von H8PP, nicht die Druckfestigkeit. Quelle: 3M/Nida-Core H8PP Technical Data Sheet (multimedia.3m.com — Compressive Strength 188 psi / 1,3 MPa, Shear Strength 72,5 psi / 0,5 MPa), bestätigt durch Anhang B.2 (ASTM C365: 1,20 MPa).
 
 ### 29.2 Stärken-Profil (Spinnennetz)
 

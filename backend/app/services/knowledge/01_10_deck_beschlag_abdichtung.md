@@ -1616,7 +1616,7 @@ class DeckRebeddingProject(BaseModel):
 | Traveler-Schiene | M8 | 15–18 | Durchgehende Backing-Schiene |
 | Horn-Klampe (klein) | M8 × 4 | 12–15 | Backing Plate |
 | Horn-Klampe (groß) | M10 × 4 | 25–30 | Backing Plate zwingend |
-| Anklerwinsch | M10/M12 × 4–6 | 30–40 | Massive Backing Plate |
+| Anklerwinsch | M10/M12 × 4–6 | M10: 30–35 / M12: 50–60 | Massive Backing Plate |
 | Pad Eye (standard) | M8 × 2 | 15–18 | Backing Plate |
 | Pad Eye (hochlast) | M10 × 2 | 28–32 | Edelstahl-Backing Plate |
 | Spinlock Clutch XTS | M8 × 4 | 15–18 | Backing Plate |
@@ -1624,7 +1624,7 @@ class DeckRebeddingProject(BaseModel):
 
 (Confidence: documented — Harken/Lewmar/Andersen Installationsanleitungen, allgemeiner Konsens)
 
-> ⚠️ **ZU PRÜFEN (Audit):** Anklerwinsch-Drehmoment in dieser Tabelle "M10/M12 × 4–6 | 30–40 Nm" widerspricht den drei anderen Fundstellen im Dokument: A.1 (M12 mit Dichtstoff 50–60 Nm), AA.1 (M12: 50–60 Nm) und AG.4 (Lewmar V700/V1500, Quick Aleph, Lofrans Kobra, Maxwell/Muir M12: 50–60 Nm). Für die höchstbelastete Deckskomponente ist die 30–40-Nm-Angabe für M12 vermutlich zu niedrig (Unteranzug-/Lockerungsrisiko). Wert NICHT geraten korrigiert — verbindliche Herstellervorgabe der konkreten Winsch prüfen. Der Bereich 30–40 Nm passt nur zu M10 (A.1: M10 mit Dichtstoff 30–35 Nm).
+> ✅ Aufgeloest (Audit): M12-Anklerwinsch-Bolzen = 50–60 Nm (30–40 Nm gilt nur für M10). Bestätigt durch Standard-Anzugsdrehmomente für A4-70/316-Edelstahl (M10 ≈ 33 Nm, M12 ≈ 57 Nm) sowie die dokumenteigenen Herstellerdaten (A.1, AA.1, AG.4). Quelle: BUMAX Fasteners — Tightening torque and force (A4-70, µ=0,14).
 
 ---
 

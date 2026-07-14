@@ -288,7 +288,7 @@ Osmose im Kontext von GFK-Booten (Glasfaserverstärkter Kunststoff) ist ein elek
 | **DFT/Schicht** | 125 µm (★★★★★) | 100 µm (★★★★☆) | 75 µm (★★★☆☆) |
 | **Schichten für 500 µm** | 4 | 5 | 7 |
 | **Topfzeit (23°C)** | 90 Min. (★★★★☆) | 45 Min. (★★☆☆☆) | 120 Min. (★★★★★) |
-| **Max. Überarbeitung** | 30 Tage (★★★★★) | 30 Tage (★★★★★) | 2 Tage (★★☆☆☆) |
+| **Max. Überarbeitung** | 30 Tage (★★★★★) | 7 Tage (★★★★☆) | 2 Tage (★★☆☆☆) |
 | **VOC** | 195 g/L (★★★★★) | 220 g/L (★★★★☆) | 290 g/L (★★★☆☆) |
 | **Aluminium-tauglich** | ⛔ Nein | ⛔ Nein | ✅ Ja (mit Etch) |
 | **Stahl-tauglich** | ⚠️ Bedingt | ⚠️ Bedingt | ✅ Ja |
@@ -297,9 +297,9 @@ Osmose im Kontext von GFK-Booten (Glasfaserverstärkter Kunststoff) ist ein elek
 
 > „Gelshield 200 ist der Evolution der Gelshield-Familie — höchster Feststoff, niedrigster VOC, dickste Schichten. Für GFK-Osmoseschutz gibt es nichts Besseres von International." — Applikationsleiter, AkzoNobel
 
-> ⚠️ **ZU PRÜFEN (Audit):** Max. Überarbeitung Gelshield Plus steht hier mit „30 Tage" (ebenso Anhang A), aber mit „7 Tage" in FAQ 57, Anhang Q und Anhang R. Herstellerseitig nicht zweifelsfrei verifizierbar; die 3 Fundstellen mit „7 Tage" deuten darauf hin, dass „30 Tage" versehentlich aus der Gelshield-200-Spalte übernommen wurde.
+> ✅ Aufgeloest (Audit): Max. Überarbeitung Gelshield Plus = 7 Tage (Self-on-self max. 2 Tage @23°C / 4 Tage kühl; max. 7 Tage beim Überarbeiten mit Gelshield-200-Tie-Coat bzw. Interprotect). „30 Tage" war fälschlich aus der Gelshield-200-Spalte übernommen. — Quelle: International Gelshield Plus TDS (AkzoNobel, Ref:3151, 13/12/2018).
 
-> Confidence: `estimated — unverifiziert (Überarbeitungszeit Gelshield Plus widersprüchlich)`
+> Confidence: `measured`
 
 ### 4.6 Eigner-Erfahrungen Gelshield 200
 

@@ -97,12 +97,12 @@ Hartantifoulings unterliegen denselben Biozid-Regulierungen wie SPC (EU BPR 528/
 | Slipanlage-Vorschriften | Zunehmend strenger (DE, DK, SE) | Schleifen nur noch über Auffangwanne → Kosten steigen |
 | TBT-Altlasten | IMO AFS Convention | Alte Boote (vor 2003) können TBT unter Hart-AF haben → Spezialentsorgung |
 | VOC-Grenzwerte | EU Directive 2004/42/EC | Hart-AF enthält typisch 40–55% VOC → einige Formulierungen müssen angepasst werden |
-| Schweden (Ostsee) | KemI | Cu₂O-Verbot für <12m → auch Hartantifouling betroffen |
-| Dänemark (Binnengewässer) | Miljøstyrelsen | Cu₂O-Verbot für <25m in Ostsee |
+| Schweden | KemI | Kein Längenlimit — geografisch geregelt: eigene Produktlisten für West-/Ostküste (Ostküste nur kupferärmere Rezepturen); im Bottnischen Meerbusen nördl. Örskär und in Binnengewässern (Süßwasser) keine biozidhaltigen AF zugelassen |
+| Dänemark | Miljøstyrelsen | Kupfer erlaubt, aber Auswaschung begrenzt: ≤200 µg Cu/cm² in 14 Tagen und ≤350 µg Cu/cm² in 30 Tagen (Salzwasser-Sportboote ≥200 kg). Die 25-m-Grenze im dän. Recht betrifft Irgarol/Cybutryn, NICHT Kupfer |
 | Bodensee | IGKB | Biozid-Verbot → kein Hart-AF mit Biozid erlaubt |
 
-> ⚠️ **ZU PRÜFEN (Audit):** Die Dänemark-Zeile („Cu₂O-Verbot für <25m in Ostsee") widerspricht Anhang Y.1 („Dänemark: Cu₂O erlaubt mit BPR") und ist in sich inkonsistent (Kopf „Binnengewässer" vs. Inhalt „Ostsee"). Auch die schwedische „<12m"-Längengrenze ist unbelegt (KemI unterscheidet Ost-/Westküste, keine klare Längengrenze). Länderspezifische Kupfer-Verbote hier nicht verifiziert.
-> Confidence: `estimated — unverifiziert` (länderspezifische Kupfer-Verbote; die Rahmen-Aussagen EU-BPR/IMO-AFS/VOC-Richtlinie/Bodensee bleiben belegt)
+> ✅ Aufgeloest (Audit): Schweden kennt kein <12m-Längenlimit — die Regelung ist geografisch (kupferärmere Produktlisten Ostküste; keine biozidhaltigen AF im Bottnischen Meerbusen nördl. Örskär und in Binnengewässern). Dänemark verbietet Kupfer nicht (im Einklang mit Anhang Y.1), sondern begrenzt die Kupfer-Auswaschung auf ≤200 µg Cu/cm² in 14 Tagen; die dänische 25-m-Grenze betrifft Irgarol/Cybutryn, nicht Kupfer. Quelle: KemI (kemi.se, „Anti-fouling paints"); Dänische EPA / Miljøstyrelsen (eng.mst.dk, „Fact Sheet — Anti-fouling paint").
+> Confidence: `documented` (KemI + Miljøstyrelsen, offizielle Behördenangaben)
 
 ---
 

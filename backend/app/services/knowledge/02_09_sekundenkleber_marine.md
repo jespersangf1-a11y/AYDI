@@ -1318,16 +1318,16 @@ CA kann als Schraubensicherung dienen — Alternative zu Loctite Threadlocker:
 
 | Produkt | Spaltfüllung | Fixture | Zugscherung | Preis/20g |
 |---------|-------------|---------|------------|-----------|
-| Loctite 454 | 5mm | 10–30 s | 8–14 MPa | 12–18 EUR |
+| Loctite 454 | 0,25mm | 10–30 s | 8–14 MPa | 12–18 EUR |
 | Loctite 3090 (2K) | 5mm | 120–180 s | 10–15 MPa | 18–25 EUR |
-| 3M CA100 | 5mm | 15–45 s | 8–14 MPa | ~$12/oz |
-| Permabond 910 | 5mm | 15–45 s | 8–14 MPa | £9–14 |
-| ERGO 5072 | 5mm | 15–45 s | 8–14 MPa | 7–12 EUR |
-| BSI Insta-Cure+ | 5mm | 15–45 s | 8–14 MPa | ~$7/oz |
-| Starbond EM-2000 | 5mm | 15–45 s | 8–14 MPa | ~$9/oz |
-| Zap Gel | 5mm | 15–45 s | 8–14 MPa | ~$7/oz |
+| 3M CA100 | 0,5mm | 15–45 s | 8–14 MPa | ~$12/oz |
+| Permabond 910 | 0,15mm | 15–45 s | 8–14 MPa | £9–14 |
+| ERGO 5072 | 0,3mm | 15–45 s | 8–14 MPa | 7–12 EUR |
+| BSI Insta-Cure+ | 0,3mm | 15–45 s | 8–14 MPa | ~$7/oz |
+| Starbond EM-2000 | 0,3mm | 15–45 s | 8–14 MPa | ~$9/oz |
+| Zap Gel | 0,3mm | 15–45 s | 8–14 MPa | ~$7/oz |
 
-> ⚠️ **ZU PRÜFEN (Audit):** Spaltfüllung „5mm" für einkomponentige Gel-CA (454, 910, CA100, EM-2000, Insta-Cure+, Zap Gel) widerspricht FAQ 38 und Glossar (Anhang AE): dort Gel „bis 0,3mm", nur 2K-CA (3090) „bis 5mm". Einkomponentiger CA härtet feuchtigkeitsinitiiert nur oberflächennah (vgl. §1.1/§2.2: Tiefenaushärtung ≤0,25mm), daher ist 5mm-Durchhärtung nur für 2K-Typen plausibel. Gel-Spaltfüllung hier als `estimated — unverifiziert` behandeln.
+> ✅ Aufgelöst (Audit): Einkomponentige Gel-CA füllen nur Sub-mm-Spalte (Durchhärtung feuchtigkeitslimitiert, vgl. §1.1/§2.2); nur 2K-CA (Loctite 3090) erreicht 5mm. Korrigiert nach Hersteller-TDS: Loctite 454 = 0,25mm, 3M CA100 = 0,5mm (0.020"), Permabond 910 = 0,15mm; übrige Gele = 0,3mm (dokumentierter Gel-Wert, Glossar/FAQ 38). — Quellen: Loctite 454 TDS; 3M Scotch-Weld CA100 TDS; Permabond 910 TDS.
 
 ### 17.4 Entscheidungsmatrix: Welcher CA wofür?
 
@@ -3724,7 +3724,7 @@ class BondJointForensics(BaseModel):
 | MAK | Maximale Arbeitsplatzkonzentration | 0,2 ppm für Ethyl-2-CA | `measured` |
 | MMA | Methylmethacrylat | Acrylat-Strukturkleber (Alternative zu CA) | `measured` |
 | NPG | Neopentylglykol | Premium-Gelcoat-Basis, gut klebbar | `measured` |
-| OSHA PEL | Occupational Exposure Limit | 2 ppm (USA) — siehe Audit-Hinweis unten | `estimated — unverifiziert` |
+| OSHA PEL | Occupational Exposure Limit | Kein OSHA-PEL für Ethyl-2-CA; maßgeblich ACGIH TLV 0,2 ppm TWA / 1 ppm STEL | `documented` |
 | Peel Strength | Schälfestigkeit | N/mm, kritisch für flexible Verbindungen | `measured` |
 | Polymerisation (anionisch) | Kettenreaktion von CA-Monomeren | Grundmechanismus aller CA-Kleber | `measured` |
 | Primer | Vorbehandlungsmittel für schwierige Substrate | 770 (PE/PP), 768 (Silikon), 7471 (allgemein) | `measured` |
@@ -3740,7 +3740,7 @@ class BondJointForensics(BaseModel):
 | Weichmacher-Migration | Wanderung von Weichmachern aus PVC | Zerstört CA-Klebfuge auf Weich-PVC | `measured` |
 | Ziegler-Polymerisation | Koordinative Polymerisation | Nicht relevant für CA (rein anionisch) | `measured` |
 
-> ⚠️ **ZU PRÜFEN (Audit):** OSHA hat für Ethyl-2-Cyanacrylat keinen substanzspezifischen PEL veröffentlicht — der Wert „2 ppm (USA)" ist nicht belegbar. Zudem ist „strenger als MAK" logisch falsch: 2 ppm ist höher (= weniger streng) als der MAK/TLV von 0,2 ppm (siehe Zeile MAK). Belegter Wert: ACGIH TLV 0,2 ppm TWA / 1 ppm STEL.
+> ✅ Aufgelöst (Audit): OSHA hat keinen substanzspezifischen PEL für Ethyl-2-Cyanacrylat; maßgeblich ist ACGIH TLV 0,2 ppm TWA / 1 ppm STEL (Substanz als DSEN/RSEN eingestuft). Der frühere Wert „2 ppm (USA)" war der ACGIH-Wert für Methyl-2-CA (MCA), fälschlich auf ECA/OSHA übertragen. — Quellen: OSHA Sampling Method 55 (MCA/ECA); ACGIH TLV / Ethyl-2-Cyanacrylat-SDS.
 
 ---
 

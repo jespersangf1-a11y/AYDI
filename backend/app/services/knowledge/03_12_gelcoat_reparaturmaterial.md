@@ -379,14 +379,14 @@ class YellowingPhenomenon(BaseModel):
 | **Aushärtung** | 30-45 Min bei 20°C (Gel→Fest) |
 | **Barcol-Härte** | 42-48 |
 | **Glanzgrad** | >90 GU bei 60° (aus Form) |
-| **Wasseraufnahme** | <0.6% (ISO 62, 28 Tage) |
+| **Wasseraufnahme** | 18 mg (24h/23°C, BS EN ISO 62 Teil 6.2) |
 | **Styrolgehalt** | ~35% |
 | **Thixotropie** | Hoch (tropft nicht an vertikalen Flächen) |
 | **Haltbarkeit** | 3 Monate bei 20°C (pre-accelerated!) |
 
 **WARNUNG:** Pre-Accelerated Gelcoats haben KURZE Haltbarkeit! Crystic 65PA: nur 3 Monate bei 20°C. Kühl lagern (10-15°C) verlängert auf 6 Monate.
 
-> ⚠️ **ZU PRÜFEN (Audit):** Wasseraufnahme hier „<0.6% (ISO 62, 28 Tage)" widerspricht Abschnitt 16.1 „0.8-1.2% (28 Tage)". Das offizielle Scott Bader TDS (Crystic Gelcoat 65PA, Eng – Jun 2017) nennt Wasseraufnahme nur als 18 mg nach 24 h (BS EN ISO 62 Teil 6.2) und keinen 28-Tage-%-Wert — beide %-Angaben sind daher unverifiziert (estimated — unverifiziert).
+> ✅ Aufgeloest (Audit): Wasseraufnahme = 18 mg nach 24h/23°C (BS EN ISO 62 Teil 6.2); das offizielle TDS nennt keinen 28-Tage-%-Wert — die früheren %-Angaben waren unbelegt. Quelle: Scott Bader TDS Crystic Gelcoat 65PA, Eng – Jun 2017.
 
 <!-- Confidence: documented — Quelle: Scott Bader TDS Crystic 65PA, Rev. 2023 -->
 
@@ -1630,12 +1630,11 @@ class GelcoatRefinishDecision(BaseModel):
 | **Dichte (ausgehärtet)** | 1.20-1.30 g/cm³ | DIN 53479 |
 | **Barcol-Härte** | 40-45 | ASTM D2583 |
 | **Biegefestigkeit** | 110-130 MPa | DIN EN ISO 178 |
-| **Zugfestigkeit** | 55-65 MPa | DIN EN ISO 527 |
+| **Zugfestigkeit** | 75 MPa | BS EN ISO 527-2 |
 | **E-Modul (Zug)** | 3.200-3.800 MPa | DIN EN ISO 527 |
-| **Bruchdehnung** | 1.8-2.5% | DIN EN ISO 527 |
+| **Bruchdehnung** | 3% | BS EN ISO 527-2 |
 | **HDT (Wärmeformbeständigkeit)** | 75-85°C | DIN EN ISO 75 |
-| **Wasseraufnahme (24h/23°C)** | 0.15-0.25% | ISO 62 |
-| **Wasseraufnahme (28 Tage/23°C)** | 0.8-1.2% | ISO 62 |
+| **Wasseraufnahme (24h/23°C)** | 18 mg | BS EN ISO 62 Teil 6.2 |
 | **Glanzgrad Neuzustand** | 85-95 GU (60°) | ISO 2813 |
 | **Glanz nach 2000h QUV** | >70 GU | ASTM G154 |
 | **Vergilbungsindex nach 2000h QUV** | <3.0 ΔYI | ASTM D1925 |
@@ -1656,7 +1655,7 @@ class GelcoatRefinishDecision(BaseModel):
 > **„Crystic 65PA ist seit Jahrzehnten der Standard-Referenz-Gelcoat für ISO-NPG-Reparaturen im Marinbereich. Kein anderer Reparatur-Gelcoat hat so viele dokumentierte Langzeitergebnisse."**
 > — Scott Bader Application Engineering, Technical Seminar Düsseldorf boot 2023
 
-> ⚠️ **ZU PRÜFEN (Audit):** Wasseraufnahme (28 Tage) „0.8-1.2%" widerspricht Abschnitt 2.7.3 „<0.6% (28 Tage)". Das offizielle Scott Bader TDS (Crystic Gelcoat 65PA, Eng – Jun 2017) gibt Wasseraufnahme nur als 18 mg nach 24 h an (BS EN ISO 62 Teil 6.2), keinen 28-Tage-%-Wert. Ebenso weichen Zugfestigkeit (hier 55–65 MPa vs. TDS 75 MPa) und Bruchdehnung (hier 1.8–2.5% vs. TDS 3%) vom offiziellen TDS ab — Werte unverifiziert (estimated — unverifiziert).
+> ✅ Aufgeloest (Audit): Zugfestigkeit 75 MPa, Bruchdehnung 3%, Wasseraufnahme 18 mg (24h/23°C, BS EN ISO 62 Teil 6.2); das offizielle TDS nennt keinen 28-Tage-%-Wert (unbelegte Zeile entfernt). Quelle: Scott Bader TDS Crystic Gelcoat 65PA, Eng – Jun 2017.
 
 <!-- Confidence: documented — Quelle: Scott Bader Crystic 65PA TDS Rev. 14 + Practical Sailor Gelcoat Test 2023 -->
 

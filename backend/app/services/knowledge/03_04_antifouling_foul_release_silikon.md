@@ -3743,19 +3743,19 @@ class FRProductSelection(BaseModel):
 
 ### Y.1 Mythos: "FR funktioniert nur bei Booten über 15 Knoten"
 
-**Fakt:** Dies galt für FR-Systeme der 1. Generation (1990er). Moderne Systeme (3./4. Generation) reinigen sich ab 4–6 Knoten. Selektope®-haltige FR (Hempasil X3) wirken sogar bei Standzeit. Der "15-Knoten-Mythos" ist die häufigste Fehlinformation im Yacht-Markt.
+**Fakt:** Dies galt für FR-Systeme der 1. Generation (1990er). Moderne Systeme (3./4. Generation) reinigen sich ab 4–6 Knoten. Biozid-Hydrogel-Beschichtungen wie Hempaguard (ActiGuard) bieten sogar bei Standzeit aktiven Schutz. Der "15-Knoten-Mythos" ist die häufigste Fehlinformation im Yacht-Markt.
 
 | Generation | Mindest-Geschwindigkeit | Beispielprodukt |
 |-----------|----------------------|----------------|
 | 1. Gen (1990er) | >15 kt | Frühe Silikon-Beschichtungen |
 | 2. Gen (2005–2015) | >10 kt | Intersleek 900, SigmaGlide 890 |
 | 3. Gen (2015–2022) | >6–8 kt | Intersleek 1100SR, Hempel Silic One |
-| 3. Gen + Selektope® | 0 kt (aktiv) | Hempasil X3 87500 |
+| 3. Gen + ActiGuard (Biozid-Hydrogel) | 0 kt (Idle-Schutz) | Hempaguard X7 89900 |
 | 4. Gen (2022+) | >4–6 kt | Intersleek 1400, Hempasil X7 |
 
-> ⚠️ **ZU PRÜFEN (Audit):** Die Zeile „3. Gen + Selektope® / 0 kt (aktiv) / Hempasil X3 87500" ist FALSCH. Hempasil X3 (87500) ist laut Hempel-PDS **biozid-frei und enthält KEIN Selektope** (siehe Kap. 3.2, Kap. 12.1, Anhang A); zudem reinigt sich kein biozid-freies Silikon-FR bei „0 kt". Das Selektope-/biozidhaltige Hempel-Produkt ist Hempaguard, nicht Hempasil X3.
+> ✅ Aufgeloest (Audit): Hempasil X3 87500 ist biozid-frei und Selektope-frei (Servicegeschwindigkeit >8 kt), gehoert daher NICHT in die „0 kt (aktiv)"-Zeile; der Idle-Schutz bei 0 kt stammt vom biozidhaltigen Hempaguard X7 89900 (ActiGuard-Silikon-Hydrogel), nicht von X3. — Quelle: Hempel PDS Hempasil X3+ 87500 („third generation, high solids, silicone based, biocide free fouling release coating") & Hempaguard/ActiGuard (hempel.com).
 
-> Confidence: `estimated` — unverifiziert (siehe Audit-Hinweis)
+> Confidence: `documented` (Hempel PDS 87500 / Hempaguard, web-verifiziert 2026-07)
 
 ### Y.2 Mythos: "FR ist nur für Superyachten wirtschaftlich"
 

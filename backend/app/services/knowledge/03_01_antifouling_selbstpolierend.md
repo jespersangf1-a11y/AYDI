@@ -221,11 +221,11 @@ Selbstpolierende Antifoulings (SPC — Self-Polishing Copolymer) basieren auf ei
 |--------|-----|---------|------|-------|-----------------|-----------|
 | Primocon | Einkomponenten-Primer | Universalprimer UWS | Gelcoat, alter AF | Micron-Serie | YPA984 | ~70–85 EUR |
 | Interprotect | 2K Epoxy-Primer | Osmoseschutz + Primer | Gelcoat, Epoxy-Lamination | Micron-Serie | YPA400/YPA401 | ~100–120 EUR |
-| Gelshield 200 | 2K Epoxy | Osmoseschutz | Gelcoat (nach Trocknung) | Primocon/Interprotect | GS200 | ~90–110 EUR |
+| Gelshield 200 | 2K Epoxy | Osmoseschutz | Gelcoat (nach Trocknung) | Primocon/Interprotect | YPA212 (Grün) / YPA213 (Grau) | ~90–110 EUR |
 
-> ⚠️ **ZU PRÜFEN (Audit):** Gelshield 200 Art.-Nr. „GS200" (hier) vs. „YPA149" (Anhang N, Kompatibilitätstabelle) — Artikelnummer widersprüchlich und nicht zweifelsfrei belegt. International führt Gelshield 200 farbabhängig (Grün/Grau); korrekten Farb-/Artikelcode beim Hersteller verifizieren.
+> ✅ Aufgelöst (Audit): Gelshield 200 wird farbabhängig geführt — korrekte Art.-Nr. YPA212 (Grün) / YPA213 (Grau); „GS200" und „YPA149" waren beide falsch. Quelle: International/AkzoNobel Produktseite + Fachhändler-SKU (IPYPA212A2.5AA / IPYPA213A2.5AA).
 
-> Confidence: `estimated — unverifiziert` (Gelshield-200-Art.-Nr. zu verifizieren; übrige Zeilen `measured`)
+> Confidence: `measured`
 
 ### 2.7 International Verdünner/Reiniger
 
@@ -3114,7 +3114,7 @@ class HauloutPlanDetailed(BaseModel):
 | AF-Produkt | Empfohlener Primer | Alternative Primer (getestet) | NICHT kompatibel |
 |-----------|-------------------|------------------------------|-----------------|
 | Micron Extra EU | Primocon (YPA984) | Interprotect (YPA400) | VC Tar 2 |
-| Micron 350 | Primocon (YPA984) | Gelshield 200 (YPA149) | VC Tar 2, Gelshield Plus |
+| Micron 350 | Primocon (YPA984) | Gelshield 200 (YPA212 Grün / YPA213 Grau) | VC Tar 2, Gelshield Plus |
 | Micron WA | Primocon (YPA984) | Interprotect (auf Alu: PFLICHT) | Jede nicht-Alu-kompatible Grundierung |
 | Micron CSC | Primocon (YPA984) | Interprotect | — |
 | Olympic 86951 | Light Primer 45551 | Underwater Primer 26030, Hempadur 17080 | International-Primer (Haftungsrisiko) |

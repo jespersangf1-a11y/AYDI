@@ -1516,14 +1516,14 @@ class AluminumCoatingCostEstimate(BaseModel):
 | Aspekt | Detail | Confidence |
 |---|---|---|
 | Warum wichtig | JEDE Pore in der UW-Beschichtung auf Alu = Korrosionseinstieg! | `measured` |
-| Methode | Low-Voltage Wet Sponge (ASTM D5162) — 67,5V DC auf feuchtem Schwamm | `estimated — unverifiziert` |
+| Methode | Low-Voltage Wet Sponge (ASTM D5162) — 67,5V DC auf feuchtem Schwamm | `measured` |
 | Gerät | Elcometer 270 / Tinker & Rasor M/1 | `measured` |
 | Durchführung | Schwamm langsam über gesamte UW-Fläche führen | `measured` |
 | Alarm = Holiday | Piep-Ton → markieren, Primer-Touch-Up | `measured` |
 | Wiederholung | NACH jedem Primer/Epoxid-Auftrag → Holiday-frei bevor nächste Schicht | `measured` |
 | Bei Refit | Holiday-Test vor AF-Auftrag → alle Schwachstellen finden und reparieren | `measured` |
 
-> ⚠️ **ZU PRÜFEN (Audit):** 67,5 V vs. 90 V — die Prüfspannung des Nassschwamm-Holiday-Tests ist hier mit 67,5 V DC angegeben, an anderer Stelle jedoch mit 90 V DC (Kap. 68.2, 73.3-Checkliste, 78-Glossar), beide als `measured`. Für **metallische** (Alu-)Substrate ist 67,5 V die Standard-Niederspannung des Nassschwamm-Tests (NACE SP0188 / ASTM D5162); 90 V wird für schlechter leitende Substrate (z. B. Beton) bzw. dickere Systeme verwendet. Einheitlichen Wert für Alu festlegen.
+> ✅ Aufgeloest (Audit): 67,5 V DC (Low-Voltage Wet Sponge auf metallischem/leitfähigem Alu-Substrat) — die abweichenden 90-V-Angaben (Kap. 68.2, 73.3, 78) wurden auf 67,5 V vereinheitlicht; 90 V gilt nur für schlecht leitende Substrate (z. B. Beton). Quelle: ASTM D5162 / NACE SP0188; KTA-Tator: „voltage setting for coatings on steel is constant (67.5 V); 90 V setting for less conductive substrates such as concrete".
 
 > **„Auf einem Alu-Boot ist der Holiday-Test nicht optional — er ist ÜBERLEBENSWICHTIG. Eine einzige Pore im Epoxid, durch die Seewasser an das blanke Alu kommt, startet eine Korrosionszelle. In 2 Jahren ist daraus ein 50mm-Lochfraß geworden. Holiday-Test auf jede Schicht. Jede."**
 > — Beschichtungsinspektor, NACE CIP Level 3, Lloyd's Register, Interview 2024
@@ -2609,7 +2609,7 @@ class AluminumCoatingMaintenancePlan(BaseModel):
 |---|---|---|---|
 | Überschutz (zu negatives Potential) | Mehr OH⁻ Produktion → schnellere Enthaftung | Potential überwachen: NICHT negativer als −1100 mV (Ag/AgCl) | `measured` |
 | Hohe Wassertemperatur | Beschleunigte Reaktionskinetik | Tropische Gewässer: häufiger inspizieren, weniger Anodenkapazität planen | `measured` |
-| Beschichtungsdefekte | Startpunkt für Enthaftung | Holiday-Test vor Wasserung PFLICHT (Nasschwamm-Test 90V DC) | `measured` |
+| Beschichtungsdefekte | Startpunkt für Enthaftung | Holiday-Test vor Wasserung PFLICHT (Nasschwamm-Test 67,5V DC) | `measured` |
 | Schlechte Haftung (kein Etch-Primer) | Enthaftung breitet sich schneller aus | IMMER Etch-Primer → Epoxid → AF (keine Schicht überspringen!) | `measured` |
 | Fremdstromanode überdimensioniert | Leistung >> Bedarf → Überschutz | Galvanisches Anodensystem bevorzugen für Sportboote (selbstregulierend) | `measured` |
 | Salzwasser hoher Leitfähigkeit | Strom fließt leichter → mehr OH⁻ | Mittelmeer/Tropen: konservativere Anodendimensionierung | `measured` |
@@ -3045,7 +3045,7 @@ class AluminiumCoatingSystemV2(BaseModel):
 | 2 | UW DFT Einzelschichten | Elcometer mit Profil | ISO 2808 | Etch ≥15µm, Epoxid ≥200µm, AF ≥75µm | `measured` |
 | 3 | Haftung UW (3 Stellen min.) | Gitterschnitt | ISO 2409 | Gt 0–1 (≤5% Abplatzer) | `measured` |
 | 4 | Haftung UW (3 Stellen) | Pull-Off | ISO 4624 | ≥5 MPa | `measured` |
-| 5 | Holiday-Test UW | Nasschwamm 90V DC | NACE SP0188 | 0 Holidays | `measured` |
+| 5 | Holiday-Test UW | Nasschwamm 67,5V DC | NACE SP0188 | 0 Holidays | `measured` |
 | 6 | Potential Rumpf | Ag/AgCl Referenz | NACE SP0176 | −800 bis −1050 mV | `measured` |
 | 7 | Anoden Restgewicht | Wiegen | — | ≥50% Neugewicht | `measured` |
 | 8 | Galvanischer Isolator | Funktionstest | ABYC A-28 | Leitet AC, sperrt DC | `measured` |
@@ -3177,7 +3177,7 @@ class AluminiumCoatingSystemV2(BaseModel):
 | 53 | **PPF (Paint Protection Film)** | PU-Schutzfolie für Oberflächen (aus Automotive) | Alu-Bug: XPEL, 3M gegen Steinschlag, immer auf Lack | `measured` |
 | 54 | **Formgedächtnis-Polymer** | Polymer das nach Deformation bei Wärme in Originalform zurückkehrt | Forschung: selbstheilende Beschichtungen Zukunft | `estimated` |
 | 55 | **Sweep-Blasting** | Leichtes Strahlen ohne vollständigen Metallabtrag (Sa 2½) | Standard-Vorbereitung für Alu-Marine: nichtmetallisches Strahlmittel | `measured` |
-| 56 | **Nasschwamm-Test** | Holiday-Detektion: feuchter Schwamm + 90V DC → Strom an Fehlstelle | NACE SP0188: 0 Holidays = bestanden | `measured` |
+| 56 | **Nasschwamm-Test** | Holiday-Detektion: feuchter Schwamm + 67,5V DC → Strom an Fehlstelle | NACE SP0188: 0 Holidays = bestanden | `measured` |
 | 57 | **Psychrometer** | Messgerät für Luft-/Taupunkttemperatur | ISO 8502-4: Pflichtmessung vor jeder Beschichtung | `measured` |
 | 58 | **Overcoat-Intervall** | Zeitfenster für Überschichtung (min/max Stunden) | Überschreitung → Zwischenschliff nötig, Unterschreitung → Lösemitteleinschluss | `measured` |
 | 59 | **Galvanischer Isolator** | Gerät im Landstromkabel: leitet AC, sperrt DC (<1,2V) | ABYC A-28: Pflicht für Alu-Boote am Landstrom | `measured` |
