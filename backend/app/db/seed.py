@@ -8,8 +8,9 @@ import logging
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.auth import hash_password
 from app.db.database import async_session, engine
-from app.models.models import Base, Layout, Project, Material, CompetitorModel
+from app.models.models import Base, Layout, Project, Material, CompetitorModel, User
 
 logger = logging.getLogger(__name__)
 
@@ -1704,9 +1705,20 @@ async def seed():
             competitor = CompetitorModel(**comp_data)
             session.add(competitor)
 
+        # Seed demo user (projects require a non-null user_id)
+        demo_user = User(
+            email="demo@aydi.app",
+            hashed_password=hash_password("demo1234"),
+            full_name="Demo User",
+            role="user",
+            tier="pro",
+        )
+        session.add(demo_user)
+        await session.flush()
+
         projects = []
         for data in SEED_PROJECTS:
-            project = Project(**data)
+            project = Project(user_id=demo_user.id, **data)
             session.add(project)
             projects.append(project)
 
