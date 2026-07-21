@@ -26,7 +26,15 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["images"])
 
-UPLOAD_DIR = Path(__file__).resolve().parents[3] / "uploads" / "images"
+# Respect UPLOAD_DIR from settings/env (e.g. /tmp/uploads on serverless hosts);
+# falls back to the previous location next to the code for local development.
+from app.core.config import settings  # noqa: E402
+
+UPLOAD_DIR = (
+    Path(settings.UPLOAD_DIR) / "images"
+    if Path(settings.UPLOAD_DIR).is_absolute()
+    else Path(__file__).resolve().parents[3] / settings.UPLOAD_DIR / "images"
+)
 ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "heic", "webp"}
 MAX_FILE_SIZE = 20 * 1024 * 1024  # 20 MB
 
