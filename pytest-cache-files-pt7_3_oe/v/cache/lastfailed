@@ -1,7 +1,0 @@
-{
-  "backend/tests/test_dxf_parser.py": true,
-  "backend/tests/test_orchestrator.py": true,
-  "backend/tests/test_qa_error_handling.py": true,
-  "backend/tests/test_subscription.py": true,
-  "backend/tests/test_visual_analysis.py": true
-}
