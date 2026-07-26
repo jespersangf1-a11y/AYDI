@@ -1,14 +1,21 @@
 import logging
+from datetime import datetime, timezone
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import get_db
 from app.models.models import QuickAnalysisResult
-from app.schemas.quick_analysis import PublicSpecs, QuickAnalysisResponse
+from app.schemas.quick_analysis import (
+    PublicSpecs,
+    QuickAnalysisResponse,
+    BuyerInsightsResponse,
+)
 from app.services.inference.layout_estimator import estimate_layout_from_specs
+from app.services.knowledge.buyer_insights import get_buyer_insights
+from app.services.community.engine import find_relevant_patterns
 
 # Import available analysis modules
 from app.services.analysis.ergonomics import run_ergonomics_analysis
@@ -121,6 +128,73 @@ def _generate_summary(boat_class: str, overall_score: float, module_results: dic
         summary += f" mit Optimierungspotenzial bei {module_labels.get(weakest, weakest)}"
     summary += "."
     return summary
+
+
+async def _load_matched_community_patterns(
+    db: AsyncSession,
+    brand: str | None,
+    model_name: str | None,
+) -> list[dict]:
+    """Load community patterns and relevance-match them to the boat identity.
+
+    Community data is enrichment — failures (e.g. missing table in a fresh
+    test DB) degrade to an empty, honestly-labelled section instead of
+    breaking the analysis.
+    """
+    if not brand and not model_name:
+        return []
+    try:
+        from app.models.models import CommunityPattern
+
+        result = await db.execute(select(CommunityPattern))
+        pattern_dicts = [
+            {
+                "id": p.id,
+                "manufacturer": p.manufacturer,
+                "boat_model": p.boat_model,
+                "issue_category": p.issue_category,
+                "zone_type": p.zone_type,
+                "description": p.description,
+                "report_count": p.report_count,
+                "severity_mode": p.severity_mode,
+                "typical_onset_years": p.typical_onset_years,
+                "materials_involved": p.materials_involved,
+                "construction_methods_involved": p.construction_methods_involved,
+                "confidence": p.confidence,
+                "is_positive": p.is_positive,
+            }
+            for p in result.scalars().all()
+        ]
+        matched = find_relevant_patterns(
+            pattern_dicts,
+            manufacturer=brand,
+            model=model_name,
+            include_positive=True,
+        )
+        # Keep ONLY identity-level matches (exact_model 1.0 / manufacturer
+        # 0.8). The engine's zone_category fallback (0.3) matches patterns of
+        # FOREIGN manufacturers — showing those as "documented community
+        # experience" for THIS boat would present uncertainty as fact.
+        return [p for p in matched if p.get("relevance", 0.0) >= 0.8]
+    except Exception:
+        logger.exception("Community pattern matching failed; continuing without")
+        return []
+
+
+async def _build_buyer_insights(specs: PublicSpecs, db: AsyncSession) -> dict | None:
+    """Pillar 2: boat-identity fields drive the buyer report (previously they
+    were captured but never read by any analysis)."""
+    if not specs.brand and not specs.model_name and specs.year is None:
+        return None
+    patterns = await _load_matched_community_patterns(db, specs.brand, specs.model_name)
+    return get_buyer_insights(
+        brand=specs.brand,
+        model_name=specs.model_name,
+        year=specs.year,
+        boat_class=specs.boat_class,
+        community_patterns=patterns,
+        current_year=datetime.now(timezone.utc).year,
+    )
 
 
 def _build_upgrade_prompt() -> dict:
@@ -288,7 +362,39 @@ async def create_quick_analysis(
         upgrade_prompt=_build_upgrade_prompt(),
         specs_used=specs.model_dump(),
         created_at=db_result.created_at,
+        buyer_insights=await _build_buyer_insights(specs, db),
     )
+
+
+@router.get("/quick-analysis/buyer-insights", response_model=BuyerInsightsResponse)
+async def get_buyer_insights_endpoint(
+    brand: str | None = Query(None, min_length=2, max_length=100),
+    model: str | None = Query(None, min_length=1, max_length=100),
+    year: int | None = Query(None, ge=1900, le=2100),
+    boat_class: str = Query("cruising_sail", max_length=40),
+    db: AsyncSession = Depends(get_db),
+):
+    """Kaufberatung (pillar 2, Level 1/public): known type weaknesses,
+    age-expected problems and community patterns for a specific boat.
+
+    Registered BEFORE /quick-analysis/{analysis_id} so the literal path
+    is not swallowed by the UUID route.
+    """
+    if not brand and not model and year is None:
+        raise HTTPException(
+            status_code=422,
+            detail="Mindestens Marke, Modell oder Baujahr angeben.",
+        )
+    patterns = await _load_matched_community_patterns(db, brand, model)
+    insights = get_buyer_insights(
+        brand=brand,
+        model_name=model,
+        year=year,
+        boat_class=boat_class,
+        community_patterns=patterns,
+        current_year=datetime.now(timezone.utc).year,
+    )
+    return BuyerInsightsResponse(**insights)
 
 
 @router.get("/quick-analysis/{analysis_id}", response_model=QuickAnalysisResponse)
@@ -306,9 +412,27 @@ async def get_quick_analysis(
 
     estimated = qa.estimated_layout or {}
 
+    # Tolerant read path: rows persisted under an older/laxer schema version
+    # must stay retrievable — buyer insights are enrichment, not a reason to
+    # 500 a previously stored analysis.
+    stored_specs: PublicSpecs | None = None
+    try:
+        stored_specs = PublicSpecs(**qa.specs_input)
+    except Exception:
+        logger.warning(
+            "Stored specs of quick-analysis %s no longer validate against the "
+            "current schema; serving without buyer insights.", qa.id,
+        )
+
+    specs_provided = (
+        _count_specs_provided(stored_specs)
+        if stored_specs is not None
+        else sum(1 for v in (qa.specs_input or {}).values() if v is not None)
+    )
+
     return QuickAnalysisResponse(
         id=qa.id,
-        specs_provided=_count_specs_provided(PublicSpecs(**qa.specs_input)),
+        specs_provided=specs_provided,
         specs_inferred=estimated.get("specs_inferred", 0),
         overall_assessment={
             "score": qa.overall_score,
@@ -319,4 +443,11 @@ async def get_quick_analysis(
         upgrade_prompt=_build_upgrade_prompt(),
         specs_used=qa.specs_input,
         created_at=qa.created_at,
+        # Recomputed (not persisted): deterministic from specs + current
+        # knowledge base, so stored analyses benefit from newer knowledge.
+        buyer_insights=(
+            await _build_buyer_insights(stored_specs, db)
+            if stored_specs is not None
+            else None
+        ),
     )

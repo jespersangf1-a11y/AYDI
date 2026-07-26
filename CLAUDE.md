@@ -13,6 +13,21 @@ AYDI (AI Yacht Design Intelligence) is a domain-specific analysis platform for y
 
 ---
 
+## Product Vision: Four Functional Pillars
+
+AYDI serves four distinct user missions. Every feature should trace to at least one pillar. The four praxistest personas (`praxistest_runner.py`) each represent one pillar and should exercise differentiated journeys — not identical flows.
+
+| # | Pillar | Who | What they get | Persona | Tier |
+|---|--------|-----|---------------|---------|------|
+| 1 | **Knowledge base / lexicon** | Anyone maintaining or repairing a boat | Standalone reference for repairs, materials, components, failure patterns — the 252-doc corpus, user-facing (browse, search, read) | — (public funnel) | Public read; full depth is a PRO selling point (`KNOWLEDGE_BASE_FULL`) |
+| 2 | **Buyer's assistant** | Prospective boat buyers | Known weaknesses of a specific make/model/year, age-expected problems, photo-based condition assessment | Marc (Käufer) | FREE basic / PRO report |
+| 3 | **Owner refit & customization** | Owners improving/customizing their boat | Model the boat, play through changes (cosmetic → structural), before/after scoring | Kai (Bootseigner) | PRO |
+| 4 | **Professional design** | Designers & shipyard teams | New-model design work: construction, interior/exterior, team collaboration, versioned iterations | Elena (Designerin), Sarah (Werftleiterin) | PRO / ENTERPRISE |
+
+Pillars 1–2 are the marketing funnel into 3–4. Pillar-readiness (mapped against code, 2026-07): pillar 1 has the strongest substance (corpus + API) — its user-facing wiring is the first unlock; pillar 2 is wiring work over existing backend assets (community patterns, manufacturer weak-spot DB, condition vision prompts); pillar 3 lacks the edit/what-if loop; pillar 4 (authoring, team model, ISO-12215 dimensioning, CAD export) is the largest build.
+
+---
+
 ## Two User Levels
 
 **Level 1 (Schnellanalyse)** — No login. Enter public specs (length, beam, cabin count...) and/or upload photos. Get instant estimated analysis. This is the marketing funnel and data collection mechanism.
@@ -230,6 +245,19 @@ The analysis engine (above) runs inside a platform layer. These subsystems are l
 - **ENTERPRISE (Werft)** — Pro + fleet management, API access, multi-tenancy, custom reports, priority support.
 
 The **orchestrator** filters modules by tier: `get_allowed_modules(context.tier)`; disallowed modules are recorded in `tier_gated`, not executed. `context.tier` is populated from the authenticated user. Use `require_feature` / `require_module` at route boundaries.
+
+**Effective tier (pillar 4, stage 2):** a user's governing tier is `max(personal tier, org tiers)` — `resolve_effective_tier` (permissions.py), resolved per request and attached as the transient `user.effective_tier` in `get_current_user` and `authenticate_websocket`. **Every tier gate reads `effective_tier(user)`** (the `getattr(user,'effective_tier',user.tier)` accessor), never `user.tier` directly — an ENTERPRISE org thereby unlocks its features for all members. `org.tier` defaults to `free` and is changeable **only** by a platform admin (`POST /admin/orgs/{id}/tier`, `require_role('admin')`) — never self-service (that would be privilege escalation). There is no billing system; tier is admin-provisioned.
+
+### Teams & Sharing (pillar 4 — load-bearing, enforced in code)
+Two layers, additive (GitHub org + repo-collaborators pattern):
+- **Project sharing (stage 1):** `ProjectMember(project_id, user_id, role viewer/editor)`. Owner derived from `Project.user_id`.
+- **Organizations (stage 2):** `Organization` (name, tier), `OrganizationMember(org_role owner/admin/member)`, `Project.org_id` (nullable, SET NULL on org delete — never destroys member work). Org membership grants a base project role via the central chokepoint: **org member → `editor`, org owner/admin → `owner`** on the org's projects.
+- **Central access resolver:** `get_accessible_project(project_id, user, db, min_role)` (permissions.py) → effective role = max(owner-if-creator, ProjectMember role, org-derived role); **404 for no access** (no existence leak), **403 for insufficient role**. All 9 route files delegate to it. `require_org(org_id, user, db, min_role)` is the org-scope analog (member<admin<owner).
+- **Invitations:** unified `Invitation` table (project XOR org, keyed by normalized email). Creation is **anti-enumeration** (identical response whether or not the email has an account — no user lookup in the response path); acceptance is always explicit (never auto-join). Legacy `POST /projects/{id}/members` is frozen/deprecated — the invitation flow is the path.
+- **Brand-reference visibility** is org-scoped via the single predicate in `app/core/brand_visibility.py` — used by BOTH the CRUD endpoints AND the `brand_dna` analysis loader (they must not drift, or the analysis leaks foreign private brand DNA).
+- **Live collaboration** (`/ws/collaborate/{layout_id}`): PRO+ (effective tier); org-derived roles may join; viewers cannot broadcast edits (server-enforced). Broadcast-only — nothing persisted; the client must never present ephemeral state as durable.
+
+**DB note:** production is PostgreSQL (enforces FK actions). Dev/tests run SQLite with `PRAGMA foreign_keys=ON` (set globally in `db/database.py`) so SET NULL / CASCADE behave identically; `delete_organization` also cleans up explicitly for engine-independence.
 
 ### Boat Classes (13, not 4)
 `BoatClass` enum (`schemas/schemas.py`) has **13** values — everything calibrates on these:

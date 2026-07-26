@@ -3,10 +3,14 @@
 REST API router for the AYDI Knowledge System.
 
 Exposes the comprehensive yacht design knowledge database via REST endpoints.
-No authentication required - knowledge is public information.
+No authentication required — knowledge is public read-only information and the
+Level-1 marketing funnel (product pillar 1: user-facing lexicon). Tiered depth
+(`KNOWLEDGE_BASE_FULL`) is a deliberate follow-up product decision.
 
 Endpoints:
-  GET /api/v1/knowledge/categories - List all knowledge categories
+  GET /api/v1/knowledge/categories - List all knowledge categories (legacy index)
+  GET /api/v1/knowledge/corpus/categories - Browse the 31 research-corpus categories
+  GET /api/v1/knowledge/corpus/documents/{key} - Read one full research document
   GET /api/v1/knowledge/materials - Get material-specific knowledge
   GET /api/v1/knowledge/manufacturer/{name} - Get manufacturer profile
   GET /api/v1/knowledge/degradation - Get degradation patterns
@@ -15,12 +19,11 @@ Endpoints:
   GET /api/v1/knowledge/search - Full-text search across databases
 """
 
+import asyncio
 import logging
+import re
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Query
-
-from app.core.permissions import get_current_user
-from app.models.models import User
+from fastapi import APIRouter, HTTPException, Query
 
 from app.services.knowledge.KNOWLEDGE_INDEX import KNOWLEDGE_INDEX
 from app.services.knowledge.knowledge_retrieval import (
@@ -31,6 +34,20 @@ from app.services.knowledge.knowledge_retrieval import (
     get_manufacturer_knowledge,
     list_available_knowledge_databases,
     format_knowledge_for_prompt,
+    # New markdown-powered retrieval functions
+    get_all_faq_knowledge,
+    get_all_glossary_knowledge,
+    get_all_fehlerbilder_knowledge,
+    get_all_fallstudien_knowledge,
+    get_all_manufacturers_knowledge,
+    get_all_expert_references_knowledge,
+    search_knowledge as search_all_knowledge,
+    MARKDOWN_LOADER_AVAILABLE,
+)
+from app.services.knowledge.markdown_knowledge_loader import (
+    get_markdown_knowledge_summary,
+    get_markdown_knowledge,
+    get_knowledge_by_slug,
 )
 from app.schemas.knowledge import (
     KnowledgeIndexResponse,
@@ -49,6 +66,25 @@ from app.schemas.knowledge import (
     SearchResponse,
     SearchMatch,
     KnowledgeErrorResponse,
+    # New schemas for markdown knowledge
+    FAQEntry,
+    FAQResponse,
+    GlossaryEntry,
+    GlossaryResponse,
+    FehlerbildEntry,
+    FehlerbilderResponse,
+    FallstudieEntry,
+    FallstudienResponse,
+    MarkdownManufacturerEntry,
+    MarkdownManufacturersResponse,
+    KnowledgeSummaryResponse,
+    # Corpus browsing (user-facing lexicon)
+    CorpusDocumentSummary,
+    CorpusCategory,
+    CorpusCategoriesResponse,
+    CorpusTable,
+    CorpusSection,
+    CorpusDocumentResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -68,9 +104,9 @@ router = APIRouter(
 # ============================================================================
 
 @router.get("/categories", response_model=KnowledgeIndexResponse, status_code=200)
-async def get_knowledge_categories(_user: User = Depends(get_current_user)):
+async def get_knowledge_categories():
     """
-    Get the KNOWLEDGE_INDEX overview with all 21 categories and their status.
+    Get the KNOWLEDGE_INDEX overview with all top-level categories and their status.
 
     Returns information about all knowledge categories, including implementation
     status (implemented/partial/missing), entry counts, and descriptions.
@@ -129,7 +165,6 @@ async def get_materials_knowledge(
         None,
         description="Core material for sandwich construction (e.g., pvc_foam, balsa, airex)",
     ),
-    _user: User = Depends(get_current_user),
 ):
     """
     Get material-specific knowledge for a given composition.
@@ -231,7 +266,7 @@ async def get_materials_knowledge(
     response_model=ManufacturerResponse,
     status_code=200,
 )
-async def get_manufacturer_profile(name: str, _user: User = Depends(get_current_user)):
+async def get_manufacturer_profile(name: str):
     """
     Get manufacturer profile from the knowledge databases.
 
@@ -253,25 +288,69 @@ async def get_manufacturer_profile(name: str, _user: User = Depends(get_current_
 
         knowledge_data = get_manufacturer_knowledge(builder_name=name)
 
-        if not knowledge_data or not knowledge_data.get("found"):
+        # get_manufacturer_knowledge() returns the profile dict DIRECTLY (or {}
+        # / only markdown_matches) — there is no 'found'/'profile' wrapper.
+        # The previous wrapper check made every real match report "not found".
+        markdown_matches = knowledge_data.get("markdown_matches") or []
+        profile_data = {
+            k: v for k, v in knowledge_data.items() if k != "markdown_matches"
+        }
+
+        if not profile_data and not markdown_matches:
             return ManufacturerResponse(
                 manufacturer=None,
                 message=f"No knowledge base entry found for manufacturer '{name}'",
             )
 
-        profile_data = knowledge_data.get("profile", {})
+        # Map the real DB field names (aging_lifecycle_manufacturers_deep.py:
+        # key_de, business_model, build_quality_assessment, known_problems,
+        # notes) defensively onto the response schema.
+        quality_assessment = profile_data.get("build_quality_assessment")
+        if not isinstance(quality_assessment, dict):
+            quality_assessment = {}
+
+        raw_problems = profile_data.get("known_problems") or []
+        if isinstance(raw_problems, str):
+            # Some profiles carry a single string here (e.g. Dehler:
+            # "virtually_none_documented_...") — iterating it directly would
+            # char-split it into 48 one-letter "weaknesses".
+            raw_problems = [raw_problems]
+        known_weaknesses = profile_data.get("known_weaknesses") or [
+            str(p.get("issue", p)) if isinstance(p, dict) else str(p)
+            for p in raw_problems
+        ]
+
+        expert_opinions = [str(o) for o in profile_data.get("expert_opinions", [])]
+        if profile_data.get("notes"):
+            expert_opinions.append(str(profile_data["notes"]))
+        for match in markdown_matches:
+            expert_opinions.append(
+                f"{match.get('name', '')} — {match.get('specialization', '')} "
+                f"(Quelle: {match.get('source', '')})".strip()
+            )
+
+        try:
+            reputation_score = float(profile_data.get("reputation_score", 0.0))
+        except (TypeError, ValueError):
+            reputation_score = 0.0
 
         manufacturer = ManufacturerProfile(
-            manufacturer_name=name,
-            reputation_score=profile_data.get("reputation_score", 0.0),
-            known_strengths=profile_data.get("known_strengths", []),
-            known_weaknesses=profile_data.get("known_weaknesses", []),
-            quality_tier=profile_data.get("quality_tier"),
-            construction_methods=profile_data.get("construction_methods", []),
-            material_preferences=profile_data.get("material_preferences", {}),
-            production_type=profile_data.get("production_type"),
-            typical_issues_by_age=profile_data.get("typical_issues_by_age", {}),
-            expert_opinions=profile_data.get("expert_opinions", []),
+            manufacturer_name=str(profile_data.get("key_de") or name),
+            reputation_score=max(0.0, min(100.0, reputation_score)),
+            known_strengths=[str(s) for s in profile_data.get("known_strengths", [])],
+            known_weaknesses=[str(w) for w in known_weaknesses],
+            quality_tier=profile_data.get("quality_tier")
+            or quality_assessment.get("current_reputation")
+            or quality_assessment.get("general"),
+            construction_methods=[
+                str(c) for c in profile_data.get("construction_methods", [])
+            ],
+            material_preferences=profile_data.get("material_preferences") or {},
+            production_type=profile_data.get("production_type")
+            or profile_data.get("business_model"),
+            typical_issues_by_age=profile_data.get("typical_issues_by_age")
+            or quality_assessment,
+            expert_opinions=expert_opinions,
         )
 
         return ManufacturerResponse(
@@ -301,7 +380,6 @@ async def get_manufacturer_profile(name: str, _user: User = Depends(get_current_
 async def get_degradation_knowledge(
     hull_material: Optional[str] = Query(None, description="Hull material (e.g., grp, carbon)"),
     core_material: Optional[str] = Query(None, description="Core material (e.g., balsa, pvc_foam)"),
-    _user: User = Depends(get_current_user),
 ):
     """
     Get degradation patterns, cycles, and material lifespans.
@@ -411,7 +489,6 @@ async def get_compliance_standards(
         None,
         description="Operating waters: inland, coastal, offshore",
     ),
-    _user: User = Depends(get_current_user),
 ):
     """
     Get applicable compliance standards and safety requirements.
@@ -501,7 +578,6 @@ async def get_systems_knowledge(
         None,
         description="System type: engine, electrical, sanitary, rigging, steering, cooling, fuel",
     ),
-    _user: User = Depends(get_current_user),
 ):
     """
     Get system-specific knowledge for maintenance and troubleshooting.
@@ -676,7 +752,6 @@ async def get_systems_knowledge(
 )
 async def search_knowledge(
     q: str = Query(..., min_length=2, max_length=200, description="Search query"),
-    _user: User = Depends(get_current_user),
 ):
     """
     Full-text search across all knowledge databases.
@@ -697,7 +772,13 @@ async def search_knowledge(
                 detail="Search query must be at least 2 characters",
             )
 
-        # Simple search implementation - in production would use full-text indexing
+        import time
+        start_time = time.time()
+
+        # Warm the corpus cache off the event loop (cold-start parse ~15s)
+        if MARKDOWN_LOADER_AVAILABLE:
+            await asyncio.to_thread(get_markdown_knowledge)
+
         search_query = q.lower().strip()
         matches: list[SearchMatch] = []
 
@@ -706,7 +787,6 @@ async def search_knowledge(
             title = category_data.get("title", "").lower()
             description = category_data.get("description", "").lower()
 
-            # Check if search term matches title or description
             if search_query in title or search_query in description:
                 matches.append(
                     SearchMatch(
@@ -718,7 +798,78 @@ async def search_knowledge(
                     )
                 )
 
-        # Search in available databases list
+        # Search corpus document titles — these open as full articles in the UI
+        # (database="markdown_document", category=<document key>)
+        if MARKDOWN_LOADER_AVAILABLE:
+            try:
+                cat_titles = _corpus_category_titles()
+                for doc_key, doc in get_markdown_knowledge().items():
+                    doc_title = (doc.get("title") or "").lower()
+                    if search_query in doc_title or search_query in doc_key.lower():
+                        cat_name = cat_titles.get(
+                            doc["category"], f"Kategorie {doc['category']}"
+                        )
+                        matches.append(
+                            SearchMatch(
+                                category=doc_key,
+                                database="markdown_document",
+                                entry_name=doc.get("title") or doc_key,
+                                excerpt=(
+                                    f"Fachartikel · {cat_name} · "
+                                    f"{doc.get('line_count', 0)} Zeilen"
+                                ),
+                                relevance_score=0.95,
+                            )
+                        )
+            except Exception:
+                logger.exception("Error searching corpus document titles")
+
+        # Search in markdown knowledge (FAQ, Glossar, Fehlerbilder, Erfahrungsberichte)
+        if MARKDOWN_LOADER_AVAILABLE:
+            try:
+                md_results = search_all_knowledge(q, max_results=30)
+                for md_result in md_results:
+                    result_type = md_result.get("type", "unknown")
+                    if result_type == "faq":
+                        matches.append(SearchMatch(
+                            category=md_result.get("source", ""),
+                            database="markdown_faq",
+                            entry_name=md_result.get("question_de", "")[:100],
+                            excerpt=md_result.get("answer_de", "")[:200],
+                            relevance_score=0.9,
+                            full_content=md_result,
+                        ))
+                    elif result_type == "glossary":
+                        matches.append(SearchMatch(
+                            category=md_result.get("source", ""),
+                            database="markdown_glossary",
+                            entry_name=md_result.get("term_de", "")[:100],
+                            excerpt=md_result.get("definition", "")[:200],
+                            relevance_score=0.85,
+                            full_content=md_result,
+                        ))
+                    elif result_type == "fehlerbild":
+                        matches.append(SearchMatch(
+                            category=md_result.get("source", ""),
+                            database="markdown_fehlerbilder",
+                            entry_name=md_result.get("fehlerbild_title", "")[:100],
+                            excerpt=md_result.get("symptom_de", "")[:200],
+                            relevance_score=0.88,
+                            full_content=md_result,
+                        ))
+                    elif result_type == "erfahrungsbericht":
+                        matches.append(SearchMatch(
+                            category=md_result.get("source", ""),
+                            database="markdown_erfahrungsberichte",
+                            entry_name=md_result.get("forum", "Forum"),
+                            excerpt=md_result.get("text", "")[:200],
+                            relevance_score=0.75,
+                            full_content=md_result,
+                        ))
+            except Exception:
+                logger.exception("Error searching markdown knowledge")
+
+        # Search in legacy databases
         try:
             databases = list_available_knowledge_databases()
             for db_name, count in databases.items():
@@ -735,14 +886,14 @@ async def search_knowledge(
         except Exception:
             pass
 
-        # Sort by relevance score
+        elapsed_ms = (time.time() - start_time) * 1000
         matches.sort(key=lambda m: m.relevance_score, reverse=True)
 
         return SearchResponse(
             query=q,
             results_count=len(matches),
-            matches=matches[:50],  # Limit to top 50 results
-            search_time_ms=0.0,
+            matches=matches[:50],
+            search_time_ms=round(elapsed_ms, 2),
         )
 
     except HTTPException:
@@ -753,3 +904,410 @@ async def search_knowledge(
             status_code=500,
             detail="Failed to search knowledge databases",
         )
+
+
+# ============================================================================
+# MARKDOWN KNOWLEDGE ENDPOINTS — FAQ, Glossar, Fehlerbilder, Fallstudien
+# ============================================================================
+
+
+@router.get("/faq", response_model=FAQResponse, status_code=200)
+async def get_faq_entries(
+    category: Optional[str] = Query(
+        None,
+        description="Filter by category (e.g. '01', '02', '03', '04', '05', '06')",
+    ),
+    q: Optional[str] = Query(
+        None,
+        min_length=2,
+        max_length=200,
+        description="Search in questions and answers",
+    ),
+    max_results: int = Query(50, ge=1, le=500, description="Max results"),
+):
+    """
+    Get FAQ entries from the markdown knowledge database.
+
+    Searches across all 72 knowledge files and returns matching FAQ entries.
+    Supports filtering by category and keyword search.
+
+    Returns:
+        FAQResponse: List of FAQ entries with source attribution
+    """
+    try:
+        entries = get_all_faq_knowledge(
+            category=category,
+            search_query=q,
+            max_results=max_results,
+        )
+        return FAQResponse(
+            total_count=len(entries),
+            category=category,
+            search_query=q,
+            entries=[
+                FAQEntry(
+                    question_de=e.get("question_de", ""),
+                    answer_de=e.get("answer_de", ""),
+                    confidence=e.get("confidence", "documented"),
+                    knowledge_source=e.get("knowledge_source"),
+                )
+                for e in entries
+            ],
+        )
+    except Exception as e:
+        logger.error("Error retrieving FAQ knowledge: %s", e)
+        raise HTTPException(status_code=500, detail="Failed to retrieve FAQ entries")
+
+
+@router.get("/glossar", response_model=GlossaryResponse, status_code=200)
+async def get_glossary_entries(
+    category: Optional[str] = Query(None, description="Filter by category"),
+    q: Optional[str] = Query(None, min_length=2, max_length=200, description="Search term"),
+    max_results: int = Query(100, ge=1, le=1000),
+):
+    """
+    Get glossary entries from the markdown knowledge database.
+
+    Returns all glossary terms with German and English translations and definitions.
+    """
+    try:
+        entries = get_all_glossary_knowledge(
+            category=category,
+            search_query=q,
+            max_results=max_results,
+        )
+        return GlossaryResponse(
+            total_count=len(entries),
+            category=category,
+            search_query=q,
+            entries=[
+                GlossaryEntry(
+                    term_de=e.get("term_de"),
+                    term_en=e.get("term_en"),
+                    definition=e.get("definition"),
+                    knowledge_source=e.get("knowledge_source"),
+                )
+                for e in entries
+            ],
+        )
+    except Exception as e:
+        logger.error("Error retrieving glossary: %s", e)
+        raise HTTPException(status_code=500, detail="Failed to retrieve glossary entries")
+
+
+@router.get("/fehlerbilder", response_model=FehlerbilderResponse, status_code=200)
+async def get_fehlerbilder(
+    category: Optional[str] = Query(None, description="Filter by category"),
+    q: Optional[str] = Query(None, min_length=2, max_length=200, description="Search in title/text"),
+    max_results: int = Query(50, ge=1, le=500),
+):
+    """
+    Get failure pattern entries (Fehlerbilder) from the markdown knowledge database.
+
+    Returns structured failure patterns with symptoms, causes, and corrective actions.
+    """
+    try:
+        entries = get_all_fehlerbilder_knowledge(
+            category=category,
+            search_query=q,
+            max_results=max_results,
+        )
+        return FehlerbilderResponse(
+            total_count=len(entries),
+            category=category,
+            search_query=q,
+            entries=[
+                FehlerbildEntry(
+                    title_de=e.get("title_de", ""),
+                    symptom_de=e.get("symptom_de"),
+                    ursache_de=e.get("ursache_de"),
+                    massnahme_de=e.get("massnahme_de"),
+                    haeufigkeit_de=e.get("haeufigkeit_de"),
+                    confidence=e.get("confidence"),
+                    knowledge_source=e.get("knowledge_source"),
+                )
+                for e in entries
+            ],
+        )
+    except Exception as e:
+        logger.error("Error retrieving fehlerbilder: %s", e)
+        raise HTTPException(status_code=500, detail="Failed to retrieve failure patterns")
+
+
+@router.get("/fallstudien", response_model=FallstudienResponse, status_code=200)
+async def get_fallstudien(
+    category: Optional[str] = Query(None, description="Filter by category"),
+    q: Optional[str] = Query(None, min_length=2, max_length=200, description="Search in title/text"),
+    max_results: int = Query(50, ge=1, le=500),
+):
+    """
+    Get case studies (Fallstudien) from the markdown knowledge database.
+
+    Returns real-world case studies with situation, diagnosis, result, and lessons learned.
+    """
+    try:
+        entries = get_all_fallstudien_knowledge(
+            category=category,
+            search_query=q,
+            max_results=max_results,
+        )
+        return FallstudienResponse(
+            total_count=len(entries),
+            category=category,
+            search_query=q,
+            entries=[
+                FallstudieEntry(
+                    title_de=e.get("title_de", ""),
+                    situation_de=e.get("situation_de"),
+                    diagnose_de=e.get("diagnose_de"),
+                    ursache_de=e.get("ursache_de"),
+                    ergebnis_de=e.get("ergebnis_de"),
+                    kosten_de=e.get("kosten_de"),
+                    lehre_de=e.get("lehre_de"),
+                    confidence=e.get("confidence"),
+                    knowledge_source=e.get("knowledge_source"),
+                )
+                for e in entries
+            ],
+        )
+    except Exception as e:
+        logger.error("Error retrieving fallstudien: %s", e)
+        raise HTTPException(status_code=500, detail="Failed to retrieve case studies")
+
+
+@router.get("/manufacturers/markdown", response_model=MarkdownManufacturersResponse, status_code=200)
+async def get_markdown_manufacturers(
+    category: Optional[str] = Query(None, description="Filter by category"),
+    q: Optional[str] = Query(None, min_length=2, max_length=200, description="Search by name"),
+    max_results: int = Query(100, ge=1, le=1000),
+):
+    """
+    Get manufacturer profiles from the markdown knowledge database.
+
+    Returns manufacturers extracted from all 72 knowledge files with specializations,
+    origins, and certifications.
+    """
+    try:
+        entries = get_all_manufacturers_knowledge(
+            category=category,
+            search_query=q,
+            max_results=max_results,
+        )
+        return MarkdownManufacturersResponse(
+            total_count=len(entries),
+            category=category,
+            search_query=q,
+            entries=[
+                MarkdownManufacturerEntry(
+                    name=e.get("name", ""),
+                    origin=e.get("origin"),
+                    specialization=e.get("specialization"),
+                    website=e.get("website"),
+                    founded=e.get("founded"),
+                    certifications=e.get("certifications"),
+                    knowledge_source=e.get("knowledge_source"),
+                )
+                for e in entries
+            ],
+        )
+    except Exception as e:
+        logger.error("Error retrieving markdown manufacturers: %s", e)
+        raise HTTPException(status_code=500, detail="Failed to retrieve manufacturer data")
+
+
+@router.get("/summary", response_model=KnowledgeSummaryResponse, status_code=200)
+async def get_knowledge_summary():
+    """
+    Get a complete summary of all loaded knowledge — both legacy databases
+    and the 72 markdown knowledge files.
+
+    Returns counts for files, lines, tables, FAQ, glossary, fehlerbilder,
+    fallstudien, manufacturers, and expert references.
+    """
+    try:
+        md_summary = get_markdown_knowledge_summary()
+        legacy_dbs = list_available_knowledge_databases()
+
+        # Filter legacy-only keys
+        legacy_only = {
+            k: v for k, v in legacy_dbs.items()
+            if not k.startswith("MARKDOWN")
+        }
+
+        return KnowledgeSummaryResponse(
+            total_files=md_summary.get("total_files", 0),
+            total_lines=md_summary.get("total_lines", 0),
+            total_tables=md_summary.get("total_tables", 0),
+            total_manufacturers=md_summary.get("total_manufacturers", 0),
+            total_erfahrungsberichte=md_summary.get("total_erfahrungsberichte", 0),
+            total_faq=md_summary.get("total_faq", 0),
+            total_glossary=md_summary.get("total_glossary", 0),
+            total_fehlerbilder=md_summary.get("total_fehlerbilder", 0),
+            total_fallstudien=md_summary.get("total_fallstudien", 0),
+            total_expert_references=md_summary.get("total_expert_references", 0),
+            legacy_databases=legacy_only,
+        )
+    except Exception as e:
+        logger.error("Error retrieving knowledge summary: %s", e)
+        raise HTTPException(status_code=500, detail="Failed to retrieve knowledge summary")
+
+
+# ============================================================================
+# CORPUS BROWSING ENDPOINTS — the research corpus as a user-facing lexicon
+# ============================================================================
+
+# Cached '01' -> 'Dichtungen und Profile' mapping, derived from the
+# KNOWLEDGE_INDEX markdown section (single source of truth for naming).
+_CORPUS_CATEGORY_TITLES: Optional[dict[str, str]] = None
+
+
+def _corpus_category_titles() -> dict[str, str]:
+    """Parse category names from KNOWLEDGE_INDEX['22_markdown_knowledge']."""
+    global _CORPUS_CATEGORY_TITLES
+    if _CORPUS_CATEGORY_TITLES is None:
+        titles: dict[str, str] = {}
+        md_section = KNOWLEDGE_INDEX.get("22_markdown_knowledge", {})
+        for sub in md_section.get("subcategories", {}).values():
+            title = sub.get("title", "")
+            match = re.match(r"^(\d{2})\s*[—–-]\s*(.+)$", title)
+            if match:
+                titles[match.group(1)] = match.group(2).strip()
+        _CORPUS_CATEGORY_TITLES = titles
+    return _CORPUS_CATEGORY_TITLES
+
+
+@router.get(
+    "/corpus/categories",
+    response_model=CorpusCategoriesResponse,
+    status_code=200,
+)
+async def get_corpus_categories():
+    """
+    Browse structure of the full research corpus: all categories (01-31)
+    with their documents, ready for the lexicon UI.
+
+    Returns:
+        CorpusCategoriesResponse: Categories with document summaries; each
+        document's `key` can be resolved via GET /corpus/documents/{key}.
+    """
+    if not MARKDOWN_LOADER_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Knowledge corpus not available")
+
+    try:
+        # First call parses ~840K lines (~15s) — keep that off the event loop
+        # (cold start would otherwise freeze /health and every other request).
+        docs = await asyncio.to_thread(get_markdown_knowledge)
+        titles = _corpus_category_titles()
+
+        by_category: dict[str, list[tuple[str, dict]]] = {}
+        for doc_key, doc in docs.items():
+            by_category.setdefault(doc.get("category", "??"), []).append((doc_key, doc))
+
+        categories: list[CorpusCategory] = []
+        for cat_id in sorted(by_category):
+            entries = sorted(
+                by_category[cat_id],
+                key=lambda kv: (kv[1].get("subcategory", ""), kv[0]),
+            )
+            documents = [
+                CorpusDocumentSummary(
+                    key=doc_key,
+                    title=doc.get("title") or doc_key,
+                    category=doc.get("category", ""),
+                    subcategory=doc.get("subcategory", ""),
+                    line_count=doc.get("line_count", 0),
+                    table_count=len(doc.get("tables", [])),
+                    faq_count=len(doc.get("faq", [])),
+                    fehlerbilder_count=len(doc.get("fehlerbilder", [])),
+                    fallstudien_count=len(doc.get("fallstudien", [])),
+                )
+                for doc_key, doc in entries
+            ]
+            categories.append(
+                CorpusCategory(
+                    id=cat_id,
+                    name=titles.get(cat_id, f"Kategorie {cat_id}"),
+                    document_count=len(documents),
+                    documents=documents,
+                )
+            )
+
+        return CorpusCategoriesResponse(
+            total_categories=len(categories),
+            total_documents=len(docs),
+            categories=categories,
+        )
+    except Exception as e:
+        logger.error("Error building corpus categories: %s", e)
+        raise HTTPException(status_code=500, detail="Failed to load knowledge corpus")
+
+
+def _table_to_schema(table: list) -> CorpusTable:
+    """Convert loader row-dicts into an order-preserving columns/rows table."""
+    if not table:
+        return CorpusTable(columns=[], rows=[])
+    columns = list(table[0].keys())  # Python dicts preserve insertion order
+    rows = [[str(row.get(col, "")) for col in columns] for row in table]
+    return CorpusTable(columns=columns, rows=rows)
+
+
+def _section_to_schema(section: dict) -> CorpusSection:
+    """Convert the loader's section dict into the response schema."""
+    return CorpusSection(
+        title=section.get("title", ""),
+        level=section.get("level", 0),
+        text="\n".join(section.get("content_lines", [])).strip(),
+        tables=[_table_to_schema(t) for t in section.get("tables", [])],
+        subsections=[
+            _section_to_schema(sub) for sub in section.get("subsections", [])
+        ],
+    )
+
+
+@router.get(
+    "/corpus/documents/{key}",
+    response_model=CorpusDocumentResponse,
+    status_code=200,
+)
+async def get_corpus_document(key: str):
+    """
+    Read one full research document as a structured article (section
+    hierarchy with text and tables) — the lexicon article view.
+
+    Path Parameters:
+        key: Document key from /corpus/categories (slug or composite key)
+
+    Returns:
+        CorpusDocumentResponse: Fully parsed document
+    """
+    if not MARKDOWN_LOADER_AVAILABLE:
+        raise HTTPException(status_code=503, detail="Knowledge corpus not available")
+
+    # Cold-start parse must not block the event loop (see corpus/categories).
+    doc = await asyncio.to_thread(get_knowledge_by_slug, key)
+    if doc is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Knowledge document '{key}' not found",
+        )
+
+    try:
+        titles = _corpus_category_titles()
+        return CorpusDocumentResponse(
+            key=key,
+            file=doc.get("file", ""),
+            category=doc.get("category", ""),
+            category_name=titles.get(
+                doc.get("category", ""), f"Kategorie {doc.get('category', '')}"
+            ),
+            subcategory=doc.get("subcategory", ""),
+            slug=doc.get("slug", key),
+            title=doc.get("title") or key,
+            line_count=doc.get("line_count", 0),
+            sections=_section_to_schema(doc.get("sections", {})),
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Error serializing corpus document '%s': %s", key, e)
+        raise HTTPException(status_code=500, detail="Failed to load knowledge document")

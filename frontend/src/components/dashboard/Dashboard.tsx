@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { FolderOpen, Ship } from 'lucide-react'
 import { listProjects } from '../../services/api'
 import HeroSection from '../layout/HeroSection'
+import InvitationsInbox from './InvitationsInbox'
 import { MEDIA } from '../../config/media'
 import type { Project } from '../../types'
 import { BOAT_CLASS_LABELS, STATUS_LABELS } from '../../types'
@@ -24,12 +25,15 @@ export default function Dashboard({ onSelectProject }: DashboardProps) {
   const [error, setError] = useState<string | null>(null)
   const gridRef = useScrollReveal<HTMLDivElement>()
 
-  useEffect(() => {
-    listProjects()
+  const loadProjects = useCallback(() => {
+    return listProjects()
       .then(setProjects)
       .catch((e) => setError(e.message))
-      .finally(() => setLoading(false))
   }, [])
+
+  useEffect(() => {
+    loadProjects().finally(() => setLoading(false))
+  }, [loadProjects])
 
   if (loading) {
     return (
@@ -81,6 +85,9 @@ export default function Dashboard({ onSelectProject }: DashboardProps) {
         />
 
         <div className="px-6 md:px-10 py-12">
+          {/* Pending invitations (pillar 4, stage 2) — refreshes projects on accept */}
+          <InvitationsInbox onChanged={loadProjects} />
+
           {projects.length === 0 ? (
             <div className="text-center py-16">
               <div className="mb-4">
@@ -103,10 +110,18 @@ export default function Dashboard({ onSelectProject }: DashboardProps) {
                 >
                   <div className="flex items-start justify-between mb-4">
                     <Ship className="w-6 h-6 text-ocean-600 transition-colors duration-300 group-hover:text-ocean-700" />
-                    <span
-                      className={`text-xs px-3 py-1.5 rounded-md font-semibold uppercase tracking-wider-premium transition-all duration-300 ${STATUS_COLORS[project.status] || ''}`}
-                    >
-                      {STATUS_LABELS[project.status]}
+                    <span className="flex items-center gap-2">
+                      {/* Shared-with-me badge (pillar 4, stage 1) */}
+                      {project.access_role && project.access_role !== 'owner' && (
+                        <span className="text-xs px-2.5 py-1 rounded-full border bg-ocean-100 text-ocean-700 border-ocean-300 whitespace-nowrap">
+                          Geteilt · {project.access_role === 'editor' ? 'Bearbeiten' : 'Nur Lesen'}
+                        </span>
+                      )}
+                      <span
+                        className={`text-xs px-3 py-1.5 rounded-md font-semibold uppercase tracking-wider-premium transition-all duration-300 ${STATUS_COLORS[project.status] || ''}`}
+                      >
+                        {STATUS_LABELS[project.status]}
+                      </span>
                     </span>
                   </div>
 

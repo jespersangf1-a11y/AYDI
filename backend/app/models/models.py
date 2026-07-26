@@ -2,7 +2,7 @@
 import uuid
 from datetime import date, datetime, timezone
 
-from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, Index, Integer, String, Text
+from sqlalchemy import Boolean, CheckConstraint, Date, DateTime, Float, ForeignKey, Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy import JSON, Uuid
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -20,6 +20,13 @@ class Project(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    # Organization ownership (pillar 4, stage 2). Nullable: private projects
+    # stay private. SET NULL on org delete — a deleted org reverts its projects
+    # to private, it never destroys members' work. Project.user_id owner always
+    # wins; org membership adds a base access role (see get_accessible_project).
+    org_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("organizations.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     boat_class: Mapped[str] = mapped_column(String(20), nullable=False)
@@ -34,6 +41,119 @@ class Project(Base):
         back_populates="project", cascade="all, delete-orphan"
     )
     images: Mapped[list["ImageUpload"]] = relationship(back_populates="project", cascade="all, delete-orphan")
+
+
+class ProjectMember(Base):
+    """Project sharing (pillar 4, stage 1 — decision 'Option C').
+
+    Grants a non-owner user access to a project with a role:
+    viewer = read-only, editor = read/write. Owner-only operations
+    (delete project, manage members) stay bound to Project.user_id.
+    In stage 2 (organization model) this table remains the fine-grained
+    per-project grant layer under org membership.
+    """
+    __tablename__ = "project_members"
+    __table_args__ = (
+        UniqueConstraint("project_id", "user_id", name="uq_project_member"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    project_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    role: Mapped[str] = mapped_column(String(20), nullable=False, default="viewer")  # viewer, editor
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
+
+
+class Organization(Base):
+    """Organization / shipyard (pillar 4, stage 2 — decision 'Option C' stage 2).
+
+    A team entity that groups projects and members. Membership grants a base
+    access role on the org's projects (see get_accessible_project); explicit
+    ProjectMember grants still ADD access on top (external guests, extra
+    grants) — GitHub org + repo-collaborators pattern.
+
+    ``tier`` is the seat-licensing lever: a member's effective subscription
+    tier is max(personal tier, org tier). It defaults to 'free' and may be
+    raised ONLY by a platform admin (there is no billing system) — self-service
+    would be a trivial privilege escalation (create org -> set enterprise).
+    """
+    __tablename__ = "organizations"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    tier: Mapped[str] = mapped_column(String(20), nullable=False, default="free")  # free, pro, enterprise
+    created_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, onupdate=_utcnow)
+
+
+class OrganizationMember(Base):
+    """Membership in an organization with an org-level role.
+
+    org_role: owner (full control, incl. tier is platform-admin-only), admin
+    (manage members/invites, effective 'owner' on org projects), member
+    (effective 'editor' on org projects). An org must always keep >= 1 owner.
+    """
+    __tablename__ = "organization_members"
+    __table_args__ = (
+        UniqueConstraint("organization_id", "user_id", name="uq_org_member"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    organization_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    org_role: Mapped[str] = mapped_column(String(20), nullable=False, default="member")  # owner, admin, member
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
+
+
+class Invitation(Base):
+    """Unified invitation for project OR org access (pillar 4, stage 2).
+
+    Exactly one of project_id / organization_id is set (CHECK). Keyed by
+    normalized email — NOT a user FK — so an invite created before the invitee
+    registers is picked up on their first login (GET /invitations/mine matches
+    on the normalized email). Acceptance is always explicit (never auto-join
+    on registration): membership requires the invitee's consent.
+
+    The anti-enumeration property lives in the endpoints: creating an
+    invitation returns an identical response whether or not the email has an
+    account — it never performs a user lookup in the response path.
+    """
+    __tablename__ = "invitations"
+    __table_args__ = (
+        CheckConstraint(
+            "(project_id IS NULL) <> (organization_id IS NULL)",
+            name="ck_invitation_one_scope",
+        ),
+        Index("ix_invitations_email_status", "email", "status"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    email: Mapped[str] = mapped_column(String(255), nullable=False, index=True)  # normalized lower().strip()
+    project_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE"), nullable=True, index=True
+    )
+    organization_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("organizations.id", ondelete="CASCADE"), nullable=True, index=True
+    )
+    role: Mapped[str] = mapped_column(String(20), nullable=False)  # project: viewer|editor; org: member|admin
+    invited_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")  # pending|accepted|declined|revoked
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
+    expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    responded_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
 class Layout(Base):
@@ -117,6 +237,12 @@ class Material(Base):
     __tablename__ = "materials"
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    # Ownership guard: without it any logged-in user could PATCH/DELETE every
+    # material — and DELETE cascades into FOREIGN projects' zone assignments.
+    # Nullable for legacy/seed rows (admin-managed).
+    created_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     category: Mapped[str] = mapped_column(String(50), nullable=False)
     subcategory: Mapped[str] = mapped_column(String(50), nullable=False)
@@ -225,6 +351,12 @@ class CompetitorModel(Base):
     __tablename__ = "competitor_models"
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    # Ownership guard (same IDOR class as brand references/materials):
+    # competitor data feeds EVERY user's market analysis. Nullable = legacy/
+    # seed rows (admin-managed).
+    created_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
     brand: Mapped[str] = mapped_column(String(255), nullable=False)
     model_name: Mapped[str] = mapped_column(String(255), nullable=False)
     boat_class: Mapped[str] = mapped_column(String(20), nullable=False)
@@ -245,6 +377,17 @@ class BrandReferenceModel(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     shipyard_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # Ownership guard (audit: any logged-in user could delete ALL brand
+    # references). Nullable for legacy rows.
+    created_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    # Org-scoped brand DNA (pillar 4, stage 2): org rows are private to the
+    # org's members. NULL = personal (created_by) or legacy/seed (both NULL =
+    # globally readable reference data).
+    org_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("organizations.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     model_name: Mapped[str] = mapped_column(String(255), nullable=False)
     model_year: Mapped[int | None] = mapped_column(Integer, nullable=True)
     boat_class: Mapped[str] = mapped_column(String(20), nullable=False)
@@ -259,6 +402,12 @@ class BrandReferenceModel(Base):
 
 class LayoutVersion(Base):
     __tablename__ = "layout_versions"
+    __table_args__ = (
+        # Guards the read-max-then-insert version numbering against concurrent
+        # writers: a collision fails hard (handled as 409) instead of silently
+        # producing two "Version N" rows.
+        UniqueConstraint("layout_id", "version_number", name="uq_layout_version_number"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     layout_id: Mapped[uuid.UUID] = mapped_column(
@@ -270,6 +419,10 @@ class LayoutVersion(Base):
     )
     zones_snapshot: Mapped[list | None] = mapped_column(JSON, nullable=True)
     passages_snapshot: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    # Non-geometry layout fields at snapshot time ({name, version,
+    # deck_height_mm}) — without this, restoring a version could not bring
+    # back an analysis-relevant deck_height change (destructive edit).
+    layout_meta_snapshot: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     change_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     changed_by: Mapped[str | None] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)

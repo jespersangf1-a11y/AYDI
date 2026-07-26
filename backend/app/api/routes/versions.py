@@ -3,9 +3,10 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.permissions import get_current_user
+from app.core.permissions import get_accessible_project, get_current_user
 from app.db.database import get_db
 from app.models.models import Layout, LayoutVersion, Project, User
 from app.schemas.versions import LayoutVersionCreate, LayoutVersionResponse
@@ -18,13 +19,11 @@ async def _verify_project_ownership(
     project_id: UUID,
     user: User,
     db: AsyncSession,
+    min_role: str = "editor",
 ) -> None:
-    """Verify the project exists and belongs to the given user."""
-    result = await db.execute(
-        select(Project).where(Project.id == project_id, Project.user_id == user.id)
-    )
-    if not result.scalar_one_or_none():
-        raise HTTPException(status_code=404, detail="Projekt nicht gefunden")
+    """Access check: owner or shared member with >= min_role
+    (pillar 4, stage 1 — see core.permissions.get_accessible_project)."""
+    await get_accessible_project(project_id, user, db, min_role)
 
 
 async def _get_layout_or_404(
@@ -52,7 +51,7 @@ async def list_versions(
     _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    await _verify_project_ownership(project_id, _user, db)
+    await _verify_project_ownership(project_id, _user, db, min_role="viewer")
     await _get_layout_or_404(project_id, layout_id, db)
 
     result = await db.execute(
@@ -76,7 +75,16 @@ async def create_version(
     _user: User = Depends(get_current_user),
 ):
     await _verify_project_ownership(project_id, _user, db)
-    await _get_layout_or_404(project_id, layout_id, db)
+    # Row lock: serializes numbering against parallel PATCH /layouts (which
+    # also creates versions) — see layouts.update_layout.
+    result = await db.execute(
+        select(Layout)
+        .where(Layout.id == layout_id, Layout.project_id == project_id)
+        .with_for_update()
+    )
+    layout = result.scalar_one_or_none()
+    if not layout:
+        raise HTTPException(status_code=404, detail="Layout nicht gefunden")
 
     # Auto-increment version_number: max existing + 1, default 1
     result = await db.execute(
@@ -87,13 +95,47 @@ async def create_version(
     max_version = result.scalar_one_or_none()
     next_version_number = (max_version or 0) + 1
 
+    # parent_version_id must belong to THIS layout — the FK alone only checks
+    # existence and would accept foreign layouts' version UUIDs.
+    if data.parent_version_id is not None:
+        parent_check = await db.execute(
+            select(LayoutVersion.id).where(
+                LayoutVersion.id == data.parent_version_id,
+                LayoutVersion.layout_id == layout_id,
+            )
+        )
+        if parent_check.scalar_one_or_none() is None:
+            raise HTTPException(
+                status_code=422,
+                detail="parent_version_id gehört nicht zu diesem Layout.",
+            )
+
     version = LayoutVersion(
         layout_id=layout_id,
         version_number=next_version_number,
+        # Server-authoritative fields: meta captures what the layout actually
+        # was (restore needs deck_height), changed_by is the authenticated
+        # user (client-supplied values allowed audit-trail spoofing).
+        layout_meta_snapshot={
+            "name": layout.name,
+            "version": layout.version,
+            "deck_height_mm": layout.deck_height_mm,
+        },
+        changed_by=_user.email,
         **data.model_dump(),
     )
     db.add(version)
-    await db.commit()
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "Gleichzeitige Versionierung erkannt (Nummern-Konflikt) — "
+                "bitte erneut versuchen."
+            ),
+        )
     await db.refresh(version)
     return version
 
@@ -109,7 +151,7 @@ async def get_version(
     _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    await _verify_project_ownership(project_id, _user, db)
+    await _verify_project_ownership(project_id, _user, db, min_role="viewer")
     await _get_layout_or_404(project_id, layout_id, db)
 
     result = await db.execute(
@@ -134,7 +176,7 @@ async def diff_versions(
     db: AsyncSession = Depends(get_db),
 ):
     """Compute a structured diff between two layout versions."""
-    await _verify_project_ownership(project_id, _user, db)
+    await _verify_project_ownership(project_id, _user, db, min_role="viewer")
     await _get_layout_or_404(project_id, layout_id, db)
 
     result_a = await db.execute(

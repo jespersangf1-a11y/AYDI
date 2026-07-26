@@ -1,22 +1,41 @@
-# backend/requirements.txt
+# backend/requirements.txt — production dependencies.
+# Versions are pinned conservatively; raise as needed but verify CI is green.
+
+# Web framework
 fastapi==0.115.6
 uvicorn[standard]==0.34.0
+python-multipart==0.0.20
+
+# Validation
+pydantic[email]==2.10.3
+pydantic-settings==2.7.0
+email-validator==2.2.0          # explicit; pydantic[email] already pulls this but pinning is safer for Railway/Nixpacks
+
+# Database
 sqlalchemy[asyncio]==2.0.36
 asyncpg==0.30.0
 aiosqlite==0.20.0
-pydantic[email]==2.10.3
-pydantic-settings==2.7.0
 alembic==1.14.0
+
+# Auth
+pyjwt==2.10.1
+passlib[bcrypt]==1.7.4
+# IMPORTANT: passlib 1.7.4 calls bcrypt.__about__.__version__ which was
+# removed in bcrypt 4.1.x; pin to 4.0.1 to avoid the runtime warning AND
+# the subsequent crash when running under uvicorn with strict logging.
+bcrypt==4.0.1
+
+# AI / CAD
+anthropic==0.42.0
 ezdxf==1.4.3
 shapely==2.0.6
 numpy==2.2.1
-python-multipart==0.0.20
+trimesh==4.5.3
+Pillow==11.1.0
+
+# HTTP client (used by some service modules and tests)
 httpx==0.28.1
+
+# Test (only used in CI; harmless in production image)
 pytest==8.3.4
 pytest-asyncio==0.25.0
-pyjwt==2.10.1
-passlib==1.7.4
-bcrypt==4.2.1
-trimesh==4.5.3
-anthropic==0.42.0
-Pillow==11.1.0

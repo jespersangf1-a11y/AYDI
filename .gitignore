@@ -13,3 +13,29 @@ build/
 .idea/
 *.db
 *.sqlite3
+
+# Virtual environments (top-level and nested)
+.venv/
+venv/
+backend/.venv/
+backend/venv/
+
+# Nested-directory artefacts (accidental copies)
+backend/backend/
+
+# Upload artefacts and caches
+backend/uploads/
+backend/backend/uploads/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Frontend coverage / temp
+frontend/coverage/
+frontend/.vite/
+
+# Editor temp
+*.swp
+*.swo
+*~

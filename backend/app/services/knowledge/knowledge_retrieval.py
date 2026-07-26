@@ -23,7 +23,77 @@ import logging
 logger = logging.getLogger(__name__)
 
 # =============================================================================
-# IMPORT ALL KNOWLEDGE DATABASES
+# IMPORT MARKDOWN KNOWLEDGE LOADER (72 files, 270K+ lines)
+# =============================================================================
+
+try:
+    from .markdown_knowledge_loader import (
+        get_markdown_knowledge,
+        get_knowledge_by_slug,
+        get_knowledge_by_category,
+        get_all_manufacturers as get_md_manufacturers,
+        get_all_erfahrungsberichte as get_md_erfahrungsberichte,
+        get_all_fehlerbilder as get_md_fehlerbilder,
+        get_all_fallstudien as get_md_fallstudien,
+        get_all_faq as get_md_faq,
+        get_all_glossary as get_md_glossary,
+        get_all_expert_references as get_md_expert_references,
+        get_relevant_slugs_for_context,
+        search_markdown_knowledge,
+        format_markdown_knowledge_for_prompt,
+        get_markdown_knowledge_summary,
+    )
+    MARKDOWN_LOADER_AVAILABLE = True
+    logger.info("Markdown knowledge loader imported successfully")
+except ImportError as e:
+    MARKDOWN_LOADER_AVAILABLE = False
+    logger.warning(f"Markdown knowledge loader not available: {e}")
+
+    def get_markdown_knowledge():
+        return {}
+
+    def get_knowledge_by_slug(slug):
+        return None
+
+    def get_knowledge_by_category(cat):
+        return []
+
+    def get_md_manufacturers():
+        return []
+
+    def get_md_erfahrungsberichte():
+        return []
+
+    def get_md_fehlerbilder():
+        return []
+
+    def get_md_fallstudien():
+        return []
+
+    def get_md_faq():
+        return []
+
+    def get_md_glossary():
+        return []
+
+    def get_md_expert_references():
+        return []
+
+    def get_relevant_slugs_for_context(ctx):
+        return []
+
+    def search_markdown_knowledge(q, max_results=20):
+        return []
+
+    def format_markdown_knowledge_for_prompt(slugs, **kw):
+        return ""
+
+    def get_markdown_knowledge_summary():
+        return {"total_files": 0}
+
+
+# =============================================================================
+# IMPORT ALL KNOWLEDGE DATABASES (legacy deep_*.py modules)
 # =============================================================================
 
 try:
@@ -637,6 +707,71 @@ def get_knowledge_for_visual_analysis(
             "Gründliche Inspektionen auf Bauvarianten und Qualitätsschwankungen erforderlich."
         )
 
+    # =========================================================================
+    # MARKDOWN KNOWLEDGE ENRICHMENT — Fehlerbilder, Erfahrungsberichte, Experten
+    # =========================================================================
+
+    if MARKDOWN_LOADER_AVAILABLE:
+        # Determine relevant slugs based on material context
+        relevant_slugs = set()
+        if hull_mat == "grp":
+            relevant_slugs.update(get_relevant_slugs_for_context("materials"))
+            if core_mat == "balsa":
+                for s in ["kernmaterial_endkorn_balsa"]:
+                    relevant_slugs.add(s)
+            elif core_mat == "pvc_foam":
+                for s in ["kernmaterial_pvc_schaum"]:
+                    relevant_slugs.add(s)
+            elif core_mat == "san_foam":
+                for s in ["kernmaterial_san_schaum"]:
+                    relevant_slugs.add(s)
+            # Add resin/fiber knowledge
+            relevant_slugs.update([
+                "polyester_harz", "vinylester_harz", "epoxid_harz",
+                "e_glas_gewebe_und_gelege", "s_glas",
+            ])
+        if image_type in ("deck_detail",):
+            relevant_slugs.update([
+                "teak_oel_und_pflege", "teakdeck_fugenmasse",
+                "deck_beschlag_abdichtung",
+            ])
+        if image_type in ("engine_room",):
+            relevant_slugs.update([
+                "kuehlwasserschlaeuche", "kuehlwassersystem_dichtungen",
+                "motordichtungen",
+            ])
+        if image_type in ("hull_section", "material_sample"):
+            relevant_slugs.update(get_relevant_slugs_for_context("structural"))
+
+        # Inject top fehlerbilder as critical inspection knowledge
+        md_knowledge = get_markdown_knowledge()
+        fehlerbilder_added = 0
+        erfahrungen_added = 0
+        for slug in relevant_slugs:
+            data = md_knowledge.get(slug)
+            if not data:
+                continue
+            for fb in data.get("fehlerbilder", [])[:3]:
+                if fehlerbilder_added < 10:
+                    symptom = fb.get("symptom_de", "")
+                    massnahme = fb.get("massnahme_de", "")
+                    warning_text = f"[{data['title']}] {fb['title_de']}"
+                    if symptom:
+                        warning_text += f" — Symptom: {symptom[:120]}"
+                    if massnahme:
+                        warning_text += f" — Maßnahme: {massnahme[:120]}"
+                    knowledge["critical_warnings"].append(warning_text)
+                    fehlerbilder_added += 1
+            for er in data.get("erfahrungsberichte", [])[:2]:
+                if erfahrungen_added < 8:
+                    er_text = er.get("text", "")[:200]
+                    source = er.get("source", "Forum")
+                    knowledge.setdefault("praxis_erfahrungen", [])
+                    knowledge["praxis_erfahrungen"].append(
+                        f"[{source}] {er_text}"
+                    )
+                    erfahrungen_added += 1
+
     return knowledge
 
 
@@ -730,6 +865,81 @@ def get_knowledge_for_materials_analysis(
             "Bestimmte Formentrenner reagieren mit Vinylester",
         ]
 
+    # =========================================================================
+    # MARKDOWN KNOWLEDGE ENRICHMENT — Detailed material data from 72 files
+    # =========================================================================
+
+    if MARKDOWN_LOADER_AVAILABLE:
+        material_slugs = get_relevant_slugs_for_context("materials")
+        md_knowledge = get_markdown_knowledge()
+
+        # Enrich core_data with markdown knowledge for specific core materials
+        if core_mat == "balsa":
+            balsa_data = md_knowledge.get("kernmaterial_endkorn_balsa")
+            if balsa_data:
+                knowledge["core_data"]["md_balsa"] = {
+                    "tables": balsa_data.get("tables", [])[:5],
+                    "fehlerbilder": balsa_data.get("fehlerbilder", [])[:5],
+                    "faq": balsa_data.get("faq", [])[:5],
+                    "manufacturers": balsa_data.get("manufacturers", []),
+                }
+        elif core_mat == "pvc_foam":
+            pvc_data = md_knowledge.get("kernmaterial_pvc_schaum")
+            if pvc_data:
+                knowledge["core_data"]["md_pvc"] = {
+                    "tables": pvc_data.get("tables", [])[:5],
+                    "fehlerbilder": pvc_data.get("fehlerbilder", [])[:5],
+                    "faq": pvc_data.get("faq", [])[:5],
+                    "manufacturers": pvc_data.get("manufacturers", []),
+                }
+        elif core_mat == "san_foam":
+            san_data = md_knowledge.get("kernmaterial_san_schaum")
+            if san_data:
+                knowledge["core_data"]["md_san"] = {
+                    "tables": san_data.get("tables", [])[:5],
+                    "fehlerbilder": san_data.get("fehlerbilder", [])[:5],
+                    "faq": san_data.get("faq", [])[:5],
+                    "manufacturers": san_data.get("manufacturers", []),
+                }
+
+        # Add resin/fiber markdown data
+        for slug in ["polyester_harz", "vinylester_harz", "epoxid_harz"]:
+            resin_md = md_knowledge.get(slug)
+            if resin_md:
+                knowledge["resin_data"][f"md_{slug}"] = {
+                    "title": resin_md.get("title", ""),
+                    "fehlerbilder_count": len(resin_md.get("fehlerbilder", [])),
+                    "faq_count": len(resin_md.get("faq", [])),
+                    "manufacturers": [
+                        m.get("name", "") for m in resin_md.get("manufacturers", [])
+                    ],
+                }
+
+        # Enrich known_issues with fehlerbilder from relevant markdown files
+        for slug in material_slugs[:15]:
+            data = md_knowledge.get(slug)
+            if not data:
+                continue
+            for fb in data.get("fehlerbilder", [])[:2]:
+                issue_text = f"[{data['title']}] {fb['title_de']}"
+                if fb.get("ursache_de"):
+                    issue_text += f" — Ursache: {fb['ursache_de'][:100]}"
+                knowledge["known_issues"].append(issue_text)
+
+        # Add markdown manufacturers for material suppliers
+        knowledge["markdown_manufacturers"] = []
+        for slug in material_slugs[:20]:
+            data = md_knowledge.get(slug)
+            if not data:
+                continue
+            for mfr in data.get("manufacturers", []):
+                knowledge["markdown_manufacturers"].append({
+                    "name": mfr.get("name", ""),
+                    "origin": mfr.get("origin", ""),
+                    "specialization": mfr.get("specialization", ""),
+                    "source_slug": slug,
+                })
+
     return knowledge
 
 
@@ -788,6 +998,57 @@ def get_knowledge_for_structural_analysis(
         "ISO 8666 — Boote unter 24m — Definierte Länge und Abmessungen",
         "ISO 8847 — Bewertung der Schiffsstabilität",
     ]
+
+    # =========================================================================
+    # MARKDOWN KNOWLEDGE ENRICHMENT — Structural data from composites/fasteners
+    # =========================================================================
+
+    if MARKDOWN_LOADER_AVAILABLE:
+        structural_slugs = get_relevant_slugs_for_context("structural")
+        md_knowledge = get_markdown_knowledge()
+
+        # Add fastener/hardware knowledge (05_xx series)
+        knowledge["markdown_fastener_data"] = []
+        for slug in structural_slugs:
+            data = md_knowledge.get(slug)
+            if not data or data.get("category") != "05":
+                continue
+            knowledge["markdown_fastener_data"].append({
+                "slug": slug,
+                "title": data.get("title", ""),
+                "tables_count": len(data.get("tables", [])),
+                "fehlerbilder": [
+                    {
+                        "title": fb["title_de"],
+                        "symptom": fb.get("symptom_de", ""),
+                        "massnahme": fb.get("massnahme_de", ""),
+                    }
+                    for fb in data.get("fehlerbilder", [])[:3]
+                ],
+            })
+
+        # Add composite material structural data (04_xx series)
+        knowledge["markdown_composite_data"] = []
+        for slug in structural_slugs:
+            data = md_knowledge.get(slug)
+            if not data or data.get("category") != "04":
+                continue
+            knowledge["markdown_composite_data"].append({
+                "slug": slug,
+                "title": data.get("title", ""),
+                "expert_references": [
+                    {"source": ref.get("source", ""), "text": ref.get("text", "")[:150]}
+                    for ref in data.get("expert_references", [])[:3]
+                ],
+                "fallstudien": [
+                    {
+                        "title": fs["title_de"],
+                        "diagnose": fs.get("diagnose_de", "")[:100],
+                        "ergebnis": fs.get("ergebnis_de", "")[:100],
+                    }
+                    for fs in data.get("fallstudien", [])[:3]
+                ],
+            })
 
     return knowledge
 
@@ -867,6 +1128,41 @@ def get_knowledge_for_compliance(
 
     knowledge["notes"] = f"Compliance-Daten für CE-Kategorie {ce_category}, {propulsion}-Antrieb, {operating_waters}-Gewässer"
 
+    # =========================================================================
+    # MARKDOWN KNOWLEDGE ENRICHMENT — Compliance data from seals/fittings
+    # =========================================================================
+
+    if MARKDOWN_LOADER_AVAILABLE:
+        compliance_slugs = get_relevant_slugs_for_context("compliance")
+        md_knowledge = get_markdown_knowledge()
+
+        knowledge["markdown_compliance_data"] = []
+        for slug in compliance_slugs[:20]:
+            data = md_knowledge.get(slug)
+            if not data:
+                continue
+            # Extract compliance-relevant FAQ and fehlerbilder
+            compliance_faqs = [
+                faq for faq in data.get("faq", [])
+                if any(kw in faq.get("question_de", "").lower() for kw in [
+                    "iso", "ce", "norm", "vorschrift", "zulassung",
+                    "sicherheit", "prüf", "zertifiz",
+                ])
+            ]
+            if compliance_faqs or data.get("fehlerbilder"):
+                knowledge["markdown_compliance_data"].append({
+                    "slug": slug,
+                    "title": data.get("title", ""),
+                    "compliance_faq": [
+                        {"q": f["question_de"], "a": f["answer_de"][:200]}
+                        for f in compliance_faqs[:3]
+                    ],
+                    "safety_fehlerbilder": [
+                        {"title": fb["title_de"], "symptom": fb.get("symptom_de", "")}
+                        for fb in data.get("fehlerbilder", [])[:3]
+                    ],
+                })
+
     return knowledge
 
 
@@ -939,6 +1235,60 @@ def get_knowledge_for_service_patterns(
         "ten_yearly": "Große Überholungen, möglicherweise Kern-Erneuerung",
     }
 
+    # =========================================================================
+    # MARKDOWN KNOWLEDGE ENRICHMENT — Erfahrungsberichte, Fallstudien, Fehlerbilder
+    # =========================================================================
+
+    if MARKDOWN_LOADER_AVAILABLE:
+        service_slugs = get_relevant_slugs_for_context("service_patterns")
+        md_knowledge = get_markdown_knowledge()
+
+        # Add real failure cases from markdown fallstudien
+        knowledge["markdown_fallstudien"] = []
+        for slug in service_slugs[:20]:
+            data = md_knowledge.get(slug)
+            if not data:
+                continue
+            for fs in data.get("fallstudien", [])[:3]:
+                knowledge["markdown_fallstudien"].append({
+                    "source_slug": slug,
+                    "source_title": data.get("title", ""),
+                    "title": fs.get("title_de", ""),
+                    "situation": fs.get("situation_de", ""),
+                    "diagnose": fs.get("diagnose_de", ""),
+                    "ergebnis": fs.get("ergebnis_de", ""),
+                    "kosten": fs.get("kosten_de", ""),
+                    "lehre": fs.get("lehre_de", ""),
+                })
+
+        # Add erfahrungsberichte for pattern detection
+        knowledge["markdown_erfahrungsberichte"] = []
+        for slug in service_slugs[:15]:
+            data = md_knowledge.get(slug)
+            if not data:
+                continue
+            for er in data.get("erfahrungsberichte", [])[:3]:
+                knowledge["markdown_erfahrungsberichte"].append({
+                    "source_slug": slug,
+                    "forum": er.get("source", ""),
+                    "text": er.get("text", "")[:300],
+                    "type": er.get("type", ""),
+                })
+
+        # Enrich common failure modes with markdown fehlerbilder
+        for slug in service_slugs[:15]:
+            data = md_knowledge.get(slug)
+            if not data:
+                continue
+            for fb in data.get("fehlerbilder", [])[:2]:
+                knowledge["common_failure_modes"].append({
+                    "source": data.get("title", slug),
+                    "title": fb.get("title_de", ""),
+                    "symptom": fb.get("symptom_de", ""),
+                    "ursache": fb.get("ursache_de", ""),
+                    "massnahme": fb.get("massnahme_de", ""),
+                })
+
     return knowledge
 
 
@@ -985,6 +1335,24 @@ def get_manufacturer_knowledge(builder_name: Optional[str]) -> Dict[str, Any]:
             if builder_lower in mfg_name.lower():
                 profile["reputation"] = rep_data
                 break
+
+    # Search in markdown knowledge manufacturer databases
+    if MARKDOWN_LOADER_AVAILABLE:
+        md_manufacturers = get_md_manufacturers()
+        profile["markdown_matches"] = []
+        for mfr in md_manufacturers:
+            mfr_name = (mfr.get("name") or "").strip()
+            if len(mfr_name) < 3:
+                # Empty/degenerate names would substring-match EVERY query
+                # ("" in x is always True) and report any brand as found.
+                continue
+            if builder_lower in mfr_name.lower() or mfr_name.lower() in builder_lower:
+                profile["markdown_matches"].append({
+                    "name": mfr_name,
+                    "origin": mfr.get("origin", ""),
+                    "specialization": mfr.get("specialization", ""),
+                    "source": mfr.get("knowledge_source", ""),
+                })
 
     return profile
 
@@ -1049,6 +1417,13 @@ def format_knowledge_for_prompt(
     if "degradation_knowledge" in knowledge and knowledge["degradation_knowledge"]:
         output_lines.append("⏳ ALTERUNGS- UND DEGRADATIONSMUSTER:")
         output_lines.append(f"  {knowledge['degradation_knowledge']}")
+        output_lines.append("")
+
+    # Praxis-Erfahrungen from markdown knowledge
+    if "praxis_erfahrungen" in knowledge and knowledge["praxis_erfahrungen"]:
+        output_lines.append("💬 PRAXIS-ERFAHRUNGEN (aus Foren & Eignern):")
+        for erfahrung in knowledge["praxis_erfahrungen"][:5]:
+            output_lines.append(f"  • {erfahrung}")
         output_lines.append("")
 
     # Flatten to string and truncate
@@ -1188,7 +1563,239 @@ def list_available_knowledge_databases() -> Dict[str, int]:
         "MATERIAL_INTERACTION_FAILURES": len(MATERIAL_INTERACTION_FAILURES),
         "GALVANIC_SERIES_MARINE": len(GALVANIC_SERIES_MARINE),
     }
+    # Add markdown knowledge statistics
+    if MARKDOWN_LOADER_AVAILABLE:
+        md_summary = get_markdown_knowledge_summary()
+        databases["MARKDOWN_FILES"] = md_summary.get("total_files", 0)
+        databases["MARKDOWN_TOTAL_LINES"] = md_summary.get("total_lines", 0)
+        databases["MARKDOWN_TABLES"] = md_summary.get("total_tables", 0)
+        databases["MARKDOWN_MANUFACTURERS"] = md_summary.get("total_manufacturers", 0)
+        databases["MARKDOWN_ERFAHRUNGSBERICHTE"] = md_summary.get("total_erfahrungsberichte", 0)
+        databases["MARKDOWN_FAQ"] = md_summary.get("total_faq", 0)
+        databases["MARKDOWN_GLOSSARY"] = md_summary.get("total_glossary", 0)
+        databases["MARKDOWN_FEHLERBILDER"] = md_summary.get("total_fehlerbilder", 0)
+        databases["MARKDOWN_FALLSTUDIEN"] = md_summary.get("total_fallstudien", 0)
+        databases["MARKDOWN_EXPERT_REFERENCES"] = md_summary.get("total_expert_references", 0)
+
     return {k: v for k, v in databases.items() if v > 0}
+
+
+# =============================================================================
+# NEW RETRIEVAL FUNCTIONS — Direct access to markdown knowledge aggregates
+# =============================================================================
+
+
+def get_all_faq_knowledge(
+    category: Optional[str] = None,
+    search_query: Optional[str] = None,
+    max_results: int = 50,
+) -> List[Dict[str, Any]]:
+    """
+    Returns all FAQ entries from markdown knowledge, optionally filtered.
+
+    Args:
+        category: filter by category (e.g. '04' for composites)
+        search_query: filter by keyword in question or answer
+        max_results: maximum number of results
+
+    Returns:
+        List of FAQ dicts with question_de, answer_de, confidence, knowledge_source
+    """
+    if not MARKDOWN_LOADER_AVAILABLE:
+        return []
+
+    all_faqs = get_md_faq()
+
+    if category:
+        md_knowledge = get_markdown_knowledge()
+        category_slugs = {
+            slug for slug, data in md_knowledge.items()
+            if data.get("category") == category
+        }
+        all_faqs = [f for f in all_faqs if f.get("knowledge_source") in category_slugs]
+
+    if search_query:
+        query_lower = search_query.lower()
+        all_faqs = [
+            f for f in all_faqs
+            if query_lower in f.get("question_de", "").lower()
+            or query_lower in f.get("answer_de", "").lower()
+        ]
+
+    return all_faqs[:max_results]
+
+
+def get_all_glossary_knowledge(
+    category: Optional[str] = None,
+    search_query: Optional[str] = None,
+    max_results: int = 100,
+) -> List[Dict[str, Any]]:
+    """
+    Returns all glossary entries from markdown knowledge, optionally filtered.
+    """
+    if not MARKDOWN_LOADER_AVAILABLE:
+        return []
+
+    all_glossary = get_md_glossary()
+
+    if category:
+        md_knowledge = get_markdown_knowledge()
+        category_slugs = {
+            slug for slug, data in md_knowledge.items()
+            if data.get("category") == category
+        }
+        all_glossary = [
+            g for g in all_glossary if g.get("knowledge_source") in category_slugs
+        ]
+
+    if search_query:
+        query_lower = search_query.lower()
+        all_glossary = [
+            g for g in all_glossary
+            if any(query_lower in str(v).lower() for v in g.values())
+        ]
+
+    return all_glossary[:max_results]
+
+
+def get_all_fehlerbilder_knowledge(
+    category: Optional[str] = None,
+    search_query: Optional[str] = None,
+    max_results: int = 50,
+) -> List[Dict[str, Any]]:
+    """
+    Returns all Fehlerbild (failure pattern) entries from markdown knowledge.
+    """
+    if not MARKDOWN_LOADER_AVAILABLE:
+        return []
+
+    all_fb = get_md_fehlerbilder()
+
+    if category:
+        md_knowledge = get_markdown_knowledge()
+        category_slugs = {
+            slug for slug, data in md_knowledge.items()
+            if data.get("category") == category
+        }
+        all_fb = [f for f in all_fb if f.get("knowledge_source") in category_slugs]
+
+    if search_query:
+        query_lower = search_query.lower()
+        all_fb = [
+            f for f in all_fb
+            if query_lower in f.get("title_de", "").lower()
+            or query_lower in f.get("full_text", "").lower()
+        ]
+
+    return all_fb[:max_results]
+
+
+def get_all_fallstudien_knowledge(
+    category: Optional[str] = None,
+    search_query: Optional[str] = None,
+    max_results: int = 50,
+) -> List[Dict[str, Any]]:
+    """
+    Returns all Fallstudien (case studies) from markdown knowledge.
+    """
+    if not MARKDOWN_LOADER_AVAILABLE:
+        return []
+
+    all_fs = get_md_fallstudien()
+
+    if category:
+        md_knowledge = get_markdown_knowledge()
+        category_slugs = {
+            slug for slug, data in md_knowledge.items()
+            if data.get("category") == category
+        }
+        all_fs = [f for f in all_fs if f.get("knowledge_source") in category_slugs]
+
+    if search_query:
+        query_lower = search_query.lower()
+        all_fs = [
+            f for f in all_fs
+            if query_lower in f.get("title_de", "").lower()
+            or query_lower in f.get("full_text", "").lower()
+        ]
+
+    return all_fs[:max_results]
+
+
+def get_all_manufacturers_knowledge(
+    category: Optional[str] = None,
+    search_query: Optional[str] = None,
+    max_results: int = 100,
+) -> List[Dict[str, Any]]:
+    """
+    Returns all manufacturer profiles from markdown knowledge.
+    """
+    if not MARKDOWN_LOADER_AVAILABLE:
+        return []
+
+    all_mfr = get_md_manufacturers()
+
+    if category:
+        md_knowledge = get_markdown_knowledge()
+        category_slugs = {
+            slug for slug, data in md_knowledge.items()
+            if data.get("category") == category
+        }
+        all_mfr = [m for m in all_mfr if m.get("knowledge_source") in category_slugs]
+
+    if search_query:
+        query_lower = search_query.lower()
+        all_mfr = [
+            m for m in all_mfr
+            if any(query_lower in str(v).lower() for v in m.values())
+        ]
+
+    return all_mfr[:max_results]
+
+
+def get_all_expert_references_knowledge(
+    category: Optional[str] = None,
+    max_results: int = 100,
+) -> List[Dict[str, Any]]:
+    """
+    Returns all expert references from markdown knowledge.
+    """
+    if not MARKDOWN_LOADER_AVAILABLE:
+        return []
+
+    all_refs = get_md_expert_references()
+
+    if category:
+        md_knowledge = get_markdown_knowledge()
+        category_slugs = {
+            slug for slug, data in md_knowledge.items()
+            if data.get("category") == category
+        }
+        all_refs = [r for r in all_refs if r.get("knowledge_source") in category_slugs]
+
+    return all_refs[:max_results]
+
+
+def search_knowledge(
+    query: str,
+    max_results: int = 20,
+) -> List[Dict[str, Any]]:
+    """
+    Full-text search across ALL knowledge sources — both legacy deep_*.py
+    databases and markdown knowledge files.
+
+    Returns unified list of search results.
+    """
+    results = []
+
+    # Search markdown knowledge
+    if MARKDOWN_LOADER_AVAILABLE:
+        md_results = search_markdown_knowledge(query, max_results=max_results)
+        results.extend(md_results)
+
+    # TODO: Add search across legacy deep_*.py databases when needed
+
+    return results[:max_results]
 
 
 def validate_parameters(

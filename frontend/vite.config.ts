@@ -9,6 +9,7 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:8000',
         changeOrigin: true,
+        ws: true, // real-time collaboration (WS /api/v1/ws/collaborate/...)
       },
       '/health': {
         target: 'http://localhost:8000',

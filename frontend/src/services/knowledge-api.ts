@@ -1,101 +1,85 @@
 import type {
   KnowledgeCategory,
-  KnowledgeDetail,
-  DegradationTimeline,
-  ManufacturerKnowledge,
+  KnowledgeDocument,
+  KnowledgeSearchResult,
+  CorpusDocumentSummary,
 } from '../types'
 
 const BASE = '/api/v1'
 
-interface MaterialKnowledgeParams {
-  category?: string
-  material?: string
-  use_case?: string
+interface CorpusCategoryDto {
+  id: string
+  name: string
+  document_count: number
+  documents: CorpusDocumentSummary[]
 }
 
-interface DegradationKnowledgeParams {
-  material?: string
-  environment?: string
-  timeframe?: string
+interface CorpusCategoriesResponseDto {
+  total_categories: number
+  total_documents: number
+  categories: CorpusCategoryDto[]
 }
 
-interface SearchParams {
+interface SearchMatchDto {
+  category: string
+  database: string
+  entry_name: string
+  excerpt: string
+  relevance_score: number
+}
+
+interface SearchResponseDto {
   query: string
-  limit?: number
-  offset?: number
+  results_count: number
+  matches: SearchMatchDto[]
 }
 
 /**
- * Get all knowledge categories
+ * Get all corpus categories (01-31) with their documents,
+ * mapped onto the category grid shape used by KnowledgePage.
  */
 export async function getKnowledgeCategories(): Promise<KnowledgeCategory[]> {
-  const res = await fetch(`${BASE}/knowledge/categories`)
-  if (!res.ok) throw new Error('Failed to fetch knowledge categories')
+  const res = await fetch(`${BASE}/knowledge/corpus/categories`)
+  if (!res.ok) throw new Error('Wissensdatenbank konnte nicht geladen werden')
+  const data: CorpusCategoriesResponseDto = await res.json()
+  return data.categories.map((c) => ({
+    id: c.id,
+    name: c.name,
+    description: `${c.document_count} ${c.document_count === 1 ? 'Fachartikel' : 'Fachartikel'} aus dem Recherche-Korpus`,
+    subcategory_count: c.document_count,
+    implementation_status: 'complete' as const,
+    documentation_ready: true,
+    subcategories: c.documents.map((d) => ({
+      id: d.key,
+      name: d.title,
+      description: `${d.line_count.toLocaleString('de-DE')} Zeilen · ${d.table_count} Tabellen · ${d.fehlerbilder_count} Fehlerbilder · ${d.faq_count} FAQ`,
+    })),
+  }))
+}
+
+/**
+ * Read one full research document (lexicon article view).
+ */
+export async function getKnowledgeDocument(key: string): Promise<KnowledgeDocument> {
+  const res = await fetch(`${BASE}/knowledge/corpus/documents/${encodeURIComponent(key)}`)
+  if (!res.ok) throw new Error(`Artikel konnte nicht geladen werden: ${key}`)
   return res.json()
 }
 
 /**
- * Get detailed knowledge for a specific category
+ * Search across the knowledge base. Results stemming from the corpus carry
+ * a sourceKey that can be opened as a full article.
  */
-export async function getKnowledgeDetail(categoryId: string): Promise<KnowledgeDetail> {
-  const res = await fetch(`${BASE}/knowledge/categories/${categoryId}`)
-  if (!res.ok) throw new Error(`Failed to fetch knowledge for category: ${categoryId}`)
-  return res.json()
-}
-
-/**
- * Get material-specific knowledge
- */
-export async function getMaterialKnowledge(
-  params: MaterialKnowledgeParams,
-): Promise<KnowledgeDetail[]> {
-  const searchParams = new URLSearchParams()
-  if (params.category) searchParams.set('category', params.category)
-  if (params.material) searchParams.set('material', params.material)
-  if (params.use_case) searchParams.set('use_case', params.use_case)
-
-  const query = searchParams.toString() ? `?${searchParams.toString()}` : ''
-  const res = await fetch(`${BASE}/knowledge/materials${query}`)
-  if (!res.ok) throw new Error('Failed to fetch material knowledge')
-  return res.json()
-}
-
-/**
- * Get manufacturer-specific knowledge and known issues
- */
-export async function getManufacturerKnowledge(name: string): Promise<ManufacturerKnowledge> {
-  const res = await fetch(`${BASE}/knowledge/manufacturers/${encodeURIComponent(name)}`)
-  if (!res.ok) throw new Error(`Failed to fetch manufacturer knowledge: ${name}`)
-  return res.json()
-}
-
-/**
- * Get degradation timelines and environmental impact
- */
-export async function getDegradationKnowledge(
-  params: DegradationKnowledgeParams,
-): Promise<DegradationTimeline[]> {
-  const searchParams = new URLSearchParams()
-  if (params.material) searchParams.set('material', params.material)
-  if (params.environment) searchParams.set('environment', params.environment)
-  if (params.timeframe) searchParams.set('timeframe', params.timeframe)
-
-  const query = searchParams.toString() ? `?${searchParams.toString()}` : ''
-  const res = await fetch(`${BASE}/knowledge/degradation${query}`)
-  if (!res.ok) throw new Error('Failed to fetch degradation knowledge')
-  return res.json()
-}
-
-/**
- * Search across all knowledge base
- */
-export async function searchKnowledge(params: SearchParams): Promise<KnowledgeDetail[]> {
-  const searchParams = new URLSearchParams()
-  searchParams.set('q', params.query)
-  if (params.limit) searchParams.set('limit', params.limit.toString())
-  if (params.offset) searchParams.set('offset', params.offset.toString())
-
-  const res = await fetch(`${BASE}/knowledge/search?${searchParams.toString()}`)
-  if (!res.ok) throw new Error('Failed to search knowledge')
-  return res.json()
+export async function searchKnowledge(query: string): Promise<KnowledgeSearchResult[]> {
+  const res = await fetch(`${BASE}/knowledge/search?q=${encodeURIComponent(query)}`)
+  if (!res.ok) throw new Error('Suche fehlgeschlagen')
+  const data: SearchResponseDto = await res.json()
+  return (data.matches ?? []).map((m, idx) => ({
+    id: `${m.database}-${idx}`,
+    title: m.entry_name,
+    excerpt: m.excerpt,
+    database: m.database,
+    // Markdown-based hits carry the source document key in `category`
+    sourceKey: m.database.startsWith('markdown') && m.category ? m.category : null,
+  }))
 }

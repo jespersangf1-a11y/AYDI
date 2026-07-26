@@ -4,6 +4,7 @@ import type { QuickAnalysisResponse, QuickModuleResult, AnalysisModule } from '.
 import { ANALYSIS_MODULE_LABELS } from '../../types'
 import ScoreGauge from '../analysis/ScoreGauge'
 import UpgradePrompt from './UpgradePrompt'
+import BuyerInsightsPanel from './BuyerInsightsPanel'
 
 interface QuickResultsProps {
   result: QuickAnalysisResponse
@@ -223,6 +224,24 @@ export default function QuickResults({ result, onNewAnalysis }: QuickResultsProp
             <ModuleCard key={name} name={name} result={mod} index={idx} />
           ))}
         </div>
+
+        {/* Kaufberatung (pillar 2) — shown when boat identity was provided */}
+        {result.buyer_insights?.available ? (
+          <div className="animate-fade-in-up" style={{ animationDelay: '250ms' }}>
+            <BuyerInsightsPanel insights={result.buyer_insights} />
+          </div>
+        ) : (
+          <div
+            className="animate-fade-in-up bg-sand-50 border border-sand-200 rounded-xl px-6 py-4"
+            style={{ animationDelay: '250ms' }}
+          >
+            <p className="text-sm text-navy-700">
+              <span className="font-medium">Kaufberatung verfügbar:</span> Geben Sie
+              Marke, Modell oder Baujahr an (Sektion „Bootsidentität"), um dokumentierte
+              Typ-Schwachstellen und altersbedingte Prüfpunkte zu diesem Boot zu sehen.
+            </p>
+          </div>
+        )}
 
         {/* Unavailable modules */}
         {unavailableModules.length > 0 && (

@@ -9,7 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.database import async_session, engine
-from app.models.models import Base, Layout, Project, Material, CompetitorModel
+from app.models.models import Base, Layout, Project, Material, CompetitorModel, User
 
 logger = logging.getLogger(__name__)
 
@@ -1704,9 +1704,32 @@ async def seed():
             competitor = CompetitorModel(**comp_data)
             session.add(competitor)
 
+        # Demo projects need an owner: projects.user_id is NOT NULL since the
+        # user-isolation fix (BUG-007). Without this, every boot against a
+        # FRESH database crashed in the seed (IntegrityError) before startup.
+        # The demo user gets an unguessable random password — it is a data
+        # container, not a login account.
+        import secrets
+        from app.core.auth import hash_password
+
+        result = await session.execute(
+            select(User).where(User.email == "demo@aydi.example")
+        )
+        demo_user = result.scalars().first()
+        if demo_user is None:
+            demo_user = User(
+                email="demo@aydi.example",
+                hashed_password=hash_password(secrets.token_urlsafe(32)),
+                full_name="AYDI Demo",
+                role="user",
+                tier="free",
+            )
+            session.add(demo_user)
+            await session.flush()
+
         projects = []
         for data in SEED_PROJECTS:
-            project = Project(**data)
+            project = Project(**data, user_id=demo_user.id)
             session.add(project)
             projects.append(project)
 

@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.permissions import get_current_user
+from app.core.permissions import get_accessible_project, get_current_user
 from app.db.database import get_db
 from app.models.models import CostItem, Layout, Project, User
 from app.schemas.costs import CostItemCreate, CostItemResponse, CostItemUpdate
@@ -20,13 +20,11 @@ async def _verify_project_ownership(
     project_id: UUID,
     user: User,
     db: AsyncSession,
+    min_role: str = "editor",
 ) -> None:
-    """Verify the project exists and belongs to the given user."""
-    result = await db.execute(
-        select(Project).where(Project.id == project_id, Project.user_id == user.id)
-    )
-    if not result.scalar_one_or_none():
-        raise HTTPException(status_code=404, detail="Projekt nicht gefunden")
+    """Access check: owner or shared member with >= min_role
+    (pillar 4, stage 1 — see core.permissions.get_accessible_project)."""
+    await get_accessible_project(project_id, user, db, min_role)
 
 
 async def _verify_layout(
@@ -54,7 +52,7 @@ async def list_cost_items(
     db: AsyncSession = Depends(get_db),
 ):
     """List all cost items for a layout, with optional category filter."""
-    await _verify_project_ownership(project_id, _user, db)
+    await _verify_project_ownership(project_id, _user, db, min_role="viewer")
     await _verify_layout(project_id, layout_id, db)
 
     query = select(CostItem).where(CostItem.layout_id == layout_id).order_by(
@@ -101,7 +99,7 @@ async def get_cost_summary(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """Return aggregated cost breakdown by category and zone for a layout."""
-    await _verify_project_ownership(project_id, _user, db)
+    await _verify_project_ownership(project_id, _user, db, min_role="viewer")
     await _verify_layout(project_id, layout_id, db)
 
     result = await db.execute(
@@ -145,7 +143,7 @@ async def get_cost_item(
     db: AsyncSession = Depends(get_db),
 ):
     """Get a single cost item by ID."""
-    await _verify_project_ownership(project_id, _user, db)
+    await _verify_project_ownership(project_id, _user, db, min_role="viewer")
     await _verify_layout(project_id, layout_id, db)
 
     result = await db.execute(

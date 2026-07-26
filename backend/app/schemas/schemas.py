@@ -1,9 +1,10 @@
 # backend/app/schemas/schemas.py
 from datetime import date, datetime
 from enum import Enum
+from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class BoatClass(str, Enum):
@@ -99,6 +100,111 @@ class ProjectResponse(BaseModel):
     status: ProjectStatus
     created_at: datetime
     updated_at: datetime
+    # Organization ownership (pillar 4, stage 2), None for private projects.
+    org_id: UUID | None = None
+    # Caller's relationship to the project: "owner" / "editor" / "viewer".
+    # Drives the "geteilt"-badge and owner-only UI (sharing dialog).
+    access_role: str | None = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# Project sharing (pillar 4, stage 1)
+class ProjectMemberCreate(BaseModel):
+    email: EmailStr
+    role: Literal["viewer", "editor"] = "viewer"
+
+
+class ProjectMemberRoleUpdate(BaseModel):
+    role: Literal["viewer", "editor"]
+
+
+class ProjectMemberResponse(BaseModel):
+    user_id: UUID
+    email: str
+    full_name: str
+    role: str  # owner, editor, viewer
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# Project org attachment (pillar 4, stage 2)
+class ProjectOrgUpdate(BaseModel):
+    # None = detach the project back to private
+    org_id: UUID | None = None
+
+
+# ---------------------------------------------------------------------------
+# Organizations (pillar 4, stage 2)
+# ---------------------------------------------------------------------------
+
+class OrganizationCreate(BaseModel):
+    name: str = Field(..., min_length=1, max_length=200)
+
+
+class OrganizationUpdate(BaseModel):
+    # Rename only. tier is deliberately NOT here — it is platform-admin-only
+    # (self-service tier changes would be a privilege escalation).
+    name: str = Field(..., min_length=1, max_length=200)
+
+
+class OrganizationResponse(BaseModel):
+    id: UUID
+    name: str
+    tier: str
+    created_at: datetime
+    # Caller's org_role ("owner"/"admin"/"member") — for UI gating.
+    org_role: str | None = None
+    member_count: int | None = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class OrgMemberResponse(BaseModel):
+    user_id: UUID
+    email: str
+    full_name: str
+    org_role: str  # owner, admin, member
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class OrgMemberRoleUpdate(BaseModel):
+    org_role: Literal["owner", "admin", "member"]
+
+
+class OrgTierUpdate(BaseModel):
+    # Platform-admin-only endpoint payload.
+    tier: Literal["free", "pro", "enterprise"]
+
+
+# ---------------------------------------------------------------------------
+# Invitations (pillar 4, stage 2)
+# ---------------------------------------------------------------------------
+
+class ProjectInvitationCreate(BaseModel):
+    email: EmailStr
+    role: Literal["viewer", "editor"] = "viewer"
+
+
+class OrgInvitationCreate(BaseModel):
+    email: EmailStr
+    role: Literal["member", "admin"] = "member"
+
+
+class InvitationResponse(BaseModel):
+    id: UUID
+    email: str
+    role: str
+    status: str
+    scope: str  # "project" | "org"
+    project_id: UUID | None = None
+    organization_id: UUID | None = None
+    # Human-readable target name, filled by the endpoint (project/org name).
+    target_name: str | None = None
+    invited_by_email: str | None = None
+    created_at: datetime
+    expires_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -110,6 +216,28 @@ class LayoutCreate(BaseModel):
     zones: list[ZoneData]
     passages: list[PassageData]
     deck_height_mm: int = 2100
+
+
+class LayoutUpdate(BaseModel):
+    """Partial layout update (pillar 3: owner refit loop).
+
+    Every applied update auto-snapshots the PREVIOUS state as a LayoutVersion,
+    so edits are never destructive and before/after comparison always works.
+    """
+    name: str | None = Field(None, min_length=1, max_length=200)
+    version: str | None = Field(None, min_length=1, max_length=50)
+    # min_length=1: emptying a layout is not a refit operation — a bare
+    # zones=[] would only ever appear by accident (e.g. missing snapshot)
+    # and every following analysis would fail on empty geometry.
+    zones: list[ZoneData] | None = Field(None, min_length=1)
+    passages: list[PassageData] | None = None
+    deck_height_mm: int | None = Field(None, ge=1000, le=5000)
+    # Zone renames performed in this update ({old_name: new_name}) — the
+    # server cascades them to ZoneMaterial/StructuralItem/CostItem rows,
+    # which reference zones BY NAME and would otherwise be orphaned.
+    zone_renames: dict[str, str] | None = None
+    # Recorded on the auto-created version snapshot
+    change_summary: str | None = Field(None, max_length=500)
 
 
 class LayoutResponse(BaseModel):

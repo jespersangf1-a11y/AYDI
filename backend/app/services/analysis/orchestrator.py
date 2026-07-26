@@ -231,6 +231,10 @@ def _build_module_kwargs(name: str, context: AnalysisContext) -> dict:
 
     if name == "materials":
         kwargs["materials"] = context.zone_materials
+    elif name == "structural":
+        # Measured items were loaded into the context but never handed to the
+        # module — the analysis silently ignored real measurements.
+        kwargs["structural_items"] = context.structural_items
     elif name == "cost":
         kwargs["cost_items"] = context.cost_items
         kwargs["boat_length_m"] = context.length_m

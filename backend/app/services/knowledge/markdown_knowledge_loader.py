@@ -75,7 +75,11 @@ def _parse_markdown_table(lines: List[str]) -> List[Dict[str, str]]:
     if not header_line.startswith("|"):
         return []
 
-    headers = [h.strip() for h in header_line.split("|") if h.strip()]
+    # Position-preserving split: only trim the leading/trailing pipe borders.
+    # Filtering out EMPTY cells (old behaviour) shifted every value after an
+    # empty middle cell under the WRONG column header — factually wrong data
+    # (prices, torques, approvals) in ~100 corpus files.
+    headers = [h.strip() for h in header_line.strip().strip("|").split("|")]
 
     # Skip separator line (line[1])
     rows = []
@@ -83,10 +87,12 @@ def _parse_markdown_table(lines: List[str]) -> List[Dict[str, str]]:
         line = line.strip()
         if not line.startswith("|"):
             break
-        cells = [c.strip() for c in line.split("|") if c.strip() != ""]
-        if len(cells) >= 1:
+        cells = [c.strip() for c in line.strip("|").split("|")]
+        if any(c != "" for c in cells):
             row = {}
             for i, header in enumerate(headers):
+                if header == "":
+                    continue  # border artifacts from malformed headers
                 row[header] = cells[i] if i < len(cells) else ""
             rows.append(row)
 
@@ -1208,6 +1214,23 @@ def parse_knowledge_file(filepath: Path) -> Dict[str, Any]:
     }
     """
     content = filepath.read_text(encoding="utf-8")
+    original_line_count = content.count("\n") + 1
+
+    # Strip YAML frontmatter (--- ... ---) — ~100 corpus files start with it.
+    # It must not leak into the section tree, and its `title:` field is the
+    # best title source when the body carries no H1.
+    frontmatter_title = ""
+    if content.startswith("---"):
+        fm_end = re.search(r"^---\s*$", content[3:], re.MULTILINE)
+        if fm_end:
+            fm_block = content[3 : 3 + fm_end.start()]
+            fm_title_match = re.search(
+                r"^title:\s*[\"']?(.+?)[\"']?\s*$", fm_block, re.MULTILINE
+            )
+            if fm_title_match:
+                frontmatter_title = fm_title_match.group(1).strip()
+            content = content[3 + fm_end.end():].lstrip("\n")
+
     lines = content.split("\n")
 
     # Extract identifiers from filename
@@ -1217,13 +1240,17 @@ def parse_knowledge_file(filepath: Path) -> Dict[str, Any]:
     subcategory = parts[1] if len(parts) > 1 else ""
     slug = parts[2] if len(parts) > 2 else name
 
-    # Extract title from first H1
+    # Extract title from the FIRST H1 anywhere in the body (previously only
+    # line 0 was checked, so every frontmatter-led file got title="" and the
+    # lexicon UI showed raw slugs). Fall back to the frontmatter title.
     title = ""
-    title_match = re.match(r"^#\s+(.+)", lines[0] if lines else "")
+    title_match = re.search(r"^#\s+(.+)$", content, re.MULTILINE)
     if title_match:
         title_raw = title_match.group(1).strip()
         # Remove number prefix like "06.01 — "
         title = re.sub(r"^\d+\.\d+\s*—?\s*", "", title_raw)
+    if not title:
+        title = frontmatter_title
 
     # Parse sections
     sections = _extract_section_hierarchy(content)
@@ -1254,7 +1281,7 @@ def parse_knowledge_file(filepath: Path) -> Dict[str, Any]:
         "fehlerbilder": _extract_fehlerbilder(content),
         "fallstudien": _extract_fallstudien(content),
         "pydantic_models": _extract_pydantic_models(content),
-        "line_count": len(lines),
+        "line_count": original_line_count,
     }
 
 

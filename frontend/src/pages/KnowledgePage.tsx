@@ -1,13 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
-import { Search, ChevronDown, Package, AlertTriangle, Zap, BookOpen, TrendingUp, Eye } from 'lucide-react'
+import { Search, ChevronDown, Package, AlertTriangle, Zap, BookOpen, TrendingUp, Droplets } from 'lucide-react'
 import HeroSection from '../components/layout/HeroSection'
-import KnowledgeDetailPanel from '../components/knowledge/KnowledgeDetail'
+import KnowledgeArticle from '../components/knowledge/KnowledgeArticle'
 import {
   getKnowledgeCategories,
-  getKnowledgeDetail,
+  getKnowledgeDocument,
   searchKnowledge,
 } from '../services/knowledge-api'
-import type { KnowledgeCategory, KnowledgeDetail } from '../types'
+import type { KnowledgeCategory, KnowledgeDocument, KnowledgeSearchResult } from '../types'
 import { MEDIA } from '../config/media'
 
 
@@ -15,14 +15,17 @@ export default function KnowledgePage() {
   const [categories, setCategories] = useState<KnowledgeCategory[]>([])
   const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
-  const [searchResults, setSearchResults] = useState<KnowledgeDetail[]>([])
+  const [searchResults, setSearchResults] = useState<KnowledgeSearchResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
-  const [selectedDetail, setSelectedDetail] = useState<KnowledgeDetail | null>(null)
+  const [selectedDocument, setSelectedDocument] = useState<KnowledgeDocument | null>(null)
+  const [docLoadingKey, setDocLoadingKey] = useState<string | null>(null)
+  const [docError, setDocError] = useState<string | null>(null)
+  const [searchError, setSearchError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showSearchResults, setShowSearchResults] = useState(false)
 
-  // Load categories
+  // Load corpus categories
   useEffect(() => {
     getKnowledgeCategories()
       .then((data) => {
@@ -30,96 +33,105 @@ export default function KnowledgePage() {
         setError(null)
       })
       .catch((e) => {
-        setError(e.message)
-        // Mock data for demo
-        setCategories(getMockCategories())
+        setError(
+          e instanceof Error
+            ? e.message
+            : 'Wissensdatenbank konnte nicht geladen werden',
+        )
+        setCategories([])
       })
       .finally(() => setLoading(false))
   }, [])
 
-  // Handle search with debounce
+  // Handle search with debounce. The sequence counter guards against BOTH
+  // stale debounce timers (query shortened below 2 chars while a timer was
+  // pending) and out-of-order fetch responses (older response arriving after
+  // a newer one).
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const searchSeqRef = useRef(0)
 
-  const handleSearch = async (query: string) => {
+  const handleSearch = (query: string) => {
     setSearchQuery(query)
-    if (query.trim().length < 2) {
-      setShowSearchResults(false)
-      setSearchResults([])
-      return
-    }
+    const seq = ++searchSeqRef.current
 
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current)
+      searchTimeoutRef.current = null
+    }
+
+    if (query.trim().length < 2) {
+      setShowSearchResults(false)
+      setSearchResults([])
+      setSearchError(null)
+      setIsSearching(false)
+      return
     }
 
     setIsSearching(true)
     searchTimeoutRef.current = setTimeout(async () => {
       try {
-        const results = await searchKnowledge({ query, limit: 20 })
+        const results = await searchKnowledge(query)
+        if (seq !== searchSeqRef.current) return // stale response — discard
         setSearchResults(results)
+        setSearchError(null)
         setShowSearchResults(true)
       } catch (e) {
+        if (seq !== searchSeqRef.current) return
         console.error('Search error:', e)
-        setShowSearchResults(false)
+        setSearchResults([])
+        setSearchError('Suche fehlgeschlagen — bitte versuchen Sie es erneut.')
+        setShowSearchResults(true)
       } finally {
-        setIsSearching(false)
+        if (seq === searchSeqRef.current) setIsSearching(false)
       }
     }, 300)
   }
 
-  const handleCategoryClick = async (categoryId: string) => {
-    if (expandedCategoryId === categoryId) {
-      setExpandedCategoryId(null)
-    } else {
-      setExpandedCategoryId(categoryId)
-    }
+  const handleCategoryClick = (categoryId: string) => {
+    setExpandedCategoryId(expandedCategoryId === categoryId ? null : categoryId)
   }
 
-  const handleViewDetail = async (categoryId: string) => {
+  const handleOpenDocument = async (key: string) => {
+    setDocLoadingKey(key)
+    setDocError(null)
     try {
-      const detail = await getKnowledgeDetail(categoryId)
-      setSelectedDetail(detail)
+      const doc = await getKnowledgeDocument(key)
+      setSelectedDocument(doc)
     } catch (e) {
-      console.error('Failed to fetch detail:', e)
+      console.error('Failed to fetch document:', e)
+      setDocError('Artikel konnte nicht geladen werden — bitte versuchen Sie es erneut.')
+    } finally {
+      setDocLoadingKey(null)
     }
   }
 
   const getCategoryIcon = (categoryName: string) => {
     const name = categoryName.toLowerCase()
-    if (name.includes('material')) return <Package className="w-6 h-6" />
-    if (name.includes('degradation')) return <TrendingUp className="w-6 h-6" />
-    if (name.includes('issue') || name.includes('problem'))
-      return <AlertTriangle className="w-6 h-6" />
-    if (name.includes('electrical') || name.includes('power'))
-      return <Zap className="w-6 h-6" />
-    if (name.includes('standard') || name.includes('norm'))
+    if (name.includes('elektr')) return <Zap className="w-6 h-6" />
+    if (name.includes('sicherheit')) return <AlertTriangle className="w-6 h-6" />
+    if (name.includes('norm') || name.includes('standard') || name.includes('konstruktion'))
       return <BookOpen className="w-6 h-6" />
-    return <Eye className="w-6 h-6" />
+    if (name.includes('schl') || name.includes('wasser') || name.includes('sanit'))
+      return <Droplets className="w-6 h-6" />
+    if (name.includes('beschichtung') || name.includes('pflege') || name.includes('wartung'))
+      return <TrendingUp className="w-6 h-6" />
+    return <Package className="w-6 h-6" />
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'complete':
-        return 'bg-green-950/30 border-green-700/30'
-      case 'partial':
-        return 'bg-amber-950/30 border-amber-700/30'
-      case 'planned':
-        return 'bg-blue-950/30 border-blue-700/30'
+  const getDatabaseLabel = (database: string) => {
+    switch (database) {
+      case 'markdown_document':
+        return 'Fachartikel'
+      case 'markdown_faq':
+        return 'FAQ'
+      case 'markdown_glossary':
+        return 'Glossar'
+      case 'markdown_fehlerbilder':
+        return 'Fehlerbild'
+      case 'markdown_erfahrungsberichte':
+        return 'Erfahrungsbericht'
       default:
-        return 'bg-navy-900/30 border-navy-700/30'
-    }
-  }
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'complete':
-        return 'Vollständig'
-      case 'partial':
-        return 'Teilweise'
-      case 'planned':
-        return 'Geplant'
-      default:
-        return status
+        return 'Wissensbasis'
     }
   }
 
@@ -156,11 +168,21 @@ export default function KnowledgePage() {
               </div>
             )}
           </div>
-          {showSearchResults && searchResults.length === 0 && !isSearching && searchQuery.length > 1 && (
+          {showSearchResults && searchError && !isSearching && (
+            <div className="mt-4 card-premium bg-amber-950/20 border-amber-700/20 p-4 text-amber-300 text-sm">
+              {searchError}
+            </div>
+          )}
+          {showSearchResults && !searchError && searchResults.length === 0 && !isSearching && searchQuery.length > 1 && (
             <div className="text-center mt-8 py-12 animate-fade-in-up">
-              <Eye className="w-12 h-12 text-navy-600 mx-auto mb-4" />
+              <BookOpen className="w-12 h-12 text-navy-600 mx-auto mb-4" />
               <p className="text-navy-700 text-sm">Keine Ergebnisse für "{searchQuery}"</p>
               <p className="text-navy-600 text-xs mt-2">Versuchen Sie andere Suchbegriffe</p>
+            </div>
+          )}
+          {docError && (
+            <div className="mt-4 card-premium bg-amber-950/20 border-amber-700/20 p-4 text-amber-300 text-sm">
+              {docError}
             </div>
           )}
         </div>
@@ -175,9 +197,12 @@ export default function KnowledgePage() {
         )}
 
         {error && (
-          <div className="card-premium bg-amber-950/20 border-amber-700/20 p-6 text-amber-300 text-sm">
-            <p className="font-medium mb-1">Hinweis:</p>
+          <div className="card-premium bg-amber-950/20 border-amber-700/20 p-6 text-amber-300 text-sm max-w-3xl mx-auto">
+            <p className="font-medium mb-1">Wissensdatenbank nicht erreichbar</p>
             <p>{error}</p>
+            <p className="mt-2 text-xs">
+              Bitte stellen Sie sicher, dass das Backend läuft, und laden Sie die Seite neu.
+            </p>
           </div>
         )}
 
@@ -194,30 +219,53 @@ export default function KnowledgePage() {
               SUCHERGEBNISSE ({searchResults.length})
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {searchResults.map((result, idx) => (
-                <button
-                  key={result.id}
-                  onClick={() => setSelectedDetail(result)}
-                  style={{ animationDelay: `${idx * 80}ms` }}
-                  className="animate-fade-in-up card-premium p-6 text-left hover:bg-sand-50 hover:shadow-lg hover:shadow-ocean-500/10 transition-all duration-200 group"
-                  aria-label={`${result.title} öffnen`}
-                >
-                  <div className="flex items-start gap-3 mb-3">
-                    <span className="text-ocean-600 group-hover:scale-110 group-hover:text-ocean-600 transition-all duration-200">
-                      {getCategoryIcon(result.category_name)}
-                    </span>
-                    <div className="flex-1">
-                      <p className="text-xs font-medium text-navy-700 uppercase tracking-wide">
-                        {result.category_name}
-                      </p>
-                      <h3 className="font-serif font-medium text-navy-900 mt-1 group-hover:text-ocean-600 transition-colors">
-                        {result.title}
-                      </h3>
+              {searchResults.map((result, idx) => {
+                const clickable = Boolean(result.sourceKey)
+                const inner = (
+                  <>
+                    <div className="flex items-start gap-3 mb-3">
+                      <span className="text-ocean-600 transition-all duration-200">
+                        <BookOpen className="w-6 h-6" />
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-navy-700 uppercase tracking-wide">
+                          {getDatabaseLabel(result.database)}
+                        </p>
+                        <h3 className="font-serif font-medium text-navy-900 mt-1">
+                          {result.title}
+                        </h3>
+                      </div>
                     </div>
+                    <p className="text-sm text-navy-700 line-clamp-3">{result.excerpt}</p>
+                    {clickable && (
+                      <p className="mt-3 text-xs text-ocean-600 font-medium">
+                        {docLoadingKey === result.sourceKey
+                          ? 'Artikel wird geladen...'
+                          : 'Quellartikel öffnen →'}
+                      </p>
+                    )}
+                  </>
+                )
+                return clickable ? (
+                  <button
+                    key={result.id}
+                    onClick={() => handleOpenDocument(result.sourceKey as string)}
+                    style={{ animationDelay: `${idx * 60}ms` }}
+                    className="animate-fade-in-up card-premium p-6 text-left hover:bg-sand-50 hover:shadow-lg hover:shadow-ocean-500/10 transition-all duration-200"
+                    aria-label={`${result.title} öffnen`}
+                  >
+                    {inner}
+                  </button>
+                ) : (
+                  <div
+                    key={result.id}
+                    style={{ animationDelay: `${idx * 60}ms` }}
+                    className="animate-fade-in-up card-premium p-6 text-left"
+                  >
+                    {inner}
                   </div>
-                  <p className="text-sm text-navy-700 line-clamp-2">{result.description}</p>
-                </button>
-              ))}
+                )
+              })}
             </div>
           </div>
         )}
@@ -230,10 +278,10 @@ export default function KnowledgePage() {
                 {/* Category Card */}
                 <button
                   onClick={() => handleCategoryClick(category.id)}
-                  style={{ animationDelay: `${catIdx * 80}ms` }}
+                  style={{ animationDelay: `${catIdx * 40}ms` }}
                   className="animate-fade-in-up w-full card-premium p-6 text-left hover:bg-sand-50 transition-all duration-200 group"
                   aria-expanded={expandedCategoryId === category.id}
-                  aria-label={`${category.name} - ${expandedCategoryId === category.id ? 'Eingeklappt' : 'Ausgeklappt'}`}
+                  aria-label={category.name}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-start gap-4 flex-1">
@@ -242,29 +290,16 @@ export default function KnowledgePage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-3 mb-2 flex-wrap">
+                          <span className="font-mono text-xs text-navy-500">{category.id}</span>
                           <h3 className="font-serif text-subtitle font-medium text-navy-800 group-hover:text-ocean-600 transition-colors">
                             {category.name}
                           </h3>
-                          <span
-                            className={`px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap border transition-all duration-200 ${
-                              category.implementation_status === 'planned' && expandedCategoryId === category.id
-                                ? 'animate-pulse-glow'
-                                : ''
-                            } ${getStatusColor(category.implementation_status)}`}
-                          >
-                            {getStatusLabel(category.implementation_status)}
-                          </span>
                         </div>
                         <p className="text-sm text-navy-700 line-clamp-2 mb-3">{category.description}</p>
                         <div className="flex items-center gap-4 text-xs text-navy-600">
                           <span className="font-mono">
-                            {category.subcategory_count} {category.subcategory_count === 1 ? 'Unterkategorie' : 'Unterkategorien'}
+                            {category.subcategory_count} {category.subcategory_count === 1 ? 'Artikel' : 'Artikel'}
                           </span>
-                          {category.documentation_ready && (
-                            <span className="flex items-center gap-1 text-green-600">
-                              ✓ Dokumentiert
-                            </span>
-                          )}
                         </div>
                       </div>
                     </div>
@@ -276,20 +311,20 @@ export default function KnowledgePage() {
                   </div>
                 </button>
 
-                {/* Expanded Subcategories */}
+                {/* Expanded document list */}
                 {expandedCategoryId === category.id && (
                   <div className="pl-0 sm:pl-6 space-y-2 animate-slide-down">
                     {category.subcategories && category.subcategories.length > 0 ? (
                       category.subcategories.map((sub, subIdx) => (
                         <button
                           key={sub.id}
-                          onClick={() => handleViewDetail(sub.id)}
-                          style={{ animationDelay: `${subIdx * 60}ms` }}
+                          onClick={() => handleOpenDocument(sub.id)}
+                          style={{ animationDelay: `${subIdx * 40}ms` }}
                           className="animate-fade-in-up w-full card-premium p-4 text-left hover:bg-sand-50 hover:translate-x-1 transition-all duration-200 border-l-2 border-ocean-500/40 hover:border-ocean-500 group"
                           aria-label={`Öffne ${sub.name}`}
                         >
                           <h4 className="font-medium text-navy-900 mb-1 group-hover:text-ocean-600 transition-colors">
-                            {sub.name}
+                            {docLoadingKey === sub.id ? `${sub.name} — wird geladen...` : sub.name}
                           </h4>
                           {sub.description && (
                             <p className="text-sm text-navy-700 line-clamp-1">{sub.description}</p>
@@ -298,7 +333,7 @@ export default function KnowledgePage() {
                       ))
                     ) : (
                       <div className="card-premium p-4 text-navy-700 text-sm">
-                        Keine Unterkategorien verfügbar
+                        Keine Artikel verfügbar
                       </div>
                     )}
                   </div>
@@ -316,10 +351,10 @@ export default function KnowledgePage() {
               <div>
                 <h3 className="font-serif text-base font-medium text-navy-900 mb-2">Über diese Wissensdatenbank</h3>
                 <p className="text-sm text-navy-700 leading-relaxed">
-                  Diese Wissensdatenbank ist Ihr digitales Nachschlagewerk für alle Aspekte des Yachtdesigns.
-                  Ähnlich wie Nigel Calders klassisches Bootsbesitzer-Nachschlagewerk bietet es autorisierte,
-                  vertrauenswürdige Informationen über Materialwissenschaft, Degradation, maritime Standards und bewährte Praktiken.
-                  Alle Inhalte wurden von Fachleuten kuratiert und mit aktuellen Erkenntnissen aktualisiert.
+                  Diese Wissensdatenbank ist Ihr digitales Nachschlagewerk für alle Aspekte des Yachtdesigns —
+                  {' '}{categories.reduce((sum, c) => sum + c.subcategory_count, 0)} Fachartikel in {categories.length} Kategorien:
+                  Materialkunde, Dichtungen, Beschichtungen, Bordsysteme, Sicherheit, Konstruktion und mehr.
+                  Jeder Artikel nennt seine Quellenlage; unsichere Angaben sind als solche gekennzeichnet.
                 </p>
               </div>
             </div>
@@ -327,131 +362,10 @@ export default function KnowledgePage() {
         )}
       </div>
 
-      {/* Detail Panel Modal */}
-      {selectedDetail && (
-        <KnowledgeDetailPanel data={selectedDetail} onClose={() => setSelectedDetail(null)} />
+      {/* Article Modal */}
+      {selectedDocument && (
+        <KnowledgeArticle doc={selectedDocument} onClose={() => setSelectedDocument(null)} />
       )}
     </div>
   )
-}
-
-// Mock data for demo when API is not available
-function getMockCategories(): KnowledgeCategory[] {
-  return [
-    {
-      id: 'materials-overview',
-      name: 'Materialwissenschaft',
-      description: 'Umfassender Überblick über maritime Materialien, ihre Eigenschaften und optimale Anwendung',
-      subcategory_count: 8,
-      implementation_status: 'complete',
-      documentation_ready: true,
-      subcategories: [
-        {
-          id: 'teak-wood',
-          name: 'Teakholz und tropische Hölzer',
-          description: 'Eigenschaften, Behandlung und Langzeitverhalten',
-        },
-        {
-          id: 'composite-materials',
-          name: 'Verbundwerkstoffe',
-          description: 'GFK, Kohlefaser und fortgeschrittene Materialen',
-        },
-      ],
-    },
-    {
-      id: 'degradation-timelines',
-      name: 'Degradationszeitleisten',
-      description: 'Zeitbasierte Vorhersagen des Materialverhaltens in verschiedenen maritimen Umgebungen',
-      subcategory_count: 6,
-      implementation_status: 'complete',
-      documentation_ready: true,
-      subcategories: [
-        {
-          id: 'saltwater-exposure',
-          name: 'Salzwassergefährdung',
-          description: 'Korrosion und Abbau in Meeresumgebungen',
-        },
-        {
-          id: 'tropical-climate',
-          name: 'Tropische Bedingungen',
-          description: 'UV-Strahlung und hohe Luftfeuchtigkeit',
-        },
-      ],
-    },
-    {
-      id: 'known-issues',
-      name: 'Bekannte Herstellungsprobleme',
-      description: 'Dokumentierte Probleme und deren Lösungen nach Hersteller und Modell',
-      subcategory_count: 12,
-      implementation_status: 'partial',
-      documentation_ready: true,
-      subcategories: [
-        {
-          id: 'hallberg-rassy',
-          name: 'Hallberg-Rassy Yachten',
-          description: 'Qualitäts-Standards und bekannte Stärken',
-        },
-        {
-          id: 'x-yachts',
-          name: 'X-Yachts',
-          description: 'Design-Philosophie und typische Details',
-        },
-      ],
-    },
-    {
-      id: 'marine-standards',
-      name: 'Maritime Standards & Zertifizierungen',
-      description: 'Geltende Normen, Klassifikationen und Compliance-Anforderungen',
-      subcategory_count: 5,
-      implementation_status: 'complete',
-      documentation_ready: true,
-      subcategories: [
-        {
-          id: 'iso-standards',
-          name: 'ISO-Normen für Yachtbau',
-          description: 'Internationale Sicherheits- und Qualitätsstandards',
-        },
-        {
-          id: 'ce-marking',
-          name: 'CE-Kennzeichnung',
-          description: 'Europäische Konformitätsanforderungen',
-        },
-      ],
-    },
-    {
-      id: 'best-practices',
-      name: 'Best Practices & Wartung',
-      description: 'Bewährte Verfahren für Wartung, Reparatur und Erhaltung',
-      subcategory_count: 7,
-      implementation_status: 'complete',
-      documentation_ready: true,
-      subcategories: [
-        {
-          id: 'preventive-maintenance',
-          name: 'Vorbeugende Wartung',
-          description: 'Zeitpläne und Verfahren',
-        },
-        {
-          id: 'restoration',
-          name: 'Restaurierung',
-          description: 'Verfahren zur Wiederherstellung klassischer Materialien',
-        },
-      ],
-    },
-    {
-      id: 'environmental-impact',
-      name: 'Umweltauswirkungen',
-      description: 'Nachhaltigkeit, Umweltbelastung und ökologische Überlegungen',
-      subcategory_count: 4,
-      implementation_status: 'partial',
-      documentation_ready: false,
-      subcategories: [
-        {
-          id: 'sustainable-materials',
-          name: 'Nachhaltige Materialien',
-          description: 'Umweltfreundliche Alternativen',
-        },
-      ],
-    },
-  ]
 }

@@ -44,6 +44,10 @@ export interface Project {
   status: ProjectStatus
   created_at: string
   updated_at: string
+  /** Organization the project belongs to, or null if private (pillar 4, stage 2) */
+  org_id?: string | null
+  /** Caller's relationship: owner / editor / viewer (sharing, pillar 4) */
+  access_role?: string | null
 }
 
 export interface ProjectCreate {
@@ -181,6 +185,92 @@ export interface QuickAnalysisResponse {
   }
   specs_used: PublicSpecs
   created_at: string
+  buyer_insights?: BuyerInsights | null
+}
+
+// --- Buyer insights (pillar 2: Kaufberatung) ---
+
+export interface BuyerKnownProblem {
+  issue: string
+  severity: string
+  severity_de: string
+  model_years?: string | null
+  applies_to_year?: boolean | null
+  applies_note_de: string
+  description?: string | null
+  detection?: string | null
+  repair_cost_eur?: number | null
+  affected_percentage?: string | null
+  confidence: string
+}
+
+export interface BuyerAgeItem {
+  component: string
+  component_de: string
+  status_de: string
+  severity: string
+  lifespan_years: number[]
+  lifespan_basis_de?: string | null
+  inspection_hint?: string | null
+  replacement_cost_range_eur?: number[] | null
+  confidence: string
+}
+
+export interface BuyerCommunityPattern {
+  description?: string | null
+  zone_type?: string | null
+  severity?: string | null
+  report_count: number
+  typical_onset_years?: number | null
+  relevance?: number | null
+  match_reason?: string | null
+  match_reason_de?: string | null
+  is_positive: boolean
+  confidence: string
+}
+
+export interface BuyerManufacturerSection {
+  found: boolean
+  note?: string
+  key?: string
+  display_name?: string
+  country?: string | null
+  model_name?: string | null
+  known_problems?: BuyerKnownProblem[]
+  track_record_note_de?: string | null
+  problems_note_de?: string | null
+  era_note_de?: string | null
+  survey_recommendation?: string | null
+  owner_forum_consensus?: string | null
+  common_repair_costs_eur?: Record<string, number[] | number> | null
+  confidence?: string
+}
+
+export interface BuyerInsights {
+  available: boolean
+  reason?: string | null
+  boat_identity?: {
+    brand?: string | null
+    model_name?: string | null
+    year?: number | null
+    age_years?: number | null
+    boat_class?: string
+  } | null
+  manufacturer?: BuyerManufacturerSection | null
+  age_expectations?: {
+    age_years: number
+    items: BuyerAgeItem[]
+    confidence: string
+    note_de: string
+  } | null
+  community?: {
+    available: boolean
+    note?: string
+    patterns?: BuyerCommunityPattern[]
+    confidence?: string
+  } | null
+  summary_de?: string | null
+  disclaimer_de?: string | null
 }
 
 // --- Service Reports ---
@@ -356,6 +446,11 @@ export interface LayoutVersion {
   id: string
   layout_id: string
   version_number: number
+  layout_meta_snapshot?: {
+    name?: string
+    version?: string
+    deck_height_mm?: number
+  } | null
   parent_version_id: string | null
   zones_snapshot: ZoneData[] | null
   passages_snapshot: PassageData[] | null
@@ -679,4 +774,157 @@ export interface KnowledgeDetail {
   compliance_standards?: string[] | null
   created_at: string
   updated_at: string
+}
+
+// --- Research corpus (user-facing lexicon, /api/v1/knowledge/corpus/*) ---
+
+export interface CorpusDocumentSummary {
+  key: string
+  title: string
+  category: string
+  subcategory: string
+  line_count: number
+  table_count: number
+  faq_count: number
+  fehlerbilder_count: number
+  fallstudien_count: number
+}
+
+export interface CorpusTable {
+  /** Explicit column order — object keys would reorder numeric headers */
+  columns: string[]
+  rows: string[][]
+}
+
+export interface CorpusSection {
+  title: string
+  level: number
+  text: string
+  tables: CorpusTable[]
+  subsections: CorpusSection[]
+}
+
+export interface KnowledgeDocument {
+  key: string
+  file: string
+  category: string
+  category_name: string
+  subcategory: string
+  slug: string
+  title: string
+  line_count: number
+  sections: CorpusSection
+}
+
+// --- Project sharing (pillar 4, stage 1) ---
+
+export type ProjectAccessRole = 'owner' | 'editor' | 'viewer'
+
+export interface ProjectMemberEntry {
+  user_id: string
+  email: string
+  full_name: string
+  role: string // owner, editor, viewer
+}
+
+// --- Organizations & invitations (pillar 4, stage 2) ---
+
+export type OrgRole = 'owner' | 'admin' | 'member'
+
+export interface Organization {
+  id: string
+  name: string
+  tier: string // free, pro, enterprise
+  created_at: string
+  org_role?: OrgRole | null
+  member_count?: number | null
+}
+
+export interface OrgMemberEntry {
+  user_id: string
+  email: string
+  full_name: string
+  org_role: OrgRole
+}
+
+export interface Invitation {
+  id: string
+  email: string
+  role: string
+  status: string
+  scope: 'project' | 'org'
+  project_id?: string | null
+  organization_id?: string | null
+  target_name?: string | null
+  invited_by_email?: string | null
+  created_at: string
+  expires_at: string
+}
+
+// --- Structural items (pillar 3: measured weights/positions for trim/CG) ---
+
+export interface StructuralItemData {
+  id: string
+  layout_id: string
+  name: string
+  item_type: string
+  zone_name?: string | null
+  weight_kg: number
+  position_x_mm?: number | null
+  position_y_mm?: number | null
+  position_z_mm?: number | null
+  dimensions?: Record<string, number> | null
+  properties?: Record<string, unknown> | null
+  created_at: string
+}
+
+export interface StructuralItemCreatePayload {
+  name: string
+  item_type: string
+  zone_name?: string | null
+  weight_kg: number
+  position_x_mm?: number | null
+  position_y_mm?: number | null
+  position_z_mm?: number | null
+}
+
+// --- Zone material assignments (pillar 3: owner refit — Optik/Material) ---
+
+export interface MaterialSummary {
+  id: string
+  name: string
+  category: string
+  subcategory: string
+  manufacturer?: string | null
+  cost_per_unit: number
+  cost_unit: string
+  lifespan_years?: number | null
+}
+
+export interface ZoneMaterialAssignment {
+  id: string
+  layout_id: string
+  zone_name: string
+  surface_type: string
+  material_id: string
+  area_sqm: number
+  notes?: string | null
+  created_at: string
+}
+
+export interface ZoneMaterialCreatePayload {
+  zone_name: string
+  surface_type: string
+  material_id: string
+  area_sqm: number
+  notes?: string | null
+}
+
+export interface KnowledgeSearchResult {
+  id: string
+  title: string
+  excerpt: string
+  database: string
+  /** Document key to open as article, when the hit stems from the corpus */
+  sourceKey?: string | null
 }

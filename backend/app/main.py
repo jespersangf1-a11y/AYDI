@@ -13,9 +13,11 @@ from app.api.routes import (
     costs,
     images,
     import_cad,
+    invitations,
     knowledge,
     layouts,
     materials,
+    organizations,
     projects,
     quick_analysis,
     reports,
@@ -51,6 +53,17 @@ async def lifespan(app: FastAPI):
     # Seed reference data if tables are empty
     from app.db.seed import seed
     await seed()
+
+    # Warm the markdown knowledge corpus BEFORE serving traffic: the lazy
+    # first parse takes ~15s for ~840K lines and would otherwise run inside
+    # the first (now public) knowledge request, freezing the event loop —
+    # including /health — right after every restart.
+    import asyncio as _asyncio
+    from app.services.knowledge.markdown_knowledge_loader import (
+        get_markdown_knowledge as _warm_corpus,
+    )
+    docs = await _asyncio.to_thread(_warm_corpus)
+    logger.info("Knowledge corpus warmed: %d documents", len(docs))
 
     yield
     logger.info("AYDI shutting down")
@@ -97,6 +110,9 @@ app.include_router(images.router, prefix="/api/v1")
 app.include_router(import_cad.router, prefix="/api/v1")
 app.include_router(community.router, prefix="/api/v1")
 app.include_router(knowledge.router, prefix="/api/v1")
+app.include_router(organizations.router, prefix="/api/v1")
+app.include_router(organizations.admin_router, prefix="/api/v1")
+app.include_router(invitations.router, prefix="/api/v1")
 
 
 @app.get("/health/live")

@@ -1,14 +1,22 @@
 # backend/app/api/routes/benchmarks.py
-"""Public class benchmarks — aggregated from all layouts of a given boat class."""
+"""Class benchmarks — aggregated from all layouts of a given boat class.
+
+PRO feature (server-side gated) with k-anonymity: tiny samples would expose
+one identifiable foreign project's exact dimensions and scores (min=max=mean).
+"""
 from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.permissions import get_current_user
+from app.core.permissions import get_current_user, require_tier
+from app.core.subscription import Feature
 from app.db.database import get_db
 from app.models.models import AnalysisResult, Layout, Project, User
 
 router = APIRouter(tags=["benchmarks"])
+
+# Below this sample size, aggregates de-anonymize a single foreign project
+_MIN_SAMPLE_SIZE = 5
 
 
 def _polygon_area_sqm(polygon: list[list[float]]) -> float:
@@ -44,7 +52,7 @@ def _compute_stats(values: list[float]) -> dict:
 @router.get("/class-benchmarks/{boat_class}")
 async def get_class_benchmarks(
     boat_class: str,
-    _user: User = Depends(get_current_user),
+    _user: User = Depends(require_tier(Feature.BENCHMARK_DATABASE)),
     db: AsyncSession = Depends(get_db),
 ):
     """Return aggregated benchmarks for a boat class from all stored layouts."""
@@ -55,12 +63,21 @@ async def get_class_benchmarks(
     )
     rows = result.all()
 
-    if not rows:
+    if len(rows) < _MIN_SAMPLE_SIZE:
         return {
             "boat_class": boat_class,
-            "sample_size": 0,
+            "sample_size": len(rows),
             "metrics": {},
-            "message": "Keine Daten für diese Bootsklasse vorhanden.",
+            "analysis_scores": {},
+            "message": (
+                "Keine Daten für diese Bootsklasse vorhanden."
+                if not rows
+                else (
+                    f"Zu wenige Vergleichsboote ({len(rows)} von mindestens "
+                    f"{_MIN_SAMPLE_SIZE}) — aggregierte Werte würden einzelne "
+                    "Projekte identifizierbar machen."
+                )
+            ),
         }
 
     passage_widths: list[float] = []

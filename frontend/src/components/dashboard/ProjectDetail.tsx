@@ -1,5 +1,7 @@
-import { useEffect, useState, useMemo, lazy, Suspense } from 'react'
+import { useEffect, useState, useMemo, useRef, lazy, Suspense } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import {
+  Anchor,
   ArrowLeft,
   Ship,
   Zap,
@@ -13,7 +15,13 @@ import {
   Loader2,
   Box,
   Map,
+  Package,
   RotateCcw,
+  Save,
+  Share2,
+  Eye,
+  TrendingUp,
+  Radio,
 } from 'lucide-react'
 import {
   getProject,
@@ -24,6 +32,10 @@ import {
   getLayoutVersions,
   getLayoutDiff,
   getProjectImages,
+  createLayoutVersion,
+  updateLayout,
+  getMyOrganizations,
+  setProjectOrg,
 } from '../../services/api'
 import HeroSection from '../layout/HeroSection'
 import { MEDIA } from '../../config/media'
@@ -36,7 +48,7 @@ import type {
   FullAnalysisResult,
   AnalysisModule,
   ImageUploadData,
-  WarningData,
+  Organization,
 } from '../../types'
 import {
   BOAT_CLASS_LABELS,
@@ -45,6 +57,12 @@ import {
 } from '../../types'
 import ScoreGauge from '../analysis/ScoreGauge'
 import SubScoreBars from '../analysis/SubScoreBars'
+import ZoneMaterialsPanel from '../materials/ZoneMaterialsPanel'
+import StructuralItemsPanel from '../structural/StructuralItemsPanel'
+import LayoutEditor from '../editor/LayoutEditor'
+import ShareDialog from './ShareDialog'
+import CollabPanel from '../collab/CollabPanel'
+import { useCollaboration } from '../../hooks/useCollaboration'
 import WarningList from '../analysis/WarningList'
 import LayoutViewer from '../analysis/LayoutViewer'
 import FullAnalysisView from '../analysis/FullAnalysisView'
@@ -61,46 +79,16 @@ interface ProjectDetailProps {
   onBack: () => void
 }
 
-type TabType = 'overview' | 'layouts' | 'analysis' | 'costs' | 'history'
-type ViewerMode = '2d' | '3d'
-
-// ─── Helper: collect all warnings from all analyses ───
-function collectWarnings(analyses: AnalysisResult[]): WarningData[] {
-  return analyses.flatMap((a) => a.warnings ?? [])
-}
-
-// ─── Helper: group analyses by module (latest first) ───
-function latestByModule(analyses: AnalysisResult[]): Record<string, AnalysisResult> {
-  const map: Record<string, AnalysisResult> = {}
-  for (const a of analyses) {
-    if (!map[a.module] || new Date(a.created_at) > new Date(map[a.module].created_at)) {
-      map[a.module] = a
-    }
-  }
-  return map
-}
-
-// ─── Module icon colors by score ───
-function moduleScoreClass(score: number): string {
-  if (score >= 80) return 'text-emerald-600'
-  if (score >= 60) return 'text-amber-600'
-  if (score >= 40) return 'text-orange-600'
-  return 'text-red-600'
-}
-
-function moduleBorderClass(score: number): string {
-  if (score >= 80) return 'border-emerald-500/30'
-  if (score >= 60) return 'border-amber-500/30'
-  if (score >= 40) return 'border-orange-500/30'
-  return 'border-red-500/30'
-}
-
-function moduleBgClass(score: number): string {
-  if (score >= 80) return 'bg-emerald-500/5'
-  if (score >= 60) return 'bg-amber-500/5'
-  if (score >= 40) return 'bg-orange-500/5'
-  return 'bg-red-500/5'
-}
+import {
+  type TabType,
+  type ViewerMode,
+  isTabType,
+  collectWarnings,
+  latestByModule,
+  moduleScoreClass,
+  moduleBorderClass,
+  moduleBgClass,
+} from './projectDetail/helpers'
 
 export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps) {
   // ─── Core state ───
@@ -127,6 +115,49 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
   const [selectedVersionB, setSelectedVersionB] = useState<string | null>(null)
   const [diff, setDiff] = useState<LayoutDiff | null>(null)
   const [diffLoading, setDiffLoading] = useState(false)
+  const [savingVersion, setSavingVersion] = useState(false)
+  const [restoringVersionId, setRestoringVersionId] = useState<string | null>(null)
+
+  // ─── Score comparison (refit loop: before/after) ───
+  const [compareRunA, setCompareRunA] = useState<string | null>(null)
+  const [compareRunB, setCompareRunB] = useState<string | null>(null)
+
+  // ─── Material assignments changed since last materials analysis ───
+  // Lifted here so the hint survives tab switches; reset on successful run.
+  const [materialsChanged, setMaterialsChanged] = useState(false)
+  const [structuralChanged, setStructuralChanged] = useState(false)
+
+  // ─── Sharing dialog (pillar 4, stage 1) ───
+  const [shareDialogOpen, setShareDialogOpen] = useState(false)
+
+  // ─── Organization attachment (pillar 4, stage 2) ───
+  const [myOrgs, setMyOrgs] = useState<Organization[]>([])
+  const [orgSaving, setOrgSaving] = useState(false)
+
+  // ─── Live collaboration (pillar 4, stage 2) ───
+  const [collabActive, setCollabActive] = useState(false)
+  const collab = useCollaboration(
+    collabActive ? selectedLayout?.id ?? null : null,
+    collabActive
+  )
+
+  // ─── Zone editor (pillar 3: graphical layout editing) ───
+  const [editingLayout, setEditingLayout] = useState(false)
+  const [savingLayoutEdit, setSavingLayoutEdit] = useState(false)
+  // Ref (not state): read inside navigation guards without re-renders
+  const editorDirtyRef = useRef(false)
+
+  const confirmLeaveEditor = (): boolean => {
+    if (!editingLayout || !editorDirtyRef.current) return true
+    const ok = window.confirm(
+      'Ungespeicherte Layout-Änderungen gehen verloren — trotzdem fortfahren?',
+    )
+    if (ok) {
+      editorDirtyRef.current = false
+      setEditingLayout(false)
+    }
+    return ok
+  }
 
   // ─── Images state ───
   const [images, setImages] = useState<ImageUploadData[]>([])
@@ -135,7 +166,20 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
   const [snapshotLabel, setSnapshotLabel] = useState<string | null>(null)
 
   // ─── UI state ───
-  const [activeTab, setActiveTab] = useState<TabType>('overview')
+  // Tab state derives from the URL — supports deep links. The route is the
+  // splat "/projects/:id/*" (react-router v6 has no optional params), so the
+  // tab segment lives under params['*'], NOT params.tab — reading only
+  // params.tab left activeTab permanently on 'overview' and made every other
+  // tab unreachable in the browser.
+  const params = useParams<{ tab?: string; '*': string }>()
+  const tabFromUrl = params.tab ?? params['*']?.split('/')[0]
+  const navigate = useNavigate()
+  const activeTab: TabType = isTabType(tabFromUrl) ? tabFromUrl : 'overview'
+  const setActiveTab = (next: TabType) => {
+    // Leaving the layouts tab unmounts the zone editor — guard unsaved work
+    if (!confirmLeaveEditor()) return
+    navigate(`/projects/${projectId}/${next}`, { replace: false })
+  }
   const [viewerMode, setViewerMode] = useState<ViewerMode>('2d')
 
   // ─── Reset dependent state when selectedLayout changes ───
@@ -148,7 +192,55 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
     setSelectedVersionB(null)
     setDiff(null)
     setSnapshotLabel(null)
+    setCompareRunA(null)
+    setCompareRunB(null)
+    setMaterialsChanged(false)
+    setStructuralChanged(false)
+    setEditingLayout(false)
   }, [selectedLayout?.id])
+
+  // ─── Save zone-editor changes (PATCH — previous state auto-versioned) ───
+  const handleSaveLayoutEdit = async (
+    zones: Layout['zones'],
+    passages: Layout['passages'],
+    changeSummary: string,
+    zoneRenames: Record<string, string>,
+  ) => {
+    if (!selectedLayout) return
+    setSavingLayoutEdit(true)
+    setError(null)
+    try {
+      const updated = await updateLayout(projectId, selectedLayout.id, {
+        zones,
+        passages,
+        change_summary: changeSummary || 'Layout im Editor bearbeitet',
+        // Server cascades renames to material/structural/cost references
+        ...(Object.keys(zoneRenames).length > 0 ? { zone_renames: zoneRenames } : {}),
+      })
+      editorDirtyRef.current = false
+      setSelectedLayout(updated)
+      setLayouts((prev) => prev.map((l) => (l.id === updated.id ? updated : l)))
+      setEditingLayout(false)
+      setSnapshotLabel(null)
+      // Geometry changed: derived results are stale
+      setFullAnalysisResult(null)
+      setDiff(null)
+      setSelectedVersionA(null)
+      setSelectedVersionB(null)
+      setCompareRunA(null)
+      setCompareRunB(null)
+      setMaterialsChanged(true)
+      setStructuralChanged(true)
+      if (versionsLoaded) {
+        const v = await getLayoutVersions(projectId, updated.id)
+        setVersions(v)
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Layout konnte nicht gespeichert werden')
+    } finally {
+      setSavingLayoutEdit(false)
+    }
+  }
 
   // ─── Derived data ───
   const latestModuleResults = useMemo(() => latestByModule(analyses), [analyses])
@@ -164,6 +256,17 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
     if (scores.length === 0) return null
     return scores.reduce((sum, s) => sum + s, 0) / scores.length
   }, [latestModuleResults])
+
+  // ─── Viewer gating (pillar 4, stage 1) ───
+  // Shared members with role 'viewer' get a read-only UI. The backend
+  // enforces this server-side (403) — this only prevents dead-end clicks.
+  // No access_role (legacy responses) counts as editable: worst case the
+  // server rejects, we never over-lock the owner's own project.
+  const canEdit =
+    !project?.access_role ||
+    project.access_role === 'owner' ||
+    project.access_role === 'editor'
+  const READ_ONLY_HINT = 'Nur-Lesen-Zugriff — Änderungen sind für Betrachter deaktiviert'
 
   // ─── Initial data load ───
   useEffect(() => {
@@ -186,16 +289,43 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
         setLayouts(lays)
         setAnalyses(anals)
         setImages(imgs)
-        if (lays.length > 0) setSelectedLayout(lays[0])
-        if (anals.length > 0) setSelectedAnalysis(anals[0])
+        // Always set (also to null): without this, navigating to a project
+        // with zero layouts kept the PREVIOUS project's layout selected and
+        // fired requests with a foreign layout_id.
+        setSelectedLayout(lays[0] ?? null)
+        setSelectedAnalysis(anals[0] ?? null)
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false))
   }, [projectId])
 
+  // Load the owner's organizations so they can attach/detach the project.
+  useEffect(() => {
+    if (project?.access_role === 'owner') {
+      getMyOrganizations().then(setMyOrgs).catch(() => setMyOrgs([]))
+    }
+  }, [project?.access_role])
+
+  const handleSetOrg = async (orgId: string | null) => {
+    if (!project) return
+    setOrgSaving(true)
+    setError(null)
+    try {
+      const updated = await setProjectOrg(project.id, orgId)
+      setProject((prev) => (prev ? { ...prev, org_id: updated.org_id, access_role: updated.access_role } : prev))
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Organisationszuordnung fehlgeschlagen')
+    } finally {
+      setOrgSaving(false)
+    }
+  }
+
   // ─── Run single module analysis ───
   const handleRunAnalysis = async (module: string) => {
     if (!selectedLayout) return
+    // Concurrency guard: a second parallel run would end the shared spinner
+    // early and duplicate history rows
+    if (analyzing || fullAnalyzing) return
     setAnalyzing(true)
     setAnalyzingModule(module)
     setError(null)
@@ -204,6 +334,8 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
       setAnalyses((prev) => [result, ...prev])
       setSelectedAnalysis(result)
       setSelectedModuleForDetail(module)
+      if (module === 'materials') setMaterialsChanged(false)
+      if (module === 'structural') setStructuralChanged(false)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Analysefehler')
     } finally {
@@ -215,6 +347,7 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
   // ─── Run full orchestrated analysis ───
   const handleRunFullAnalysis = async () => {
     if (!selectedLayout) return
+    if (analyzing || fullAnalyzing) return
     setFullAnalyzing(true)
     setError(null)
     try {
@@ -224,6 +357,10 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
       const refreshed = await listAnalyses(projectId)
       setAnalyses(refreshed)
       if (refreshed.length > 0) setSelectedAnalysis(refreshed[0])
+      // Full analysis covers materials + structural — clear the pending
+      // "Änderungen noch nicht analysiert" hints (only for modules that ran)
+      if (result.modules?.materials) setMaterialsChanged(false)
+      if (result.modules?.structural) setStructuralChanged(false)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Vollanalyse fehlgeschlagen')
     } finally {
@@ -260,17 +397,84 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
     }
   }
 
-  // ─── Restore version ───
-  const handleSelectVersion = (version: LayoutVersion) => {
+  // ─── Preview a version (viewer only — analyses always use the DB state) ───
+  const handlePreviewVersion = (version: LayoutVersion) => {
     if (!selectedLayout) return
-    // Apply version snapshot to current viewer
     if (version.zones_snapshot && version.passages_snapshot) {
       setSelectedLayout({
         ...selectedLayout,
         zones: version.zones_snapshot,
         passages: version.passages_snapshot,
       })
-      setSnapshotLabel(`Snapshot v${version.version_number}`)
+      setSnapshotLabel(`Vorschau v${version.version_number} — nicht der Analyse-Stand`)
+    }
+  }
+
+  // ─── Really restore a version (PATCH — server snapshots current state first) ───
+  const handleRestoreVersion = async (version: LayoutVersion) => {
+    if (!selectedLayout) return
+    // A version without geometry snapshots cannot be restored — patching
+    // zones=[] would silently EMPTY the layout instead.
+    if (!version.zones_snapshot || !version.passages_snapshot) {
+      setError('Diese Version enthält keinen Geometrie-Snapshot und kann nicht wiederhergestellt werden.')
+      return
+    }
+    setRestoringVersionId(version.id)
+    setError(null)
+    try {
+      const meta = version.layout_meta_snapshot
+      const updated = await updateLayout(projectId, selectedLayout.id, {
+        zones: version.zones_snapshot,
+        passages: version.passages_snapshot,
+        // Restore analysis-relevant meta too (deck height affects scores)
+        ...(meta?.deck_height_mm != null ? { deck_height_mm: meta.deck_height_mm } : {}),
+        change_summary: `Wiederhergestellt von Version ${version.version_number}`,
+      })
+      setSelectedLayout(updated)
+      setLayouts((prev) => prev.map((l) => (l.id === updated.id ? updated : l)))
+      setSnapshotLabel(null)
+      // The restored geometry invalidates everything derived from the old
+      // state — leaving these standing would present stale scores as current.
+      setFullAnalysisResult(null)
+      setDiff(null)
+      setSelectedVersionA(null)
+      setSelectedVersionB(null)
+      setCompareRunA(null)
+      setCompareRunB(null)
+      const v = await getLayoutVersions(projectId, updated.id)
+      setVersions(v)
+      setVersionsLoaded(true)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Version konnte nicht wiederhergestellt werden')
+    } finally {
+      setRestoringVersionId(null)
+    }
+  }
+
+  // ─── Exit a version preview (back to the real DB state) ───
+  const handleExitPreview = () => {
+    if (!selectedLayout) return
+    const original = layouts.find((l) => l.id === selectedLayout.id)
+    if (original) setSelectedLayout(original)
+    setSnapshotLabel(null)
+  }
+
+  // ─── Save current layout state as a named version ───
+  const handleSaveVersion = async () => {
+    if (!selectedLayout) return
+    setSavingVersion(true)
+    setError(null)
+    try {
+      await createLayoutVersion(projectId, selectedLayout.id, {
+        zones_snapshot: selectedLayout.zones,
+        passages_snapshot: selectedLayout.passages,
+        change_summary: 'Manuell gesicherte Version',
+      })
+      await handleLoadVersions()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Version konnte nicht gesichert werden')
+    } finally {
+      setSavingVersion(false)
     }
   }
 
@@ -309,6 +513,8 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
       icon: <Zap className="w-4 h-4" />,
       badge: Object.keys(latestModuleResults).length,
     },
+    { id: 'materials', label: 'Materialien', icon: <Package className="w-4 h-4" /> },
+    { id: 'structural', label: 'Struktur', icon: <Anchor className="w-4 h-4" /> },
     { id: 'costs', label: 'Kosten', icon: <Euro className="w-4 h-4" /> },
     {
       id: 'history',
@@ -361,6 +567,39 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
             </div>
           </div>
           <div className="flex items-center gap-6">
+            {/* Org attachment (pillar 4, stage 2): owner may assign the
+                project to one of their organizations, or keep it private. */}
+            {project.access_role === 'owner' && myOrgs.length > 0 && (
+              <div className="flex items-center gap-2">
+                <span className="label-premium">Organisation</span>
+                <select
+                  value={project.org_id ?? ''}
+                  onChange={(e) => handleSetOrg(e.target.value || null)}
+                  disabled={orgSaving}
+                  aria-label="Projekt einer Organisation zuordnen"
+                  className="rounded-lg border border-sand-300 bg-white px-2.5 py-1.5 text-xs text-navy-800 focus:border-ocean-500 focus:outline-none disabled:opacity-50"
+                >
+                  <option value="">Privat</option>
+                  {myOrgs.map((o) => (
+                    <option key={o.id} value={o.id}>{o.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            {/* Sharing (pillar 4, stage 1): owner shares; members see a badge */}
+            {project.access_role === 'owner' ? (
+              <button
+                onClick={() => setShareDialogOpen(true)}
+                className="flex items-center gap-2 bg-sand-100 border border-sand-300 hover:bg-sand-200 text-navy-700 px-4 py-2 rounded-lg text-xs font-medium transition-all"
+              >
+                <Share2 className="w-3.5 h-3.5" />
+                Teilen
+              </button>
+            ) : project.access_role ? (
+              <span className="text-xs px-2.5 py-1 rounded-full border bg-ocean-100 text-ocean-700 border-ocean-300 whitespace-nowrap">
+                Geteilt · {project.access_role === 'editor' ? 'Bearbeiten' : 'Nur Lesen'}
+              </span>
+            ) : null}
             {overallScore !== null && (
               <div className="text-center">
                 <p className="label-premium mb-1">Gesamtscore</p>
@@ -454,7 +693,8 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
                     </p>
                     <button
                       onClick={handleRunFullAnalysis}
-                      disabled={fullAnalyzing || !selectedLayout}
+                      disabled={fullAnalyzing || !selectedLayout || !canEdit}
+                      title={!canEdit ? READ_ONLY_HINT : undefined}
                       className="inline-flex items-center gap-2 bg-ocean-700 hover:bg-ocean-600 disabled:opacity-50 disabled:cursor-not-allowed text-navy-900 px-8 py-3.5 rounded-lg font-medium transition-all duration-200 hover:shadow-lg hover:shadow-ocean-700/30"
                     >
                       {fullAnalyzing ? (
@@ -561,7 +801,12 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
                     <button
                       key={layout.id}
                       onClick={() => {
+                        // Switching layouts unmounts the editor — guard dirty state
+                        if (!confirmLeaveEditor()) return
                         setSelectedLayout(layout)
+                        // Re-selecting the SAME card must also end a preview
+                        // (the reset effect only fires on id CHANGE)
+                        setSnapshotLabel(null)
                         setVersionsLoaded(false)
                         setVersions([])
                       }}
@@ -593,8 +838,29 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
                   <span className="flex items-center gap-1.5 text-xs bg-amber-900/20 border border-amber-600/30 text-amber-300 px-3 py-1.5 rounded-full font-medium mr-2">
                     <RotateCcw className="w-3 h-3" />
                     {snapshotLabel}
+                    <button
+                      onClick={handleExitPreview}
+                      className="ml-1 underline hover:text-amber-100 transition-colors"
+                      aria-label="Vorschau beenden"
+                    >
+                      beenden
+                    </button>
                   </span>
                 )}
+                <button
+                  onClick={() => setEditingLayout(true)}
+                  disabled={editingLayout || snapshotLabel !== null || !canEdit}
+                  title={
+                    !canEdit
+                      ? READ_ONLY_HINT
+                      : snapshotLabel
+                        ? 'Vorschau aktiv — erst beenden, dann bearbeiten'
+                        : 'Zonen grafisch bearbeiten (Vorzustand wird versioniert)'
+                  }
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all bg-ocean-700 hover:bg-ocean-600 disabled:opacity-50 text-navy-900 mr-2"
+                >
+                  Bearbeiten
+                </button>
                 <span className="label-premium mr-2">Ansicht</span>
                 <button
                   onClick={() => setViewerMode('2d')}
@@ -621,14 +887,73 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
               </div>
             )}
 
-            {/* Layout Viewer */}
-            {selectedLayout && viewerMode === '2d' && (
-              <div className="card-premium p-0 overflow-hidden">
-                <LayoutViewer zones={selectedLayout.zones} passages={selectedLayout.passages} />
+            {/* Zone editor (replaces the viewers while active) */}
+            {selectedLayout && editingLayout && (
+              <LayoutEditor
+                key={selectedLayout.id}
+                zones={selectedLayout.zones}
+                passages={selectedLayout.passages}
+                saving={savingLayoutEdit}
+                onSave={handleSaveLayoutEdit}
+                onCancel={() => {
+                  editorDirtyRef.current = false
+                  setEditingLayout(false)
+                }}
+                onDirtyChange={(dirty) => {
+                  editorDirtyRef.current = dirty
+                }}
+              />
+            )}
+
+            {/* Live-Session join / status (pillar 4, stage 2) */}
+            {selectedLayout && !editingLayout && (
+              <div className="flex items-center gap-3">
+                {!collabActive ? (
+                  <button
+                    onClick={() => setCollabActive(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all bg-sand-100 border border-sand-300 hover:bg-sand-200 text-navy-700"
+                    title="Andere Teammitglieder live in diesem Layout sehen (Präsenz, Cursor, Kommentare)"
+                  >
+                    <Radio className="w-3.5 h-3.5" />
+                    Live-Session beitreten
+                  </button>
+                ) : (
+                  <span className="flex items-center gap-1.5 text-xs text-emerald-700">
+                    <Radio className="w-3.5 h-3.5" />
+                    Live-Session aktiv
+                  </span>
+                )}
               </div>
             )}
 
-            {selectedLayout && viewerMode === '3d' && (
+            {/* Live-Session panel */}
+            {selectedLayout && !editingLayout && collabActive && (
+              <CollabPanel
+                status={collab.status}
+                statusDetail={collab.statusDetail}
+                participants={collab.participants}
+                comments={collab.comments}
+                activity={collab.activity}
+                onSendComment={collab.sendComment}
+                onEndSession={() => setCollabActive(false)}
+              />
+            )}
+
+            {/* Layout Viewer */}
+            {selectedLayout && !editingLayout && viewerMode === '2d' && (
+              <div className="card-premium p-0 overflow-hidden">
+                <LayoutViewer
+                  zones={selectedLayout.zones}
+                  passages={selectedLayout.passages}
+                  remoteCursors={collabActive ? Object.values(collab.cursors) : undefined}
+                  remoteSelections={collabActive ? collab.selections : undefined}
+                  onCursorMove={collabActive ? collab.sendCursor : undefined}
+                  onZoneSelect={collabActive ? collab.sendZoneSelect : undefined}
+                />
+              </div>
+            )}
+
+            {selectedLayout && !editingLayout && viewerMode === '3d' && (
               <div className="card-premium p-0 overflow-hidden" style={{ height: '600px' }}>
                 <Suspense
                   fallback={
@@ -676,7 +1001,8 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
                   </div>
                   <button
                     onClick={handleRunFullAnalysis}
-                    disabled={fullAnalyzing || !selectedLayout}
+                    disabled={fullAnalyzing || !selectedLayout || !canEdit}
+                    title={!canEdit ? READ_ONLY_HINT : undefined}
                     className="flex items-center gap-2 bg-ocean-700 hover:bg-ocean-600 disabled:opacity-50 disabled:cursor-not-allowed text-navy-900 px-6 py-3 rounded-lg font-medium transition-all duration-200 hover:shadow-lg hover:shadow-ocean-700/30"
                   >
                     {fullAnalyzing ? (
@@ -706,13 +1032,19 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
               />
             )}
 
-            {/* Module Selector — all 11 modules */}
-            {selectedLayout && (
+            {/* Module Selector — all 11 modules; hidden for read-only members
+                (running an analysis writes history rows → editor required) */}
+            {selectedLayout && canEdit && (
               <ModuleSelector
                 onSelect={(mod) => handleRunAnalysis(mod)}
                 selectedModule={(analyzingModule as AnalysisModule) ?? undefined}
                 availableModules={undefined}
               />
+            )}
+            {selectedLayout && !canEdit && (
+              <div className="card-premium px-6 py-4 text-sm text-navy-600">
+                {READ_ONLY_HINT}. Vorhandene Analyseergebnisse können Sie unten einsehen.
+              </div>
             )}
 
             {/* Running indicator */}
@@ -784,6 +1116,141 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
             {analyses.length > 0 && (
               <div>
                 <p className="label-premium mb-4">Analysehistorie</p>
+
+                {/* Before/after score comparison (refit loop).
+                    Runs are filtered to the SELECTED layout — analyses are
+                    project-wide, and comparing runs of two different layouts
+                    would present an apples/oranges delta as the effect of a
+                    refit change. Runs older than the layout's last change are
+                    marked as outdated. */}
+                {analyses.filter((a) => a.layout_id === selectedLayout?.id).length >= 2 && (
+                  <div className="card-premium px-6 py-5 mb-4">
+                    <h3 className="font-sans font-semibold text-navy-900 mb-3 flex items-center gap-2 text-sm">
+                      <TrendingUp className="w-4 h-4 text-ocean-500" />
+                      Vorher/Nachher-Vergleich
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-2">
+                      <div>
+                        <label className="label-premium mb-2 block">Lauf A (vorher)</label>
+                        <select
+                          value={compareRunA ?? ''}
+                          onChange={(e) => {
+                            setCompareRunA(e.target.value || null)
+                            setCompareRunB(null)
+                          }}
+                          className="w-full rounded-lg border border-sand-200 bg-white px-3 py-2 text-sm text-navy-900 focus:border-ocean-500 focus:outline-none"
+                        >
+                          <option value="">Wählen...</option>
+                          {analyses
+                            .filter((a) => a.layout_id === selectedLayout?.id)
+                            .map((a) => (
+                              <option key={a.id} value={a.id}>
+                                {ANALYSIS_MODULE_LABELS[a.module as AnalysisModule] ?? a.module} —{' '}
+                                {new Date(a.created_at).toLocaleString('de-DE', {
+                                  day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
+                                })}{' '}
+                                ({Math.round(a.overall_score)})
+                                {selectedLayout &&
+                                new Date(a.created_at) < new Date(selectedLayout.updated_at)
+                                  ? ' · veraltet (Layout seitdem geändert)'
+                                  : ''}
+                              </option>
+                            ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="label-premium mb-2 block">Lauf B (nachher)</label>
+                        <select
+                          value={compareRunB ?? ''}
+                          onChange={(e) => setCompareRunB(e.target.value || null)}
+                          disabled={!compareRunA}
+                          className="w-full rounded-lg border border-sand-200 bg-white px-3 py-2 text-sm text-navy-900 focus:border-ocean-500 focus:outline-none disabled:opacity-50"
+                        >
+                          <option value="">Wählen...</option>
+                          {analyses
+                            .filter((a) => {
+                              const runA = analyses.find((x) => x.id === compareRunA)
+                              return (
+                                runA &&
+                                a.module === runA.module &&
+                                a.layout_id === runA.layout_id &&
+                                a.id !== runA.id
+                              )
+                            })
+                            .map((a) => (
+                              <option key={a.id} value={a.id}>
+                                {new Date(a.created_at).toLocaleString('de-DE', {
+                                  day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
+                                })}{' '}
+                                ({Math.round(a.overall_score)})
+                                {selectedLayout &&
+                                new Date(a.created_at) < new Date(selectedLayout.updated_at)
+                                  ? ' · veraltet (Layout seitdem geändert)'
+                                  : ''}
+                              </option>
+                            ))}
+                        </select>
+                      </div>
+                    </div>
+                    {(() => {
+                      const runA = analyses.find((a) => a.id === compareRunA)
+                      const runB = analyses.find((a) => a.id === compareRunB)
+                      if (!runA || !runB) {
+                        return (
+                          <p className="text-xs text-navy-500">
+                            Zwei Läufe desselben Moduls wählen, um die Wirkung einer
+                            Änderung zu sehen.
+                          </p>
+                        )
+                      }
+                      const delta = runB.overall_score - runA.overall_score
+                      const subKeys = Array.from(
+                        new Set([
+                          ...Object.keys(runA.sub_scores ?? {}),
+                          ...Object.keys(runB.sub_scores ?? {}),
+                        ]),
+                      )
+                      const deltaClass =
+                        delta > 0 ? 'text-emerald-600' : delta < 0 ? 'text-red-600' : 'text-navy-600'
+                      return (
+                        <div className="mt-2 border-t border-sand-200 pt-3">
+                          <p className="text-sm text-navy-900 mb-2">
+                            Gesamt:{' '}
+                            <span className="font-mono">{Math.round(runA.overall_score)}</span>
+                            {' → '}
+                            <span className="font-mono">{Math.round(runB.overall_score)}</span>{' '}
+                            <span className={`font-mono font-semibold ${deltaClass}`}>
+                              ({delta > 0 ? '+' : ''}
+                              {delta.toFixed(1)})
+                            </span>
+                          </p>
+                          {subKeys.length > 0 && (
+                            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1">
+                              {subKeys.map((key) => {
+                                const a = Number(runA.sub_scores?.[key] ?? NaN)
+                                const b = Number(runB.sub_scores?.[key] ?? NaN)
+                                if (isNaN(a) || isNaN(b)) return null
+                                const d = b - a
+                                const cls =
+                                  d > 0 ? 'text-emerald-600' : d < 0 ? 'text-red-600' : 'text-navy-500'
+                                return (
+                                  <li key={key} className="text-xs text-navy-700 flex justify-between gap-2">
+                                    <span className="truncate">{key.replace(/_/g, ' ')}</span>
+                                    <span className={`font-mono ${cls}`}>
+                                      {Math.round(a)}→{Math.round(b)} ({d > 0 ? '+' : ''}
+                                      {d.toFixed(1)})
+                                    </span>
+                                  </li>
+                                )
+                              })}
+                            </ul>
+                          )}
+                        </div>
+                      )
+                    })()}
+                  </div>
+                )}
+
                 <div className="space-y-2 max-h-96 overflow-y-auto scrollbar-hide">
                   {analyses.map((a) => (
                     <button
@@ -817,6 +1284,61 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
                     </button>
                   ))}
                 </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ═══════════════════════════════════════════════════════════════
+            TAB: MATERIALS — Materialzuweisungen (Refit: Optik/Material)
+        ═══════════════════════════════════════════════════════════════ */}
+        {activeTab === 'materials' && (
+          <div className="space-y-8 animate-fade-in-up">
+            {selectedLayout ? (
+              <ZoneMaterialsPanel
+                key={selectedLayout.id}
+                projectId={projectId}
+                layoutId={selectedLayout.id}
+                zones={selectedLayout.zones}
+                deckHeightMm={selectedLayout.deck_height_mm}
+                onRunMaterialsAnalysis={() => handleRunAnalysis('materials')}
+                analysisRunning={analyzing && analyzingModule === 'materials'}
+                busy={analyzing || fullAnalyzing}
+                changedSinceAnalysis={materialsChanged}
+                onChangedSinceAnalysis={setMaterialsChanged}
+                readOnly={!canEdit}
+              />
+            ) : (
+              <div className="card-premium px-8 py-12 text-center">
+                <Package className="w-12 h-12 mx-auto mb-4 text-navy-600" />
+                <p className="text-navy-600">Kein Layout ausgewählt</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ═══════════════════════════════════════════════════════════════
+            TAB: STRUCTURAL — gemessene Gewichte/Positionen (Trimm/CG)
+        ═══════════════════════════════════════════════════════════════ */}
+        {activeTab === 'structural' && (
+          <div className="space-y-8 animate-fade-in-up">
+            {selectedLayout ? (
+              <StructuralItemsPanel
+                key={selectedLayout.id}
+                projectId={projectId}
+                layoutId={selectedLayout.id}
+                zones={selectedLayout.zones}
+                onRunStructuralAnalysis={() => handleRunAnalysis('structural')}
+                analysisRunning={analyzing && analyzingModule === 'structural'}
+                busy={analyzing || fullAnalyzing}
+                changedSinceAnalysis={structuralChanged}
+                onChangedSinceAnalysis={setStructuralChanged}
+                readOnly={!canEdit}
+              />
+            ) : (
+              <div className="card-premium px-8 py-12 text-center">
+                <Anchor className="w-12 h-12 mx-auto mb-4 text-navy-600" />
+                <p className="text-navy-600">Kein Layout ausgewählt</p>
               </div>
             )}
           </div>
@@ -863,12 +1385,48 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
             {selectedLayout && versionsLoaded && versions.length === 0 && (
               <div className="card-premium px-8 py-12 text-center">
                 <Clock className="w-12 h-12 mx-auto mb-4 text-navy-600" />
-                <p className="text-navy-600">Noch keine Versionen vorhanden</p>
+                <p className="text-navy-600 mb-4">Noch keine Versionen vorhanden</p>
+                <button
+                  onClick={handleSaveVersion}
+                  disabled={savingVersion || snapshotLabel !== null || !canEdit}
+                  title={!canEdit ? READ_ONLY_HINT : undefined}
+                  className="inline-flex items-center gap-2 bg-ocean-700 hover:bg-ocean-600 disabled:opacity-50 text-navy-900 px-5 py-2.5 rounded-lg text-sm font-medium transition-all duration-200"
+                >
+                  {savingVersion ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4" />
+                  )}
+                  Aktuellen Stand als Version sichern
+                </button>
               </div>
             )}
 
             {selectedLayout && versionsLoaded && versions.length > 0 && (
               <>
+                {/* Save current state as version */}
+                <div className="flex justify-end">
+                  <button
+                    onClick={handleSaveVersion}
+                    disabled={savingVersion || snapshotLabel !== null || !canEdit}
+                    title={
+                      !canEdit
+                        ? READ_ONLY_HINT
+                        : snapshotLabel
+                          ? 'Vorschau aktiv — erst zurücksetzen oder wiederherstellen'
+                          : 'Aktuellen Layout-Stand als Version sichern'
+                    }
+                    className="inline-flex items-center gap-2 bg-ocean-700 hover:bg-ocean-600 disabled:opacity-50 text-navy-900 px-5 py-2.5 rounded-lg text-sm font-medium transition-all duration-200"
+                  >
+                    {savingVersion ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4" />
+                    )}
+                    Version sichern
+                  </button>
+                </div>
+
                 {/* Version comparison selector */}
                 <div className="card-premium px-6 py-5">
                   <h3 className="font-sans font-semibold text-navy-900 mb-4 flex items-center gap-2">
@@ -978,14 +1536,41 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
                                 </div>
                               )}
                             </div>
-                            <button
-                              onClick={() => handleSelectVersion(version)}
-                              className="flex items-center gap-1.5 text-xs text-ocean-600 hover:text-ocean-500 transition-colors opacity-0 group-hover:opacity-100"
-                              title="Version wiederherstellen"
-                            >
-                              <RotateCcw className="w-3.5 h-3.5" />
-                              Laden
-                            </button>
+                            <div className="flex items-center gap-3 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-within:opacity-100 transition-opacity">
+                              <button
+                                onClick={() => handlePreviewVersion(version)}
+                                disabled={!version.zones_snapshot || !version.passages_snapshot}
+                                className="flex items-center gap-1.5 text-xs text-navy-600 hover:text-ocean-500 transition-colors disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ocean-500"
+                                title="Im Viewer ansehen (ändert nichts)"
+                              >
+                                <Eye className="w-3.5 h-3.5" />
+                                Ansehen
+                              </button>
+                              <button
+                                onClick={() => handleRestoreVersion(version)}
+                                disabled={
+                                  restoringVersionId !== null ||
+                                  !version.zones_snapshot ||
+                                  !version.passages_snapshot ||
+                                  !canEdit
+                                }
+                                className="flex items-center gap-1.5 text-xs text-ocean-600 hover:text-ocean-500 transition-colors disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ocean-500"
+                                title={
+                                  !canEdit
+                                    ? READ_ONLY_HINT
+                                    : !version.zones_snapshot || !version.passages_snapshot
+                                      ? 'Kein Geometrie-Snapshot — nicht wiederherstellbar'
+                                      : 'Diesen Stand wirklich wiederherstellen (aktueller Stand wird als Version gesichert)'
+                                }
+                              >
+                                {restoringVersionId === version.id ? (
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                ) : (
+                                  <RotateCcw className="w-3.5 h-3.5" />
+                                )}
+                                Wiederherstellen
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -997,6 +1582,15 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
           </div>
         )}
       </div>
+
+      {/* Share dialog (owner only) */}
+      {shareDialogOpen && (
+        <ShareDialog
+          projectId={projectId}
+          projectName={project.name}
+          onClose={() => setShareDialogOpen(false)}
+        />
+      )}
     </div>
   )
 }

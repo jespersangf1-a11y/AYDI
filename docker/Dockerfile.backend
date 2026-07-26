@@ -1,10 +1,41 @@
+# AYDI Backend — production image.
+# Built from the repo root (build context = repo root) because the
+# Dockerfile needs both the `backend/` directory and `docker/entrypoint.sh`.
 FROM python:3.12-slim
+
+# Runtime tooling for sqlite (dev), libffi (cryptography), libstdc++ (numpy/scipy)
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        libstdc++6 \
+        libffi8 \
+        ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app/backend
 
+# Python runtime config
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app/backend \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Install Python deps in a separate layer for cache friendliness
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Application code
 COPY backend/ .
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Entrypoint: runs `alembic upgrade head` then starts uvicorn.
+COPY docker/entrypoint.sh /entrypoint.sh
+# Normalize CRLF -> LF in case the file was edited on Windows.
+RUN sed -i 's/\r$//' /entrypoint.sh && chmod +x /entrypoint.sh
+
+EXPOSE 8000
+
+# Liveness/readiness endpoints are at /health/live and /health/ready.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+    CMD python -c "import urllib.request,sys; urllib.request.urlopen('http://127.0.0.1:8000/health/live', timeout=3); sys.exit(0)" || exit 1
+
+ENTRYPOINT ["/entrypoint.sh"]

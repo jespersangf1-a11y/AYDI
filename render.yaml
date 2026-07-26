@@ -1,0 +1,45 @@
+# Render Blueprint for the AYDI backend.
+#
+# How to use:
+#   1. Create an account at https://render.com
+#   2. New → "Blueprint" → connect this Git repo → select branch `main`
+#   3. Render reads this file, creates the service automatically.
+#   4. Set the env vars marked `sync: false` in the dashboard once
+#      (Render won't put secret values in the YAML for you).
+#
+# Why Docker not native: AYDI ships Alembic migrations + a custom
+# entrypoint, so we want full control over the start sequence.
+services:
+  - type: web
+    name: aydi-backend
+    plan: free                       # 750h/month, sleeps after 15min idle
+    region: frankfurt                # closest to most EU yacht designers
+    runtime: docker
+    dockerfilePath: ./docker/Dockerfile.backend
+    dockerContext: .                 # repo root (Dockerfile needs both backend/ and docker/)
+    healthCheckPath: /health/ready
+    autoDeploy: true
+    envVars:
+      # Database — paste your Neon connection string here, e.g.
+      #   postgresql+asyncpg://USER:PASS@ep-xxx.eu-central-1.aws.neon.tech/aydi
+      - key: DATABASE_URL
+        sync: false                  # set in dashboard, NOT in git
+      # CORS — your frontend's origin(s), as a JSON array string
+      - key: CORS_ORIGINS
+        value: '["https://aydi.vercel.app","https://aydi.pages.dev"]'
+      # Anthropic API key for the visual analysis pipeline
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      # JWT secret — generate one with: python -c "import secrets; print(secrets.token_urlsafe(64))"
+      - key: SECRET_KEY
+        sync: false
+      # Production hardening
+      - key: AUTH_COOKIE_ONLY
+        value: "true"
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: LOG_JSON
+        value: "true"
+      - key: LOG_LEVEL
+        value: "INFO"
+      # Render injects $PORT automatically; our entrypoint respects it.

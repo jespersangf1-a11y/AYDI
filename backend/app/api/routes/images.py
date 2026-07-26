@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.permissions import get_current_user
+from app.core.permissions import get_accessible_project, get_current_user
 from app.db.database import get_db
 from app.models.models import ImageUpload, Project, QuickAnalysisResult, User
 from app.schemas.images import (
@@ -181,14 +181,12 @@ def _analysis_succeeded(result: dict | None) -> bool:
     return bool(result) and result.get("analysis") is not None and not result.get("error")
 
 
-async def _get_project(project_id: UUID, user: User, db: AsyncSession) -> Project:
-    result = await db.execute(
-        select(Project).where(Project.id == project_id, Project.user_id == user.id)
-    )
-    project = result.scalar_one_or_none()
-    if not project:
-        raise HTTPException(status_code=404, detail="Projekt nicht gefunden")
-    return project
+async def _get_project(
+    project_id: UUID, user: User, db: AsyncSession, min_role: str = "editor"
+) -> Project:
+    """Access-checked fetch: owner or shared member with >= min_role
+    (pillar 4, stage 1 — see core.permissions.get_accessible_project)."""
+    return await get_accessible_project(project_id, user, db, min_role)
 
 
 # ---------------------------------------------------------------------------
@@ -340,7 +338,7 @@ async def list_project_images(
     db: AsyncSession = Depends(get_db),
 ):
     """List all images for a project, optionally filtered by image_type."""
-    await _get_project(project_id, _user, db)
+    await _get_project(project_id, _user, db, min_role="viewer")
 
     query = select(ImageUpload).where(ImageUpload.project_id == project_id)
     if image_type:

@@ -195,6 +195,16 @@ export default function SpecForm({ boatClass, loading, onSubmit, onBack }: SpecF
       }
     }
 
+    // Validate year — a typo like "202" would otherwise feed the buyer
+    // report's age logic ("1824 Jahre alt") and be presented as real.
+    if (fields.year && fields.year.trim() !== '') {
+      const year = parseInt(fields.year, 10)
+      const maxYear = new Date().getFullYear() + 1
+      if (isNaN(year) || year < 1900 || year > maxYear) {
+        newErrors.year = `Baujahr muss zwischen 1900 und ${maxYear} liegen`
+      }
+    }
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -493,8 +503,12 @@ export default function SpecForm({ boatClass, loading, onSubmit, onBack }: SpecF
           )}
         </Section>
 
-        {/* Kommerziell */}
-        <Section title="Kommerziell & Identifikation">
+        {/* Kommerziell — die Identitätsfelder schalten die Kaufberatung frei */}
+        <Section
+          title="Bootsidentität & Kaufberatung"
+          hint="Marke, Modell oder Baujahr schalten den Kaufberatungs-Report frei"
+          highlight
+        >
           <div className="group">
             <Field
               label="Marke / Werft"
@@ -522,7 +536,8 @@ export default function SpecForm({ boatClass, loading, onSubmit, onBack }: SpecF
               placeholder="z.B. 2024"
               value={fields.year}
               onChange={handleChange}
-              min={1960}
+              min={1900}
+              error={errors.year}
             />
           </div>
           <div className="group">

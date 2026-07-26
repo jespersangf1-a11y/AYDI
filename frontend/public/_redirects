@@ -1,0 +1,6 @@
+# Cloudflare Pages routing.
+# Proxies /api/* to the Render backend so the browser stays same-origin
+# (lets the auth cookies and CSRF flow work without third-party-cookie issues).
+/api/*  https://aydi-backend.onrender.com/api/:splat  200
+# SPA fallback — everything else hits the bundled index.html
+/*      /index.html                                    200

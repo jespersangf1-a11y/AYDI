@@ -27,7 +27,13 @@ services:
       CORS_ORIGINS: ${CORS_ORIGINS:-["http://localhost:5173","http://localhost"]}
     ports:
       - "8000:8000"
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    # Dev mode: skip the production entrypoint (alembic + uvicorn) and run
+    # uvicorn with --reload. Production deployments use the entrypoint
+    # defined in Dockerfile.backend (which runs `alembic upgrade head`
+    # before starting). For local dev, run `alembic upgrade head` manually
+    # inside the container once after starting: `docker compose exec backend alembic upgrade head`.
+    entrypoint: []
+    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
     volumes:
       - ./backend:/app/backend
 

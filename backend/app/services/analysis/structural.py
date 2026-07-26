@@ -341,6 +341,130 @@ def _get_boat_extents(zones: list[dict]) -> tuple[float, float, float, float]:
     return min(all_x), max(all_x), min(all_y), max(all_y)
 
 
+def _valid_point_masses(structural_items: list[dict] | None) -> list[dict]:
+    """Measured structural items usable as point masses.
+
+    Requires finite weight_kg > 0 and an X position. Measured weights are
+    real kg — the same unit as the zone heuristic (area × kg/m² × class
+    factor), so combining both into one CG model is unit-consistent.
+    """
+    if not structural_items:
+        return []
+    masses: list[dict] = []
+    for item in structural_items:
+        try:
+            weight = float(item.get("weight_kg") or 0.0)
+        except (TypeError, ValueError):
+            continue
+        x = item.get("position_x_mm")
+        if not math.isfinite(weight) or weight <= 0 or x is None:
+            continue
+        y = item.get("position_y_mm")
+        masses.append({
+            "name": item.get("name") or item.get("item_type") or "Element",
+            "item_type": str(item.get("item_type") or "").lower(),
+            "zone_name": item.get("zone_name"),
+            "weight_kg": weight,
+            "x_mm": float(x),
+            "y_mm": float(y) if y is not None else None,
+        })
+    return masses
+
+
+def _clamp01(value: float) -> float:
+    return max(0.0, min(1.0, value))
+
+
+def _point_in_polygon(x: float, y: float, polygon: list[list[float]]) -> bool:
+    """Ray-casting point-in-polygon test."""
+    n = len(polygon)
+    if n < 3:
+        return False
+    inside = False
+    j = n - 1
+    for i in range(n):
+        xi, yi = polygon[i][0], polygon[i][1]
+        xj, yj = polygon[j][0], polygon[j][1]
+        if (yi > y) != (yj > y):
+            x_cross = (xj - xi) * (y - yi) / (yj - yi) + xi
+            if x < x_cross:
+                inside = not inside
+        j = i
+    return inside
+
+
+# Exact tank types (schema enum) — substring matching wrongly treated a
+# 'watermaker' as water ballast and a generic 'tank' as fuel.
+_FUEL_TANK_TYPES = {"fuel_tank"}
+_WATER_TANK_TYPES = {"water_tank"}
+# Item types that count as "heavy placement" concerns regardless of weight,
+# plus a weight threshold for anything else.
+_HEAVY_ITEM_TYPES = {"engine", "ballast", "fuel_tank", "water_tank"}
+_HEAVY_ITEM_MIN_KG = 150.0
+
+
+def _build_weight_model(
+    zones: list[dict],
+    weight_factor: float,
+    structural_items: list[dict] | None,
+) -> tuple[list[dict], list[dict], list[dict]]:
+    """Effective weight model combining zone heuristics and measured masses.
+
+    The kg/m² zone heuristic already CONTAINS typical equipment weight (an
+    engine zone is 350 kg/m² because of the engine). A measured engine must
+    therefore REPLACE its zone's heuristic share, not stack on top of it —
+    otherwise the same physical mass is counted twice. Masses are assigned to
+    a zone by explicit zone_name first, else by point-in-polygon; the zone's
+    heuristic weight is reduced by the assigned measured weight (min 0).
+
+    Returns (zone_entries, masses, outside_masses):
+      zone_entries: [{zone, weight (effective), cx, cy}]
+      masses: valid point masses, each with "assigned_zone" (name or None)
+      outside_masses: masses whose X lies outside the zone extents
+        (legitimate — e.g. anchor locker — but flagged for transparency;
+        the evaluation frame stays the zone extents, see analyses).
+    """
+    masses = _valid_point_masses(structural_items)
+    zones_by_name = {z.get("name"): z for z in zones if z.get("name")}
+    reductions: dict[int, float] = {}
+
+    for mass in masses:
+        zone = None
+        zone_name = mass.get("zone_name")
+        if zone_name and zone_name in zones_by_name:
+            zone = zones_by_name[zone_name]
+        elif mass["y_mm"] is not None:
+            for z in zones:
+                if _point_in_polygon(mass["x_mm"], mass["y_mm"], z.get("polygon", [])):
+                    zone = z
+                    break
+        mass["assigned_zone"] = zone.get("name") if zone else None
+        if zone is not None:
+            reductions[id(zone)] = reductions.get(id(zone), 0.0) + mass["weight_kg"]
+
+    zone_entries: list[dict] = []
+    for z in zones:
+        heuristic = _estimate_zone_weight(z, weight_factor)
+        effective = max(0.0, heuristic - reductions.get(id(z), 0.0))
+        cx, cy = _polygon_centroid(z.get("polygon", []))
+        zone_entries.append({"zone": z, "weight": effective, "cx": cx, "cy": cy})
+
+    min_x, max_x, _, _ = _get_boat_extents(zones)
+    outside = [m for m in masses if not (min_x <= m["x_mm"] <= max_x)]
+    return zone_entries, masses, outside
+
+
+def _condition_adjusted_item_weight(mass: dict, fuel_pct: float, water_pct: float) -> float:
+    """Loading-condition weight of a measured item: exact tank types scale
+    with their fill level, everything else (engine, ballast, battery,
+    watermaker …) is fixed mass."""
+    if mass["item_type"] in _FUEL_TANK_TYPES:
+        return mass["weight_kg"] * (fuel_pct / 100.0)
+    if mass["item_type"] in _WATER_TANK_TYPES:
+        return mass["weight_kg"] * (water_pct / 100.0)
+    return mass["weight_kg"]
+
+
 # ---------------------------------------------------------------------------
 # Sub-analysis: Longitudinal (fore-aft) balance
 # ---------------------------------------------------------------------------
@@ -349,8 +473,13 @@ def _get_boat_extents(zones: list[dict]) -> tuple[float, float, float, float]:
 def analyze_fore_aft_balance(
     zones: list[dict],
     config: dict,
+    *,
+    structural_items: list[dict] | None = None,
 ) -> tuple[float, list[dict], dict]:
     """Evaluate fore-aft weight balance via weighted X-centroid.
+
+    Measured structural items (weight_kg + position) enter the CG model as
+    point masses alongside the heuristic zone weights.
 
     Returns (score 0-100, warnings, metrics).
     """
@@ -367,26 +496,33 @@ def analyze_fore_aft_balance(
 
     weight_factor = config.get("boat_class_weight_factor", 1.0)
     ideal_range = config.get("ideal_cog_x_range", (0.44, 0.54))
+    # Evaluation frame stays the ZONE extents: ideal_cog_x_range is calibrated
+    # to the hull/zone bounding box. Extending the frame by item positions
+    # shifted every percentage and even inverted warning directions.
     min_x, max_x, _, _ = _get_boat_extents(zones)
     x_span = max_x - min_x
 
     if x_span < 1e-6:
         return 50.0, warnings, {"cog_x_pct": 0.5, "ideal_range": list(ideal_range), "deviation_pct": 0.0}
 
+    zone_entries, masses, _ = _build_weight_model(zones, weight_factor, structural_items)
+
     total_weight = 0.0
     weighted_x = 0.0
 
-    for z in zones:
-        w = _estimate_zone_weight(z, weight_factor)
-        cx, _ = _polygon_centroid(z.get("polygon", []))
-        total_weight += w
-        weighted_x += cx * w
+    for entry in zone_entries:
+        total_weight += entry["weight"]
+        weighted_x += entry["cx"] * entry["weight"]
+
+    for mass in masses:
+        total_weight += mass["weight_kg"]
+        weighted_x += mass["x_mm"] * mass["weight_kg"]
 
     if total_weight < 1e-6:
         return 50.0, warnings, {"cog_x_pct": 0.5, "ideal_range": list(ideal_range), "deviation_pct": 0.0}
 
     cog_x = weighted_x / total_weight
-    cog_x_pct = (cog_x - min_x) / x_span
+    cog_x_pct = _clamp01((cog_x - min_x) / x_span)
 
     # Score
     deviation = 0.0
@@ -440,8 +576,12 @@ def analyze_fore_aft_balance(
 def analyze_lateral_balance(
     zones: list[dict],
     config: dict,
+    *,
+    structural_items: list[dict] | None = None,
 ) -> tuple[float, list[dict], dict]:
     """Evaluate port-starboard weight balance via weighted Y-centroid.
+
+    Measured items with a Y position enter the model as point masses.
 
     Returns (score 0-100, warnings, metrics).
     """
@@ -458,26 +598,33 @@ def analyze_lateral_balance(
 
     weight_factor = config.get("boat_class_weight_factor", 1.0)
     tolerance = config.get("lateral_tolerance_pct", 0.05)
+    # Fixed zone frame — see analyze_fore_aft_balance
     _, _, min_y, max_y = _get_boat_extents(zones)
     y_span = max_y - min_y
 
     if y_span < 1e-6:
         return 100.0, warnings, {"cog_y_pct": 0.5, "offset_from_center_pct": 0.0, "tolerance_pct": tolerance}
 
+    zone_entries, all_masses, _ = _build_weight_model(zones, weight_factor, structural_items)
+    # Only items with a Y position can enter a lateral model
+    masses = [m for m in all_masses if m["y_mm"] is not None]
+
     total_weight = 0.0
     weighted_y = 0.0
 
-    for z in zones:
-        w = _estimate_zone_weight(z, weight_factor)
-        _, cy = _polygon_centroid(z.get("polygon", []))
-        total_weight += w
-        weighted_y += cy * w
+    for entry in zone_entries:
+        total_weight += entry["weight"]
+        weighted_y += entry["cy"] * entry["weight"]
+
+    for mass in masses:
+        total_weight += mass["weight_kg"]
+        weighted_y += mass["y_mm"] * mass["weight_kg"]
 
     if total_weight < 1e-6:
         return 50.0, warnings, {"cog_y_pct": 0.5, "offset_from_center_pct": 0.0, "tolerance_pct": tolerance}
 
     cog_y = weighted_y / total_weight
-    cog_y_pct = (cog_y - min_y) / y_span
+    cog_y_pct = _clamp01((cog_y - min_y) / y_span)
     offset = abs(cog_y_pct - 0.5)
 
     if offset <= tolerance:
@@ -514,8 +661,14 @@ def analyze_lateral_balance(
 def analyze_heavy_zone_placement(
     zones: list[dict],
     config: dict,
+    *,
+    structural_items: list[dict] | None = None,
 ) -> tuple[float, list[dict], dict]:
-    """Check if heavy zones are centrally positioned.
+    """Check if heavy zones AND heavy measured items are centrally positioned.
+
+    Measured heavy items (engine/ballast/tanks, or anything ≥150 kg) are
+    evaluated like heavy zones — a measured 2-t engine must not disappear
+    from this sub-score just because no engine ZONE was drawn.
 
     Returns (score 0-100, warnings, metrics).
     """
@@ -537,13 +690,23 @@ def analyze_heavy_zone_placement(
     min_x, max_x, _, _ = _get_boat_extents(zones)
     x_span = max_x - min_x
 
-    heavy_zones = [z for z in zones if z.get("zone_type") in _HEAVY_ZONE_TYPES]
+    zone_entries, masses, _ = _build_weight_model(zones, weight_factor, structural_items)
+    heavy_entries = [
+        e for e in zone_entries if e["zone"].get("zone_type") in _HEAVY_ZONE_TYPES
+    ]
+    heavy_masses = [
+        m for m in masses
+        if m["item_type"] in _HEAVY_ITEM_TYPES or m["weight_kg"] >= _HEAVY_ITEM_MIN_KG
+    ]
 
-    if not heavy_zones:
+    if not heavy_entries and not heavy_masses:
         warnings.append({
             "code": "STRUCTURAL_NO_HEAVY_ZONES",
             "severity": "info",
-            "message": "Keine schweren Zonen (Motor, Stauraum) im Layout erkannt.",
+            "message": (
+                "Keine schweren Zonen (Motor, Stauraum) und keine schweren "
+                "gemessenen Elemente im Layout erkannt."
+            ),
             "suggestion": "Motor- und Stauräume im Layout definieren.",
         })
         return 100.0, warnings, {
@@ -559,35 +722,56 @@ def analyze_heavy_zone_placement(
     total_heavy_weight = 0.0
     central_weight = 0.0
 
-    for z in heavy_zones:
-        w = _estimate_zone_weight(z, weight_factor)
-        cx, _ = _polygon_centroid(z.get("polygon", []))
-        cx_pct = (cx - min_x) / x_span
+    def _evaluate_heavy_point(
+        label: str, kind: str, weight: float, cx_pct: float, suggestion: str
+    ) -> None:
+        nonlocal total_heavy_weight, central_weight
+        if weight <= 0:
+            return
         is_central = central_band[0] <= cx_pct <= central_band[1]
-
-        total_heavy_weight += w
+        total_heavy_weight += weight
         if is_central:
-            central_weight += w
+            central_weight += weight
         else:
             severity = "critical" if cx_pct < 0.15 or cx_pct > 0.85 else "warning"
             warnings.append({
                 "code": "HEAVY_ZONE_OFF_CENTER",
                 "severity": severity,
                 "message": (
-                    f"Schwere Zone '{z.get('name', '?')}' ({z.get('zone_type')}) "
-                    f"bei {cx_pct:.0%} der Bootslänge — "
-                    f"außerhalb des zentralen Bereichs ({central_band[0]:.0%}–{central_band[1]:.0%})."
+                    f"{label} bei {cx_pct:.0%} der Bootslänge — außerhalb des "
+                    f"zentralen Bereichs ({central_band[0]:.0%}–{central_band[1]:.0%})."
                 ),
-                "suggestion": f"Zone '{z.get('name', '?')}' weiter zur Mitte verlagern.",
+                "suggestion": suggestion,
             })
-
         heavy_info.append({
-            "name": z.get("name", "?"),
-            "zone_type": z.get("zone_type"),
+            "name": label,
+            "zone_type": kind,
             "centroid_x_pct": round(cx_pct, 4),
-            "weight_kg": round(w, 1),
+            "weight_kg": round(weight, 1),
             "is_central": is_central,
         })
+
+    for entry in heavy_entries:
+        z = entry["zone"]
+        cx_pct = _clamp01((entry["cx"] - min_x) / x_span)
+        _evaluate_heavy_point(
+            f"Schwere Zone '{z.get('name', '?')}' ({z.get('zone_type')})",
+            str(z.get("zone_type")),
+            entry["weight"],
+            cx_pct,
+            f"Zone '{z.get('name', '?')}' weiter zur Mitte verlagern.",
+        )
+
+    for mass in heavy_masses:
+        cx_pct = _clamp01((mass["x_mm"] - min_x) / x_span)
+        _evaluate_heavy_point(
+            f"Gemessenes Element '{mass['name']}' ({mass['item_type']}, "
+            f"{mass['weight_kg']:.0f} kg)",
+            f"item:{mass['item_type']}",
+            mass["weight_kg"],
+            cx_pct,
+            f"Element '{mass['name']}' weiter zur Mitte verlagern.",
+        )
 
     central_ratio = central_weight / total_heavy_weight if total_heavy_weight > 0 else 1.0
 
@@ -639,8 +823,13 @@ def analyze_heavy_zone_placement(
 def analyze_load_concentration(
     zones: list[dict],
     config: dict,
+    *,
+    structural_items: list[dict] | None = None,
 ) -> tuple[float, list[dict], dict]:
     """Evaluate weight distribution across three longitudinal segments.
+
+    Measured items are binned into the segments as point masses (their zone's
+    heuristic weight is reduced accordingly — no double counting).
 
     Returns (score 0-100, warnings, metrics).
     """
@@ -674,16 +863,23 @@ def analyze_load_concentration(
     boundaries = [min_x, min_x + third, min_x + 2 * third, max_x]
     segment_weights: dict[str, float] = {"bow": 0.0, "middle": 0.0, "stern": 0.0}
 
-    for z in zones:
-        w = _estimate_zone_weight(z, weight_factor)
-        cx, _ = _polygon_centroid(z.get("polygon", []))
-        # Assign to segment by centroid position
-        if cx < boundaries[1]:
-            segment_weights["bow"] += w
-        elif cx < boundaries[2]:
-            segment_weights["middle"] += w
+    zone_entries, masses, _ = _build_weight_model(zones, weight_factor, structural_items)
+
+    def _bin_weight(x: float, weight: float) -> None:
+        if x < boundaries[1]:
+            segment_weights["bow"] += weight
+        elif x < boundaries[2]:
+            segment_weights["middle"] += weight
         else:
-            segment_weights["stern"] += w
+            segment_weights["stern"] += weight
+
+    for entry in zone_entries:
+        _bin_weight(entry["cx"], entry["weight"])
+
+    for mass in masses:
+        # Clamp outside items into the boat frame for binning (anchor locker
+        # ahead of the zones belongs to the bow segment)
+        _bin_weight(min(max(mass["x_mm"], min_x), max_x), mass["weight_kg"])
 
     total = sum(segment_weights.values())
     if total < 1e-6:
@@ -750,8 +946,13 @@ LOADING_CONDITIONS = {
 def analyze_loading_conditions(
     zones: list[dict],
     config: dict,
+    *,
+    structural_items: list[dict] | None = None,
 ) -> tuple[float, list[dict], dict]:
     """Compute CG position under different loading conditions.
+
+    Measured items enter each condition as point masses; tank-typed items
+    scale with the condition's fill level, all others are fixed mass.
 
     Returns (score 0-100, warnings, metrics).
     """
@@ -768,11 +969,14 @@ def analyze_loading_conditions(
 
     weight_factor = config.get("boat_class_weight_factor", 1.0)
     ideal_range = config.get("ideal_cog_x_range", (0.44, 0.54))
+    # Fixed zone frame — see analyze_fore_aft_balance
     min_x, max_x, _, _ = _get_boat_extents(zones)
     x_span = max_x - min_x
 
     if x_span < 1e-6:
         return 50.0, warnings, {"conditions": {}}
+
+    zone_entries, masses, _ = _build_weight_model(zones, weight_factor, structural_items)
 
     condition_results: dict[str, float] = {}
     in_range_count = 0
@@ -785,9 +989,9 @@ def analyze_loading_conditions(
         total_weight = 0.0
         weighted_x = 0.0
 
-        for z in zones:
-            base_weight = _estimate_zone_weight(z, weight_factor)
-            zone_type = z.get("zone_type", "")
+        for entry in zone_entries:
+            base_weight = entry["weight"]
+            zone_type = entry["zone"].get("zone_type", "")
 
             if zone_type == "engine":
                 adjusted_weight = base_weight * (fuel_pct / 100.0)
@@ -798,16 +1002,20 @@ def analyze_loading_conditions(
             else:
                 adjusted_weight = base_weight
 
-            cx, _ = _polygon_centroid(z.get("polygon", []))
             total_weight += adjusted_weight
-            weighted_x += cx * adjusted_weight
+            weighted_x += entry["cx"] * adjusted_weight
+
+        for mass in masses:
+            adjusted = _condition_adjusted_item_weight(mass, fuel_pct, water_pct)
+            total_weight += adjusted
+            weighted_x += mass["x_mm"] * adjusted
 
         if total_weight < 1e-6:
             condition_results[cond_name] = 0.5
             continue
 
         cog_x = weighted_x / total_weight
-        cog_x_pct = (cog_x - min_x) / x_span
+        cog_x_pct = _clamp01((cog_x - min_x) / x_span)
         condition_results[cond_name] = round(cog_x_pct, 4)
 
         if ideal_range[0] <= cog_x_pct <= ideal_range[1]:
@@ -844,8 +1052,12 @@ def analyze_loading_conditions(
 def analyze_trim(
     zones: list[dict],
     config: dict,
+    *,
+    structural_items: list[dict] | None = None,
 ) -> tuple[float, list[dict], dict]:
     """Estimate longitudinal trim angle from weight distribution.
+
+    Measured items enter the trim CG as point masses.
 
     Returns (score 0-100, warnings, metrics).
     """
@@ -863,26 +1075,31 @@ def analyze_trim(
     weight_factor = config.get("boat_class_weight_factor", 1.0)
     ideal_range = config.get("ideal_cog_x_range", (0.44, 0.54))
     max_trim_deg = config.get("max_trim_deg", 2.0)
+    # Fixed zone frame — see analyze_fore_aft_balance
     min_x, max_x, _, _ = _get_boat_extents(zones)
     x_span = max_x - min_x
 
     if x_span < 1e-6:
         return 50.0, warnings, {"trim_deg": 0.0, "cog_x_pct": 0.5, "ideal_midpoint_pct": 0.5}
 
+    zone_entries, masses, _ = _build_weight_model(zones, weight_factor, structural_items)
+
     total_weight = 0.0
     weighted_x = 0.0
 
-    for z in zones:
-        w = _estimate_zone_weight(z, weight_factor)
-        cx, _ = _polygon_centroid(z.get("polygon", []))
-        total_weight += w
-        weighted_x += cx * w
+    for entry in zone_entries:
+        total_weight += entry["weight"]
+        weighted_x += entry["cx"] * entry["weight"]
+
+    for mass in masses:
+        total_weight += mass["weight_kg"]
+        weighted_x += mass["x_mm"] * mass["weight_kg"]
 
     if total_weight < 1e-6:
         return 50.0, warnings, {"trim_deg": 0.0, "cog_x_pct": 0.5, "ideal_midpoint_pct": 0.5}
 
     cog_x = weighted_x / total_weight
-    cog_x_pct = (cog_x - min_x) / x_span
+    cog_x_pct = _clamp01((cog_x - min_x) / x_span)
 
     # Ideal midpoint in mm
     ideal_midpoint_pct = (ideal_range[0] + ideal_range[1]) / 2.0
@@ -932,14 +1149,18 @@ def run_structural_analysis(
     boat_class: str,
     config_overrides: dict | None = None,
     data_source: str = "measured",
+    structural_items: list[dict] | None = None,
 ) -> dict:
     """Orchestrator — runs all structural (weight distribution) sub-analyses.
 
     Args:
         zones: Layout zones with polygon, zone_type, name.
         passages: Unused — accepted for API pattern consistency.
-        boat_class: One of small_sail, cruising_sail, large_motor, superyacht.
+        boat_class: One of the 13 BoatClass values.
         config_overrides: Optional dict to override config values.
+        structural_items: Measured items (weight_kg, position_*_mm) — enter
+            the CG/trim/loading models as point masses. Previously these were
+            collected via the API but silently ignored by the analysis.
 
     Returns a standardized result dict matching the AYDI analysis module contract.
     """
@@ -968,12 +1189,18 @@ def run_structural_analysis(
     all_metrics: dict[str, dict] = {}
 
     analyses = [
-        ("fore_aft", lambda: analyze_fore_aft_balance(zones, config)),
-        ("lateral", lambda: analyze_lateral_balance(zones, config)),
-        ("heavy_placement", lambda: analyze_heavy_zone_placement(zones, config)),
-        ("load_concentration", lambda: analyze_load_concentration(zones, config)),
-        ("loading_conditions", lambda: analyze_loading_conditions(zones, config)),
-        ("trim", lambda: analyze_trim(zones, config)),
+        ("fore_aft", lambda: analyze_fore_aft_balance(
+            zones, config, structural_items=structural_items)),
+        ("lateral", lambda: analyze_lateral_balance(
+            zones, config, structural_items=structural_items)),
+        ("heavy_placement", lambda: analyze_heavy_zone_placement(
+            zones, config, structural_items=structural_items)),
+        ("load_concentration", lambda: analyze_load_concentration(
+            zones, config, structural_items=structural_items)),
+        ("loading_conditions", lambda: analyze_loading_conditions(
+            zones, config, structural_items=structural_items)),
+        ("trim", lambda: analyze_trim(
+            zones, config, structural_items=structural_items)),
     ]
 
     for name, fn in analyses:
@@ -993,6 +1220,88 @@ def run_structural_analysis(
             })
 
     overall = sum(sub_scores.get(k, 50.0) * w for k, w in weights.items())
+
+    # Honest provenance for measured items: report what entered the model,
+    # what was deducted from zone heuristics (double-count prevention), what
+    # lies outside the evaluation frame, and what was skipped.
+    if structural_items:
+        weight_factor = config.get("boat_class_weight_factor", 1.0)
+        zone_entries, masses, outside = _build_weight_model(
+            zones, weight_factor, structural_items
+        )
+        measured_weight = sum(m["weight_kg"] for m in masses)
+        effective_heuristic = sum(e["weight"] for e in zone_entries)
+        raw_heuristic = sum(_estimate_zone_weight(z, weight_factor) for z in zones)
+        deducted = raw_heuristic - effective_heuristic
+        model_weight = measured_weight + effective_heuristic
+        skipped = len(structural_items) - len(masses)
+        all_metrics["measured_items"] = {
+            "count": len(masses),
+            "total_weight_kg": round(measured_weight, 1),
+            "share_of_model_weight_pct": (
+                round(measured_weight / model_weight * 100.0, 1)
+                if model_weight > 1e-6
+                else 0.0
+            ),
+            "deducted_from_zone_heuristics_kg": round(deducted, 1),
+            "outside_zone_extents": [m["name"] for m in outside],
+            "skipped_without_position_or_weight": skipped,
+        }
+        if masses:
+            all_warnings.append({
+                "code": "STRUCTURAL_MEASURED_ITEMS_USED",
+                "severity": "info",
+                "message": (
+                    f"{len(masses)} gemessene Strukturelemente "
+                    f"({measured_weight:.0f} kg) fließen in alle Gewichts-Teilanalysen "
+                    f"ein; zugeordnete Zonenheuristik wurde um {deducted:.0f} kg "
+                    "entlastet (keine Doppelzählung). Übrige Gewichte bleiben "
+                    "heuristisch aus Zonenflächen geschätzt."
+                ),
+                "suggestion": None,
+            })
+        if outside:
+            names = ", ".join(m["name"] for m in outside)
+            all_warnings.append({
+                "code": "STRUCTURAL_ITEM_OUTSIDE_EXTENTS",
+                "severity": "info",
+                "message": (
+                    f"Element(e) außerhalb der Zonen-Ausdehnung: {names} — "
+                    "zulässig (z.B. Ankerkasten), Bewertungsrahmen bleibt die "
+                    "Zonen-Bounding-Box; Positionsreferenz bitte prüfen."
+                ),
+                "suggestion": None,
+            })
+        unknown_tanks = [
+            m for m in masses
+            if "tank" in m["item_type"]
+            and m["item_type"] not in (_FUEL_TANK_TYPES | _WATER_TANK_TYPES)
+        ]
+        if unknown_tanks:
+            names = ", ".join(m["name"] for m in unknown_tanks)
+            all_warnings.append({
+                "code": "STRUCTURAL_TANK_TYPE_UNKNOWN",
+                "severity": "info",
+                "message": (
+                    f"Tanktyp nicht zuordenbar ({names}) — als Festmasse "
+                    "gerechnet. Für Beladungszustände item_type 'fuel_tank' "
+                    "oder 'water_tank' verwenden."
+                ),
+                "suggestion": None,
+            })
+        if skipped > 0:
+            all_warnings.append({
+                "code": "STRUCTURAL_ITEMS_SKIPPED",
+                "severity": "warning",
+                "message": (
+                    f"{skipped} Strukturelement(e) ohne positives Gewicht oder "
+                    "X-Position wurden NICHT berücksichtigt."
+                ),
+                "suggestion": (
+                    "Gewicht (> 0 kg) und Längsposition (X) der Strukturelemente "
+                    "erfassen, damit sie in die Analyse eingehen."
+                ),
+            })
 
     for w in all_warnings:
         suggestion = w.get("suggestion")

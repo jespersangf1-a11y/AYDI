@@ -1,0 +1,23 @@
+# Railway deployment configuration.
+#
+# AYDI is a monorepo with backend/ (FastAPI) and frontend/ (React) as
+# separate buildable services. Railway services can be configured here
+# OR via the dashboard — values in the dashboard take precedence.
+#
+# To deploy ONLY the backend service from this repo, set this file's
+# settings in your Railway service config OR rely on the dashboard.
+
+[build]
+# Railway honors this Dockerfile path relative to the repo root.
+builder = "DOCKERFILE"
+dockerfilePath = "docker/Dockerfile.backend"
+
+[deploy]
+# The Dockerfile's ENTRYPOINT already runs `alembic upgrade head` before
+# uvicorn, so we don't need a startCommand override here. Restart on
+# failure is built into Railway by default.
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 5
+# Wait until /health/ready returns 200 before sending traffic.
+healthcheckPath = "/health/ready"
+healthcheckTimeout = 30

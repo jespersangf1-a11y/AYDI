@@ -1,8 +1,9 @@
 # backend/app/schemas/materials.py
 from datetime import datetime
+from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class MaterialCreate(BaseModel):
@@ -56,11 +57,16 @@ class MaterialResponse(BaseModel):
 
 
 class ZoneMaterialCreate(BaseModel):
-    zone_name: str
-    surface_type: str
+    zone_name: str = Field(..., min_length=1, max_length=100)
+    # Closed set: free strings would silently bypass the materials analysis'
+    # surface handling; area must be positive — negative areas would let an
+    # API client subtract lifecycle cost/weight and inflate the score.
+    surface_type: Literal[
+        "floor", "wall", "ceiling", "countertop", "upholstery", "deck"
+    ]
     material_id: UUID
-    area_sqm: float
-    notes: str | None = None
+    area_sqm: float = Field(..., gt=0, le=10000)
+    notes: str | None = Field(None, max_length=1000)
 
 
 class ZoneMaterialResponse(BaseModel):

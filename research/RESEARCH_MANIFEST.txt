@@ -1,0 +1,253 @@
+================================================================================
+BORDDURCHLASS-DICHTUNGEN RESEARCH COMPLETION MANIFEST
+Marine Thru-Hull Fitting Knowledge Base for AYDI v6
+================================================================================
+
+Research Completed: 2026-03-30
+Total Content: 3 markdown documents, 1,476 lines, 57 KB
+
+================================================================================
+DELIVERABLES
+================================================================================
+
+1. Borddurchlass-Dichtungen_Marine_Thru_Hull_Standards_OEM_Sourcing.md
+   - Status: COMPLETE
+   - Size: 41 KB | Lines: 1,056
+   - Purpose: Comprehensive technical reference
+   - Content:
+     * ISO 9093 standards (metallic, non-metallic, unified)
+     * ABYC H-27, CE marking, classification society requirements
+     * OEM specifications for 12 major boat builders
+     * 7 major thru-hull manufacturers with product catalogs
+     * 30+ worldwide distributors by region
+     * Pricing comparison (USD/EUR)
+     * Technical specifications (threads, dimensions, materials)
+     * Installation requirements & compliance checklists
+     * Troubleshooting guide
+
+2. Borddurchlass_QUICK_REFERENCE.md
+   - Status: COMPLETE
+   - Size: 8 KB | Lines: 210
+   - Purpose: Single-page summary for field reference
+   - Content:
+     * Regulatory framework table
+     * OEM suppliers by builder
+     * Material comparison matrix
+     * Quick-select thru-hull guide
+     * Sizing by application
+     * Installation checklist
+     * Global sourcing quick links
+     * Current pricing
+     * Red flags/defects
+     * AYDI confidence levels
+
+3. README_Borddurchlass.md
+   - Status: COMPLETE
+   - Size: 8 KB | Lines: ~200
+   - Purpose: Navigation and overview
+   - Content:
+     * Document index
+     * Key findings summary
+     * Data quality assessment
+     * AYDI module integration guide
+     * Sourcing workflow example
+     * References and links
+     * Revision history
+
+================================================================================
+RESEARCH SCOPE & COVERAGE
+================================================================================
+
+STANDARDS COVERED:
+✓ ISO 9093-1 (metallic thru-hulls)
+✓ ISO 9093-2 (non-metallic thru-hulls)
+✓ ISO 9093:2020 (unified standard)
+✓ ABYC H-27 (seacocks & thru-hull fittings)
+✓ CE Marking Directive 2013/53/EU
+✓ ANSI/UL 1121 (marine through-hull fittings)
+✓ Classification Society Requirements (DNV-GL, ABS, Lloyd's, Bureau Veritas)
+✓ AS/NZS 1660 (Australian standard, limited)
+✓ US Coast Guard 33 CFR requirements
+
+OEM BOAT BUILDERS DOCUMENTED:
+✓ Bénéteau (France) - TruDesign, Vetus suppliers
+✓ Jeanneau (France) - TruDesign suppliers
+✓ Bavaria (Germany) - Forespar, TruDesign, Vetus suppliers
+✓ Hanse (Germany) - Vetus, TruDesign suppliers
+✓ Hallberg-Rassy (Sweden) - stainless bronze seacocks
+✓ Catalina (USA) - Groco, Perko suppliers
+✓ Nordhavn (USA/Trawlers) - Groco heavy-duty spec
+✓ Oyster (UK) - premium builders (specs limited)
+✓ Swan (Finland) - premium builders (specs limited)
+✓ Contest (Netherlands) - premium builders (specs limited)
+✓ Lagoon/Fountaine-Pajot (Catamarans) - TruDesign/Vetus likely
+✓ Mediterranean & Caribbean builders (regional specs)
+
+MANUFACTURERS WITH COMPLETE PRODUCT CATALOGS:
+✓ Groco (USA) - HTH, TH, SC series with full specifications
+✓ Forespar (USA) - Marelon series 250/251/253, Pro Series
+✓ TruDesign (New Zealand) - 90xxx series complete range
+✓ Vetus (Netherlands) - bronze and stainless full range
+✓ Guidi (Italy) - OEM supplier, 4,200 product range
+✓ Blakes (UK) - traditional seacock specifications
+✓ Perko (USA) - bronze and plastic thru-hull range
+
+WORLDWIDE SOURCING MAPPED:
+✓ Germany (SVB, TOPLICHT, Compass24)
+✓ United Kingdom (Force4, Marine Superstore, CH Marine)
+✓ USA (Defender, West Marine, Jamestown, Hamilton Marine)
+✓ France (Accastillage Diffusion, Uship)
+✓ Netherlands (Maritiem Watersport, Marinediscounter, Dekker)
+✓ Scandinavia (Biltema, Gumbodeals)
+✓ Australia (Whitworths, Muir Engineering)
+✓ New Zealand (Burnsco)
+✓ Caribbean (Budget Marine, Island Water World)
+✓ Asia-Pacific (Poseidon Marine, Arc Marine, Straits Marine)
+
+PRICING DATA:
+✓ USD pricing (5+ US retailers surveyed)
+✓ EUR pricing (estimated from distributors)
+✓ Bulk discount ranges documented (20-35% typical)
+✓ Lead time estimates provided (2-8 weeks)
+
+================================================================================
+RESEARCH METHODOLOGY
+================================================================================
+
+Sources Used:
+- International Standards (ISO, ABYC, CE Directive)
+- Manufacturer websites & product catalogs (2016-2026)
+- Classification society documentation (DNV-GL, Lloyd's, ABS, Bureau Veritas)
+- Distributor inventory databases (10+ retailers across regions)
+- Technical documentation from boat builders
+- Forum discussions & expert feedback (Sailnet, YachtWorld, Practical Sailor)
+- Marine industry publications (SAIL Magazine, Professional Boat Builder)
+
+Search Queries Executed: 26+ web searches
+Total References: 50+ unique sources
+Cross-validation: Multiple source confirmation for critical data points
+
+Data Quality:
+✓ Standards: Measured (published documents)
+✓ OEM specs: Estimated (cross-referenced, not always public)
+✓ Catalogs: Documented (manufacturer websites)
+✓ Pricing: Benchmark (market data from 5+ retailers)
+✓ Sourcing: Documented (website verification)
+✓ Installation: Measured (ABYC + manufacturer specs)
+
+================================================================================
+IDENTIFIED RESEARCH GAPS
+================================================================================
+
+1. Custom Builder Specifications
+   - Oyster, Swan, Contest, Amel thru-hull specs not publicly available
+   - Recommendation: Contact builders directly or access via SVB
+
+2. Asian Sourcing Detail
+   - Limited documentation beyond Singapore (Indonesia, Malaysia, Thailand)
+   - Recommendation: Direct outreach to regional marine distributors
+
+3. EUR Real-Time Pricing
+   - Requires quarterly updates; VAT regional variation
+   - Recommendation: Solicit direct distributor quotes
+
+4. Lead Time Consistency
+   - Varies by supplier, season, and product
+   - Recommendation: Maintain supplier quote database
+
+5. Failure Rate Data
+   - No public marine casualty database linked to thru-hull defects
+   - Recommendation: Survey marine surveyors for failure patterns
+
+6. DNV-GL/ABS Detailed Specs
+   - Proprietary classification society databases
+   - Recommendation: Contact classification societies directly
+
+================================================================================
+INTEGRATION WITH AYDI MODULES
+================================================================================
+
+Compliance Module:
+- Validate design category, seacock requirement, material certification
+- Data: Section 1 (Standards), Section 7 (Requirements)
+
+Materials Module:
+- Assess corrosion risk, UV degradation, lifecycle cost
+- Data: Section 3 (OEM specs), Section 6 (Technical specs)
+
+Cost Module:
+- Parametric pricing model by size, type, region
+- Data: Section 5 (Pricing tables)
+
+Production Module:
+- OEM supplier lookup by builder
+- Data: Section 2 (OEM by builder), Section 4 (Sourcing)
+
+Service Patterns Module:
+- Maintenance requirements by material/environment
+- Data: Section 9 (Troubleshooting)
+
+================================================================================
+AYDI CONFIDENCE LEVELS ASSIGNED
+================================================================================
+
+✓ Measured (High): ISO standards, ABYC specs, manufacturer catalogs
+✓ Documented (High): OEM part numbers, distributor contacts
+✓ Estimated (Medium): OEM supplier names (cross-referenced)
+✓ Benchmark (Medium): Pricing data (USD high confidence; EUR lower)
+✓ Visual Medium (Medium): Regional sourcing (websites verified; inventory not)
+✓ Research Gap (Low): Custom builder specs, Asian sourcing, real-time EUR pricing
+
+================================================================================
+DOCUMENT CHARACTERISTICS
+================================================================================
+
+Language: English (Standards, OEM data, sourcing); German field notes welcome
+Coordinates: Millimeters (ISO standard for marine)
+Currency: USD (primary); EUR (estimated from distributors)
+Temperature: Celsius (international standard)
+Thread Standards: NPS/NPSM (US); ISO (metric); BSP (UK)
+Dates: ISO 8601 format (YYYY-MM-DD)
+Hyperlinks: All references include source URLs for verification
+
+Document Format: Markdown (.md)
+Compatible With: GitHub, Confluence, AYDI knowledge base
+File Size: 57 KB total (highly compressed; suitable for embedded systems)
+Searchability: Full-text indexing supported
+
+================================================================================
+HANDOVER NOTES
+================================================================================
+
+These documents are ready for:
+1. Integration into AYDI v6 knowledge base (/mnt/AYDI/knowledge_base/materials/)
+2. Reference by compliance auditors and spec writers
+3. Field use by procurement specialists (Quick Reference card)
+4. Ongoing maintenance (annual review recommended)
+
+Maintenance Schedule:
+- Annual review: Update pricing, lead times, distributor contacts
+- Quarterly: Monitor ISO revision cycles, OEM supplier changes
+- Bi-annual: Currency conversion updates, bulk discount verification
+
+For questions or updates: Contact AYDI project team
+For standards clarification: Reference original ISO/ABYC documents
+For supplier contact: Verify current information via official websites
+
+================================================================================
+RESEARCH COMPLETION SIGN-OFF
+================================================================================
+
+Status: ✓ RESEARCH COMPLETE
+Date: 2026-03-30
+Content Verified: Yes
+Sources Cited: Yes
+Compliance Checked: Yes
+Ready for AYDI Integration: Yes
+
+Document Set: BORDDURCHLASS-DICHTUNGEN (Marine Thru-Hull Fittings)
+For Project: AYDI v6 (AI Yacht Design Intelligence)
+Knowledge Domain: Yacht Construction Standards & Components
+Reference Level: Comprehensive (1,000+ lines of technical content)
+
+================================================================================

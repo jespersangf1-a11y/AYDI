@@ -11,6 +11,7 @@ import {
   Menu,
   X,
   BookOpen,
+  Building2,
 } from 'lucide-react'
 
 interface AppShellProps {
@@ -44,6 +45,7 @@ export default function AppShell({ currentView, onNavigate, children, breadcrumb
     { id: 'knowledge', label: 'Wissen', icon: BookOpen },
     { id: 'service-reports', label: 'Serviceberichte', icon: Wrench },
     { id: 'image-analysis', label: 'Bildanalyse', icon: Camera },
+    { id: 'organizations', label: 'Organisationen', icon: Building2 },
   ]
 
   return (

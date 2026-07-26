@@ -61,7 +61,8 @@ class CompetitorResponse(BaseModel):
 
 
 class BrandReferenceCreate(BaseModel):
-    shipyard_id: str | None = None
+    shipyard_id: str | None = None  # DEPRECATED freetext — use org_id
+    org_id: UUID | None = None  # pillar 4, stage 2: org-scoped brand DNA
     model_name: str
     model_year: int | None = None
     boat_class: str
@@ -74,6 +75,7 @@ class BrandReferenceCreate(BaseModel):
 class BrandReferenceResponse(BaseModel):
     id: UUID
     shipyard_id: str | None
+    org_id: UUID | None
     model_name: str
     model_year: int | None
     boat_class: str

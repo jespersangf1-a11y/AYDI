@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.permissions import get_current_user
+from app.core.permissions import get_accessible_project, get_current_user
 from app.db.database import get_db
 from app.models.models import Project, User
 from app.schemas.schemas import CadImportResponse
@@ -25,15 +25,12 @@ STEP_EXTENSIONS = {".step", ".stp"}
 IGES_EXTENSIONS = {".iges", ".igs"}
 
 
-async def _get_project(project_id: UUID, user: User, db: AsyncSession) -> Project:
-    """Load and validate project existence and ownership."""
-    result = await db.execute(
-        select(Project).where(Project.id == project_id, Project.user_id == user.id)
-    )
-    project = result.scalar_one_or_none()
-    if not project:
-        raise HTTPException(status_code=404, detail="Projekt nicht gefunden")
-    return project
+async def _get_project(
+    project_id: UUID, user: User, db: AsyncSession, min_role: str = "editor"
+) -> Project:
+    """Access-checked fetch: owner or shared member with >= min_role
+    (pillar 4, stage 1 — see core.permissions.get_accessible_project)."""
+    return await get_accessible_project(project_id, user, db, min_role)
 
 
 def _validate_file_extension(filename: str | None, allowed: set[str], format_name: str) -> None:

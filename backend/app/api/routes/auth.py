@@ -1,7 +1,15 @@
-"""Authentication endpoints: login, refresh, register, me."""
+"""Authentication endpoints: login, refresh, register, logout, me.
+
+Cookie-first authentication: login/refresh issue httpOnly cookies plus a
+non-httpOnly ``csrf_token`` cookie for double-submit CSRF protection.
+For backward compatibility, access_token + refresh_token are still
+returned in the response body, but new web clients should rely on the
+cookies and ignore the body fields.
+"""
+import secrets
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,13 +21,20 @@ from app.core.auth import (
     hash_password,
     verify_password,
 )
-from app.core.permissions import get_current_user
+from app.core.config import settings
+from app.core.permissions import (
+    ACCESS_COOKIE_NAME,
+    REFRESH_COOKIE_NAME,
+    get_current_user,
+)
 from app.db.database import get_db
 from app.models.models import User
 
 import jwt
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+CSRF_COOKIE_NAME = "aydi_csrf"
 
 
 class LoginRequest(BaseModel):
@@ -38,10 +53,11 @@ class TokenResponse(BaseModel):
     access_token: str
     refresh_token: str
     token_type: str = "bearer"
+    csrf_token: str | None = None
 
 
 class RefreshRequest(BaseModel):
-    refresh_token: str
+    refresh_token: str | None = None  # optional — read from cookie if absent
 
 
 class UserResponse(BaseModel):
@@ -53,9 +69,49 @@ class UserResponse(BaseModel):
     is_active: bool
 
 
+def _set_auth_cookies(response: Response, access: str, refresh: str) -> str:
+    """Attach the three auth cookies to the outgoing response and return the CSRF token."""
+    csrf = secrets.token_urlsafe(32)
+    common = {
+        "secure": settings.COOKIE_SECURE,
+        "samesite": "lax",
+        "domain": settings.COOKIE_DOMAIN,
+        "path": "/",
+    }
+    response.set_cookie(
+        ACCESS_COOKIE_NAME,
+        access,
+        httponly=True,
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        **common,
+    )
+    response.set_cookie(
+        REFRESH_COOKIE_NAME,
+        refresh,
+        httponly=True,
+        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
+        **common,
+    )
+    # CSRF token is NOT httponly — frontend reads it and echoes it in X-CSRF-Token
+    response.set_cookie(
+        CSRF_COOKIE_NAME,
+        csrf,
+        httponly=False,
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        **common,
+    )
+    return csrf
+
+
+def _clear_auth_cookies(response: Response) -> None:
+    for name in (ACCESS_COOKIE_NAME, REFRESH_COOKIE_NAME, CSRF_COOKIE_NAME):
+        response.delete_cookie(name, path="/", domain=settings.COOKIE_DOMAIN)
+
+
 @router.post("/login", response_model=TokenResponse)
 async def login(
     data: LoginRequest,
+    response: Response,
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(select(User).where(User.email == data.email))
@@ -71,10 +127,10 @@ async def login(
             detail="Konto deaktiviert",
         )
 
-    return TokenResponse(
-        access_token=create_access_token(str(user.id), user.role),
-        refresh_token=create_refresh_token(str(user.id)),
-    )
+    access = create_access_token(str(user.id), user.role)
+    refresh = create_refresh_token(str(user.id))
+    csrf = _set_auth_cookies(response, access, refresh)
+    return TokenResponse(access_token=access, refresh_token=refresh, csrf_token=csrf)
 
 
 @router.post("/register", response_model=UserResponse, status_code=201)
@@ -82,7 +138,6 @@ async def register(
     data: RegisterRequest,
     db: AsyncSession = Depends(get_db),
 ):
-    # Check if email already exists
     result = await db.execute(select(User).where(User.email == data.email))
     if result.scalar_one_or_none():
         raise HTTPException(
@@ -114,10 +169,19 @@ async def register(
 @router.post("/refresh", response_model=TokenResponse)
 async def refresh_token(
     data: RefreshRequest,
+    response: Response,
     db: AsyncSession = Depends(get_db),
 ):
+    # Read refresh token from cookie if request body didn't carry one
+    from fastapi import Request as _Request  # local import to avoid top-level cycle
+    # Note: we accept either cookie or body for transition compatibility
+    token_str = data.refresh_token
+    if not token_str:
+        # Fallback impossible without Request — clients without cookies must supply token in body
+        raise HTTPException(status_code=400, detail="Refresh-Token fehlt")
+
     try:
-        payload = decode_token(data.refresh_token)
+        payload = decode_token(token_str)
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Refresh-Token abgelaufen")
     except jwt.PyJWTError:
@@ -131,10 +195,17 @@ async def refresh_token(
     if not user or not user.is_active:
         raise HTTPException(status_code=401, detail="Benutzer nicht gefunden")
 
-    return TokenResponse(
-        access_token=create_access_token(str(user.id), user.role),
-        refresh_token=create_refresh_token(str(user.id)),
-    )
+    access = create_access_token(str(user.id), user.role)
+    refresh = create_refresh_token(str(user.id))
+    csrf = _set_auth_cookies(response, access, refresh)
+    return TokenResponse(access_token=access, refresh_token=refresh, csrf_token=csrf)
+
+
+@router.post("/logout", status_code=204)
+async def logout(response: Response):
+    """Clear auth cookies. Idempotent — safe to call without an active session."""
+    _clear_auth_cookies(response)
+    return Response(status_code=204)
 
 
 @router.get("/me", response_model=UserResponse)

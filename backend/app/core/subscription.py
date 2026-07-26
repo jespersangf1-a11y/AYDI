@@ -30,6 +30,14 @@ class SubscriptionTier(str, Enum):
     ENTERPRISE = "enterprise"
 
 
+# Ordering for computing the *effective* tier (max over personal + org tiers).
+TIER_ORDER: dict[str, int] = {"free": 0, "pro": 1, "enterprise": 2}
+
+
+def _tier_rank(tier: str) -> int:
+    return TIER_ORDER.get((tier or "free").lower(), 0)
+
+
 # ---------------------------------------------------------------------------
 # Feature definitions
 # ---------------------------------------------------------------------------

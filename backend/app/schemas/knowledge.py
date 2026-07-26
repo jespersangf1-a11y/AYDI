@@ -188,6 +188,220 @@ class SearchResponse(BaseModel):
 
 
 # ============================================================================
+# FAQ KNOWLEDGE
+# ============================================================================
+
+class FAQEntry(BaseModel):
+    """A single FAQ entry from markdown knowledge."""
+    question_de: str = Field(..., description="Question in German")
+    answer_de: str = Field(..., description="Answer in German")
+    confidence: str = Field("documented", description="Confidence level")
+    knowledge_source: str | None = Field(None, description="Source knowledge file slug")
+
+
+class FAQResponse(BaseModel):
+    """Response for FAQ knowledge queries."""
+    total_count: int = Field(0, description="Total FAQ entries matching")
+    category: str | None = Field(None, description="Category filter applied")
+    search_query: str | None = Field(None, description="Search filter applied")
+    entries: list[FAQEntry] = Field(default_factory=list)
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# ============================================================================
+# GLOSSARY KNOWLEDGE
+# ============================================================================
+
+class GlossaryEntry(BaseModel):
+    """A single glossary entry from markdown knowledge."""
+    term_de: str | None = Field(None, description="German term")
+    term_en: str | None = Field(None, description="English term")
+    definition: str | None = Field(None, description="Definition")
+    knowledge_source: str | None = Field(None, description="Source knowledge file slug")
+
+
+class GlossaryResponse(BaseModel):
+    """Response for glossary knowledge queries."""
+    total_count: int = Field(0)
+    category: str | None = Field(None)
+    search_query: str | None = Field(None)
+    entries: list[GlossaryEntry] = Field(default_factory=list)
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# ============================================================================
+# FEHLERBILDER (FAILURE PATTERNS)
+# ============================================================================
+
+class FehlerbildEntry(BaseModel):
+    """A single failure pattern from markdown knowledge."""
+    title_de: str = Field(..., description="Fehlerbild title in German")
+    symptom_de: str | None = Field(None, description="Symptoms")
+    ursache_de: str | None = Field(None, description="Root cause")
+    massnahme_de: str | None = Field(None, description="Corrective action")
+    haeufigkeit_de: str | None = Field(None, description="Frequency")
+    confidence: str | None = Field(None, description="Confidence level")
+    knowledge_source: str | None = Field(None, description="Source knowledge file slug")
+
+
+class FehlerbilderResponse(BaseModel):
+    """Response for failure pattern queries."""
+    total_count: int = Field(0)
+    category: str | None = Field(None)
+    search_query: str | None = Field(None)
+    entries: list[FehlerbildEntry] = Field(default_factory=list)
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# ============================================================================
+# FALLSTUDIEN (CASE STUDIES)
+# ============================================================================
+
+class FallstudieEntry(BaseModel):
+    """A single case study from markdown knowledge."""
+    title_de: str = Field(..., description="Case study title")
+    situation_de: str | None = Field(None, description="Initial situation")
+    diagnose_de: str | None = Field(None, description="Diagnosis")
+    ursache_de: str | None = Field(None, description="Root cause")
+    ergebnis_de: str | None = Field(None, description="Result")
+    kosten_de: str | None = Field(None, description="Cost info")
+    lehre_de: str | None = Field(None, description="Lesson learned")
+    confidence: str | None = Field(None, description="Confidence level")
+    knowledge_source: str | None = Field(None, description="Source knowledge file slug")
+
+
+class FallstudienResponse(BaseModel):
+    """Response for case study queries."""
+    total_count: int = Field(0)
+    category: str | None = Field(None)
+    search_query: str | None = Field(None)
+    entries: list[FallstudieEntry] = Field(default_factory=list)
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# ============================================================================
+# MANUFACTURERS (from markdown knowledge)
+# ============================================================================
+
+class MarkdownManufacturerEntry(BaseModel):
+    """A manufacturer entry parsed from markdown knowledge files."""
+    name: str = Field(..., description="Manufacturer name")
+    origin: str | None = Field(None, description="Country/origin")
+    specialization: str | None = Field(None, description="Main specialization")
+    website: str | None = Field(None, description="Website URL")
+    founded: str | None = Field(None, description="Year founded")
+    certifications: str | None = Field(None, description="Certifications held")
+    knowledge_source: str | None = Field(None, description="Source knowledge file slug")
+
+
+class MarkdownManufacturersResponse(BaseModel):
+    """Response for markdown manufacturer queries."""
+    total_count: int = Field(0)
+    category: str | None = Field(None)
+    search_query: str | None = Field(None)
+    entries: list[MarkdownManufacturerEntry] = Field(default_factory=list)
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# ============================================================================
+# KNOWLEDGE SUMMARY
+# ============================================================================
+
+class KnowledgeSummaryResponse(BaseModel):
+    """Summary of all loaded markdown knowledge."""
+    total_files: int = Field(0)
+    total_lines: int = Field(0)
+    total_tables: int = Field(0)
+    total_manufacturers: int = Field(0)
+    total_erfahrungsberichte: int = Field(0)
+    total_faq: int = Field(0)
+    total_glossary: int = Field(0)
+    total_fehlerbilder: int = Field(0)
+    total_fallstudien: int = Field(0)
+    total_expert_references: int = Field(0)
+    legacy_databases: dict = Field(default_factory=dict, description="Legacy deep_*.py database counts")
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# ============================================================================
+# CORPUS BROWSING — the 252 research documents as a user-facing lexicon
+# ============================================================================
+
+class CorpusDocumentSummary(BaseModel):
+    """Summary of one research document for the category browse view."""
+    key: str = Field(..., description="Lookup key for /corpus/documents/{key} (slug or composite key)")
+    title: str = Field(..., description="Document title (from first H1)")
+    category: str = Field(..., description="Corpus category number, e.g. '01'")
+    subcategory: str = Field(..., description="Document number within the category, e.g. '05'")
+    line_count: int = Field(0)
+    table_count: int = Field(0)
+    faq_count: int = Field(0)
+    fehlerbilder_count: int = Field(0)
+    fallstudien_count: int = Field(0)
+
+
+class CorpusCategory(BaseModel):
+    """One of the corpus categories (01-31) with its documents."""
+    id: str = Field(..., description="Category number, e.g. '01'")
+    name: str = Field(..., description="German category name, e.g. 'Dichtungen und Profile'")
+    document_count: int = Field(0)
+    documents: list[CorpusDocumentSummary] = Field(default_factory=list)
+
+
+class CorpusCategoriesResponse(BaseModel):
+    """Browse structure of the full research corpus."""
+    total_categories: int = Field(0)
+    total_documents: int = Field(0)
+    categories: list[CorpusCategory] = Field(default_factory=list)
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CorpusTable(BaseModel):
+    """A parsed markdown table with explicit column order.
+
+    Explicit `columns` (instead of row dicts) because JS object-key iteration
+    reorders integer-like keys (e.g. engine-model headers like "2003"),
+    which would scramble comparison tables in the article view.
+    """
+    columns: list[str] = Field(default_factory=list)
+    rows: list[list[str]] = Field(default_factory=list)
+
+
+class CorpusSection(BaseModel):
+    """Recursive section of a parsed research document."""
+    title: str = Field("")
+    level: int = Field(0)
+    text: str = Field("", description="Section body text (markdown source, tables extracted)")
+    tables: list[CorpusTable] = Field(default_factory=list)
+    subsections: list["CorpusSection"] = Field(default_factory=list)
+
+
+CorpusSection.model_rebuild()
+
+
+class CorpusDocumentResponse(BaseModel):
+    """A full research document, parsed into a section hierarchy."""
+    key: str = Field(...)
+    file: str = Field(..., description="Source filename, e.g. '01_02_fenster_dichtungen.md'")
+    category: str = Field(...)
+    category_name: str = Field(...)
+    subcategory: str = Field(...)
+    slug: str = Field(...)
+    title: str = Field(...)
+    line_count: int = Field(0)
+    sections: CorpusSection = Field(..., description="Root section containing the full hierarchy")
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# ============================================================================
 # ERROR RESPONSES
 # ============================================================================
 

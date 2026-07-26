@@ -3,12 +3,13 @@ import logging
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
-from sqlalchemy import select
+from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.permissions import get_current_user
+from app.core.permissions import effective_tier, get_accessible_project, get_current_user
 from app.db.database import get_db
-from app.models.models import AnalysisResult, Layout, Project, User
+from app.models.models import AnalysisResult, Layout, LayoutVersion, Project, User
 from app.schemas.schemas import (
     AnalysisRequest,
     AnalysisResponse,
@@ -16,6 +17,7 @@ from app.schemas.schemas import (
     FullAnalysisRequest,
     LayoutCreate,
     LayoutResponse,
+    LayoutUpdate,
 )
 from app.services.analysis.ergonomics import run_ergonomics_analysis
 from app.services.analysis.volume_storage import run_volume_storage_analysis
@@ -36,6 +38,8 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/projects/{project_id}", tags=["layouts"])
 
+from app.services.analysis.community import run_community_analysis
+
 ANALYSIS_MODULES = {
     "ergonomics": run_ergonomics_analysis,
     "volume_storage": run_volume_storage_analysis,
@@ -48,17 +52,71 @@ ANALYSIS_MODULES = {
     "service_patterns": run_service_patterns_analysis,
     "brand_dna": run_brand_dna_analysis,
     "market": run_market_analysis,
+    "community": run_community_analysis,
 }
 
 
-async def _get_project(project_id: UUID, user: User, db: AsyncSession) -> Project:
-    result = await db.execute(
-        select(Project).where(Project.id == project_id, Project.user_id == user.id)
-    )
-    project = result.scalar_one_or_none()
-    if not project:
-        raise HTTPException(status_code=404, detail="Projekt nicht gefunden")
-    return project
+async def _load_community_patterns(
+    db: AsyncSession,
+    manufacturer: str | None = None,
+    model: str | None = None,
+) -> list[dict]:
+    """Load community patterns relevance-matched to a boat identity.
+
+    IMPORTANT: run_community_analysis does NO matching of its own — feeding
+    it the whole DB would score/warn this boat with problems of FOREIGN
+    manufacturers as "documented". Without an identity we therefore return []
+    and the module honestly reports "Keine Community-Daten verfügbar."
+    (`Project` currently has no manufacturer/model fields — once they exist,
+    passing them here activates Level-2 community analysis.)
+    """
+    if not manufacturer and not model:
+        return []
+    try:
+        from app.models.models import CommunityPattern
+        from app.services.community.engine import find_relevant_patterns
+
+        result = await db.execute(select(CommunityPattern))
+        pattern_dicts = [
+            {
+                "id": p.id,
+                "manufacturer": p.manufacturer,
+                "boat_model": p.boat_model,
+                "issue_category": p.issue_category,
+                "category": p.issue_category,
+                "zone_type": p.zone_type,
+                "description": p.description,
+                "report_count": p.report_count,
+                "severity_mode": p.severity_mode,
+                "severity": p.severity_mode,
+                "typical_onset_years": p.typical_onset_years,
+                "materials_involved": p.materials_involved,
+                "construction_methods_involved": p.construction_methods_involved,
+                "confidence": p.confidence,
+                "is_positive": p.is_positive,
+            }
+            for p in result.scalars().all()
+        ]
+        matched = find_relevant_patterns(
+            pattern_dicts,
+            manufacturer=manufacturer,
+            model=model,
+            include_positive=True,
+        )
+        # Identity-level matches only (>= 0.8) — the zone_category fallback
+        # (0.3) would attribute foreign manufacturers' problems to this boat.
+        return [p for p in matched if p.get("relevance", 0.0) >= 0.8]
+    except Exception:
+        logger.exception("Loading community patterns failed; continuing without")
+        return []
+
+
+async def _get_project(
+    project_id: UUID, user: User, db: AsyncSession, min_role: str = "editor"
+) -> Project:
+    """Access-checked fetch: owner or shared member with >= min_role
+    (pillar 4, stage 1 — see core.permissions.get_accessible_project)."""
+    return await get_accessible_project(project_id, user, db, min_role)
 
 
 @router.get("/layouts", response_model=list[LayoutResponse])
@@ -67,7 +125,7 @@ async def list_layouts(
     _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    await _get_project(project_id, _user, db)
+    await _get_project(project_id, _user, db, min_role="viewer")
     result = await db.execute(
         select(Layout).where(Layout.project_id == project_id).order_by(Layout.created_at.desc())
     )
@@ -97,6 +155,119 @@ async def create_layout(
     return layout
 
 
+@router.patch("/layouts/{layout_id}", response_model=LayoutResponse)
+async def update_layout(
+    project_id: UUID,
+    layout_id: UUID,
+    data: LayoutUpdate,
+    _user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Update a layout (pillar 3: owner refit loop).
+
+    Layouts were previously immutable — no update endpoint existed, so the
+    edit → re-analyze → compare loop was impossible. Every applied update
+    auto-snapshots the PREVIOUS state as a LayoutVersion first, so edits are
+    never destructive and version diff / restore always has a base.
+    """
+    await _get_project(project_id, _user, db)
+    # Row lock serializes concurrent PATCHes (and version numbering) on the
+    # same layout — without it, two parallel edits could snapshot the same
+    # base state and silently lose one applied change. SQLAlchemy's SQLite
+    # dialect ignores FOR UPDATE (single-writer anyway); PostgreSQL locks.
+    result = await db.execute(
+        select(Layout)
+        .where(Layout.id == layout_id, Layout.project_id == project_id)
+        .with_for_update()
+    )
+    layout = result.scalar_one_or_none()
+    if not layout:
+        raise HTTPException(status_code=404, detail="Layout nicht gefunden")
+
+    changed_fields = data.model_dump(
+        exclude_unset=True, exclude={"change_summary", "zone_renames"}
+    )
+    # Explicit nulls would pass the "any changes?" gate but be applied by
+    # nothing — creating phantom versions while lying to the client that the
+    # field was cleared. All updatable columns are non-nullable: reject.
+    null_fields = sorted(k for k, v in changed_fields.items() if v is None)
+    if null_fields:
+        raise HTTPException(
+            status_code=422,
+            detail=f"null ist für diese Felder nicht erlaubt: {', '.join(null_fields)}",
+        )
+    if not changed_fields:
+        raise HTTPException(
+            status_code=422,
+            detail="Keine Änderungen angegeben (name, version, zones, passages oder deck_height_mm).",
+        )
+
+    # Auto-snapshot the CURRENT state (geometry AND meta) before applying
+    max_result = await db.execute(
+        select(func.max(LayoutVersion.version_number)).where(
+            LayoutVersion.layout_id == layout_id
+        )
+    )
+    next_version_number = (max_result.scalar_one_or_none() or 0) + 1
+    snapshot = LayoutVersion(
+        layout_id=layout_id,
+        version_number=next_version_number,
+        zones_snapshot=layout.zones or [],
+        passages_snapshot=layout.passages or [],
+        layout_meta_snapshot={
+            "name": layout.name,
+            "version": layout.version,
+            "deck_height_mm": layout.deck_height_mm,
+        },
+        change_summary=(
+            f"Auto-Snapshot vor Änderung: {data.change_summary}"
+            if data.change_summary
+            else "Auto-Snapshot vor Layout-Änderung"
+        ),
+        changed_by=_user.email,
+    )
+    db.add(snapshot)
+
+    # Apply exactly the fields that passed the gate (model_dump already
+    # serialized nested zone/passage models to plain dicts).
+    for field_name, value in changed_fields.items():
+        setattr(layout, field_name, value)
+
+    # Cascade zone renames to name-referencing rows (materials, structural
+    # items, cost items) — otherwise a rename silently orphans them and the
+    # next analysis drops their weights/costs without a trace.
+    if data.zone_renames:
+        from sqlalchemy import update as sa_update
+        from app.models.models import CostItem, StructuralItem, ZoneMaterial
+
+        for old_name, new_name in data.zone_renames.items():
+            if not new_name or old_name == new_name:
+                continue
+            for model in (ZoneMaterial, StructuralItem, CostItem):
+                await db.execute(
+                    sa_update(model)
+                    .where(
+                        model.layout_id == layout_id,
+                        model.zone_name == old_name,
+                    )
+                    .values(zone_name=new_name)
+                )
+
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "Gleichzeitige Änderung erkannt (Versionsnummern-Konflikt) — "
+                "bitte erneut versuchen."
+            ),
+        )
+    await db.refresh(layout)
+    return layout
+
+
 @router.get("/layouts/{layout_id}", response_model=LayoutResponse)
 async def get_layout(
     project_id: UUID,
@@ -104,7 +275,7 @@ async def get_layout(
     _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    await _get_project(project_id, _user, db)
+    await _get_project(project_id, _user, db, min_role="viewer")
     result = await db.execute(
         select(Layout).where(Layout.id == layout_id, Layout.project_id == project_id)
     )
@@ -232,12 +403,19 @@ async def _load_service_reports(project_id: UUID, db: AsyncSession) -> list[dict
     ]
 
 
-async def _load_brand_references(boat_class: str, db: AsyncSession) -> list[dict]:
-    """Load brand reference models for the same boat class."""
+async def _load_brand_references(boat_class: str, user, db: AsyncSession) -> list[dict]:
+    """Load brand reference models for the same boat class — filtered to rows
+    the caller may SEE (pillar 4, stage 2). The brand_dna module echoes
+    reference-derived content (topology gaps, proportion signatures) back into
+    its warnings, so loading foreign org rows here would leak private brand DNA
+    that org-scoping exists to protect. Same predicate as the CRUD endpoints."""
+    from app.core.brand_visibility import can_see_brand_ref, get_my_org_ids
+
     result = await db.execute(
         select(BrandReferenceModel).where(BrandReferenceModel.boat_class == boat_class)
     )
     refs = result.scalars().all()
+    my_org_ids = await get_my_org_ids(user, db)
     return [
         {
             "features": ref.features or {},
@@ -245,6 +423,7 @@ async def _load_brand_references(boat_class: str, db: AsyncSession) -> list[dict
             "style_tags": (ref.features or {}).get("interior_style_tags", []),
         }
         for ref in refs
+        if can_see_brand_ref(ref, user, my_org_ids)
     ]
 
 
@@ -310,6 +489,22 @@ async def run_analysis(
             detail=f"Unbekanntes Analysemodul: {data.module}. Verfügbar: {list(ANALYSIS_MODULES.keys())}",
         )
 
+    # Server-side tier gating at the route boundary (CLAUDE.md: "Use
+    # require_feature / require_module at route boundaries"). Without this,
+    # FREE users could run every paid Level-2 module individually even though
+    # /full-analysis gates them — a paywall bypass.
+    from app.core.subscription import get_allowed_modules
+
+    _eff_tier = effective_tier(_user)
+    if data.module not in get_allowed_modules(_eff_tier):
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                f"Modul '{data.module}' ist im Tarif '{_eff_tier}' nicht "
+                "enthalten — Upgrade auf PRO erforderlich."
+            ),
+        )
+
     result = await db.execute(
         select(Layout).where(Layout.id == data.layout_id, Layout.project_id == project_id)
     )
@@ -330,10 +525,14 @@ async def run_analysis(
     elif data.module == "service_patterns":
         extra_kwargs["service_reports"] = await _load_service_reports(project_id, db)
     elif data.module == "brand_dna":
-        extra_kwargs["brand_references"] = await _load_brand_references(project.boat_class, db)
+        extra_kwargs["brand_references"] = await _load_brand_references(project.boat_class, _user, db)
     elif data.module == "market":
         extra_kwargs["competitors"] = await _load_competitors(project.boat_class, project.length_m, db)
         extra_kwargs["boat_length_m"] = project.length_m
+    elif data.module == "structural":
+        extra_kwargs["structural_items"] = await _load_structural_items(data.layout_id, db)
+    elif data.module == "community":
+        extra_kwargs["community_patterns"] = await _load_community_patterns(db)
 
     analysis_fn = ANALYSIS_MODULES[data.module]
     analysis_result = analysis_fn(
@@ -341,6 +540,19 @@ async def run_analysis(
         config_overrides=data.config_overrides,
         **extra_kwargs,
     )
+
+    # Module skip contract: {"available": False, "reason": ...} means the
+    # module cannot produce a reliable result. Surface that honestly instead
+    # of crashing on the missing overall_score (latent KeyError) or storing
+    # a fabricated 0-score row.
+    if analysis_result.get("available") is False:
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                f"Modul '{data.module}' nicht auswertbar: "
+                f"{analysis_result.get('reason', 'Keine ausreichenden Daten.')}"
+            ),
+        )
 
     db_result = AnalysisResult(
         project_id=project_id,
@@ -366,7 +578,7 @@ async def list_analyses(
     _user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    await _get_project(project_id, _user, db)
+    await _get_project(project_id, _user, db, min_role="viewer")
     query = select(AnalysisResult).where(AnalysisResult.project_id == project_id)
     if module:
         query = query.where(AnalysisResult.module == module)
@@ -401,10 +613,11 @@ async def run_full_analysis_endpoint(
     structural_items = await _load_structural_items(data.layout_id, db)
     cost_items = await _load_cost_items(data.layout_id, db)
     service_reports = await _load_service_reports(project_id, db)
-    brand_refs = await _load_brand_references(project.boat_class, db)
+    brand_refs = await _load_brand_references(project.boat_class, _user, db)
     competitors = await _load_competitors(
         project.boat_class, project.length_m, db
     )
+    community_patterns = await _load_community_patterns(db)
 
     context = AnalysisContext(
         zones=layout.zones or [],
@@ -412,8 +625,8 @@ async def run_full_analysis_endpoint(
         boat_class=project.boat_class,
         # Enforce the caller's real subscription tier server-side. Without this
         # the context defaulted to "pro", so free-tier users received every
-        # paid Level-2 module (paywall bypass).
-        tier=_user.tier,
+        # paid Level-2 module (paywall bypass). Effective tier includes org.
+        tier=effective_tier(_user),
         length_m=project.length_m,
         beam_m=project.beam_m,
         deck_height_mm=layout.deck_height_mm or 2100,
@@ -424,6 +637,7 @@ async def run_full_analysis_endpoint(
         service_reports=service_reports,
         brand_references=brand_refs,
         competitors=competitors,
+        community_patterns=community_patterns,
     )
 
     analysis_result = await run_full_analysis(context)

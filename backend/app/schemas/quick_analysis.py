@@ -48,9 +48,11 @@ class PublicSpecs(BaseModel):
 
     # Commercial
     price_eur: Optional[float] = None
-    year: Optional[int] = None
-    brand: Optional[str] = None
-    model_name: Optional[str] = None
+    # Bounded: an unchecked typo ("202") would otherwise drive the buyer
+    # report's age logic into an "1824 Jahre alt" analysis presented as real.
+    year: Optional[int] = Field(None, ge=1900, le=2100)
+    brand: Optional[str] = Field(None, max_length=100)
+    model_name: Optional[str] = Field(None, max_length=100)
 
     deck_height_mm: Optional[float] = None
     storage_volume_l: Optional[float] = None
@@ -87,5 +89,27 @@ class QuickAnalysisResponse(BaseModel):
     upgrade_prompt: dict  # {message, additional_modules}
     specs_used: dict  # the input specs for reference
     created_at: datetime
+    # Pillar 2 (Kaufberatung): filled when the user supplied boat identity
+    # (brand / model_name / year); None otherwise.
+    buyer_insights: Optional[dict] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class BuyerInsightsResponse(BaseModel):
+    """Boat-specific buyer report (pillar 2 — Kaufberatung, Level 1/public).
+
+    Sections keep their own confidence labels: manufacturer/community data is
+    "documented" (curated knowledge / aggregated reports), age expectations
+    are "estimated" (statistical lifespans, not findings on the actual boat).
+    """
+    available: bool
+    reason: Optional[str] = None
+    boat_identity: Optional[dict] = None
+    manufacturer: Optional[dict] = None
+    age_expectations: Optional[dict] = None
+    community: Optional[dict] = None
+    summary_de: Optional[str] = None
+    disclaimer_de: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
