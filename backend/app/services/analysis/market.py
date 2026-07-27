@@ -10,6 +10,27 @@ import math
 
 logger = logging.getLogger(__name__)
 
+# German labels for benchmark metrics — the UX is German, so warning texts must
+# not surface raw English identifiers like "Berth count" (M-5).
+_METRIC_LABELS_DE = {
+    "cockpit_area_sqm": "Cockpitfläche",
+    "salon_area_sqm": "Salonfläche",
+    "cabin_count": "Kabinenanzahl",
+    "head_count": "Anzahl Nasszellen",
+    "berth_count": "Kojenanzahl",
+    "storage_volume_l": "Stauraumvolumen",
+    "deck_height_mm": "Deckshöhe",
+    "flybridge_area_sqm": "Flybridge-Fläche",
+    "displacement_kg": "Verdrängung",
+    "fuel_capacity_l": "Kraftstoffkapazität",
+    "water_capacity_l": "Wasserkapazität",
+}
+
+
+def _metric_label_de(metric: str) -> str:
+    """German label for a benchmark metric key (falls back to a humanised key)."""
+    return _METRIC_LABELS_DE.get(metric, metric.replace("_", " ").capitalize())
+
 BOAT_CLASS_DEFAULTS = {
     "small_sail": {
         "min_competitors": 5,
@@ -414,17 +435,17 @@ def analyze_metric_comparison(
             if deviation_pct < -0.20:
                 status = "below_average"
                 code = f"MARKET_BELOW_AVERAGE_{metric.upper()}"
-                metric_label = metric.replace("_", " ")
+                metric_label = _metric_label_de(metric)
                 warnings.append({
                     "code": code,
                     "severity": "warning",
                     "message": (
-                        f"{metric_label.capitalize()} liegt {abs(deviation_pct):.0%} "
+                        f"{metric_label} liegt {abs(deviation_pct):.0%} "
                         f"unter dem Segmentdurchschnitt "
                         f"({layout_val:.1f} vs. Ø {avg:.1f})."
                     ),
                     "suggestion": (
-                        f"{metric_label.capitalize()} {abs(deviation_pct):.0%} "
+                        f"{metric_label} {abs(deviation_pct):.0%} "
                         f"unter Segmentdurchschnitt — Vergrößerung/Erhöhung prüfen."
                     ),
                     "location": metric,
@@ -434,17 +455,17 @@ def analyze_metric_comparison(
             else:
                 status = "above_average"
                 code = f"MARKET_ABOVE_AVERAGE_{metric.upper()}"
-                metric_label = metric.replace("_", " ")
+                metric_label = _metric_label_de(metric)
                 warnings.append({
                     "code": code,
                     "severity": "info",
                     "message": (
-                        f"{metric_label.capitalize()} liegt {deviation_pct:.0%} "
+                        f"{metric_label} liegt {deviation_pct:.0%} "
                         f"über dem Segmentdurchschnitt "
                         f"({layout_val:.1f} vs. Ø {avg:.1f})."
                     ),
                     "suggestion": (
-                        f"{metric_label.capitalize()} deutlich über Durchschnitt — "
+                        f"{metric_label} deutlich über Durchschnitt — "
                         f"Gewichts- und Kostenauswirkungen prüfen."
                     ),
                     "location": metric,
@@ -509,7 +530,7 @@ def analyze_competitive_position(
             weaknesses.append(metric)
 
     for metric in weaknesses:
-        metric_label = metric.replace("_", " ").capitalize()
+        metric_label = _metric_label_de(metric)
         warnings.append({
             "code": f"COMPETITIVE_WEAKNESS_{metric.upper()}",
             "severity": "warning",
@@ -524,7 +545,7 @@ def analyze_competitive_position(
         })
 
     for metric in strengths:
-        metric_label = metric.replace("_", " ").capitalize()
+        metric_label = _metric_label_de(metric)
         warnings.append({
             "code": f"COMPETITIVE_STRENGTH_{metric.upper()}",
             "severity": "info",
@@ -788,7 +809,7 @@ def analyze_market_gaps(
         avg, comp_min, comp_max = stats
 
         if layout_val > comp_max:
-            metric_label = metric.replace("_", " ").capitalize()
+            metric_label = _metric_label_de(metric)
             gap_desc = (
                 f"{metric_label}: Layout ({layout_val:.1f}) übertrifft "
                 f"alle Wettbewerber (max. {comp_max:.1f})."
@@ -810,7 +831,7 @@ def analyze_market_gaps(
                 "location": metric,
             })
         elif layout_val < comp_min:
-            metric_label = metric.replace("_", " ").capitalize()
+            metric_label = _metric_label_de(metric)
             gap_desc = (
                 f"{metric_label}: Layout ({layout_val:.1f}) liegt unter "
                 f"allen Wettbewerbern (min. {comp_min:.1f})."

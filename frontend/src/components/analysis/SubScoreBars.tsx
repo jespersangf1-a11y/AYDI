@@ -1,14 +1,92 @@
 import { useState, useRef, useEffect } from 'react'
 
+// German labels for every module sub-score key. Keys are the canonical English
+// identifiers emitted by the analysis modules (weights keys); the UI is German,
+// so an untranslated key here shows a raw identifier to the user (M-5). Keep in
+// sync when a module adds a sub-score.
 const SUB_SCORE_LABELS: Record<string, string> = {
+  // ergonomics
   passage_width: 'Durchgangsbreiten',
   path_efficiency: 'Wegeeffizienz',
   crew_guest_separation: 'Crew/Gast-Trennung',
   accessibility: 'Erreichbarkeit',
   helm_ergonomics: 'Steuerstand-Ergonomie',
+  heel_impact: 'Krängungseinfluss',
+  morning_circulation: 'Morgendliche Zirkulation',
+  access_complexity: 'Zugangskomplexität',
+  // volume
   storage_ratio: 'Stauraumanteil',
   storage_distribution: 'Stauraumverteilung',
   storage_accessibility: 'Stauraum-Erreichbarkeit',
+  utilization: 'Raumnutzung',
+  room_proportion: 'Raumproportionen',
+  // emotional
+  sightline: 'Sichtlinien',
+  sightline_rays: 'Sichtlinien-Analyse',
+  ceiling_perception: 'Deckenwahrnehmung',
+  light_distribution: 'Lichtverteilung',
+  inside_outside_flow: 'Innen-Außen-Fluss',
+  visual_calm: 'Visuelle Ruhe',
+  // compliance
+  escape_routes: 'Fluchtwege',
+  fire_safety: 'Brandschutz',
+  stability: 'Stabilität',
+  railing: 'Reling',
+  electrical_access: 'Elektrik-Zugang',
+  ce_category: 'CE-Kategorie',
+  escape_hatch: 'Fluchtluke',
+  cockpit_drain: 'Cockpit-Entwässerung',
+  companionway_sill: 'Niedergangs-Süllhöhe',
+  ventilation: 'Belüftung',
+  // production
+  mold_complexity: 'Formwerkzeug-Komplexität',
+  flat_panel_ratio: 'Flachpaneel-Anteil',
+  form_complexity: 'Formkomplexität',
+  standardization: 'Standardisierung',
+  assembly_sequence: 'Montagereihenfolge',
+  service_access: 'Wartungszugang',
+  cable_routing: 'Kabelführung',
+  // materials
+  durability: 'Haltbarkeit',
+  maintenance: 'Wartungsaufwand',
+  known_issues: 'Bekannte Schwachstellen',
+  compatibility: 'Materialverträglichkeit',
+  weight: 'Gewicht',
+  lifecycle_cost: 'Lebenszykluskosten',
+  uv_exposure: 'UV-Belastung',
+  moisture_risk: 'Feuchtigkeitsrisiko',
+  // structural
+  loading_conditions: 'Beladungszustände',
+  trim: 'Trimm',
+  fore_aft: 'Längsbalance',
+  lateral: 'Querbalance',
+  load_concentration: 'Lastkonzentration',
+  heavy_placement: 'Schwergewichts-Platzierung',
+  // cost
+  material_costs: 'Materialkosten',
+  labor_estimate: 'Arbeitsaufwand',
+  cost_per_meter: 'Kosten pro Meter',
+  distribution: 'Kostenverteilung',
+  risk: 'Kostenrisiko',
+  parametric_estimate: 'Parametrische Schätzung',
+  // brand_dna
+  topology: 'Zonentopologie',
+  proportions: 'Proportionen',
+  materials: 'Materialpalette',
+  spatial: 'Räumliche Signatur',
+  style: 'Stilkontinuität',
+  // market
+  price_positioning: 'Preispositionierung',
+  competitive_position: 'Wettbewerbsposition',
+  uniqueness: 'Eigenständigkeit',
+  metric_comparison: 'Kennzahlen-Vergleich',
+  furniture_ratio: 'Möblierungsanteil',
+  gaps: 'Spaltmaße',
+  design_warnings: 'Konstruktionshinweise',
+  // service_patterns
+  zone_issues: 'Zonen-Probleme',
+  age_patterns: 'Altersmuster',
+  material_failures: 'Materialversagen',
 }
 
 interface SubScoreBarsProps {
