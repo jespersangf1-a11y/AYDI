@@ -10,7 +10,7 @@ import secrets
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -42,11 +42,47 @@ class LoginRequest(BaseModel):
     password: str = Field(..., min_length=1)
 
 
+# A small blocklist of the most common weak passwords. Not exhaustive — the
+# structural checks below (character variety, distinct-character count) catch
+# the long tail; this just rejects the obvious ones with a clear message.
+_COMMON_PASSWORDS = frozenset({
+    "password", "passwort", "12345678", "123456789", "1234567890",
+    "qwertyui", "qwertz12", "iloveyou", "admin123", "letmein1",
+    "welcome1", "abc12345", "password1", "passw0rd",
+})
+
+
 class RegisterRequest(BaseModel):
     email: EmailStr
     password: str = Field(..., min_length=8, max_length=128)
     full_name: str = Field(..., min_length=2, max_length=200)
     shipyard_id: str | None = Field(None, max_length=100)
+
+    @field_validator("password")
+    @classmethod
+    def _password_strength(cls, v: str) -> str:
+        """Enforce a minimal strength policy beyond length (N-2).
+
+        Rejects common passwords, near-uniform strings (e.g. 'aaaaaaaa'), and
+        single-character-class passwords under 12 chars. Deliberately lenient
+        so it never blocks a genuinely strong passphrase.
+        """
+        if v.lower() in _COMMON_PASSWORDS:
+            raise ValueError("Passwort ist zu häufig und leicht zu erraten.")
+        if len(set(v)) < 4:
+            raise ValueError("Passwort enthält zu wenige unterschiedliche Zeichen.")
+        classes = sum([
+            any(c.islower() for c in v),
+            any(c.isupper() for c in v),
+            any(c.isdigit() for c in v),
+            any(not c.isalnum() for c in v),
+        ])
+        if len(v) < 12 and classes < 2:
+            raise ValueError(
+                "Passwort muss Buchstaben mit Ziffern oder Sonderzeichen "
+                "kombinieren (oder mindestens 12 Zeichen lang sein)."
+            )
+        return v
 
 
 class TokenResponse(BaseModel):

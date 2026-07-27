@@ -41,6 +41,24 @@ def _ensure_upload_dir() -> None:
     UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 
+def _validate_boat_class(boat_class: str) -> None:
+    """Reject unknown boat classes (mirrors the image_type validation).
+
+    Without this an unknown class (e.g. 'u_boot') was accepted and silently
+    calibrated the visual prompt against a non-existent class.
+    """
+    from app.schemas.schemas import BoatClass
+
+    try:
+        BoatClass(boat_class)
+    except ValueError:
+        valid = [c.value for c in BoatClass]
+        raise HTTPException(
+            status_code=400,
+            detail=f"Ungültige Bootsklasse: {boat_class}. Erlaubt: {', '.join(valid)}",
+        )
+
+
 def _extract_extension(filename: str | None) -> str:
     """Extract and validate file extension."""
     if not filename:
@@ -215,6 +233,7 @@ async def analyze_image_standalone(
             status_code=400,
             detail=f"Ungültiger Bildtyp: {image_type}. Erlaubt: {', '.join(valid)}",
         )
+    _validate_boat_class(boat_class)
 
     file_path, file_type, file_size = await _save_file(file)
 
@@ -364,6 +383,7 @@ async def analyze_batch(
     db: AsyncSession = Depends(get_db),
 ):
     """Upload multiple images and get a combined visual assessment."""
+    _validate_boat_class(boat_class)
     if not files:
         raise HTTPException(status_code=400, detail="Keine Dateien hochgeladen.")
     if len(files) > MAX_BATCH_FILES:
