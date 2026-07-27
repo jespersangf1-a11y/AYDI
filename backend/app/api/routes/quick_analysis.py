@@ -79,11 +79,20 @@ def _count_specs_provided(specs: PublicSpecs) -> int:
 
 
 def _extract_key_findings(warnings: list[dict], max_findings: int = 5) -> list[dict]:
-    """Convert analysis warnings to key_findings format for the response."""
+    """Convert analysis warnings to key_findings format for the response.
+
+    Carries the suggestion, a per-finding confidence (Level-1 findings are
+    "estimated" unless a warning states otherwise) and any location, so no
+    finding is presented as an unqualified fact and every one keeps its
+    suggestion (M-1).
+    """
     return [
         {
             "finding": w.get("message", ""),
             "severity": w.get("severity", "info"),
+            "suggestion": w.get("suggestion"),
+            "confidence": w.get("confidence", "estimated"),
+            "location": w.get("location"),
         }
         for w in warnings[:max_findings]
     ]

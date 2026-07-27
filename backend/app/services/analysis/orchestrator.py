@@ -190,6 +190,15 @@ async def run_full_analysis(
                     result["domains"] = [
                         d.value for d in get_domains_for_module(name)
                     ]
+                    # M-1: every finding must carry its own confidence badge.
+                    # Modules report confidence at module level — propagate it to
+                    # each warning that did not already set one, so the UI can
+                    # badge findings individually and none reads as an unqualified
+                    # fact.
+                    module_conf = result.get("confidence", context.data_source)
+                    for w in result.get("warnings", []):
+                        if isinstance(w, dict):
+                            w.setdefault("confidence", module_conf)
                     results[name] = result
                     # Store in context so later tiers can reference earlier results
                     context.module_results[name] = result
