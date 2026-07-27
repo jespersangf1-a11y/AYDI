@@ -129,7 +129,7 @@ export default function ProjectCreate({ onCreated, onCancel }: ProjectCreateProp
                 <label className="label-premium block mb-3">Länge (m) *</label>
                 <input
                   type="number"
-                  step="0.1"
+                  step="0.01"
                   min="1"
                   value={lengthM}
                   onChange={(e) => setLengthM(e.target.value)}
@@ -142,7 +142,7 @@ export default function ProjectCreate({ onCreated, onCancel }: ProjectCreateProp
                 <label className="label-premium block mb-3">Breite (m) *</label>
                 <input
                   type="number"
-                  step="0.1"
+                  step="0.01"
                   min="1"
                   value={beamM}
                   onChange={(e) => setBeamM(e.target.value)}

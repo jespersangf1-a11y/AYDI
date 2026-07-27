@@ -158,7 +158,11 @@ function ShellRoutes() {
         navigate('/', { replace: true })
       }}
     >
-      <ErrorBoundary fallbackTitle="Anzeigefehler">
+      {/* key on pathname: a class ErrorBoundary never clears hasError on its
+          own, so without this a render error (e.g. a bad analysis payload)
+          would pin the fallback across every navigation. Remounting per route
+          lets navigating away recover. */}
+      <ErrorBoundary key={location.pathname} fallbackTitle="Anzeigefehler">
         <div
           className={`transition-opacity ${
             transitioning ? 'opacity-0 duration-150' : 'opacity-100 duration-300'

@@ -88,19 +88,54 @@ export default function VisualResults({
   const [showLow, setShowLow] = useState(initialShowLow)
   const [cannotAssessOpen, setCannotAssessOpen] = useState(false)
 
+  // When visual analysis is disabled (no ANTHROPIC_API_KEY) the backend returns
+  // a bare upload response with ai_analysis:null — none of these arrays exist.
+  // Normalise so a missing field can never crash the view (defense in depth).
+  const findings = result.findings ?? []
+  const scores = result.scores ?? {}
+  const positiveAspects = result.positive_aspects ?? []
+  const concerns = result.concerns ?? []
+  const recommendations = result.recommendations ?? []
+  const cannotAssess = result.cannot_assess ?? []
+
   const visibleFindings = showLow
-    ? result.findings
-    : result.findings.filter((f) => !isLowConfidence(f.confidence))
+    ? findings
+    : findings.filter((f) => !isLowConfidence(f.confidence))
 
   const grouped = groupFindings(visibleFindings)
-  const hasLowConfidence = result.findings.some((f) => isLowConfidence(f.confidence))
+  const hasLowConfidence = findings.some((f) => isLowConfidence(f.confidence))
+
+  const hasAnyContent =
+    findings.length > 0 ||
+    Object.keys(scores).length > 0 ||
+    positiveAspects.length > 0 ||
+    concerns.length > 0 ||
+    recommendations.length > 0 ||
+    cannotAssess.length > 0
+
+  if (!hasAnyContent) {
+    return (
+      <div className="card-premium p-6 flex items-start gap-3" role="status">
+        <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+        <div className="space-y-1">
+          <p className="text-sm font-medium text-navy-900">
+            Keine visuelle Analyse verfügbar
+          </p>
+          <p className="text-xs text-navy-600">
+            Die visuelle Analyse (Claude Vision) ist in dieser Umgebung nicht
+            aktiv. Das Bild wurde gespeichert, aber nicht bewertet.
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
       {/* Header: confidence + quality */}
       <div className="flex items-center gap-3 flex-wrap">
         <ConfidenceBadge confidence={result.confidence} />
-        {!result.image_quality_sufficient && (
+        {result.image_quality_sufficient === false && (
           <span className="inline-flex items-center gap-1 rounded-md border border-red-500/30 bg-red-950/20 px-3 py-1.5 text-xs font-medium text-red-300">
             <AlertTriangle className="w-3 h-3" />
             Bildqualität unzureichend
@@ -109,13 +144,13 @@ export default function VisualResults({
       </div>
 
       {/* Scores */}
-      {Object.keys(result.scores).length > 0 && (
+      {Object.keys(scores).length > 0 && (
         <div className="card-premium p-6 space-y-4">
           <h4 className="text-sm font-serif font-semibold text-navy-900">
             Bewertungen
           </h4>
           <div className="space-y-3">
-            {Object.entries(result.scores).map(([key, value]) => (
+            {Object.entries(scores).map(([key, value]) => (
               <ScoreBar key={key} label={key} score={value} />
             ))}
           </div>
@@ -185,14 +220,14 @@ export default function VisualResults({
       )}
 
       {/* Positive aspects */}
-      {result.positive_aspects.length > 0 && (
+      {positiveAspects.length > 0 && (
         <div className="rounded-xl border border-emerald-500/20 bg-emerald-950/10 p-6 space-y-4">
           <h4 className="flex items-center gap-2 text-sm font-serif font-semibold text-emerald-400">
             <CheckCircle className="w-4 h-4" />
             Positive Aspekte
           </h4>
           <ul className="space-y-2">
-            {result.positive_aspects.map((item, i) => (
+            {positiveAspects.map((item, i) => (
               <li key={i} className="flex items-start gap-3 text-sm text-emerald-300">
                 <span className="mt-1.5 h-2 w-2 rounded-full bg-emerald-400 flex-shrink-0" />
                 {item}
@@ -203,14 +238,14 @@ export default function VisualResults({
       )}
 
       {/* Concerns */}
-      {result.concerns.length > 0 && (
+      {concerns.length > 0 && (
         <div className="rounded-xl border border-amber-500/20 bg-amber-950/10 p-6 space-y-4">
           <h4 className="flex items-center gap-2 text-sm font-serif font-semibold text-amber-400">
             <AlertTriangle className="w-4 h-4" />
             Bedenken
           </h4>
           <ul className="space-y-2">
-            {result.concerns.map((item, i) => (
+            {concerns.map((item, i) => (
               <li key={i} className="flex items-start gap-3 text-sm text-amber-300">
                 <span className="mt-1.5 h-2 w-2 rounded-full bg-amber-400 flex-shrink-0" />
                 {item}
@@ -221,14 +256,14 @@ export default function VisualResults({
       )}
 
       {/* Recommendations */}
-      {result.recommendations.length > 0 && (
+      {recommendations.length > 0 && (
         <div className="card-premium p-6 space-y-4">
           <h4 className="flex items-center gap-2 text-sm font-serif font-semibold text-ocean-600">
             <Lightbulb className="w-4 h-4" />
             Empfehlungen
           </h4>
           <ul className="space-y-2">
-            {result.recommendations.map((item, i) => (
+            {recommendations.map((item, i) => (
               <li key={i} className="flex items-start gap-3 text-sm text-navy-600">
                 <span className="mt-1.5 h-2 w-2 rounded-full bg-ocean-400 flex-shrink-0" />
                 {item}
@@ -239,7 +274,7 @@ export default function VisualResults({
       )}
 
       {/* Cannot assess (collapsed) */}
-      {result.cannot_assess.length > 0 && (
+      {cannotAssess.length > 0 && (
         <div className="card-premium p-5">
           <button
             onClick={() => setCannotAssessOpen(!cannotAssessOpen)}
@@ -250,11 +285,11 @@ export default function VisualResults({
             ) : (
               <ChevronRight className="w-4 h-4" />
             )}
-            Nicht beurteilbar ({result.cannot_assess.length})
+            Nicht beurteilbar ({cannotAssess.length})
           </button>
           {cannotAssessOpen && (
             <ul className="mt-4 space-y-1.5 border-t border-navy-700/30 pt-4">
-              {result.cannot_assess.map((item, i) => (
+              {cannotAssess.map((item, i) => (
                 <li key={i} className="flex items-start gap-2 text-sm text-navy-500">
                   <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-navy-600 flex-shrink-0" />
                   {item}

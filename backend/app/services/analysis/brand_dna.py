@@ -5,8 +5,9 @@ how well it fits the brand's spatial identity. Pure function module — no datab
 access. All user-facing strings are in German.
 
 Requires at least `min_reference_models` brand reference dicts to produce a
-meaningful score. If fewer references are provided, returns score 50 with an
-informational warning.
+meaningful score. If fewer references are provided, returns
+`{"available": False, "reason": ...}` (Module-Skip-Logik) so the result is not
+mistaken for a real score.
 """
 import logging
 import math
@@ -768,7 +769,7 @@ def run_brand_dna_analysis(
     - style_tags (list[str]): style descriptor tags
 
     If brand_references is None or contains fewer models than
-    `min_reference_models`, returns score 50.0 with an informational warning.
+    `min_reference_models`, returns {"available": False, "reason": ...}.
 
     Args:
         zones: Layout zones for the new design.
@@ -792,34 +793,24 @@ def run_brand_dna_analysis(
     min_refs = config.get("min_reference_models", 3)
 
     # --- Insufficient reference data ---
+    # Fewer than min_refs models cannot yield a reliable score → report as
+    # unavailable (Module-Skip-Logik) rather than emitting a 50/100 that is
+    # indistinguishable from a real result. Consistent with cost / materials /
+    # service_patterns; the orchestrator records it under `skipped` and the
+    # single-module route surfaces it as 422.
     if not brand_references or len(brand_references) < min_refs:
         actual = len(brand_references) if brand_references else 0
         return {
             "module": "brand_dna",
-            "overall_score": 50.0,
-            "sub_scores": {k: 50.0 for k in weights},
-            "warnings": [
-                {
-                    "code": "BRAND_INSUFFICIENT_DATA",
-                    "severity": "info",
-                    "message": (
-                        f"Brand DNA nicht verfügbar — mindestens {min_refs} "
-                        f"Referenzmodelle erforderlich (vorhanden: {actual})."
-                    ),
-                    "suggestion": (
-                        f"Mindestens {min_refs} frühere Modelle der Werft als "
-                        f"Referenz hinterlegen, um die Markenanalyse zu aktivieren."
-                    ),
-                }
-            ],
+            "available": False,
+            "reason": (
+                f"Brand-DNA nicht verfügbar — mindestens {min_refs} "
+                f"Referenzmodelle erforderlich (vorhanden: {actual})."
+            ),
             "suggestions": [
                 f"Mindestens {min_refs} frühere Modelle der Werft als "
                 f"Referenz hinterlegen, um die Markenanalyse zu aktivieren."
             ],
-            "metrics": {},
-            "config_used": config,
-            "confidence": data_source,
-            "confidence_note": "Basiert auf geschätzten Werten aus öffentlichen Spezifikationen." if data_source == "estimated" else None,
         }
 
     # --- Feature extraction for new layout ---

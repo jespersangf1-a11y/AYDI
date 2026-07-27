@@ -100,16 +100,16 @@ def _default_config(boat_class: str = "cruising_sail") -> dict:
 
 
 def test_empty_references():
-    """No brand references at all -> score 50, BRAND_INSUFFICIENT_DATA info warning."""
+    """No brand references at all -> module unavailable (Module-Skip-Logik)."""
     result = run_brand_dna_analysis(
         _make_standard_zones(),
         _make_standard_passages(),
         "cruising_sail",
         brand_references=None,
     )
-    assert result["overall_score"] == 50.0
-    assert any(w["code"] == "BRAND_INSUFFICIENT_DATA" for w in result["warnings"])
-    assert all(w["severity"] == "info" for w in result["warnings"])
+    assert result["available"] is False
+    assert "Referenzmodelle" in result["reason"]
+    assert "overall_score" not in result  # never a fabricated 50/100
 
 
 # ---------------------------------------------------------------------------
@@ -118,15 +118,15 @@ def test_empty_references():
 
 
 def test_insufficient_references():
-    """Fewer than min_reference_models (3) -> score 50, insufficient data warning."""
+    """Fewer than min_reference_models (3) -> module unavailable."""
     result = run_brand_dna_analysis(
         _make_standard_zones(),
         _make_standard_passages(),
         "cruising_sail",
         brand_references=[make_brand_reference(), make_brand_reference()],  # only 2
     )
-    assert result["overall_score"] == 50.0
-    assert any(w["code"] == "BRAND_INSUFFICIENT_DATA" for w in result["warnings"])
+    assert result["available"] is False
+    assert "mindestens 3" in result["reason"]
 
 
 # ---------------------------------------------------------------------------

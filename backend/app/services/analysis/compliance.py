@@ -60,8 +60,8 @@ BOAT_CLASS_DEFAULTS = {
             "ISO_15085": "2003",
             "ISO_10133": "2012",
             "ISO_13297": "2014",
-            "ISO_12216": "2002",
-            "ISO_11812": "2001",
+            "ISO_12216": "2020",
+            "ISO_11812": "2020",
         },
         "weights": {
             "escape_routes": 0.24,
@@ -92,8 +92,8 @@ BOAT_CLASS_DEFAULTS = {
             "ISO_15085": "2003",
             "ISO_10133": "2012",
             "ISO_13297": "2014",
-            "ISO_12216": "2002",
-            "ISO_11812": "2001",
+            "ISO_12216": "2020",
+            "ISO_11812": "2020",
         },
         "weights": {
             "escape_routes": 0.20,
@@ -124,8 +124,8 @@ BOAT_CLASS_DEFAULTS = {
             "ISO_15085": "2003",
             "ISO_10133": "2012",
             "ISO_13297": "2014",
-            "ISO_12216": "2002",
-            "ISO_11812": "2001",
+            "ISO_12216": "2020",
+            "ISO_11812": "2020",
         },
         "weights": {
             "escape_routes": 0.20,
@@ -156,8 +156,8 @@ BOAT_CLASS_DEFAULTS = {
             "ISO_15085": "2003",
             "ISO_10133": "2012",
             "ISO_13297": "2014",
-            "ISO_12216": "2002",
-            "ISO_11812": "2001",
+            "ISO_12216": "2020",
+            "ISO_11812": "2020",
         },
         "weights": {
             "escape_routes": 0.22,
@@ -188,8 +188,8 @@ BOAT_CLASS_DEFAULTS = {
             "ISO_15085": "2003",
             "ISO_10133": "2012",
             "ISO_13297": "2014",
-            "ISO_12216": "2002",
-            "ISO_11812": "2001",
+            "ISO_12216": "2020",
+            "ISO_11812": "2020",
         },
         "weights": {
             "escape_routes": 0.24,
@@ -220,8 +220,8 @@ BOAT_CLASS_DEFAULTS = {
             "ISO_15085": "2003",
             "ISO_10133": "2012",
             "ISO_13297": "2014",
-            "ISO_12216": "2002",
-            "ISO_11812": "2001",
+            "ISO_12216": "2020",
+            "ISO_11812": "2020",
         },
         "weights": {
             "escape_routes": 0.20,
@@ -252,8 +252,8 @@ BOAT_CLASS_DEFAULTS = {
             "ISO_15085": "2003",
             "ISO_10133": "2012",
             "ISO_13297": "2014",
-            "ISO_12216": "2002",
-            "ISO_11812": "2001",
+            "ISO_12216": "2020",
+            "ISO_11812": "2020",
         },
         "weights": {
             "escape_routes": 0.20,
@@ -284,8 +284,8 @@ BOAT_CLASS_DEFAULTS = {
             "ISO_15085": "2003",
             "ISO_10133": "2012",
             "ISO_13297": "2014",
-            "ISO_12216": "2002",
-            "ISO_11812": "2001",
+            "ISO_12216": "2020",
+            "ISO_11812": "2020",
         },
         "weights": {
             "escape_routes": 0.20,
@@ -316,8 +316,8 @@ BOAT_CLASS_DEFAULTS = {
             "ISO_15085": "2003",
             "ISO_10133": "2012",
             "ISO_13297": "2014",
-            "ISO_12216": "2002",
-            "ISO_11812": "2001",
+            "ISO_12216": "2020",
+            "ISO_11812": "2020",
         },
         "weights": {
             "escape_routes": 0.23,
@@ -348,8 +348,8 @@ BOAT_CLASS_DEFAULTS = {
             "ISO_15085": "2003",
             "ISO_10133": "2012",
             "ISO_13297": "2014",
-            "ISO_12216": "2002",
-            "ISO_11812": "2001",
+            "ISO_12216": "2020",
+            "ISO_11812": "2020",
         },
         "weights": {
             "escape_routes": 0.20,
@@ -380,8 +380,8 @@ BOAT_CLASS_DEFAULTS = {
             "ISO_15085": "2003",
             "ISO_10133": "2012",
             "ISO_13297": "2014",
-            "ISO_12216": "2002",
-            "ISO_11812": "2001",
+            "ISO_12216": "2020",
+            "ISO_11812": "2020",
         },
         "weights": {
             "escape_routes": 0.20,
@@ -412,8 +412,8 @@ BOAT_CLASS_DEFAULTS = {
             "ISO_15085": "2003",
             "ISO_10133": "2012",
             "ISO_13297": "2014",
-            "ISO_12216": "2002",
-            "ISO_11812": "2001",
+            "ISO_12216": "2020",
+            "ISO_11812": "2020",
         },
         "weights": {
             "escape_routes": 0.1765,
@@ -444,8 +444,8 @@ BOAT_CLASS_DEFAULTS = {
             "ISO_15085": "2003",
             "ISO_10133": "2012",
             "ISO_13297": "2014",
-            "ISO_12216": "2002",
-            "ISO_11812": "2001",
+            "ISO_12216": "2020",
+            "ISO_11812": "2020",
         },
         "weights": {
             "escape_routes": 0.16,
@@ -1214,6 +1214,10 @@ def analyze_escape_hatch_dimensions(
 # Sub-analysis: cockpit drain capacity (ISO 11812)
 # ---------------------------------------------------------------------------
 
+# ISO 11812 quick-draining cockpit: must empty within ~5 min. Overridable per
+# boat class via config["cockpit_drain_time_s"].
+DEFAULT_COCKPIT_DRAIN_TIME_S = 300
+
 
 def analyze_cockpit_drain_capacity(
     zones: list[dict],
@@ -1221,12 +1225,16 @@ def analyze_cockpit_drain_capacity(
 ) -> tuple[float, list[dict], dict]:
     """Check cockpit drain capacity per ISO 11812.
 
-    Cockpit drains must handle cockpit volume × 2 in liters per second.
+    A quick-draining cockpit must empty within a fixed drain time. The required
+    drain flow is therefore ``cockpit_volume / drain_time`` (l/s) — a flow, not
+    a volume. (The earlier ``volume × 2`` compared a litre value against an l/s
+    threshold, mixing dimensions and demanding ~600× the physical value.)
 
     Returns (score 0-100, warnings, metrics).
     """
     warnings: list[dict] = []
-    norm_ref = config.get("norm_versions", {}).get("ISO_11812", "2001")
+    norm_ref = config.get("norm_versions", {}).get("ISO_11812", "2020")
+    drain_time_s = config.get("cockpit_drain_time_s", DEFAULT_COCKPIT_DRAIN_TIME_S)
 
     cockpit_zones = [z for z in zones if z["zone_type"] == "cockpit"]
 
@@ -1246,7 +1254,9 @@ def analyze_cockpit_drain_capacity(
 
         depth_mm = props.get("cockpit_depth_mm", default_depth_mm)
         cockpit_volume_liters = area_sqm * depth_mm / 1000.0 * 1000.0
-        required_drain_capacity = cockpit_volume_liters * 2.0
+        required_drain_capacity = (
+            cockpit_volume_liters / drain_time_s if drain_time_s > 0 else 0.0
+        )
 
         drain_capacity = props.get("drain_capacity_lps")
         if drain_capacity is None:
@@ -1264,8 +1274,8 @@ def analyze_cockpit_drain_capacity(
                 "severity": "warning",
                 "message": (
                     f"Cockpit '{z['name']}': Abflusskapazität {drain_capacity:.1f} l/s "
-                    f"unzureichend (benötigt: {required_drain_capacity:.1f} l/s, "
-                    f"ISO 11812:{norm_ref})."
+                    f"unzureichend (benötigt: {required_drain_capacity:.1f} l/s für "
+                    f"Entleerung in {drain_time_s:.0f} s, ISO 11812:{norm_ref})."
                 ),
                 "suggestion": (
                     f"Abflusskapazität für Cockpit '{z['name']}' auf mindestens "

@@ -49,6 +49,10 @@ class PassageData(BaseModel):
     length_mm: float | None = None
     points: list[list[float]] | None = None
     is_primary: bool = True
+    # Passage-level attributes (e.g. sill_height_mm for the CE companionway-sill
+    # check). Without this, Pydantic silently dropped the field and
+    # CE_NO_SILL_DATA fired permanently — the check was unreachable via the API.
+    properties: dict | None = None
 
 
 # Pydantic v2 validation schemas for zones and passages

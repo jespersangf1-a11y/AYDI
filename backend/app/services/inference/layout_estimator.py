@@ -1,6 +1,11 @@
 """Estimate a layout from publicly available yacht specifications."""
 from typing import Optional
 
+# Storage sizing is aligned to the volume module's own thresholds so the
+# estimated baseline never trips its own storage checks (safe: volume_storage
+# imports nothing from this package, so no import cycle).
+from app.services.analysis.volume_storage import BOAT_CLASS_DEFAULTS as VOLUME_STORAGE_DEFAULTS
+
 
 # Beam estimation if not provided: beam ≈ length * factor
 BEAM_ESTIMATE_FACTORS = {
@@ -419,9 +424,25 @@ def estimate_layout_from_specs(
     # Convert to mm for polygon generation
     beam_mm = effective_beam * 1000
 
+    # Storage baseline: emit the class's min_storage_zones storage zones totalling
+    # its target ratio, so the estimate does not fabricate "too few storage" /
+    # "storage ratio too low" findings about the user's boat (H-2). These are the
+    # same class-based inferences already used for cabins/heads, not measured facts.
+    vol_def = VOLUME_STORAGE_DEFAULTS.get(boat_class, VOLUME_STORAGE_DEFAULTS["cruising_sail"])
+    storage_zone_count = max(1, vol_def.get("min_storage_zones", 1))
+    _template_storage_pct = next(
+        (z.get("area_pct", 0.0) for z in template["typical_zones"] if z["type"] == "storage"),
+        0.0,
+    )
+    effective_storage_ratio = max(
+        _template_storage_pct,
+        vol_def.get("target_storage_ratio", vol_def.get("min_storage_ratio", 0.12)),
+    )
+
     zones = []
     x_cursor = 0.0  # Track position along length for zone placement
     inferred_count = 0
+    nonstorage_area_sqm = 0.0
 
     for zt in template["typical_zones"]:
         zone_type = zt["type"]
@@ -431,6 +452,10 @@ def estimate_layout_from_specs(
             continue
         # Skip crew quarters if explicitly not present
         if zone_type == "crew_quarters" and has_crew_quarters is False:
+            continue
+        # Storage zones are built after this loop so they can be sized against
+        # the actual total area and spread across the layout (H-2).
+        if zone_type == "storage":
             continue
 
         # Determine count (for cabins/heads)
@@ -449,6 +474,8 @@ def estimate_layout_from_specs(
             else:
                 area_sqm = total_interior_sqm * zt["area_pct"]
                 inferred_count += 1
+
+            nonstorage_area_sqm += area_sqm
 
             # Generate simple rectangular polygon
             area_mm2 = area_sqm * 1e6
@@ -474,6 +501,42 @@ def estimate_layout_from_specs(
             })
 
             x_cursor += zone_depth * 0.3  # Overlap zones slightly for realistic spacing
+
+    # Build storage zones last (H-2): size them so storage/total hits the class
+    # target ratio, and spread them along the length (alternating port/starboard)
+    # so the estimate does not fabricate "too little storage", "too few storage
+    # zones", or "storage unevenly distributed" findings that only reflect the
+    # coarse template rather than the user's boat.
+    t = min(effective_storage_ratio, 0.9)
+    total_storage_sqm = (
+        (t / (1.0 - t)) * nonstorage_area_sqm if nonstorage_area_sqm > 0 else 0.0
+    )
+    per_zone_sqm = total_storage_sqm / storage_zone_count if storage_zone_count else 0.0
+
+    xs = [p[0] for z in zones for p in z["polygon"]]
+    layout_min_x = min(xs) if xs else 0.0
+    layout_max_x = max(xs) if xs else (length_m * 1000.0)
+    span_x = max(layout_max_x - layout_min_x, 1000.0)
+
+    for i in range(storage_zone_count):
+        area_mm2 = per_zone_sqm * 1e6
+        zone_width = min(beam_mm * 0.4, (area_mm2 / (beam_mm * 0.3)) if beam_mm > 0 else 1500)
+        zone_depth = area_mm2 / zone_width if zone_width > 0 else 1500
+        cx = layout_min_x + (i + 0.5) / storage_zone_count * span_x - zone_depth / 2.0
+        y_side = 0.0 if i % 2 == 0 else max(beam_mm - zone_width, 0.0)
+        polygon = _generate_rectangle_polygon(cx, y_side, zone_depth, zone_width)
+        name = "Stauraum" if storage_zone_count == 1 else f"Stauraum {i + 1}"
+        zones.append({
+            "name": name,
+            "zone_type": "storage",
+            "polygon": polygon,
+            "height_mm": effective_deck_height,
+            "is_crew_area": False,
+            "is_guest_area": False,
+            "confidence": "estimated",
+            "properties": {},
+        })
+        inferred_count += 1
 
     # Generate passages
     passages = []
@@ -508,6 +571,33 @@ def estimate_layout_from_specs(
                     "is_primary": pt["type"] == "primary",
                     "confidence": "estimated",
                 })
+
+    # Connectivity guarantee (H-1): the templates only list the main circulation,
+    # leaving storage/engine/etc. without a passage — which the topology checks
+    # (correctly) flag as isolated. In a real boat every space is reachable, so
+    # connect any still-orphaned zone to a hub (the salon, else the first zone)
+    # via a service passage. Without this the Level-1 estimate invents
+    # "Zone X ist isoliert" findings that describe the template, not the boat.
+    connected = set()
+    for p in passages:
+        connected.add(p["from_zone"])
+        connected.add(p["to_zone"])
+
+    hub = next((z["name"] for z in zones if z["zone_type"] == "salon"), None)
+    if hub is None and zones:
+        hub = zones[0]["name"]
+
+    service_width = template["passage_widths"].get("service", 500)
+    for z in zones:
+        if hub is not None and z["name"] != hub and z["name"] not in connected:
+            passages.append({
+                "from_zone": hub,
+                "to_zone": z["name"],
+                "width_mm": service_width,
+                "is_primary": False,
+                "confidence": "estimated",
+            })
+            connected.add(z["name"])
 
     return {
         "zones": zones,

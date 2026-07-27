@@ -174,28 +174,29 @@ class TestPolygonAreaFormula:
 # ===========================================================================
 # 4. COCKPIT DRAIN FORMULA (ISO 11812)
 # ===========================================================================
-# Formula: drain_capacity = cockpit_volume × 2 (must drain in 2× volume time)
-# drain_time_seconds = cockpit_volume_liters / drain_rate_liters_per_second
+# Required drain FLOW = cockpit_volume_liters / drain_time_s  (l/s).
+# It is a flow, not a volume: the old "volume × 2" compared a litre value
+# against an l/s threshold (mixed dimensions → ~600× too high).
 
 class TestCockpitDrainFormula:
     """Verify cockpit drain capacity calculation per ISO 11812."""
 
     def test_standard_cockpit(self):
-        """Cockpit: 2.0m × 1.5m × 0.3m = 0.9 m³ = 900 liters
-        Required drain: must empty cockpit in reasonable time
-        ISO requires drains that can handle 2× cockpit volume
-        Required drain capacity: 1800 liters/drain_time
+        """Cockpit 2.0m × 1.5m × 0.3m = 0.9 m³ = 900 l.
+        Quick-draining requirement: empty within drain_time_s (default 300 s).
+        Required flow = 900 l / 300 s = 3.0 l/s — a physically achievable value.
         """
         length_m = 2.0
         width_m = 1.5
-        sill_height_m = 0.3
-        cockpit_volume_m3 = length_m * width_m * sill_height_m
+        depth_m = 0.3
+        drain_time_s = 300
+        cockpit_volume_m3 = length_m * width_m * depth_m
         cockpit_volume_liters = cockpit_volume_m3 * 1000
-        required_capacity = cockpit_volume_liters * 2
+        required_flow_lps = cockpit_volume_liters / drain_time_s
 
         assert abs(cockpit_volume_m3 - 0.9) < 0.01
         assert abs(cockpit_volume_liters - 900) < 1
-        assert abs(required_capacity - 1800) < 1
+        assert abs(required_flow_lps - 3.0) < 0.01
 
 
 # ===========================================================================
