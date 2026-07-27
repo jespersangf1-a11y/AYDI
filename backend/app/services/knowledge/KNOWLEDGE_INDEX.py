@@ -962,13 +962,15 @@ KNOWLEDGE_INDEX = {
         "status": "implemented",
         "module": "markdown_knowledge_loader.py → load_all_markdown_knowledge()",
         "description": (
-            "252 nummerierte Markdown-Dateien in 31 Kategorien (~840.000 Zeilen). "
+            "261 nummerierte Markdown-Dateien in 32 Kategorien (~842.000 Zeilen). "
             "Eine davon (24_05_..._clean.md) ist eine Backup-Variante und wird vom "
-            "Loader ausgeschlossen → 251 kanonische Dateien geladen "
+            "Loader ausgeschlossen → 260 kanonische Dateien geladen "
             "(Slug-Kollisionen unter Komposit-Schlüssel bewahrt, kein stilles Überschreiben). "
+            "Kategorie 32 (Designsprachen & Stile) ergänzt die technische Materialreferenz "
+            "um Exterieur-/Interieur-Designwissen über Marken, Epochen und Jahre. "
             "Vollintegriert via knowledge_retrieval.py → Analysis-Module → API."
         ),
-        "entries": 251,
+        "entries": 260,
         "subcategories": {
             "22.1_dichtungen_profile": {
                 "title": "01 — Dichtungen und Profile",
@@ -1414,6 +1416,22 @@ KNOWLEDGE_INDEX = {
                     "04_xx Honeycomb Core", "04_xx SORIC/Lantor",
                     "04_xx Vakuuminfusions-Zubehör", "04_xx Trennmittel",
                     "04_xx GFK-Reparatur-Sets",
+                ],
+            },
+            "22.33_designsprachen_stile": {
+                "title": "32 — Designsprachen und Stile",
+                "status": "implemented",
+                "entries": 9,
+                "details": [
+                    "32_01 Serien-Segelcruiser (Beneteau, Jeanneau, Bavaria, Hanse, Dufour, Elan, Dehler, Catalina)",
+                    "32_02 Blauwasser-Cruiser (Hallberg-Rassy, Najad, Malö, Oyster, Amel, Contest, Swan, Hinckley, Morris …)",
+                    "32_03 Performance-Cruiser + Rating-Rule-Evolution (X-Yachts, J/Boats, Grand Soleil, Solaris, First, ClubSwan)",
+                    "32_04 Multihulls/Katamarane (Lagoon, Fountaine Pajot, Leopard, Bali, Catana, Outremer, Gunboat, HH, Sunreef)",
+                    "32_05 Motor-Sportcruiser (Sunseeker, Princess, Fairline, Azimut, Ferretti, Riva, Pershing, Galeon, Wally)",
+                    "32_06 Trawler/Explorer/Downeast (Nordhavn, Grand Banks, Fleming, Kadey-Krogen, Hinckley, Sabre, MJM)",
+                    "32_07 Superyachten & Studios (Feadship, Lürssen, Amels, Heesen, Benetti, Sanlorenzo; Øino, Winch, Disdale …)",
+                    "32_08 Epochen/Taxonomie/Designer (7 Epochen, 13 Stil-Kategorien, Design-Vokabular, legendäre Designer)",
+                    "32_09 Quer-Synthese: Design-Muster & Klassifikator-Signale (Pipeline-B-Cues, brand_dna-Priors)",
                 ],
             },
         },
