@@ -73,6 +73,54 @@ EXECUTION_TIERS: list[list[str]] = [
 ALL_MODULE_NAMES: set[str] = {m for tier in EXECUTION_TIERS for m in tier}
 
 
+def _polygon_area_m2(polygon: list) -> float:
+    """Shoelace area of a polygon given in millimetres, returned in m²."""
+    n = len(polygon) if polygon else 0
+    if n < 3:
+        return 0.0
+    s = 0.0
+    for i in range(n):
+        x0, y0 = polygon[i][0], polygon[i][1]
+        x1, y1 = polygon[(i + 1) % n][0], polygon[(i + 1) % n][1]
+        s += x0 * y1 - x1 * y0
+    return abs(s) / 2.0 / 1_000_000.0  # mm² → m²
+
+
+def _check_hull_area_plausibility(
+    zones: list[dict], length_m: float, beam_m: float
+) -> str | None:
+    """Flag layouts whose total zone area cannot fit the given hull (G-2/G-3).
+
+    Compares summed zone area against the hull deck footprint (length × beam).
+    Thresholds are deliberately generous so genuine multi-deck layouts (whose
+    combined area legitimately exceeds one footprint) are not false-flagged;
+    the point is to catch gross scale/entry errors — a 28 828 m² interior in a
+    12 m boat — that otherwise sailed through with no warning at all.
+    """
+    if not zones or length_m <= 0 or beam_m <= 0:
+        return None
+    footprint = length_m * beam_m
+    if footprint <= 0:
+        return None
+    total = sum(_polygon_area_m2(z.get("polygon") or []) for z in zones)
+    if total <= 0:
+        return None
+    ratio = total / footprint
+    if ratio > 6.0:
+        return (
+            f"Zonenfläche ({total:.0f} m²) übersteigt die Rumpfgrundfläche "
+            f"({footprint:.0f} m²) um das {ratio:.1f}-fache — physikalisch "
+            f"unmöglich. Layout-Maßstab und Rumpflänge/-breite prüfen."
+        )
+    if ratio > 2.5:
+        return (
+            f"Zonenfläche ({total:.0f} m²) liegt bei {ratio * 100:.0f} % der "
+            f"Rumpfgrundfläche ({footprint:.0f} m²) — für ein Eindeck-Layout "
+            f"auffällig hoch. Maßstab bzw. Deckanzahl prüfen."
+        )
+    return None
+
+
 def _get_module_runners() -> dict:
     """Lazy import of all module runner functions.
 
@@ -147,6 +195,15 @@ async def run_full_analysis(
     except DataValidationError as e:
         validation_warnings.append(str(e))
         logger.warning("Passage validation warning: %s", e)
+    try:
+        hull_warning = _check_hull_area_plausibility(
+            context.zones, context.length_m, context.beam_m
+        )
+        if hull_warning:
+            validation_warnings.append(hull_warning)
+            logger.warning("Hull area plausibility: %s", hull_warning)
+    except Exception:
+        logger.exception("Hull area plausibility check failed")
 
     # Determine allowed modules based on subscription tier
     allowed_modules = set(get_allowed_modules(context.tier))
