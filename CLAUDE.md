@@ -225,7 +225,7 @@ Score fusion combines structured + visual results per module.
 
 ```bash
 docker compose up -d
-cd backend && PYTHONPATH=. uvicorn app.main:app --reload
+cd backend && PYTHONPATH=. uvicorn app.main:app --reload --no-server-header
 cd backend && PYTHONPATH=. pytest tests/ -v
 cd frontend && npm run dev
 ```

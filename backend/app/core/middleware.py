@@ -252,6 +252,94 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
 
 # ---------------------------------------------------------------------------
+# Security Headers Middleware
+# ---------------------------------------------------------------------------
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    """Set the response headers a browser needs to defend the app.
+
+    None of these were being sent. Each one closes a specific hole:
+
+    ``X-Content-Type-Options``    stops a JSON response being sniffed as HTML
+                                  or script.
+    ``X-Frame-Options`` /
+    ``frame-ancestors``           stops the app being framed for clickjacking.
+    ``Referrer-Policy``           keeps project identifiers out of the
+                                  Referer header sent to third parties.
+    ``Content-Security-Policy``   limits what an injected string could load;
+                                  API responses need nothing at all, so the
+                                  policy denies everything by default.
+    ``Permissions-Policy``        the API has no use for camera, microphone
+                                  or geolocation.
+    ``Strict-Transport-Security`` only over HTTPS, and only in production —
+                                  sending it from a local HTTP server would
+                                  pin the developer's browser to HTTPS on
+                                  localhost.
+    ``Server``                    overwritten so the exact server software is
+                                  no longer advertised.
+
+    One caveat on ``Server``: uvicorn writes its own value at the transport
+    layer, *before* the application's headers, and does not check whether the
+    app already set one — a middleware alone therefore produces the header
+    twice, and a proxy reads the first. Uvicorn must be started with
+    ``--no-server-header`` (or ``server_header=False``) for the override to
+    be the only value. This was verified against the running server rather
+    than assumed.
+    """
+
+    #: Endpoints that render HTML and therefore need a workable policy.
+    _HTML_PATHS = ("/docs", "/redoc")
+
+    def __init__(self, app: Any, *, production: bool = False) -> None:
+        super().__init__(app)
+        self._production = production
+
+    async def dispatch(
+        self, request: Request, call_next: RequestResponseEndpoint
+    ) -> Response:
+        response = await call_next(request)
+        headers = response.headers
+
+        headers.setdefault("X-Content-Type-Options", "nosniff")
+        headers.setdefault("X-Frame-Options", "DENY")
+        headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+        headers.setdefault(
+            "Permissions-Policy",
+            "accelerometer=(), camera=(), geolocation=(), gyroscope=(), "
+            "microphone=(), payment=(), usb=()",
+        )
+        headers.setdefault("X-Permitted-Cross-Domain-Policies", "none")
+        headers.setdefault("Cross-Origin-Opener-Policy", "same-origin")
+        headers.setdefault("Cross-Origin-Resource-Policy", "same-site")
+
+        if request.url.path.startswith(self._HTML_PATHS):
+            # Swagger UI / ReDoc load their assets from a CDN.
+            headers.setdefault(
+                "Content-Security-Policy",
+                "default-src 'self'; img-src 'self' data: https:; "
+                "script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; "
+                "style-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; "
+                "font-src 'self' https://cdn.jsdelivr.net data:; "
+                "frame-ancestors 'none'; base-uri 'none'",
+            )
+        else:
+            headers.setdefault(
+                "Content-Security-Policy",
+                "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; "
+                "form-action 'none'",
+            )
+
+        if self._production:
+            headers.setdefault(
+                "Strict-Transport-Security",
+                "max-age=31536000; includeSubDomains",
+            )
+
+        headers["Server"] = "AYDI"
+        return response
+
+
+# ---------------------------------------------------------------------------
 # Request Timing Middleware
 # ---------------------------------------------------------------------------
 
@@ -283,13 +371,17 @@ def register_middleware(app: FastAPI) -> None:
     """Register all AYDI middleware on a FastAPI app.
 
     Order matters — outermost middleware runs first:
-    1. Timing (wraps everything)
-    2. Error handling (catches all exceptions)
-    3. Rate limiting (before any processing)
-    4. Locale detection (available to all handlers)
+    1. Security headers (must also cover error responses, so it wraps them)
+    2. Timing
+    3. Error handling (catches all exceptions)
+    4. Rate limiting (before any processing)
+    5. Locale detection (available to all handlers)
     """
+    from app.core.config import settings
+
     # Added in reverse order (last added = outermost)
     app.add_middleware(LocaleMiddleware)
     app.add_middleware(RateLimitMiddleware)
     app.add_middleware(ErrorHandlingMiddleware)
     app.add_middleware(TimingMiddleware)
+    app.add_middleware(SecurityHeadersMiddleware, production=settings.is_production)

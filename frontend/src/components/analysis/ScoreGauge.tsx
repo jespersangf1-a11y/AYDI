@@ -12,8 +12,12 @@ const SIZE_MAP: Record<'sm' | 'md' | 'lg', number> = {
   lg: 160,
 }
 
-export default function ScoreGauge({ score, label, size = 'md' }: ScoreGaugeProps) {
+export default function ScoreGauge({ score: rawScore, label, size = 'md' }: ScoreGaugeProps) {
   const uniqueId = useId()
+  // Der Wert kommt als Fliesskommazahl aus der Analyse (z. B. 65.87272727272729).
+  // Er wird hier einmal zentral auf 0..100 begrenzt und ganzzahlig gerundet,
+  // damit die Anzeige nie ueber den Ring hinauslaeuft.
+  const score = Number.isFinite(rawScore) ? Math.min(100, Math.max(0, Math.round(rawScore))) : 0
   const sizeValue = typeof size === 'string' ? SIZE_MAP[size] : size
   const [animatedScore, setAnimatedScore] = useState(0)
   const [hasAnimated, setHasAnimated] = useState(false)

@@ -1,6 +1,7 @@
 """Generate structured analysis reports for yacht designs."""
 from datetime import datetime, timezone
 from typing import Optional
+from app.core.boat_classes import BOAT_CLASS_LABELS as _BOAT_CLASS_LABELS
 
 
 def generate_report(
@@ -30,12 +31,9 @@ def generate_report(
         "market": "Markt & Wettbewerb",
     }
 
-    BOAT_CLASS_LABELS = {
-        "small_sail": "Kleine Segelyacht",
-        "cruising_sail": "Fahrtensegler",
-        "large_motor": "Große Motoryacht",
-        "superyacht": "Superyacht",
-    }
+    # Zentrale Liste aller 13 Klassen — vorher standen hier nur 4,
+    # neun Klassen erschienen dadurch als englischer Schlüssel im Bericht.
+    BOAT_CLASS_LABELS = dict(_BOAT_CLASS_LABELS)
 
     # Sort results by module order
     module_order = list(MODULE_LABELS.keys())

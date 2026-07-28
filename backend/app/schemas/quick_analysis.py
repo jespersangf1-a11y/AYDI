@@ -5,6 +5,8 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from app.core.boat_classes import BOAT_CLASSES, is_known
+
 
 class ConfidenceLevel(str, Enum):
     measured = "measured"
@@ -24,36 +26,52 @@ class PublicSpecs(BaseModel):
 
     # Optional — each additional field improves analysis quality
     beam_m: Optional[float] = Field(None, gt=0, lt=200)
-    draft_m: Optional[float] = None
-    displacement_kg: Optional[float] = None
-    cabin_count: Optional[int] = None
-    berth_count: Optional[int] = None
-    head_count: Optional[int] = None
+    draft_m: Optional[float] = Field(None, gt=0, le=20)
+    displacement_kg: Optional[float] = Field(None, gt=0, le=5_000_000)
+    cabin_count: Optional[int] = Field(None, ge=0, le=60)
+    berth_count: Optional[int] = Field(None, ge=0, le=200)
+    head_count: Optional[int] = Field(None, ge=0, le=60)
 
     # Layout hints
-    cockpit_area_sqm: Optional[float] = None
-    salon_area_sqm: Optional[float] = None
-    pantry_type: Optional[str] = None
-    helm_position: Optional[str] = None
+    cockpit_area_sqm: Optional[float] = Field(None, gt=0, le=2000)
+    salon_area_sqm: Optional[float] = Field(None, gt=0, le=2000)
+    pantry_type: Optional[str] = Field(None, max_length=60)
+    helm_position: Optional[str] = Field(None, max_length=60)
     has_flybridge: Optional[bool] = None
     has_crew_quarters: Optional[bool] = None
 
     # Performance
-    engine_hp: Optional[float] = None
-    engine_count: Optional[int] = None
-    fuel_capacity_l: Optional[float] = None
-    water_capacity_l: Optional[float] = None
-    sail_area_sqm: Optional[float] = None
-    max_speed_kn: Optional[float] = None
+    engine_hp: Optional[float] = Field(None, ge=0, le=50_000)
+    engine_count: Optional[int] = Field(None, ge=0, le=12)
+    fuel_capacity_l: Optional[float] = Field(None, ge=0, le=1_000_000)
+    water_capacity_l: Optional[float] = Field(None, ge=0, le=1_000_000)
+    sail_area_sqm: Optional[float] = Field(None, ge=0, le=20_000)
+    max_speed_kn: Optional[float] = Field(None, ge=0, le=150)
 
     # Commercial
-    price_eur: Optional[float] = None
-    year: Optional[int] = None
-    brand: Optional[str] = None
-    model_name: Optional[str] = None
+    price_eur: Optional[float] = Field(None, ge=0, le=1_000_000_000)
+    year: Optional[int] = Field(None, ge=1850, le=2100)
+    brand: Optional[str] = Field(None, max_length=120)
+    model_name: Optional[str] = Field(None, max_length=120)
 
-    deck_height_mm: Optional[float] = None
-    storage_volume_l: Optional[float] = None
+    deck_height_mm: Optional[float] = Field(None, gt=0, le=10_000)
+    storage_volume_l: Optional[float] = Field(None, ge=0, le=1_000_000)
+
+    @field_validator('boat_class')
+    @classmethod
+    def boat_class_must_be_known(cls, boat_class: str) -> str:
+        """Reject unknown classes instead of silently scoring them 50.0.
+
+        Previously any string was accepted: the analysis modules correctly
+        refused with ``available: false``, but the route turned that refusal
+        back into an invented result and echoed the raw input into German
+        prose. Refusing at the edge removes both problems at once.
+        """
+        if not is_known(boat_class):
+            raise ValueError(
+                "Unbekannte Bootsklasse. Zulässig sind: " + ", ".join(BOAT_CLASSES)
+            )
+        return boat_class
 
     @field_validator('beam_m')
     @classmethod

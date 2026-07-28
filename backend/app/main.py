@@ -8,6 +8,7 @@ from app.api.routes import auth, benchmarks, collaborate, community, competitors
 from app.core.config import settings
 from app.core.middleware import register_middleware
 from app.db.database import engine
+from app.db.schema_sync import purge_orphans, sync_schema
 from app.models.models import Base
 
 logger = logging.getLogger(__name__)
@@ -18,6 +19,12 @@ async def lifespan(app: FastAPI):
     # Create tables on startup
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        # create_all leaves existing tables untouched, so columns and indexes
+        # added to a model after the database was first created never arrive.
+        await conn.run_sync(sync_schema)
+        # Foreign keys are enforced from now on; rows orphaned while they were
+        # not would otherwise make every later integrity check fail.
+        await conn.run_sync(purge_orphans)
     logger.info("Database tables created")
 
     # Seed data if empty
@@ -27,11 +34,26 @@ async def lifespan(app: FastAPI):
     yield
 
 
+# The interactive documentation lists every route, every field and every
+# validation rule of the API. That is a gift to an attacker and of no use to
+# an end user, so outside development it is not served at all — including the
+# raw schema at /openapi.json, which is what actually leaks the detail.
+_docs_public = settings.docs_public
+if not _docs_public:
+    logger.info(
+        "API-Dokumentation ist deaktiviert (ENVIRONMENT=%s). "
+        "Zum Einschalten DOCS_ENABLED=true setzen.",
+        settings.ENVIRONMENT,
+    )
+
 app = FastAPI(
     title="AYDI",
     description="AI Yacht Design Intelligence",
     version="0.2.0",
     lifespan=lifespan,
+    docs_url="/docs" if _docs_public else None,
+    redoc_url="/redoc" if _docs_public else None,
+    openapi_url="/openapi.json" if _docs_public else None,
 )
 
 # CORS middleware (must be outermost for preflight handling)

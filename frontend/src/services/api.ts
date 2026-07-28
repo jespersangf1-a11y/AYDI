@@ -128,7 +128,7 @@ export async function getProject(id: string): Promise<Project> {
 }
 
 export async function createProject(data: ProjectCreate): Promise<Project> {
-  return request<Project>(`${BASE}/projects/`, {
+  return request<Project>(`${BASE}/projects`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
