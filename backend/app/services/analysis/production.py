@@ -342,6 +342,15 @@ def _polygon_min_dimension(polygon: list[list[float]]) -> float:
     return min(max(xs) - min(xs), max(ys) - min(ys))
 
 
+def _polygon_bbox_dims(polygon: list[list[float]]) -> tuple[float, float]:
+    """Return the (width, height) of a polygon's axis-aligned bounding box."""
+    if not polygon or len(polygon) < 2:
+        return 0.0, 0.0
+    xs = [p[0] for p in polygon]
+    ys = [p[1] for p in polygon]
+    return max(xs) - min(xs), max(ys) - min(ys)
+
+
 def _vertex_angles(polygon: list[list[float]]) -> list[tuple[float, bool]]:
     """Compute interior angles and reflex flags, independent of winding order.
 
@@ -701,9 +710,7 @@ def analyze_standardization(
     Returns (score 0-100, warnings, metrics).
     """
     warnings: list[dict] = []
-    std_doors = config["standard_door_widths_mm"]
-    std_berth = config["standard_berth_width_mm"]
-    tolerance = config["standardization_tolerance_mm"]
+    tolerance = max(1, config.get("standardization_tolerance_mm", 50))
 
     cabin_zones = [z for z in zones if z.get("zone_type") == "cabin"]
     has_passages = len(passages) > 0
@@ -719,60 +726,71 @@ def analyze_standardization(
         return 50.0, warnings, {
             "passage_match_ratio": 0.0,
             "cabin_match_ratio": 0.0,
-            "non_standard_passages": 0,
-            "non_standard_cabins": 0,
+            "distinct_passage_widths": 0,
+            "distinct_cabin_sizes": 0,
         }
 
-    # --- Passage check ---
-    passage_match_ratio = 0.0
-    non_standard_passages = 0
-    if has_passages:
-        matched = 0
-        for p in passages:
-            w = p["width_mm"]
-            if any(abs(w - std) <= tolerance for std in std_doors):
-                matched += 1
-            else:
-                non_standard_passages += 1
-                warnings.append({
-                    "code": "STANDARD_PASSAGE_NONSTANDARD",
-                    "severity": "warning",
-                    "message": (
-                        f"Durchgang '{p['from_zone']} → {p['to_zone']}': "
-                        f"Breite {w:.0f} mm entspricht keiner Standardmaßbreite "
-                        f"({', '.join(str(d) for d in std_doors)} mm ±{tolerance} mm)."
-                    ),
-                    "suggestion": (
-                        f"Durchgangsbreite auf einen Standardwert anpassen "
-                        f"({', '.join(str(d) for d in std_doors)} mm)."
-                    ),
-                })
-        passage_match_ratio = matched / len(passages)
+    def _dominant_share(signatures: list) -> tuple[float, int]:
+        """Fraction of items sharing the most common size, and #distinct sizes.
 
-    # --- Cabin berth check ---
-    cabin_match_ratio = 0.0
-    non_standard_cabins = 0
+        Standardisation = few distinct module sizes (one door width, one cabin
+        mould), NOT matching a hardcoded value. Matching a fixed list wrongly
+        penalised ergonomically-good wide passages (J-4: production said 0 for
+        800 mm while ergonomics rewarded it) and compared cabins to a berth
+        (furniture) width so real cabins never matched and identical vs varied
+        cabins scored the same (J-4b).
+        """
+        counts: dict = {}
+        for s in signatures:
+            counts[s] = counts.get(s, 0) + 1
+        return max(counts.values()) / len(signatures), len(counts)
+
+    # --- Passage consistency ---
+    passage_match_ratio = 1.0
+    passage_distinct = 0
+    if has_passages:
+        widths = [round(p["width_mm"] / tolerance) for p in passages]
+        passage_match_ratio, passage_distinct = _dominant_share(widths)
+        if passage_distinct > 1:
+            uniq = sorted({round(p["width_mm"]) for p in passages})
+            warnings.append({
+                "code": "STANDARD_PASSAGE_INCONSISTENT",
+                "severity": "warning",
+                "message": (
+                    f"{passage_distinct} unterschiedliche Durchgangsbreiten "
+                    f"({', '.join(str(u) for u in uniq)} mm) — jede zusätzliche "
+                    f"Türbreite ist ein weiteres Fertigungsmodul."
+                ),
+                "suggestion": (
+                    "Durchgangsbreiten auf möglichst wenige, einheitliche Maße "
+                    "vereinheitlichen (der konkrete Wert wird von der Ergonomie bewertet)."
+                ),
+            })
+
+    # --- Cabin consistency ---
+    cabin_match_ratio = 1.0
+    cabin_distinct = 0
     if has_cabins:
-        matched = 0
+        sigs = []
         for zone in cabin_zones:
-            polygon = zone.get("polygon", [])
-            min_dim = _polygon_min_dimension(polygon)
-            if abs(min_dim - std_berth) <= tolerance:
-                matched += 1
-            else:
-                non_standard_cabins += 1
-                warnings.append({
-                    "code": "STANDARD_BERTH_NONSTANDARD",
-                    "severity": "warning",
-                    "message": (
-                        f"Kabine '{zone['name']}': Mindestmaß {min_dim:.0f} mm weicht "
-                        f"von Standardkojengröße {std_berth} mm ab (Toleranz ±{tolerance} mm)."
-                    ),
-                    "suggestion": (
-                        f"Kabinenbreite in Zone '{zone['name']}' auf {std_berth} mm anpassen."
-                    ),
-                })
-        cabin_match_ratio = matched / len(cabin_zones)
+            w, d = _polygon_bbox_dims(zone.get("polygon", []))
+            lo, hi = sorted((round(w / tolerance), round(d / tolerance)))
+            sigs.append((lo, hi))
+        cabin_match_ratio, cabin_distinct = _dominant_share(sigs)
+        if cabin_distinct > 1:
+            warnings.append({
+                "code": "STANDARD_CABIN_INCONSISTENT",
+                "severity": "warning",
+                "message": (
+                    f"{cabin_distinct} unterschiedliche Kabinengrößen bei "
+                    f"{len(cabin_zones)} Kabinen — jede eigene Größe bedeutet eine "
+                    f"eigene Bauform."
+                ),
+                "suggestion": (
+                    "Kabinen auf möglichst wenige Baumaße standardisieren, "
+                    "um Formen und Rüstkosten zu sparen."
+                ),
+            })
 
     # --- Weighted score ---
     if has_passages and has_cabins:
@@ -787,8 +805,8 @@ def analyze_standardization(
     return score, warnings, {
         "passage_match_ratio": round(passage_match_ratio, 3),
         "cabin_match_ratio": round(cabin_match_ratio, 3),
-        "non_standard_passages": non_standard_passages,
-        "non_standard_cabins": non_standard_cabins,
+        "distinct_passage_widths": passage_distinct,
+        "distinct_cabin_sizes": cabin_distinct,
     }
 
 

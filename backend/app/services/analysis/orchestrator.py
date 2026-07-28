@@ -373,6 +373,11 @@ OVERALL_WEIGHTS: dict[str, dict[str, float]] = {
         "structural": 0.10,
         "cost": 0.10,
         "community": 0.05,
+        # L-2: service_patterns was omitted from every class, so its score
+        # (however strongly it varied) never reached the overall. Weights are
+        # renormalised over modules that produced a score, so this only takes
+        # effect when service reports are actually present.
+        "service_patterns": 0.05,
     },
     "cruising_sail": {
         "ergonomics": 0.10,
@@ -385,6 +390,11 @@ OVERALL_WEIGHTS: dict[str, dict[str, float]] = {
         "cost": 0.10,
         "brand_dna": 0.05,
         "community": 0.05,
+        # L-2: service_patterns was omitted from every class, so its score
+        # (however strongly it varied) never reached the overall. Weights are
+        # renormalised over modules that produced a score, so this only takes
+        # effect when service reports are actually present.
+        "service_patterns": 0.05,
     },
     "large_motor": {
         "ergonomics": 0.10,
@@ -398,6 +408,11 @@ OVERALL_WEIGHTS: dict[str, dict[str, float]] = {
         "brand_dna": 0.05,
         "market": 0.05,
         "community": 0.05,
+        # L-2: service_patterns was omitted from every class, so its score
+        # (however strongly it varied) never reached the overall. Weights are
+        # renormalised over modules that produced a score, so this only takes
+        # effect when service reports are actually present.
+        "service_patterns": 0.05,
     },
     "superyacht": {
         "ergonomics": 0.10,
@@ -411,6 +426,11 @@ OVERALL_WEIGHTS: dict[str, dict[str, float]] = {
         "brand_dna": 0.10,
         "market": 0.05,
         "community": 0.05,
+        # L-2: service_patterns was omitted from every class, so its score
+        # (however strongly it varied) never reached the overall. Weights are
+        # renormalised over modules that produced a score, so this only takes
+        # effect when service reports are actually present.
+        "service_patterns": 0.05,
     },
 }
 

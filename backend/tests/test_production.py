@@ -239,28 +239,40 @@ def test_standardization_all_standard():
     assert metrics["passage_match_ratio"] == 1.0
 
 
-def test_standardization_non_standard_passage():
-    """Passage with non-standard width -> lower score."""
+def test_standardization_inconsistent_passages():
+    """Multiple distinct passage widths -> lower score + inconsistency warning.
+
+    (New semantics: standardisation rewards few distinct module sizes, not
+    matching a hardcoded width — J-4.)
+    """
     zones = [
-        make_zone("cabin1", "cabin", polygon=[[0, 0], [2000, 0], [2000, 700], [0, 700]]),
+        make_zone("cabin1", "cabin", polygon=[[0, 0], [2000, 0], [2000, 2500], [0, 2500]]),
     ]
-    passages = [make_passage("cabin1", "salon", width_mm=450)]
+    passages = [
+        make_passage("cabin1", "salon", width_mm=600),
+        make_passage("salon", "pantry", width_mm=700),
+        make_passage("pantry", "head", width_mm=900),
+    ]
     config = _default_config()
     score, warnings, metrics = analyze_standardization(zones, passages, config)
     assert score < 100.0
-    assert any(w["severity"] == "warning" for w in warnings)
+    assert metrics["distinct_passage_widths"] == 3
+    assert any(w["code"] == "STANDARD_PASSAGE_INCONSISTENT" for w in warnings)
 
 
-def test_standardization_non_standard_berth():
-    """Cabin with non-standard berth width -> lower score."""
+def test_standardization_inconsistent_cabins():
+    """Distinct cabin footprints -> lower score + inconsistency warning (J-4b)."""
     zones = [
-        make_zone("cabin1", "cabin", polygon=[[0, 0], [2000, 0], [2000, 500], [0, 500]]),
+        make_zone("cabin1", "cabin", polygon=[[0, 0], [2000, 0], [2000, 2500], [0, 2500]]),
+        make_zone("cabin2", "cabin", polygon=[[0, 0], [1600, 0], [1600, 2100], [0, 2100]]),
+        make_zone("cabin3", "cabin", polygon=[[0, 0], [2400, 0], [2400, 2800], [0, 2800]]),
     ]
     passages = [make_passage("cabin1", "salon", width_mm=600)]
     config = _default_config()
     score, warnings, metrics = analyze_standardization(zones, passages, config)
     assert score < 100.0
-    assert any(w["severity"] == "warning" for w in warnings)
+    assert metrics["distinct_cabin_sizes"] == 3
+    assert any(w["code"] == "STANDARD_CABIN_INCONSISTENT" for w in warnings)
 
 
 def test_standardization_no_data():
