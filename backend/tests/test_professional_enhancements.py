@@ -531,7 +531,10 @@ def test_trim_balanced():
     ]
     score, warnings, metrics = analyze_trim(zones, config)
     assert score >= 0.0
-    assert "trim_deg" in metrics
+    # Trim is now scored as longitudinal CoG position vs the class ideal range
+    # (no fabricated angle in degrees — see analyze_trim / J-2).
+    assert "cog_x_pct" in metrics
+    assert "ideal_range_pct" in metrics
 
 
 def test_structural_weights_sum_to_one():

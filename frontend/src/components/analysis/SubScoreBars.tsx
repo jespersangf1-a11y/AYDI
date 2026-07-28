@@ -57,7 +57,7 @@ const SUB_SCORE_LABELS: Record<string, string> = {
   moisture_risk: 'Feuchtigkeitsrisiko',
   // structural
   loading_conditions: 'Beladungszustände',
-  trim: 'Trimm',
+  trim: 'Längsschwerpunkt',
   fore_aft: 'Längsbalance',
   lateral: 'Querbalance',
   load_concentration: 'Lastkonzentration',

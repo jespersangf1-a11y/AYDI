@@ -1070,17 +1070,16 @@ def analyze_trim(
             "message": "Keine Zonen für Trimmanalyse vorhanden.",
             "suggestion": "Zonen dem Layout zuweisen.",
         })
-        return 50.0, warnings, {"trim_deg": 0.0, "cog_x_pct": 0.0, "ideal_midpoint_pct": 0.0}
+        return 50.0, warnings, {"cog_x_pct": 0.0, "ideal_range_pct": [0.44, 0.54], "cog_deviation_pct": 0.0}
 
     weight_factor = config.get("boat_class_weight_factor", 1.0)
     ideal_range = config.get("ideal_cog_x_range", (0.44, 0.54))
-    max_trim_deg = config.get("max_trim_deg", 2.0)
     # Fixed zone frame — see analyze_fore_aft_balance
     min_x, max_x, _, _ = _get_boat_extents(zones)
     x_span = max_x - min_x
 
     if x_span < 1e-6:
-        return 50.0, warnings, {"trim_deg": 0.0, "cog_x_pct": 0.5, "ideal_midpoint_pct": 0.5}
+        return 50.0, warnings, {"cog_x_pct": 0.5, "ideal_range_pct": list(ideal_range), "cog_deviation_pct": 0.0}
 
     zone_entries, masses, _ = _build_weight_model(zones, weight_factor, structural_items)
 
@@ -1096,45 +1095,47 @@ def analyze_trim(
         weighted_x += mass["x_mm"] * mass["weight_kg"]
 
     if total_weight < 1e-6:
-        return 50.0, warnings, {"trim_deg": 0.0, "cog_x_pct": 0.5, "ideal_midpoint_pct": 0.5}
+        return 50.0, warnings, {"cog_x_pct": 0.5, "ideal_range_pct": list(ideal_range), "cog_deviation_pct": 0.0}
 
     cog_x = weighted_x / total_weight
     cog_x_pct = _clamp01((cog_x - min_x) / x_span)
 
-    # Ideal midpoint in mm
-    ideal_midpoint_pct = (ideal_range[0] + ideal_range[1]) / 2.0
-    ideal_midpoint_x = min_x + x_span * ideal_midpoint_pct
-    trim_offset_mm = cog_x - ideal_midpoint_x
-    boat_length_mm = x_span
+    # Score the longitudinal centre of gravity against the class's ideal range
+    # directly — an honest, dimensionless measure (J-2). The previous code
+    # fabricated a trim angle in degrees via atan2(offset, x_span) × 2.0: a plan
+    # view carries neither displacement nor waterplane data, so that "angle" was
+    # physically meaningless (it produced up to 15.6°, ~3 m bow-down on a 12 m
+    # hull) AND it contradicted this very range — a CoG at 45.8 %, squarely
+    # inside 44–54 %, scored 16.9. Inside the range = 100; degrades linearly to
+    # 0 at `cog_tolerance_pct` beyond the nearer edge.
+    lo, hi = ideal_range
+    tolerance = config.get("cog_tolerance_pct", 0.10)
 
-    correction_factor = 2.0
-    trim_deg = math.degrees(math.atan2(trim_offset_mm, boat_length_mm)) * correction_factor
-
-    # Score
-    abs_trim = abs(trim_deg)
-    if abs_trim <= max_trim_deg:
+    if lo <= cog_x_pct <= hi:
         score = 100.0
-    elif abs_trim >= max_trim_deg * 2.0:
-        score = 0.0
+        deviation = 0.0
     else:
-        score = 100.0 * (1.0 - (abs_trim - max_trim_deg) / max_trim_deg)
-
-    if abs_trim > max_trim_deg:
-        direction = "buglastig" if trim_deg > 0 else "hecklastig"
+        deviation = (lo - cog_x_pct) if cog_x_pct < lo else (cog_x_pct - hi)
+        score = max(0.0, 100.0 * (1.0 - deviation / tolerance)) if tolerance > 0 else 0.0
+        direction = "buglastig" if cog_x_pct > hi else "hecklastig"
         warnings.append({
-            "code": "TRIM_EXCESSIVE",
+            "code": "COG_OUT_OF_RANGE",
             "severity": "warning",
             "message": (
-                f"Geschätzter Trimm {abs_trim:.1f}° ({direction}) — "
-                f"Maximalwert: {max_trim_deg:.1f}°."
+                f"Längsschwerpunkt bei {cog_x_pct * 100:.1f} % der Länge liegt "
+                f"außerhalb des Zielbereichs {lo * 100:.0f}–{hi * 100:.0f} % "
+                f"({direction}, Abweichung {deviation * 100:.1f} Prozentpunkte)."
             ),
-            "suggestion": "Gewichtsverteilung anpassen, um den Trimm zu reduzieren.",
+            "suggestion": (
+                "Schwere Komponenten näher zur Mitte des Zielbereichs verlagern, "
+                "um die Längsbalance zu verbessern."
+            ),
         })
 
     return score, warnings, {
-        "trim_deg": round(trim_deg, 2),
         "cog_x_pct": round(cog_x_pct, 4),
-        "ideal_midpoint_pct": round(ideal_midpoint_pct, 4),
+        "ideal_range_pct": [round(lo, 4), round(hi, 4)],
+        "cog_deviation_pct": round(deviation, 4),
     }
 
 

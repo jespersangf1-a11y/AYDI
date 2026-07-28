@@ -51,7 +51,7 @@ def test_measured_mass_shifts_trim():
     _, _, with_item = analyze_trim(
         ZONES, _config(), structural_items=[HEAVY_AFT_ITEM]
     )
-    assert with_item["trim_deg"] != base["trim_deg"]
+    assert with_item["cog_deviation_pct"] != base["cog_deviation_pct"]
     assert with_item["cog_x_pct"] > base["cog_x_pct"]
 
 
