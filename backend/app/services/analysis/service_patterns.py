@@ -238,13 +238,29 @@ def analyze_zone_type_issues(
         zt = report.get("zone_type")
         if not zt:
             continue
+        # A documented clean inspection is a POSITIVE signal, not a defect
+        # (L-12). Don't let a routine "no findings" check raise a zone's problem
+        # score. Only inspections that actually flagged something (elevated
+        # severity or a cost) still count.
+        if report.get("report_type") == "inspection" and \
+                report.get("severity", "low") in ("low", "none") and \
+                not report.get("cost_eur"):
+            continue
         sev = report.get("severity", "low")
         weight = _REPORT_SEVERITY_WEIGHT.get(sev, 1)
         zone_type_scores[zt] = zone_type_scores.get(zt, 0.0) + weight
 
+    # L-10 (see analyze_material_failures): above ~30 reports also require a zone
+    # to stand out from the average zone, so uniform noise doesn't flag all of
+    # them; small realistic datasets keep the plain absolute threshold.
+    mean_zone_score = (
+        sum(zone_type_scores.values()) / len(zone_type_scores)
+    ) if zone_type_scores else 0.0
+    relative_gate = 1.5 * mean_zone_score if len(service_reports) > 30 else 0.0
+
     problematic: list[str] = []
     for zt, score_val in zone_type_scores.items():
-        if score_val >= threshold:
+        if score_val >= threshold and score_val >= relative_gate:
             problematic.append(zt)
             warnings.append({
                 "code": f"SERVICE_PATTERN_{zt.upper()}",
@@ -321,8 +337,12 @@ def analyze_age_patterns(
         })
         return 50.0, warnings, {"bucket_counts": bucket_counts, "spike_buckets": []}
 
-    num_buckets_with_data = sum(1 for c in bucket_counts.values() if c > 0)
-    avg = total / max(num_buckets_with_data, 1)
+    # Average over ALL buckets, not only the filled ones (L-7). Dividing by the
+    # filled-bucket count made a spike mathematically impossible when reports
+    # clustered in one or two windows: with a single filled bucket the average
+    # equalled the count, so "count > 2×avg" could never fire — exactly the
+    # clearest serial-defect case (all failures at one age) scored a perfect 100.
+    avg = total / len(_AGE_BUCKETS)
 
     spike_buckets: list[str] = []
     for label, count in bucket_counts.items():
@@ -410,9 +430,16 @@ def analyze_material_failures(
             if mat:
                 material_counts[mat] = material_counts.get(mat, 0) + 1
 
+    # L-10: a fixed absolute count flags every material once the dataset is
+    # large (e.g. 100 reports → each material trivially clears 3). Above ~30
+    # reports also require the material to stand out from the average material;
+    # small realistic datasets keep the sensitive absolute floor unchanged.
+    mean_count = (sum(material_counts.values()) / len(material_counts)) if material_counts else 0.0
+    relative_gate = 1.5 * mean_count if len(service_reports) > 30 else 0.0
+
     problematic_materials: list[str] = []
     for mat, count in material_counts.items():
-        if count >= min_reports:
+        if count >= min_reports and count >= relative_gate:
             problematic_materials.append(mat)
             sev = "critical" if count >= min_reports * 2 else "warning"
 

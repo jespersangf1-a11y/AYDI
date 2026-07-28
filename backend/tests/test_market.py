@@ -47,11 +47,11 @@ def _layout_metrics_at_avg() -> dict:
 
 
 def test_empty_competitors():
-    """No competitors at all -> score 50, info warning about insufficient data."""
+    """No competitors at all -> module unavailable (Module-Skip-Logik)."""
     result = run_market_analysis([], [], "cruising_sail", competitors=[])
-    assert result["overall_score"] == 50.0
-    assert any(w["severity"] == "info" for w in result["warnings"])
-    assert any("MARKET_INSUFFICIENT_COMPETITORS" in w["code"] for w in result["warnings"])
+    assert result["available"] is False
+    assert "Wettbewerbsdaten" in result["reason"]
+    assert "overall_score" not in result  # never a fabricated 50/100
 
 
 # ---------------------------------------------------------------------------
@@ -60,14 +60,12 @@ def test_empty_competitors():
 
 
 def test_insufficient_competitors():
-    """Fewer competitors than min_competitors -> score 50, info warning."""
+    """Fewer competitors than min_competitors -> module unavailable."""
     competitors = [make_competitor() for _ in range(3)]  # cruising_sail needs 5
     result = run_market_analysis([], [], "cruising_sail", competitors=competitors)
-    assert result["overall_score"] == 50.0
-    assert any("MARKET_INSUFFICIENT_COMPETITORS" in w["code"] for w in result["warnings"])
-    # All sub-scores should be 50
-    for score in result["sub_scores"].values():
-        assert score == 50.0
+    assert result["available"] is False
+    assert "mindestens 5" in result["reason"]
+    assert "overall_score" not in result
 
 
 # ---------------------------------------------------------------------------

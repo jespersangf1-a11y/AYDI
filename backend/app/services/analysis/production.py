@@ -974,7 +974,7 @@ def analyze_mold_complexity(
 
     # Window count
     total_windows = sum(
-        zone.get("properties", {}).get("window_count", 0)
+        (zone.get("properties") or {}).get("window_count", 0)
         for zone in zones
     )
     window_penalty = min(30.0, total_windows * 3.0)

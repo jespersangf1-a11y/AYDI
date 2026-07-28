@@ -580,7 +580,7 @@ def analyze_material_compatibility(
         if len(metals) >= 2:
             metal_types = set()
             for m in metals:
-                mt = m["material"].get("properties", {}).get("metal_type", "unknown")
+                mt = (m["material"].get("properties") or {}).get("metal_type", "unknown")
                 metal_types.add(mt)
 
             if len(metal_types) > 1:

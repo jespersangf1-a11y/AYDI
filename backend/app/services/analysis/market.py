@@ -905,35 +905,24 @@ def run_market_analysis(
     min_competitors = config.get("min_competitors", 5)
     competitor_list = competitors or []
 
-    # Insufficient competitor data — degrade gracefully
+    # Insufficient competitor data → report as unavailable (Module-Skip-Logik)
+    # rather than emitting a 50/100 that is indistinguishable from a real score.
+    # For most boat classes the shipped benchmark set can never meet
+    # min_competitors, so this path was silently poisoning the overall score
+    # with a fabricated 50 badged "measured". Consistent with cost / materials /
+    # brand_dna / service_patterns.
     if len(competitor_list) < min_competitors:
         return {
             "module": "market",
-            "overall_score": 50.0,
-            "sub_scores": {k: 50.0 for k in weights},
-            "warnings": [
-                {
-                    "code": "MARKET_INSUFFICIENT_COMPETITORS",
-                    "severity": "info",
-                    "message": (
-                        f"Nicht genügend Wettbewerbsdaten. "
-                        f"Mindestens {min_competitors} Modelle erforderlich "
-                        f"(vorhanden: {len(competitor_list)})."
-                    ),
-                    "suggestion": (
-                        f"Mindestens {min_competitors} Wettbewerbsmodelle "
-                        f"in der Datenbank erfassen um eine Marktanalyse durchzuführen."
-                    ),
-                }
-            ],
+            "available": False,
+            "reason": (
+                f"Nicht genügend Wettbewerbsdaten — mindestens {min_competitors} "
+                f"vergleichbare Modelle erforderlich (vorhanden: {len(competitor_list)})."
+            ),
             "suggestions": [
                 f"Mindestens {min_competitors} Wettbewerbsmodelle "
-                f"in der Datenbank erfassen um eine Marktanalyse durchzuführen."
+                f"in der Datenbank erfassen, um eine Marktanalyse durchzuführen."
             ],
-            "metrics": {},
-            "config_used": config,
-            "confidence": data_source,
-            "confidence_note": "Basiert auf geschätzten Werten aus öffentlichen Spezifikationen." if data_source == "estimated" else None,
         }
 
     layout_metrics = _extract_layout_metrics(zones, passages, boat_length_m)
