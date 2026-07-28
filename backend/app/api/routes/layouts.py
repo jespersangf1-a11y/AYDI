@@ -114,6 +114,34 @@ async def get_layout(
     return layout
 
 
+@router.delete("/layouts/{layout_id}", status_code=204)
+async def delete_layout(
+    project_id: UUID,
+    layout_id: UUID,
+    _user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Loesche ein Layout samt allem, was daran haengt.
+
+    Bisher gab es keinen Weg, ein Layout wieder loszuwerden: ein misslungener
+    DXF-Import oder ein Testlayout blieb dauerhaft in der Liste stehen. Die
+    Fremdschluessel sind auf ON DELETE CASCADE gesetzt, die Analysen,
+    Materialzuweisungen, Kosten- und Strukturposten, Versionen und Decks dieses
+    Layouts verschwinden also mit. Referenzmodelle verweisen mit SET NULL und
+    bleiben erhalten.
+    """
+    await _get_project(project_id, _user, db)
+    result = await db.execute(
+        select(Layout).where(Layout.id == layout_id, Layout.project_id == project_id)
+    )
+    layout = result.scalar_one_or_none()
+    if not layout:
+        raise HTTPException(status_code=404, detail="Layout nicht gefunden")
+    await db.delete(layout)
+    await db.commit()
+    logger.info("User %s deleted layout %s of project %s", _user.id, layout_id, project_id)
+
+
 @router.post("/layouts/import-dxf", response_model=DxfImportResponse)
 async def import_dxf(
     project_id: UUID,

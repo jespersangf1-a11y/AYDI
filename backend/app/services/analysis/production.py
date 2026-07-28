@@ -945,8 +945,12 @@ def analyze_mold_complexity(
     deck_penalty = max(0.0, (distinct_heights - 1) * 10.0)
 
     # Window count
+    # ``or {}`` statt eines Vorgabewerts: ein Layout darf "properties": null
+    # enthalten. Der Schluessel ist dann vorhanden, sein Wert ist None — der
+    # Vorgabewert des dict.get greift nicht und die Teilanalyse
+    # analyze_mold_complexity brach mit AttributeError ab.
     total_windows = sum(
-        zone.get("properties", {}).get("window_count", 0)
+        (zone.get("properties") or {}).get("window_count", 0)
         for zone in zones
     )
     window_penalty = min(30.0, total_windows * 3.0)

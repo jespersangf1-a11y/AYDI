@@ -1,14 +1,18 @@
 import logging
+import math
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.api.routes import auth, benchmarks, collaborate, community, competitors, costs, images, import_cad, knowledge, layouts, materials, projects, quick_analysis, reports, service_reports, structural_items, versions
 from app.core.config import settings
 from app.core.middleware import register_middleware
 from app.db.database import engine
-from app.db.schema_sync import purge_orphans, sync_schema
+from app.db.schema_sync import purge_orphans, repair_nonfinite_geometry, sync_schema
 from app.models.models import Base
 
 logger = logging.getLogger(__name__)
@@ -25,6 +29,10 @@ async def lifespan(app: FastAPI):
         # Foreign keys are enforced from now on; rows orphaned while they were
         # not would otherwise make every later integrity check fail.
         await conn.run_sync(purge_orphans)
+        # Layouts, die vor der Eingabepruefung mit NaN/Infinity angelegt
+        # wurden, liessen sich gar nicht mehr ausliefern — Starlette
+        # serialisiert mit allow_nan=False. Einmalig entschaerfen.
+        await conn.run_sync(repair_nonfinite_geometry)
     logger.info("Database tables created")
 
     # Seed data if empty
@@ -64,6 +72,39 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type", "Accept-Language"],
 )
+
+
+def _ohne_unendlich(wert):
+    """Ersetze NaN/Infinity rekursiv durch ihren Namen als Zeichenkette.
+
+    FastAPI legt in eine Validierungsmeldung den beanstandeten Wert selbst mit
+    hinein ("input"). Genau der ist bei diesen Faellen aber NaN oder Infinity —
+    und Starlette serialisiert mit ``allow_nan=False``. Die Antwort liess sich
+    deshalb nicht schreiben: statt der 422 mit der Begruendung bekam der
+    Aufrufer einen Serverfehler und erfuhr nicht, was an seiner Eingabe falsch
+    war. Die Schranke im Schema griff also, nur die Auskunft darueber ging
+    verloren.
+    """
+    if isinstance(wert, float):
+        if math.isnan(wert):
+            return "NaN"
+        if math.isinf(wert):
+            return "Infinity" if wert > 0 else "-Infinity"
+        return wert
+    if isinstance(wert, dict):
+        return {schluessel: _ohne_unendlich(w) for schluessel, w in wert.items()}
+    if isinstance(wert, (list, tuple)):
+        return [_ohne_unendlich(w) for w in wert]
+    return wert
+
+
+@app.exception_handler(RequestValidationError)
+async def validierungsfehler(request: Request, exc: RequestValidationError):
+    return JSONResponse(
+        status_code=422,
+        content={"detail": _ohne_unendlich(jsonable_encoder(exc.errors()))},
+    )
+
 
 # Register AYDI middleware: timing, error handling, rate limiting, locale
 register_middleware(app)
