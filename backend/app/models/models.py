@@ -279,6 +279,13 @@ class ServiceReport(Base):
     __tablename__ = "service_reports"
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    # Owner of the report. Nullable only so the additive migration can backfill
+    # legacy rows; new reports always set it. Access control keys on this
+    # (see routes/service_reports.py) — these are the most confidential records
+    # in the system (defect details, repair costs, shipyard internals).
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True
+    )
     project_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("projects.id", ondelete="SET NULL"), nullable=True
     )
