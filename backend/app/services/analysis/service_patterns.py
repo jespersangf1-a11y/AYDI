@@ -8,6 +8,7 @@ Pure function module — no database access.
 All user-facing strings are in German.
 """
 import logging
+from app.services.analysis.scoring import weighted_overall, hinweis_teilanalysen
 
 logger = logging.getLogger(__name__)
 
@@ -208,7 +209,7 @@ def analyze_zone_type_issues(
     zones: list[dict],
     service_reports: list[dict],
     config: dict,
-) -> tuple[float, list[dict], dict]:
+) -> tuple[float | None, list[dict], dict]:
     """Count weighted service report scores per zone_type.
 
     Each report contributes severity-weighted points to its zone_type.
@@ -222,13 +223,36 @@ def analyze_zone_type_issues(
 
     # Accumulate weighted score per zone_type
     zone_type_scores: dict[str, float] = {}
+    # Berichte ohne Zonenzuordnung sind fuer diese Auswertung unsichtbar. Wurden
+    # sie alle uebersprungen, blieb die Sammlung leer, es gab nichts
+    # Auffaelliges — und die Pruefung meldete 100.0 fuer eine Flotte, deren
+    # Serviceberichte gar nicht zugeordnet werden konnten.
+    berichte_mit_zone = 0
     for report in service_reports:
         zt = report.get("zone_type")
         if not zt:
             continue
+        berichte_mit_zone += 1
         sev = report.get("severity", "low")
         weight = _REPORT_SEVERITY_WEIGHT.get(sev, 1)
         zone_type_scores[zt] = zone_type_scores.get(zt, 0.0) + weight
+
+    if berichte_mit_zone == 0:
+        return None, [{
+            "code": "SERVICE_ZONE_ISSUES_NOT_ASSESSABLE",
+            "severity": "info",
+            "message": (
+                f"Zonenbezogene Servicemuster nicht beurteilbar: keiner der "
+                f"{len(service_reports)} Serviceberichte nennt einen Zonentyp."
+            ),
+            "suggestion": "Serviceberichte beim Erfassen einem Zonentyp zuordnen.",
+            "location": "service_reports.zone_type",
+        }], {
+            "zone_type_scores": {},
+            "problematic_zone_types": [],
+            "threshold": threshold,
+            "reports_with_zone": 0,
+        }
 
     problematic: list[str] = []
     for zt, score_val in zone_type_scores.items():
@@ -258,6 +282,7 @@ def analyze_zone_type_issues(
         "zone_type_scores": {k: round(v, 1) for k, v in zone_type_scores.items()},
         "problematic_zone_types": problematic,
         "threshold": threshold,
+        "reports_with_zone": berichte_mit_zone,
     }
 
 
@@ -374,7 +399,7 @@ def analyze_age_patterns(
 def analyze_material_failures(
     service_reports: list[dict],
     config: dict,
-) -> tuple[float, list[dict], dict]:
+) -> tuple[float | None, list[dict], dict]:
     """Cross-reference reports that list materials_involved.
 
     Materials appearing in 3+ reports are flagged as failure risks.
@@ -390,13 +415,39 @@ def analyze_material_failures(
 
     # Count occurrences per material
     material_counts: dict[str, int] = {}
+    # Ohne Materialangabe im Bericht gibt es nichts zu zaehlen. Nannten alle
+    # Berichte kein Material, blieb die Zaehlung leer und die Pruefung meldete
+    # 100.0 — eine Unbedenklichkeitsbescheinigung fuer saemtliche Materialien,
+    # ueber die nichts bekannt war.
+    berichte_mit_material = 0
     for report in service_reports:
         materials = report.get("materials_involved") or []
         if isinstance(materials, str):
             materials = [materials]
+        gezaehlt = False
         for mat in materials:
             if mat:
                 material_counts[mat] = material_counts.get(mat, 0) + 1
+                gezaehlt = True
+        if gezaehlt:
+            berichte_mit_material += 1
+
+    if berichte_mit_material == 0:
+        return None, [{
+            "code": "SERVICE_MATERIAL_NOT_ASSESSABLE",
+            "severity": "info",
+            "message": (
+                f"Materialbezogene Ausfallmuster nicht beurteilbar: keiner der "
+                f"{len(service_reports)} Serviceberichte nennt ein beteiligtes Material."
+            ),
+            "suggestion": "Beteiligte Materialien im Servicebericht erfassen (materials_involved).",
+            "location": "service_reports.materials_involved",
+        }], {
+            "material_counts": {},
+            "problematic_materials": [],
+            "min_reports_threshold": min_reports,
+            "reports_with_material": 0,
+        }
 
     problematic_materials: list[str] = []
     for mat, count in material_counts.items():
@@ -441,6 +492,7 @@ def analyze_material_failures(
         "material_counts": material_counts,
         "problematic_materials": problematic_materials,
         "min_reports_threshold": min_reports,
+        "reports_with_material": berichte_mit_material,
     }
 
 
@@ -453,7 +505,7 @@ def analyze_design_warnings(
     zones: list[dict],
     service_reports: list[dict],
     config: dict,
-) -> tuple[float, list[dict], dict]:
+) -> tuple[float | None, list[dict], dict]:
     """Match the current layout's zone_types against historically problematic ones.
 
     For each zone in the current layout whose zone_type has accumulated many
@@ -467,13 +519,34 @@ def analyze_design_warnings(
 
     # Build zone_type -> weighted score from service reports
     zone_type_scores: dict[str, float] = {}
+    berichte_mit_zone = 0
     for report in service_reports:
         zt = report.get("zone_type")
         if not zt:
             continue
+        berichte_mit_zone += 1
         sev = report.get("severity", "low")
         weight = _REPORT_SEVERITY_WEIGHT.get(sev, 1)
         zone_type_scores[zt] = zone_type_scores.get(zt, 0.0) + weight
+
+    if berichte_mit_zone == 0:
+        # Ohne zugeordnete Berichte gibt es keinen Abgleich mit dem Layout. Die
+        # frueheren 100.0 bescheinigten dem Entwurf, keinem bekannten
+        # Problemmuster zu entsprechen — es war nur kein Muster bekannt.
+        return None, [{
+            "code": "SERVICE_DESIGN_WARNINGS_NOT_ASSESSABLE",
+            "severity": "info",
+            "message": (
+                "Abgleich des Layouts mit Servicemustern nicht möglich: kein "
+                "Servicebericht ist einem Zonentyp zugeordnet."
+            ),
+            "suggestion": "Serviceberichte beim Erfassen einem Zonentyp zuordnen.",
+            "location": "service_reports.zone_type",
+        }], {
+            "problematic_types_in_history": [],
+            "matched_zone_count": None,
+            "matched_zone_types": [],
+        }
 
     # Collect problematic zone_types
     problematic_types = {zt for zt, s in zone_type_scores.items() if s >= threshold}
@@ -551,42 +624,24 @@ def run_service_patterns_analysis(
 
     reports = service_reports or []
 
-    # Early exit when no reports are available
+    # Dieses Modul wertet ausschliesslich Erfahrung aus der Flotte aus. Ohne
+    # Serviceberichte hat es keine Grundlage. Frueher gab es hier 50.0 zurueck —
+    # ein Wert, der wie ein Befund aussah, aber keiner war.
     if not reports:
         return {
             "module": "service_patterns",
-            "overall_score": 50.0,
-            "sub_scores": {
-                "zone_issues": 50.0,
-                "age_patterns": 50.0,
-                "material_failures": 50.0,
-                "design_warnings": 50.0,
-            },
-            "warnings": [
-                {
-                    "code": "NO_SERVICE_REPORTS",
-                    "severity": "info",
-                    "message": (
-                        "Keine Serviceberichte vorhanden. "
-                        "Musteranalyse nicht möglich."
-                    ),
-                    "suggestion": (
-                        "Serviceberichte erfassen und mit Layouts verknüpfen, "
-                        "um Musteranalysen zu ermöglichen."
-                    ),
-                }
-            ],
+            "available": False,
+            "reason": (
+                "Keine Serviceberichte vorhanden — ohne Betriebserfahrung "
+                "lassen sich keine wiederkehrenden Muster erkennen."
+            ),
             "suggestions": [
                 "Serviceberichte erfassen und mit Layouts verknüpfen, "
                 "um Musteranalysen zu ermöglichen."
             ],
-            "metrics": {},
-            "config_used": config,
-            "confidence": data_source,
-            "confidence_note": "Basiert auf geschätzten Werten aus öffentlichen Spezifikationen." if data_source == "estimated" else None,
         }
 
-    sub_scores: dict[str, float] = {}
+    sub_scores: dict[str, float | None] = {}
     all_warnings: list[dict] = []
     all_suggestions: list[str] = []
     all_metrics: dict[str, dict] = {}
@@ -626,7 +681,20 @@ def run_service_patterns_analysis(
                 "suggestion": "Serviceberichte auf Vollständigkeit und Format prüfen.",
             })
 
-    overall = sum(sub_scores.get(k, 50.0) * w for k, w in weights.items())
+    # Teilanalysen ohne Datengrundlage geben None zurueck und bleiben aus der
+    # Rechnung heraus; ihr Gewicht verteilt sich auf die geprueften. Frueher
+    # ging hier ein Vorgabewert ein — bei fehlenden Eintraegen 0.0 bzw. 50.0 —
+    # und erzeugte eine Note fuer etwas, das nie geprueft wurde.
+    overall, _nicht_bewertet = weighted_overall(sub_scores, weights)
+    if overall is None:
+        return {
+            "module": "service_patterns",
+            "available": False,
+            "reason": "Keine der Teilanalysen konnte mangels Datengrundlage durchgeführt werden.",
+            "suggestions": [
+                "Layout- und Stammdaten vervollständigen, um eine Bewertung zu ermöglichen."
+            ],
+        }
 
     for w in all_warnings:
         suggestion = w.get("suggestion")
@@ -638,11 +706,18 @@ def run_service_patterns_analysis(
     return {
         "module": "service_patterns",
         "overall_score": round(overall, 1),
-        "sub_scores": {k: round(v, 1) for k, v in sub_scores.items()},
+        # Eine Teilanalyse ohne Datengrundlage traegt None — sie wird als
+        # solche weitergereicht statt auf eine Zahl gerundet zu werden.
+        "sub_scores": {
+            k: (round(v, 1) if v is not None else None)
+            for k, v in sub_scores.items()
+        },
         "warnings": all_warnings,
         "suggestions": all_suggestions,
         "metrics": all_metrics,
         "config_used": config,
         "confidence": data_source,
         "confidence_note": "Basiert auf geschätzten Werten aus öffentlichen Spezifikationen." if data_source == "estimated" else None,
+        "coverage_note": hinweis_teilanalysen(_nicht_bewertet),
+        "unassessed_sub_analyses": _nicht_bewertet,
     }

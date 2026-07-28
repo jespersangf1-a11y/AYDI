@@ -133,11 +133,17 @@ def test_volume_utilization_poor():
 
 
 def test_volume_utilization_empty():
-    """No zones -> degraded score 50 + info warning."""
+    """Ohne Zonen ist die Volumennutzung nicht beurteilbar.
+
+    Frueher lieferte diese Eingabe 50.0 — eine Zahl, die voll gewichtet in die
+    Modulnote einging und sich in der Oberflaeche nicht von einer gemessenen
+    unterscheiden liess.
+    """
     config = _default_config()
     score, warnings, metrics = analyze_volume_utilization([], config)
-    assert score == 50.0
+    assert score is None
     assert any(w["severity"] == "info" for w in warnings)
+    assert metrics["utilization_ratio"] is None
 
 
 def test_volume_boat_class_difference():
@@ -186,11 +192,15 @@ def test_furniture_ratio_sparse():
 
 
 def test_furniture_ratio_no_data():
-    """No furniture data on any zone -> degraded score 50 + info."""
+    """Ohne Moeblierungsangaben gibt es nichts zu mitteln.
+
+    Frueher stand hier 50.0 fuer "mittelmaessig" — ein Ergebnis ohne jede
+    Eingangsgroesse.
+    """
     zones = [make_zone("salon", "salon"), make_zone("cabin", "cabin")]
     config = _default_config()
     score, warnings, metrics = analyze_furniture_ratio(zones, config)
-    assert score == 50.0
+    assert score is None
     assert any(w["severity"] == "info" for w in warnings)
     assert metrics["zones_evaluated"] == 0
 

@@ -4,6 +4,8 @@ Pure function module — no database access.
 """
 import logging
 from collections import deque
+from app.core.zone_types import normalisiere_zonen, warnung_unbekannte_typen
+from app.services.analysis.scoring import weighted_overall, hinweis_teilanalysen
 
 logger = logging.getLogger(__name__)
 
@@ -278,7 +280,7 @@ def _bfs_reachable(graph: dict[str, set[str]], start: str) -> set[str]:
     return visited
 
 
-def analyze_volume_utilization(zones: list[dict], config: dict) -> tuple[float, list[dict], dict]:
+def analyze_volume_utilization(zones: list[dict], config: dict) -> tuple[float | None, list[dict], dict]:
     """Score how efficiently the hull footprint is used by defined zones.
 
     Area-based approximation — true volumetric analysis would require hull geometry data.
@@ -291,7 +293,10 @@ def analyze_volume_utilization(zones: list[dict], config: dict) -> tuple[float, 
             "message": "Keine Zonen definiert — Volumennutzung kann nicht bewertet werden",
             "suggestion": "Zonen zum Layout hinzufügen",
         })
-        return 50.0, warnings, {"utilization_ratio": 0.0, "zone_area_sqmm": 0.0, "bbox_area_sqmm": 0.0}
+        # 50.0 war eine Zahl ohne Messung: sie ging voll gewichtet in die
+        # Modulnote ein und war in der Oberflaeche nicht von einem Messwert zu
+        # unterscheiden.
+        return None, warnings, {"utilization_ratio": None, "zone_area_sqmm": None, "bbox_area_sqmm": None}
 
     all_points = [p for z in zones for p in z["polygon"]]
     if not all_points:
@@ -300,7 +305,7 @@ def analyze_volume_utilization(zones: list[dict], config: dict) -> tuple[float, 
             "message": "Keine Polygondaten vorhanden — Volumennutzung kann nicht bewertet werden",
             "suggestion": "Zonenpolygone überprüfen",
         })
-        return 50.0, warnings, {"utilization_ratio": 0.0, "zone_area_sqmm": 0.0, "bbox_area_sqmm": 0.0}
+        return None, warnings, {"utilization_ratio": None, "zone_area_sqmm": None, "bbox_area_sqmm": None}
 
     min_x = min(p[0] for p in all_points)
     max_x = max(p[0] for p in all_points)
@@ -314,7 +319,7 @@ def analyze_volume_utilization(zones: list[dict], config: dict) -> tuple[float, 
             "message": "Zonenfläche nicht berechenbar (degenerierte Geometrie)",
             "suggestion": "Zonenpolygone überprüfen",
         })
-        return 50.0, warnings, {"utilization_ratio": 0.0, "zone_area_sqmm": 0.0, "bbox_area_sqmm": 0.0}
+        return None, warnings, {"utilization_ratio": None, "zone_area_sqmm": None, "bbox_area_sqmm": None}
 
     zone_area = sum(_polygon_area_sqmm(z["polygon"]) for z in zones)
     ratio = zone_area / bbox_area
@@ -350,7 +355,7 @@ def analyze_volume_utilization(zones: list[dict], config: dict) -> tuple[float, 
 _FURNITURE_EXCLUDED_TYPES = {"engine", "storage", "swim_platform", "tender_garage", "foredeck"}
 
 
-def analyze_furniture_ratio(zones: list[dict], config: dict) -> tuple[float, list[dict], dict]:
+def analyze_furniture_ratio(zones: list[dict], config: dict) -> tuple[float | None, list[dict], dict]:
     """Score furniture density per zone using properties.furniture_area_pct."""
     warnings: list[dict] = []
     max_ratio = config["max_furniture_ratio"]
@@ -370,7 +375,10 @@ def analyze_furniture_ratio(zones: list[dict], config: dict) -> tuple[float, lis
             "message": "Keine Möblierungsdaten vorhanden — Bewertung nicht möglich",
             "suggestion": "furniture_area_pct in Zone-Eigenschaften angeben (0.0–1.0)",
         })
-        return 50.0, warnings, {"zones_evaluated": 0, "cramped": 0, "sparse": 0}
+        # Ohne eine einzige Angabe zur Moeblierung gibt es nichts zu mitteln.
+        # Die bisherige 50.0 stand fuer "mittelmaessig" und behauptete damit ein
+        # Ergebnis, wo keine Eingangsgroesse vorlag.
+        return None, warnings, {"zones_evaluated": 0, "cramped": None, "sparse": None}
 
     zone_scores = []
     cramped = 0
@@ -444,7 +452,7 @@ def analyze_storage_ratio(zones: list[dict], config: dict) -> tuple[float, list[
     return score, warnings, {"storage_ratio": round(ratio, 4), "storage_area_sqmm": storage_area, "total_area_sqmm": total_area}
 
 
-def analyze_storage_distribution(zones: list[dict], config: dict) -> tuple[float, list[dict], dict]:
+def analyze_storage_distribution(zones: list[dict], config: dict) -> tuple[float | None, list[dict], dict]:
     """Score how evenly storage zones are distributed across the layout."""
     storage_zones = [z for z in zones if z["zone_type"] == "storage"]
     warnings = []
@@ -456,11 +464,35 @@ def analyze_storage_distribution(zones: list[dict], config: dict) -> tuple[float
                 "message": f"Nur {len(storage_zones)} Stauraum definiert (empfohlen: {config['min_storage_zones']})",
                 "suggestion": "Weitere Stauräume an verschiedenen Positionen hinzufügen",
             })
-        return 50.0 if storage_zones else 0.0, warnings, {"imbalance": 1.0, "storage_count": len(storage_zones)}
+        # Verteilung setzt mindestens zwei Stauraeume voraus — ein einzelner
+        # Stauraum ist weder gleichmaessig noch ungleichmaessig verteilt. Die
+        # frueheren Werte (50.0 bzw. 0.0) nannten dazu ein Ungleichgewicht von
+        # 1.0, das nie berechnet wurde. Das Fehlen von Stauraum an sich meldet
+        # bereits analyze_storage_ratio als kritischen Befund.
+        warnings.append({
+            "code": "STORAGE_DISTRIBUTION_NOT_ASSESSABLE",
+            "severity": "info",
+            "message": (
+                f"Stauraumverteilung nicht beurteilbar: {len(storage_zones)} Stauraum "
+                "im Layout, für eine Verteilungsaussage sind mindestens zwei nötig."
+            ),
+            "suggestion": "Weitere Stauräume an verschiedenen Positionen anlegen.",
+            "location": "layout.zones",
+        })
+        return None, warnings, {"imbalance": None, "storage_count": len(storage_zones)}
 
     all_points = [p for z in zones for p in z["polygon"]]
     if not all_points:
-        return 0.0, warnings, {"imbalance": 1.0, "storage_count": 0}
+        # Ohne Polygondaten gibt es keine Bezugsgroesse. 0.0 mit einem
+        # Ungleichgewicht von 1.0 war ein erfundener Schlechtwert.
+        warnings.append({
+            "code": "STORAGE_DISTRIBUTION_NOT_ASSESSABLE",
+            "severity": "warning",
+            "message": "Stauraumverteilung nicht beurteilbar: keine Polygondaten im Layout.",
+            "suggestion": "Zonenpolygone prüfen bzw. Layout erneut importieren.",
+            "location": "layout.zones.polygon",
+        })
+        return None, warnings, {"imbalance": None, "storage_count": len(storage_zones)}
 
     min_x = min(p[0] for p in all_points)
     max_x = max(p[0] for p in all_points)
@@ -469,7 +501,17 @@ def analyze_storage_distribution(zones: list[dict], config: dict) -> tuple[float
     bbox_diag = ((max_x - min_x) ** 2 + (max_y - min_y) ** 2) ** 0.5
 
     if bbox_diag == 0:
-        return 100.0, warnings, {"imbalance": 0.0, "storage_count": len(storage_zones)}
+        # Entartete Geometrie ohne Ausdehnung. Die frueheren 100.0 mit einem
+        # Ungleichgewicht von 0.0 hiessen "perfekt verteilt" — fuer ein Layout,
+        # dessen Ausdehnung sich nicht bestimmen laesst.
+        warnings.append({
+            "code": "STORAGE_DISTRIBUTION_NOT_ASSESSABLE",
+            "severity": "warning",
+            "message": "Stauraumverteilung nicht beurteilbar: das Layout hat keine messbare Ausdehnung.",
+            "suggestion": "Zonenpolygone auf entartete Geometrie prüfen.",
+            "location": "layout.zones.polygon",
+        })
+        return None, warnings, {"imbalance": None, "storage_count": len(storage_zones)}
 
     centroids = [_centroid(z["polygon"]) for z in storage_zones]
     avg_cx = sum(c[0] for c in centroids) / len(centroids)
@@ -499,13 +541,22 @@ def analyze_storage_distribution(zones: list[dict], config: dict) -> tuple[float
     return score, warnings, {"imbalance": round(imbalance, 4), "storage_count": len(storage_zones)}
 
 
-def analyze_storage_accessibility(zones: list[dict], passages: list[dict], config: dict) -> tuple[float, list[dict], dict]:
+def analyze_storage_accessibility(zones: list[dict], passages: list[dict], config: dict) -> tuple[float | None, list[dict], dict]:
     """Score whether storage zones are reachable via passage graph."""
     storage_zones = [z for z in zones if z["zone_type"] == "storage"]
     warnings = []
 
     if not storage_zones:
-        return 100.0, warnings, {"accessible": 0, "total_storage": 0}
+        # Kein Stauraum heisst nicht "alle Stauraeume erreichbar". Die frueheren
+        # 100.0 waren eine Erreichbarkeitsbestaetigung fuer eine leere Menge.
+        warnings.append({
+            "code": "STORAGE_ACCESS_NOT_ASSESSABLE",
+            "severity": "info",
+            "message": "Erreichbarkeit der Stauräume nicht beurteilbar: das Layout enthält keine Stauräume.",
+            "suggestion": "Stauräume (storage) im Layout anlegen.",
+            "location": "layout.zones",
+        })
+        return None, warnings, {"accessible": None, "total_storage": 0}
 
     graph = _build_adjacency(passages)
     non_storage = [z["name"] for z in zones if z["zone_type"] != "storage"]
@@ -527,12 +578,32 @@ def analyze_storage_accessibility(zones: list[dict], passages: list[dict], confi
                 "suggestion": f"Durchgang zu Stauraum '{sz['name']}' hinzufügen",
             })
 
+    # total ist hier zwangslaeufig > 0 — die leere Menge kehrt oben zurueck.
     total = len(storage_zones)
-    score = (accessible / total) * 100.0 if total > 0 else 100.0
+    score = (accessible / total) * 100.0
     return score, warnings, {"accessible": accessible, "total_storage": total}
 
 
 def run_volume_storage_analysis(zones: list[dict], passages: list[dict], boat_class: str, config_overrides: dict | None = None, data_source: str = "measured") -> dict:
+    # Ein Layout ohne Zonen ist kein Layout. Ohne diese Pruefung lieferten die
+    # Teilanalysen ihre jeweiligen Vorgabewerte zurueck, und daraus entstand ein
+    # Gesamtwert, der wie ein Befund aussah — obwohl nichts gemessen wurde.
+    if not isinstance(zones, list) or len(zones) == 0:
+        return {
+            "module": "volume_storage",
+            "available": False,
+            "reason": "Das Layout enthält keine Zonen — es gibt nichts zu bewerten.",
+            "suggestions": [
+                "Zonen im Layout anlegen oder ein CAD-Modell importieren."
+            ],
+        }
+
+    # Zonentypen vereinheitlichen, bevor irgendeine Pruefung ihre Menge bildet.
+    # Die Module suchen ihre Pruefobjekte ueber exakte Mengenzugehoerigkeit; eine
+    # abweichende Schreibweise ("saloon" statt "salon", "engine_room" statt
+    # "engine") liess die Menge leer bleiben und die Pruefung meldete daraufhin
+    # volle Punktzahl. Siehe app/core/zone_types.py.
+    zones, _unbekannte_zonentypen = normalisiere_zonen(zones)
     if boat_class not in BOAT_CLASS_DEFAULTS:
         return {"available": False, "reason": f"Unbekannte Bootsklasse: {boat_class}"}
     config = BOAT_CLASS_DEFAULTS[boat_class].copy()
@@ -569,7 +640,27 @@ def run_volume_storage_analysis(zones: list[dict], passages: list[dict], boat_cl
                 "suggestion": "Layoutdaten überprüfen",
             })
 
-    overall = sum(sub_scores.get(k, 0) * w for k, w in weights.items())
+    # Unbekannte Zonentypen gehoeren in den Befund, nicht ins Protokoll: eine
+    # Zone mit unbekanntem Typ ist fuer die typbezogenen Pruefungen unsichtbar.
+    # Ohne diesen Hinweis liest sich das Ergebnis so, als waere sie geprueft.
+    _warnung_zonentypen = warnung_unbekannte_typen(_unbekannte_zonentypen)
+    if _warnung_zonentypen:
+        all_warnings.append(_warnung_zonentypen)
+
+    # Teilanalysen ohne Datengrundlage geben None zurueck und bleiben aus der
+    # Rechnung heraus; ihr Gewicht verteilt sich auf die geprueften. Frueher
+    # ging hier ein Vorgabewert ein — bei fehlenden Eintraegen 0.0 bzw. 50.0 —
+    # und erzeugte eine Note fuer etwas, das nie geprueft wurde.
+    overall, _nicht_bewertet = weighted_overall(sub_scores, weights)
+    if overall is None:
+        return {
+            "module": "volume_storage",
+            "available": False,
+            "reason": "Keine der Teilanalysen konnte mangels Datengrundlage durchgeführt werden.",
+            "suggestions": [
+                "Layout- und Stammdaten vervollständigen, um eine Bewertung zu ermöglichen."
+            ],
+        }
 
     for w in all_warnings:
         if w.get("suggestion") and w["suggestion"] not in all_suggestions:
@@ -580,11 +671,18 @@ def run_volume_storage_analysis(zones: list[dict], passages: list[dict], boat_cl
     return {
         "module": "volume_storage",
         "overall_score": round(overall, 1),
-        "sub_scores": {k: round(v, 1) for k, v in sub_scores.items()},
+        # Eine Teilanalyse ohne Datengrundlage traegt None — sie wird als
+        # solche weitergereicht statt auf eine Zahl gerundet zu werden.
+        "sub_scores": {
+            k: (round(v, 1) if v is not None else None)
+            for k, v in sub_scores.items()
+        },
         "warnings": all_warnings,
         "suggestions": all_suggestions,
         "metrics": all_metrics,
         "config_used": config,
         "confidence": data_source,
         "confidence_note": "Basiert auf geschätzten Werten aus öffentlichen Spezifikationen." if data_source == "estimated" else None,
+        "coverage_note": hinweis_teilanalysen(_nicht_bewertet),
+        "unassessed_sub_analyses": _nicht_bewertet,
     }

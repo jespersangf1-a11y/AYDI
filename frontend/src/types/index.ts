@@ -101,6 +101,25 @@ export interface AnalysisResult {
   created_at: string
 }
 
+/**
+ * Antwort eines Moduls, dem die Datengrundlage fehlt.
+ *
+ * Bewusst ohne overall_score: ein Modul ohne Daten hat keinen Wert. Der Server
+ * speichert einen solchen Lauf auch nicht, deshalb fehlen id und created_at.
+ */
+export interface AnalysisUnavailable {
+  module: string
+  available: false
+  reason: string
+  suggestions: string[]
+}
+
+export function istNichtBeurteilbar(
+  ergebnis: AnalysisResult | AnalysisUnavailable
+): ergebnis is AnalysisUnavailable {
+  return (ergebnis as AnalysisUnavailable).available === false
+}
+
 export interface DxfImportResponse {
   zones: ZoneData[]
   passages: PassageData[]

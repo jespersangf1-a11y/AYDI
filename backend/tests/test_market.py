@@ -1,5 +1,14 @@
 """Tests for market & competitor analysis module."""
 from tests.conftest import make_zone, make_competitor
+
+
+def _minimales_layout() -> list[dict]:
+    """Eine Zone genuegt, damit die Leer-Layout-Pruefung nicht vorher greift.
+
+    Ohne Zonen meldet jedes Zonenmodul inzwischen "nicht beurteilbar" — die
+    Tests unten pruefen aber die Wettbewerberdaten, nicht das leere Layout.
+    """
+    return [make_zone("salon", "salon")]
 from app.services.analysis.market import (
     BOAT_CLASS_DEFAULTS,
     SEVERITY_ORDER,
@@ -47,11 +56,12 @@ def _layout_metrics_at_avg() -> dict:
 
 
 def test_empty_competitors():
-    """No competitors at all -> score 50, info warning about insufficient data."""
-    result = run_market_analysis([], [], "cruising_sail", competitors=[])
-    assert result["overall_score"] == 50.0
-    assert any(w["severity"] == "info" for w in result["warnings"])
-    assert any("MARKET_INSUFFICIENT_COMPETITORS" in w["code"] for w in result["warnings"])
+    """Keine Wettbewerber -> Modul meldet "nicht beurteilbar"."""
+    result = run_market_analysis(_minimales_layout(), [], "cruising_sail", competitors=[])
+    assert result["available"] is False
+    assert result["module"] == "market"
+    assert "overall_score" not in result
+    assert result["reason"]
 
 
 # ---------------------------------------------------------------------------
@@ -60,14 +70,17 @@ def test_empty_competitors():
 
 
 def test_insufficient_competitors():
-    """Fewer competitors than min_competitors -> score 50, info warning."""
-    competitors = [make_competitor() for _ in range(3)]  # cruising_sail needs 5
-    result = run_market_analysis([], [], "cruising_sail", competitors=competitors)
-    assert result["overall_score"] == 50.0
-    assert any("MARKET_INSUFFICIENT_COMPETITORS" in w["code"] for w in result["warnings"])
-    # All sub-scores should be 50
-    for score in result["sub_scores"].values():
-        assert score == 50.0
+    """Weniger Wettbewerber als min_competitors -> "nicht beurteilbar".
+
+    Frueher entstand daraus eine Gesamtnote von 50.0 mit lauter 50.0-Teilnoten
+    — eine Marktbewertung ohne ausreichenden Markt.
+    """
+    competitors = [make_competitor() for _ in range(3)]  # cruising_sail braucht 5
+    result = run_market_analysis(
+        _minimales_layout(), [], "cruising_sail", competitors=competitors
+    )
+    assert result["available"] is False
+    assert "overall_score" not in result
 
 
 # ---------------------------------------------------------------------------
@@ -296,7 +309,8 @@ def test_different_boat_classes():
     # small_sail needs 5 competitors; supply exactly 5
     small_sail_competitors = [make_competitor() for _ in range(5)]
     result_small = run_market_analysis(
-        [], [], "small_sail", competitors=small_sail_competitors, boat_length_m=10.0
+        _minimales_layout(), [], "small_sail",
+        competitors=small_sail_competitors, boat_length_m=10.0,
     )
 
     # superyacht only needs 3 competitors
@@ -313,7 +327,8 @@ def test_different_boat_classes():
         for _ in range(3)
     ]
     result_super = run_market_analysis(
-        [], [], "superyacht", competitors=superyacht_competitors, boat_length_m=35.0
+        _minimales_layout(), [], "superyacht",
+        competitors=superyacht_competitors, boat_length_m=35.0,
     )
 
     # Both should produce valid results (not the insufficient-competitors fallback)

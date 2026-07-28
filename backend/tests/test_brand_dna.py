@@ -100,16 +100,21 @@ def _default_config(boat_class: str = "cruising_sail") -> dict:
 
 
 def test_empty_references():
-    """No brand references at all -> score 50, BRAND_INSUFFICIENT_DATA info warning."""
+    """Keine Markenreferenzen -> Modul meldet "nicht beurteilbar".
+
+    Frueher entstand daraus die Gesamtnote 50.0 — eine Zahl, die in der
+    Oberflaeche von einer gemessenen nicht zu unterscheiden war.
+    """
     result = run_brand_dna_analysis(
         _make_standard_zones(),
         _make_standard_passages(),
         "cruising_sail",
         brand_references=None,
     )
-    assert result["overall_score"] == 50.0
-    assert any(w["code"] == "BRAND_INSUFFICIENT_DATA" for w in result["warnings"])
-    assert all(w["severity"] == "info" for w in result["warnings"])
+    assert result["available"] is False
+    assert result["module"] == "brand_dna"
+    assert "overall_score" not in result
+    assert result["reason"]
 
 
 # ---------------------------------------------------------------------------
@@ -118,15 +123,16 @@ def test_empty_references():
 
 
 def test_insufficient_references():
-    """Fewer than min_reference_models (3) -> score 50, insufficient data warning."""
+    """Weniger als min_reference_models (3) -> "nicht beurteilbar"."""
     result = run_brand_dna_analysis(
         _make_standard_zones(),
         _make_standard_passages(),
         "cruising_sail",
         brand_references=[make_brand_reference(), make_brand_reference()],  # only 2
     )
-    assert result["overall_score"] == 50.0
-    assert any(w["code"] == "BRAND_INSUFFICIENT_DATA" for w in result["warnings"])
+    assert result["available"] is False
+    assert result["module"] == "brand_dna"
+    assert "overall_score" not in result
 
 
 # ---------------------------------------------------------------------------

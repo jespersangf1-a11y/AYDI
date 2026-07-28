@@ -93,11 +93,30 @@ def test_maintenance_high():
 
 
 def test_maintenance_no_materials():
-    """No materials -> score 50, info."""
+    """Keine Materialzuweisungen -> nicht beurteilbar (None), Hinweis."""
     config = _default_config()
     score, warnings, metrics = analyze_maintenance_burden([], config)
-    assert score == 50.0
+    assert score is None
+    assert metrics["annual_maintenance_eur"] is None
     assert any(w["severity"] == "info" for w in warnings)
+
+
+def test_maintenance_ohne_wartungsfaktor():
+    """Material ohne Wartungsfaktor wird ausgewiesen, nicht mit 0.0 gerechnet.
+
+    Ein fehlender Wartungsfaktor hiess frueher \"verursacht keine
+    Wartungskosten\" — das guenstigste denkbare Ergebnis, und keine Messung.
+    """
+    config = _default_config()
+    zone_materials = [{
+        "zone_name": "salon",
+        "area_sqm": 10.0,
+        "material": {"name": "Teak", "cost_per_unit": 100.0},
+    }]
+    score, warnings, metrics = analyze_maintenance_burden(zone_materials, config)
+    assert score is None
+    assert any(w["code"] == "MAINTENANCE_DATA_INCOMPLETE" for w in warnings)
+    assert any(w["code"] == "MAINTENANCE_NOT_ASSESSABLE" for w in warnings)
 
 
 from app.services.analysis.materials import (
@@ -326,8 +345,9 @@ def test_materials_config_overrides():
 
 
 def test_materials_empty_input():
-    """No material assignments -> degraded scores, no crash."""
+    """Keine Materialzuweisungen -> Modul meldet \"nicht beurteilbar\"."""
     result = run_materials_analysis([], [], "cruising_sail", materials=[])
-    assert 0 <= result["overall_score"] <= 100
-    assert len(result["sub_scores"]) == 8
-    assert len(result["warnings"]) > 0
+    assert result["available"] is False
+    assert result["module"] == "materials"
+    assert "overall_score" not in result
+    assert result["reason"]

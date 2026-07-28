@@ -31,6 +31,7 @@ import type {
   Project,
   Layout,
   AnalysisResult,
+  AnalysisUnavailable,
   LayoutVersion,
   LayoutDiff,
   FullAnalysisResult,
@@ -38,6 +39,7 @@ import type {
   ImageUploadData,
   WarningData,
 } from '../../types'
+import { istNichtBeurteilbar } from '../../types'
 import {
   BOAT_CLASS_LABELS,
   STATUS_LABELS,
@@ -118,6 +120,9 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
   const [fullAnalyzing, setFullAnalyzing] = useState(false)
   const [fullAnalysisResult, setFullAnalysisResult] = useState<FullAnalysisResult | null>(null)
   const [, setSelectedModuleForDetail] = useState<string | null>(null)
+  // Ein Modul, das mangels Daten nicht urteilen konnte. Bewusst getrennt von
+  // `error`: das ist kein Fehlschlag, sondern eine Auskunft.
+  const [nichtBeurteilbar, setNichtBeurteilbar] = useState<AnalysisUnavailable | null>(null)
 
   // ─── Version state ───
   const [versions, setVersions] = useState<LayoutVersion[]>([])
@@ -199,8 +204,16 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
     setAnalyzing(true)
     setAnalyzingModule(module)
     setError(null)
+    setNichtBeurteilbar(null)
     try {
       const result = await runAnalysis(projectId, selectedLayout.id, module)
+      // Ohne Datengrundlage gibt es keinen Wert, der in die Liste gehoerte —
+      // er wuerde in den Gesamtwert des Projekts einfliessen und dort eine
+      // Bewertung vortaeuschen, die nie stattgefunden hat.
+      if (istNichtBeurteilbar(result)) {
+        setNichtBeurteilbar(result)
+        return
+      }
       setAnalyses((prev) => [result, ...prev])
       setSelectedAnalysis(result)
       setSelectedModuleForDetail(module)
@@ -346,6 +359,32 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
             >
               Schließen
             </button>
+          </div>
+        )}
+
+        {nichtBeurteilbar && (
+          <div className="card-premium bg-navy-900/20 border-navy-700/40 p-4 text-navy-300 text-sm mb-8">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="font-medium text-navy-200 mb-1">
+                  Nicht beurteilbar
+                </p>
+                <p>{nichtBeurteilbar.reason}</p>
+                {nichtBeurteilbar.suggestions.length > 0 && (
+                  <ul className="mt-2 list-disc list-inside text-navy-400">
+                    {nichtBeurteilbar.suggestions.map((vorschlag) => (
+                      <li key={vorschlag}>{vorschlag}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <button
+                onClick={() => setNichtBeurteilbar(null)}
+                className="text-navy-400 hover:text-navy-300 text-xs font-medium shrink-0"
+              >
+                Schließen
+              </button>
+            </div>
           </div>
         )}
 

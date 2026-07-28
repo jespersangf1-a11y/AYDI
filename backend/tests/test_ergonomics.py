@@ -41,8 +41,14 @@ def test_passage_widths_critical():
 
 
 def test_passage_widths_empty():
+    """Ohne erfasste Durchgaenge gibt es keine Breite zu pruefen.
+
+    Frueher meldete diese Konstellation 100.0 — volle Punktzahl fuer eine
+    Pruefung ohne Pruefobjekt.
+    """
     score, warnings, metrics = analyze_passage_widths([], _default_config())
-    assert score == 100.0
+    assert score is None
+    assert any(w.get("code") == "PASSAGE_WIDTH_NOT_ASSESSABLE" for w in warnings)
 
 
 # --- analyze_path_efficiency ---
@@ -102,12 +108,31 @@ def test_crew_guest_separation_violation():
 
 
 def test_crew_guest_separation_clean():
+    """Ohne Durchgaenge ist die Trennung nicht geprueft, sondern unbekannt.
+
+    Frueher meldete dieselbe Eingabe 100.0: kein Durchgang konnte beide Bereiche
+    verbinden, weil es ueberhaupt keinen Durchgang gab. Die Bestnote galt damit
+    einer Trennung, die nie untersucht wurde.
+    """
     config = _default_config("superyacht")
     zones = [
         make_zone("crew_cabin", "cabin", is_crew_area=True),
         make_zone("guest_salon", "salon", is_guest_area=True),
     ]
     passages = []
+    score, warnings, metrics = analyze_crew_guest_separation(zones, passages, config)
+    assert score is None
+    assert any(w.get("code") == "CREW_GUEST_NOT_ASSESSABLE" for w in warnings)
+
+
+def test_crew_guest_separation_getrennt():
+    """Mit Durchgaengen, die keine Bereiche mischen, gibt es die volle Note."""
+    config = _default_config("superyacht")
+    zones = [
+        make_zone("crew_cabin", "cabin", is_crew_area=True),
+        make_zone("guest_salon", "salon", is_guest_area=True),
+    ]
+    passages = [make_passage("crew_cabin", "crew_cabin")]
     score, warnings, metrics = analyze_crew_guest_separation(zones, passages, config)
     assert score == 100.0
 

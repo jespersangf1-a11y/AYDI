@@ -3,15 +3,18 @@ import logging
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.permissions import get_current_user
+from app.core.zone_types import normalisiere_zonentyp
 from app.db.database import get_db
 from app.models.models import AnalysisResult, Layout, Project, User
 from app.schemas.schemas import (
     AnalysisRequest,
     AnalysisResponse,
+    AnalysisUnavailableResponse,
     DxfImportResponse,
     FullAnalysisRequest,
     LayoutCreate,
@@ -174,8 +177,21 @@ async def import_dxf(
     return result
 
 
-async def _load_materials_for_analysis(layout_id: UUID, db: AsyncSession) -> list[dict]:
-    """Load zone_material assignments with eagerly-loaded material data."""
+async def _load_materials_for_analysis(
+    layout_id: UUID,
+    db: AsyncSession,
+    zones: list[dict] | None = None,
+) -> list[dict]:
+    """Load zone_material assignments with eagerly-loaded material data.
+
+    ``zones`` liefert die Zonen des Layouts. Daraus wird je Zuweisung der
+    Zonentyp ergaenzt. Das war bisher nicht der Fall, und zwei Pruefungen im
+    Materialmodul haengen daran: die UV-Belastung und das Feuchterisiko
+    entscheiden anhand des Zonentyps, welche Zuweisung sie ansehen. Ohne das
+    Feld sprang die Schleife bei jeder Zuweisung weiter, die Pruefmenge blieb
+    leer und beide Pruefungen meldeten am Ende volle Punktzahl — fuer etwas,
+    das nie betrachtet wurde.
+    """
     result = await db.execute(
         select(ZoneMaterial)
         .where(ZoneMaterial.layout_id == layout_id)
@@ -183,12 +199,19 @@ async def _load_materials_for_analysis(layout_id: UUID, db: AsyncSession) -> lis
     )
     zone_mats = result.scalars().all()
 
+    # Zonenname -> Zonentyp, in kanonischer Schreibweise (siehe app/core/zone_types.py).
+    zonentyp_je_name: dict[str, str] = {}
+    for z in zones or []:
+        if isinstance(z, dict) and z.get("name"):
+            zonentyp_je_name[z["name"]] = normalisiere_zonentyp(z.get("zone_type"))
+
     assembled = []
     for zm in zone_mats:
         material = zm.material
         if material:
             assembled.append({
                 "zone_name": zm.zone_name,
+                "zone_type": zonentyp_je_name.get(zm.zone_name),
                 "surface_type": zm.surface_type,
                 "area_sqm": zm.area_sqm,
                 "material": {
@@ -313,7 +336,17 @@ async def _load_structural_items(layout_id: UUID, db: AsyncSession) -> list[dict
     ]
 
 
-@router.post("/analyze", response_model=AnalysisResponse, status_code=201)
+@router.post(
+    "/analyze",
+    response_model=AnalysisResponse,
+    status_code=201,
+    responses={
+        200: {
+            "model": AnalysisUnavailableResponse,
+            "description": "Das Modul hat keine Datengrundlage und gibt kein Ergebnis zurück.",
+        }
+    },
+)
 async def run_analysis(
     project_id: UUID,
     data: AnalysisRequest,
@@ -341,7 +374,7 @@ async def run_analysis(
     # Load extra data for modules that need it
     extra_kwargs: dict = {}
     if data.module == "materials":
-        extra_kwargs["materials"] = await _load_materials_for_analysis(data.layout_id, db)
+        extra_kwargs["materials"] = await _load_materials_for_analysis(data.layout_id, db, zones)
     elif data.module == "cost":
         extra_kwargs["cost_items"] = await _load_cost_items(data.layout_id, db)
         extra_kwargs["boat_length_m"] = project.length_m
@@ -359,6 +392,22 @@ async def run_analysis(
         config_overrides=data.config_overrides,
         **extra_kwargs,
     )
+
+    # Ein Modul darf sich fuer nicht zustaendig erklaeren, wenn ihm die Daten
+    # fehlen. Bisher stand hier direkt der Zugriff auf "overall_score" — bei
+    # einer solchen Antwort waere das ein KeyError und damit ein Serverfehler
+    # gewesen. Es wird nichts gespeichert: ein Lauf ohne Datengrundlage ist kein
+    # Befund, der im Verlauf des Projekts auftauchen sollte.
+    if analysis_result.get("available") is False:
+        return JSONResponse(
+            status_code=200,
+            content={
+                "module": data.module,
+                "available": False,
+                "reason": analysis_result.get("reason", "Nicht beurteilbar."),
+                "suggestions": analysis_result.get("suggestions", []),
+            },
+        )
 
     db_result = AnalysisResult(
         project_id=project_id,
@@ -415,7 +464,7 @@ async def run_full_analysis_endpoint(
         raise HTTPException(status_code=404, detail="Layout nicht gefunden")
 
     # Load all supporting data in parallel-ish fashion
-    zone_materials = await _load_materials_for_analysis(data.layout_id, db)
+    zone_materials = await _load_materials_for_analysis(data.layout_id, db, layout.zones or [])
     structural_items = await _load_structural_items(data.layout_id, db)
     cost_items = await _load_cost_items(data.layout_id, db)
     service_reports = await _load_service_reports(project_id, db)

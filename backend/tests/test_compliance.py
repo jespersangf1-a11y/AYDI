@@ -48,12 +48,16 @@ def test_escape_route_no_cockpit():
 
 
 def test_escape_route_no_cabins():
-    """No sleeping zones -> score 100, info."""
+    """Keine Schlafzonen -> nicht beurteilbar (None), Hinweis.
+
+    Frueher volle Punktzahl: eine Fluchtwegfreigabe fuer ein Layout, in dem
+    kein einziger Fluchtweg geprueft wurde.
+    """
     zones = [make_zone("cockpit", "cockpit"), make_zone("salon", "salon")]
     passages = [make_passage("cockpit", "salon")]
     config = _default_config()
     score, warnings, metrics = analyze_escape_routes(zones, passages, config)
-    assert score == 100.0
+    assert score is None
     assert any(w["severity"] == "info" for w in warnings)
     assert metrics["cabins_total"] == 0
 
@@ -132,11 +136,11 @@ def test_fire_safety_good():
 
 
 def test_fire_safety_no_engine():
-    """No engine zone -> score 50, info."""
+    """Keine Motorzone -> nicht beurteilbar (None), Hinweis."""
     zones = [make_zone("salon", "salon")]
     config = _default_config()
     score, warnings, metrics = analyze_fire_safety(zones, [], config)
-    assert score == 50.0
+    assert score is None
     assert any(w["severity"] == "info" for w in warnings)
 
 
@@ -186,11 +190,11 @@ def test_stability_centered():
 
 
 def test_stability_no_heavy_zones():
-    """No engine/storage -> score 50, info."""
+    """Keine schweren Zonen -> nicht beurteilbar (None), Hinweis."""
     zones = [make_zone("salon", "salon")]
     config = _default_config()
     score, warnings, metrics = analyze_stability_impact(zones, config)
-    assert score == 50.0
+    assert score is None
     assert any(w["severity"] == "info" for w in warnings)
 
 
@@ -227,11 +231,15 @@ def test_railing_compliant():
 
 
 def test_railing_no_deck_zones():
-    """No exposed deck zones -> score 100."""
+    """Keine ungeschuetzten Deckszonen -> nicht beurteilbar (None).
+
+    Frueher volle Punktzahl nach ISO 15085 fuer ein Layout, an dem keine
+    einzige Reling geprueft wurde.
+    """
     zones = [make_zone("salon", "salon")]
     config = _default_config()
     score, warnings, metrics = analyze_railing_requirements(zones, config)
-    assert score == 100.0
+    assert score is None
     assert metrics["zones_checked"] == 0
 
 
@@ -247,11 +255,11 @@ def test_railing_violation():
 
 
 def test_railing_no_data():
-    """Cockpit without has_railing property -> info warning, score 50."""
+    """Cockpit ohne has_railing-Angabe -> nicht beurteilbar (None), Hinweis."""
     zones = [make_zone("cockpit", "cockpit")]
     config = _default_config()
     score, warnings, metrics = analyze_railing_requirements(zones, config)
-    assert score == 50.0
+    assert score is None
     assert any(w["severity"] == "info" for w in warnings)
 
 
@@ -274,11 +282,11 @@ def test_electrical_good():
 
 
 def test_electrical_no_engine():
-    """No engine zone -> score 50, info."""
+    """Keine Motorzone -> nicht beurteilbar (None), Hinweis."""
     zones = [make_zone("salon", "salon")]
     config = _default_config()
     score, warnings, metrics = analyze_electrical_access(zones, [], config)
-    assert score == 50.0
+    assert score is None
     assert any(w["severity"] == "info" for w in warnings)
 
 
@@ -430,8 +438,14 @@ def test_compliance_config_overrides():
 
 
 def test_compliance_empty_input():
-    """Empty zones and passages -> degraded scores, no crash."""
+    """Leeres Layout -> Modul meldet \"nicht beurteilbar\", keine Note.
+
+    Frueher ergab ein Layout ohne Zonen die Gesamtnote 68.0 — mit je 100/100
+    fuer Fluchtwege, Notausstieg, Reling, Cockpitlenzung und Lueftung. Das war
+    eine Sicherheitsfreigabe fuer etwas, das nie betrachtet wurde.
+    """
     result = run_compliance_analysis([], [], "cruising_sail")
-    assert 0 <= result["overall_score"] <= 100
-    assert len(result["sub_scores"]) == 10
-    assert len(result["warnings"]) > 0
+    assert result["available"] is False
+    assert result["module"] == "compliance"
+    assert "overall_score" not in result
+    assert result["reason"]

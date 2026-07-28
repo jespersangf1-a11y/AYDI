@@ -311,6 +311,21 @@ class AnalysisResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class AnalysisUnavailableResponse(BaseModel):
+    """Antwort, wenn ein Modul mangels Datengrundlage nicht urteilen kann.
+
+    Bewusst eine eigene Form ohne ``overall_score``: ein Modul ohne Daten hat
+    keinen Wert, und ein Platzhalter waere in der Oberflaeche nicht von einem
+    gemessenen zu unterscheiden. Es wird auch nichts gespeichert — ein solcher
+    Lauf ist kein Befund, der im Verlauf des Projekts stehen sollte.
+    """
+
+    module: str
+    available: bool = False
+    reason: str
+    suggestions: list[str] = []
+
+
 # DXF Import
 class DxfImportResponse(BaseModel):
     zones: list[ZoneData]

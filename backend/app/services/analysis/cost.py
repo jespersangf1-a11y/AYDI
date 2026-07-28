@@ -5,6 +5,7 @@ and quantifies cost risk from uncertain estimates. Pure function module — no d
 access. All user-facing strings are in German.
 """
 import logging
+from app.services.analysis.scoring import weighted_overall, hinweis_teilanalysen
 
 logger = logging.getLogger(__name__)
 
@@ -28,12 +29,16 @@ BOAT_CLASS_DEFAULTS = {
             "design_pct": 0.10,
         },
         "weights": {
-            "material_costs": 0.23,
-            "labor_estimate": 0.18,
-            "cost_per_meter": 0.18,
-            "distribution": 0.13,
-            "risk": 0.18,
-            "parametric_estimate": 0.10,
+            "material_costs": 0.2556,
+            "labor_estimate": 0.2,
+            "cost_per_meter": 0.2,
+            "distribution": 0.1444,
+            "risk": 0.2,
+            # "parametric_estimate" ist bewusst nicht mehr aufgefuehrt: die
+            # parametrische Hochrechnung ist eine Kennzahl, kein Urteil. Sie
+            # lieferte konstant 100.0 und trug bei Gewicht 0.10 jeder Kostennote
+            # zehn Punkte bei, die nichts gemessen hatten. Die uebrigen fuenf
+            # Gewichte sind entsprechend auf 1.0 normiert.
         },
     },
     "cruising_sail": {
@@ -55,12 +60,16 @@ BOAT_CLASS_DEFAULTS = {
             "design_pct": 0.10,
         },
         "weights": {
-            "material_costs": 0.23,
-            "labor_estimate": 0.18,
-            "cost_per_meter": 0.18,
-            "distribution": 0.13,
-            "risk": 0.18,
-            "parametric_estimate": 0.10,
+            "material_costs": 0.2556,
+            "labor_estimate": 0.2,
+            "cost_per_meter": 0.2,
+            "distribution": 0.1444,
+            "risk": 0.2,
+            # "parametric_estimate" ist bewusst nicht mehr aufgefuehrt: die
+            # parametrische Hochrechnung ist eine Kennzahl, kein Urteil. Sie
+            # lieferte konstant 100.0 und trug bei Gewicht 0.10 jeder Kostennote
+            # zehn Punkte bei, die nichts gemessen hatten. Die uebrigen fuenf
+            # Gewichte sind entsprechend auf 1.0 normiert.
         },
     },
     "large_motor": {
@@ -82,12 +91,16 @@ BOAT_CLASS_DEFAULTS = {
             "design_pct": 0.10,
         },
         "weights": {
-            "material_costs": 0.18,
-            "labor_estimate": 0.18,
-            "cost_per_meter": 0.23,
-            "distribution": 0.13,
-            "risk": 0.18,
-            "parametric_estimate": 0.10,
+            "material_costs": 0.2,
+            "labor_estimate": 0.2,
+            "cost_per_meter": 0.2556,
+            "distribution": 0.1444,
+            "risk": 0.2,
+            # "parametric_estimate" ist bewusst nicht mehr aufgefuehrt: die
+            # parametrische Hochrechnung ist eine Kennzahl, kein Urteil. Sie
+            # lieferte konstant 100.0 und trug bei Gewicht 0.10 jeder Kostennote
+            # zehn Punkte bei, die nichts gemessen hatten. Die uebrigen fuenf
+            # Gewichte sind entsprechend auf 1.0 normiert.
         },
     },
     "racing_sail": {
@@ -109,12 +122,16 @@ BOAT_CLASS_DEFAULTS = {
             "design_pct": 0.10,
         },
         "weights": {
-            "material_costs": 0.25,
-            "labor_estimate": 0.18,
-            "cost_per_meter": 0.18,
-            "distribution": 0.12,
-            "risk": 0.17,
-            "parametric_estimate": 0.10,
+            "material_costs": 0.2778,
+            "labor_estimate": 0.2,
+            "cost_per_meter": 0.2,
+            "distribution": 0.1333,
+            "risk": 0.1889,
+            # "parametric_estimate" ist bewusst nicht mehr aufgefuehrt: die
+            # parametrische Hochrechnung ist eine Kennzahl, kein Urteil. Sie
+            # lieferte konstant 100.0 und trug bei Gewicht 0.10 jeder Kostennote
+            # zehn Punkte bei, die nichts gemessen hatten. Die uebrigen fuenf
+            # Gewichte sind entsprechend auf 1.0 normiert.
         },
     },
     "daysailer": {
@@ -136,12 +153,16 @@ BOAT_CLASS_DEFAULTS = {
             "design_pct": 0.12,
         },
         "weights": {
-            "material_costs": 0.23,
-            "labor_estimate": 0.18,
-            "cost_per_meter": 0.18,
-            "distribution": 0.13,
-            "risk": 0.18,
-            "parametric_estimate": 0.10,
+            "material_costs": 0.2556,
+            "labor_estimate": 0.2,
+            "cost_per_meter": 0.2,
+            "distribution": 0.1444,
+            "risk": 0.2,
+            # "parametric_estimate" ist bewusst nicht mehr aufgefuehrt: die
+            # parametrische Hochrechnung ist eine Kennzahl, kein Urteil. Sie
+            # lieferte konstant 100.0 und trug bei Gewicht 0.10 jeder Kostennote
+            # zehn Punkte bei, die nichts gemessen hatten. Die uebrigen fuenf
+            # Gewichte sind entsprechend auf 1.0 normiert.
         },
     },
     "motorsailer": {
@@ -163,12 +184,16 @@ BOAT_CLASS_DEFAULTS = {
             "design_pct": 0.10,
         },
         "weights": {
-            "material_costs": 0.22,
-            "labor_estimate": 0.18,
-            "cost_per_meter": 0.19,
-            "distribution": 0.13,
-            "risk": 0.18,
-            "parametric_estimate": 0.10,
+            "material_costs": 0.2445,
+            "labor_estimate": 0.2,
+            "cost_per_meter": 0.2111,
+            "distribution": 0.1444,
+            "risk": 0.2,
+            # "parametric_estimate" ist bewusst nicht mehr aufgefuehrt: die
+            # parametrische Hochrechnung ist eine Kennzahl, kein Urteil. Sie
+            # lieferte konstant 100.0 und trug bei Gewicht 0.10 jeder Kostennote
+            # zehn Punkte bei, die nichts gemessen hatten. Die uebrigen fuenf
+            # Gewichte sind entsprechend auf 1.0 normiert.
         },
     },
     "catamaran_sail": {
@@ -190,12 +215,16 @@ BOAT_CLASS_DEFAULTS = {
             "design_pct": 0.12,
         },
         "weights": {
-            "material_costs": 0.22,
-            "labor_estimate": 0.18,
-            "cost_per_meter": 0.19,
-            "distribution": 0.13,
-            "risk": 0.18,
-            "parametric_estimate": 0.10,
+            "material_costs": 0.2445,
+            "labor_estimate": 0.2,
+            "cost_per_meter": 0.2111,
+            "distribution": 0.1444,
+            "risk": 0.2,
+            # "parametric_estimate" ist bewusst nicht mehr aufgefuehrt: die
+            # parametrische Hochrechnung ist eine Kennzahl, kein Urteil. Sie
+            # lieferte konstant 100.0 und trug bei Gewicht 0.10 jeder Kostennote
+            # zehn Punkte bei, die nichts gemessen hatten. Die uebrigen fuenf
+            # Gewichte sind entsprechend auf 1.0 normiert.
         },
     },
     "catamaran_motor": {
@@ -217,12 +246,16 @@ BOAT_CLASS_DEFAULTS = {
             "design_pct": 0.10,
         },
         "weights": {
-            "material_costs": 0.20,
-            "labor_estimate": 0.17,
-            "cost_per_meter": 0.21,
-            "distribution": 0.13,
-            "risk": 0.19,
-            "parametric_estimate": 0.10,
+            "material_costs": 0.2222,
+            "labor_estimate": 0.1889,
+            "cost_per_meter": 0.2334,
+            "distribution": 0.1444,
+            "risk": 0.2111,
+            # "parametric_estimate" ist bewusst nicht mehr aufgefuehrt: die
+            # parametrische Hochrechnung ist eine Kennzahl, kein Urteil. Sie
+            # lieferte konstant 100.0 und trug bei Gewicht 0.10 jeder Kostennote
+            # zehn Punkte bei, die nichts gemessen hatten. Die uebrigen fuenf
+            # Gewichte sind entsprechend auf 1.0 normiert.
         },
     },
     "small_motor": {
@@ -244,12 +277,16 @@ BOAT_CLASS_DEFAULTS = {
             "design_pct": 0.10,
         },
         "weights": {
-            "material_costs": 0.20,
-            "labor_estimate": 0.18,
-            "cost_per_meter": 0.21,
-            "distribution": 0.13,
-            "risk": 0.18,
-            "parametric_estimate": 0.10,
+            "material_costs": 0.2222,
+            "labor_estimate": 0.2,
+            "cost_per_meter": 0.2334,
+            "distribution": 0.1444,
+            "risk": 0.2,
+            # "parametric_estimate" ist bewusst nicht mehr aufgefuehrt: die
+            # parametrische Hochrechnung ist eine Kennzahl, kein Urteil. Sie
+            # lieferte konstant 100.0 und trug bei Gewicht 0.10 jeder Kostennote
+            # zehn Punkte bei, die nichts gemessen hatten. Die uebrigen fuenf
+            # Gewichte sind entsprechend auf 1.0 normiert.
         },
     },
     "sport_cruiser": {
@@ -271,12 +308,16 @@ BOAT_CLASS_DEFAULTS = {
             "design_pct": 0.10,
         },
         "weights": {
-            "material_costs": 0.19,
-            "labor_estimate": 0.16,
-            "cost_per_meter": 0.22,
-            "distribution": 0.14,
-            "risk": 0.19,
-            "parametric_estimate": 0.10,
+            "material_costs": 0.2111,
+            "labor_estimate": 0.1778,
+            "cost_per_meter": 0.2444,
+            "distribution": 0.1556,
+            "risk": 0.2111,
+            # "parametric_estimate" ist bewusst nicht mehr aufgefuehrt: die
+            # parametrische Hochrechnung ist eine Kennzahl, kein Urteil. Sie
+            # lieferte konstant 100.0 und trug bei Gewicht 0.10 jeder Kostennote
+            # zehn Punkte bei, die nichts gemessen hatten. Die uebrigen fuenf
+            # Gewichte sind entsprechend auf 1.0 normiert.
         },
     },
     "trawler": {
@@ -298,12 +339,16 @@ BOAT_CLASS_DEFAULTS = {
             "design_pct": 0.10,
         },
         "weights": {
-            "material_costs": 0.19,
-            "labor_estimate": 0.16,
-            "cost_per_meter": 0.22,
-            "distribution": 0.14,
-            "risk": 0.19,
-            "parametric_estimate": 0.10,
+            "material_costs": 0.2111,
+            "labor_estimate": 0.1778,
+            "cost_per_meter": 0.2444,
+            "distribution": 0.1556,
+            "risk": 0.2111,
+            # "parametric_estimate" ist bewusst nicht mehr aufgefuehrt: die
+            # parametrische Hochrechnung ist eine Kennzahl, kein Urteil. Sie
+            # lieferte konstant 100.0 und trug bei Gewicht 0.10 jeder Kostennote
+            # zehn Punkte bei, die nichts gemessen hatten. Die uebrigen fuenf
+            # Gewichte sind entsprechend auf 1.0 normiert.
         },
     },
     "explorer": {
@@ -325,12 +370,16 @@ BOAT_CLASS_DEFAULTS = {
             "design_pct": 0.10,
         },
         "weights": {
-            "material_costs": 0.19,
-            "labor_estimate": 0.15,
-            "cost_per_meter": 0.22,
-            "distribution": 0.15,
-            "risk": 0.19,
-            "parametric_estimate": 0.10,
+            "material_costs": 0.2111,
+            "labor_estimate": 0.1667,
+            "cost_per_meter": 0.2444,
+            "distribution": 0.1667,
+            "risk": 0.2111,
+            # "parametric_estimate" ist bewusst nicht mehr aufgefuehrt: die
+            # parametrische Hochrechnung ist eine Kennzahl, kein Urteil. Sie
+            # lieferte konstant 100.0 und trug bei Gewicht 0.10 jeder Kostennote
+            # zehn Punkte bei, die nichts gemessen hatten. Die uebrigen fuenf
+            # Gewichte sind entsprechend auf 1.0 normiert.
         },
     },
     "superyacht": {
@@ -352,12 +401,16 @@ BOAT_CLASS_DEFAULTS = {
             "design_pct": 0.10,
         },
         "weights": {
-            "material_costs": 0.18,
-            "labor_estimate": 0.14,
-            "cost_per_meter": 0.22,
-            "distribution": 0.18,
-            "risk": 0.18,
-            "parametric_estimate": 0.10,
+            "material_costs": 0.2,
+            "labor_estimate": 0.1556,
+            "cost_per_meter": 0.2444,
+            "distribution": 0.2,
+            "risk": 0.2,
+            # "parametric_estimate" ist bewusst nicht mehr aufgefuehrt: die
+            # parametrische Hochrechnung ist eine Kennzahl, kein Urteil. Sie
+            # lieferte konstant 100.0 und trug bei Gewicht 0.10 jeder Kostennote
+            # zehn Punkte bei, die nichts gemessen hatten. Die uebrigen fuenf
+            # Gewichte sind entsprechend auf 1.0 normiert.
         },
     },
 }
@@ -877,7 +930,7 @@ def analyze_cost_risk(
 def analyze_parametric_estimate(
     zones: list[dict],
     config: dict,
-) -> tuple[float, list[dict], dict]:
+) -> tuple[float | None, list[dict], dict]:
     """Parametric cost model based on LOA and zone count.
 
     Computes estimated total cost from boat length and a per-class cost model,
@@ -896,7 +949,7 @@ def analyze_parametric_estimate(
             "message": "Bootslänge nicht angegeben — parametrische Schätzung eingeschränkt.",
             "suggestion": "Bootslänge im Projekt hinterlegen für vollständige parametrische Analyse.",
         })
-        return 50.0, warnings, {"boat_length_m": 0, "estimated_total_eur": 0.0}
+        return None, warnings, {"boat_length_m": None, "estimated_total_eur": None}
 
     base_cost_per_m = parametric_model.get("base_cost_per_m", 32000)
     estimated_total = base_cost_per_m * boat_length_m
@@ -917,10 +970,11 @@ def analyze_parametric_estimate(
 
     adjusted_total = estimated_total * complexity_factor
 
-    # Score is always 100 — parametric estimates are informational
-    score = 100.0
-
-    return score, warnings, {
+    # Die Hochrechnung ist eine Kennzahl, keine Bewertung: es gibt keinen
+    # Sollwert, gegen den sie bestehen oder scheitern koennte. Die frueheren
+    # konstanten 100.0 waren keine Messung, wurden in der Oberflaeche aber wie
+    # eine Teilnote dargestellt und gingen gewichtet in die Modulnote ein.
+    return None, warnings, {
         "boat_length_m": boat_length_m,
         "base_cost_per_m": base_cost_per_m,
         "estimated_total_eur": round(estimated_total, 2),
@@ -979,28 +1033,22 @@ def run_cost_analysis(
 
     items = cost_items or []
 
-    # Early exit when no cost data at all
+    # Ohne Kostenpositionen gibt es nichts zu rechnen. Frueher lieferte dieser
+    # Zweig 50.0 in jeder Teilbewertung — eine erfundene Zahl, die in der
+    # Oberflaeche nicht von einer gemessenen zu unterscheiden war und den
+    # Gesamtwert des Projekts zur Mitte zog. Ein Modul ohne Datengrundlage sagt
+    # das ausdruecklich (siehe CLAUDE.md: lieber "nicht beurteilbar" als raten).
     if not items:
         return {
             "module": "cost",
-            "overall_score": 50.0,
-            "sub_scores": {k: 50.0 for k in weights},
-            "warnings": [{
-                "code": "COST_NO_DATA",
-                "severity": "info",
-                "message": "Keine Kostenpositionen vorhanden — Analyse nicht möglich.",
-                "suggestion": "Kostenpositionen erfassen, um eine vollständige Kostenkalkulation zu erhalten.",
-            }],
+            "available": False,
+            "reason": "Keine Kostenpositionen erfasst — eine Kostenanalyse ist ohne sie nicht möglich.",
             "suggestions": [
                 "Kostenpositionen erfassen, um eine vollständige Kostenkalkulation zu erhalten."
             ],
-            "metrics": {},
-            "config_used": config,
-            "confidence": data_source,
-            "confidence_note": "Basiert auf geschätzten Werten aus öffentlichen Spezifikationen." if data_source == "estimated" else None,
         }
 
-    sub_scores: dict[str, float] = {}
+    sub_scores: dict[str, float | None] = {}
     all_warnings: list[dict] = []
     all_suggestions: list[str] = []
     all_metrics: dict[str, dict] = {}
@@ -1030,7 +1078,20 @@ def run_cost_analysis(
                 "suggestion": "Kostenpositionen und Konfiguration überprüfen.",
             })
 
-    overall = sum(sub_scores.get(k, 50.0) * w for k, w in weights.items())
+    # Teilanalysen ohne Datengrundlage geben None zurueck und bleiben aus der
+    # Rechnung heraus; ihr Gewicht verteilt sich auf die geprueften. Frueher
+    # ging hier ein Vorgabewert ein — bei fehlenden Eintraegen 0.0 bzw. 50.0 —
+    # und erzeugte eine Note fuer etwas, das nie geprueft wurde.
+    overall, _nicht_bewertet = weighted_overall(sub_scores, weights)
+    if overall is None:
+        return {
+            "module": "cost",
+            "available": False,
+            "reason": "Keine der Teilanalysen konnte mangels Datengrundlage durchgeführt werden.",
+            "suggestions": [
+                "Layout- und Stammdaten vervollständigen, um eine Bewertung zu ermöglichen."
+            ],
+        }
 
     for w in all_warnings:
         suggestion = w.get("suggestion")
@@ -1042,11 +1103,18 @@ def run_cost_analysis(
     return {
         "module": "cost",
         "overall_score": round(overall, 1),
-        "sub_scores": {k: round(v, 1) for k, v in sub_scores.items()},
+        # Eine Teilanalyse ohne Datengrundlage traegt None — sie wird als
+        # solche weitergereicht statt auf eine Zahl gerundet zu werden.
+        "sub_scores": {
+            k: (round(v, 1) if v is not None else None)
+            for k, v in sub_scores.items()
+        },
         "warnings": all_warnings,
         "suggestions": all_suggestions,
         "metrics": all_metrics,
         "config_used": config,
         "confidence": data_source,
         "confidence_note": "Basiert auf geschätzten Werten aus öffentlichen Spezifikationen." if data_source == "estimated" else None,
+        "coverage_note": hinweis_teilanalysen(_nicht_bewertet),
+        "unassessed_sub_analyses": _nicht_bewertet,
     }
