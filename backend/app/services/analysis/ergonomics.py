@@ -696,6 +696,57 @@ def analyze_access_complexity(zones: list[dict], config: dict) -> tuple[float, l
     }
 
 
+# Standing headroom (I-2). Living zones below this are hard to stand in.
+DEFAULT_MIN_HEADROOM_MM = 1850
+DEFAULT_HEADROOM_WEIGHT = 0.08
+_HEADROOM_ZONE_TYPES = {"salon", "cabin", "pantry", "head", "galley"}
+
+
+def analyze_headroom(zones: list[dict], config: dict) -> tuple[float, list[dict], dict]:
+    """Score standing headroom in living zones (I-2).
+
+    The ergonomics module previously had no notion of standing height at all —
+    a 1600 mm cabin (no adult can stand) scored identically to a 2400 mm one.
+    Uses each living zone's height_mm; below the class minimum the score
+    degrades linearly, reaching 0 at 300 mm deficit (crawl height).
+    """
+    warnings: list[dict] = []
+    min_headroom = config.get("min_headroom_mm", DEFAULT_MIN_HEADROOM_MM)
+
+    living = [
+        z for z in zones
+        if z.get("zone_type") in _HEADROOM_ZONE_TYPES and z.get("height_mm") is not None
+    ]
+    if not living:
+        return 50.0, warnings, {"zones_evaluated": 0, "min_headroom_mm": min_headroom}
+
+    scores: list[float] = []
+    for z in living:
+        h = float(z["height_mm"])
+        if h >= min_headroom:
+            scores.append(100.0)
+            continue
+        deficit = min_headroom - h
+        scores.append(max(0.0, 100.0 * (1.0 - deficit / 300.0)))
+        if deficit > 50:
+            warnings.append({
+                "code": "ERGO_LOW_HEADROOM",
+                "severity": "critical" if deficit > 150 else "warning",
+                "message": (
+                    f"Zone '{z['name']}': Stehhöhe {h:.0f} mm unterschreitet das "
+                    f"empfohlene Minimum {min_headroom:.0f} mm."
+                ),
+                "suggestion": (
+                    "Deckshöhe in dieser Zone erhöhen oder sie als Sitz-/"
+                    "Kriechbereich ausweisen."
+                ),
+                "location": z["name"],
+            })
+
+    score = sum(scores) / len(scores)
+    return score, warnings, {"zones_evaluated": len(scores), "min_headroom_mm": min_headroom}
+
+
 def run_ergonomics_analysis(zones: list[dict], passages: list[dict], boat_class: str, config_overrides: dict | None = None, data_source: str = "measured") -> dict:
     # Input validation
     if not isinstance(zones, list) or len(zones) == 0:
@@ -724,6 +775,9 @@ def run_ergonomics_analysis(zones: list[dict], passages: list[dict], boat_class:
 
     config = BOAT_CLASS_DEFAULTS[boat_class].copy()
     weights = config.pop("weights").copy()
+    # Add the headroom dimension (I-2) without editing all 13 class weight dicts;
+    # the overall is normalised by the weight sum below, so this stays 0–100.
+    weights.setdefault("headroom", DEFAULT_HEADROOM_WEIGHT)
 
     if config_overrides:
         config.update(config_overrides)
@@ -742,6 +796,7 @@ def run_ergonomics_analysis(zones: list[dict], passages: list[dict], boat_class:
         ("heel_impact", lambda: analyze_heel_impact(passages, config)),
         ("morning_circulation", lambda: analyze_morning_circulation(zones, passages, config)),
         ("access_complexity", lambda: analyze_access_complexity(zones, config)),
+        ("headroom", lambda: analyze_headroom(zones, config)),
     ]
 
     for name, fn in analyses:
@@ -759,7 +814,10 @@ def run_ergonomics_analysis(zones: list[dict], passages: list[dict], boat_class:
                 "suggestion": "Layoutdaten überprüfen",
             })
 
-    overall = sum(sub_scores.get(k, 0) * w for k, w in weights.items())
+    # Normalise by the actual weight sum so adding a dimension (headroom) keeps
+    # the result on 0–100 regardless of whether the class weights total 1.0.
+    total_weight = sum(weights.values()) or 1.0
+    overall = sum(sub_scores.get(k, 0) * w for k, w in weights.items()) / total_weight
 
     for w in all_warnings:
         if w.get("suggestion") and w["suggestion"] not in all_suggestions:

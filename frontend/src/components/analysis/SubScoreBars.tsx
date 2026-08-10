@@ -14,6 +14,7 @@ const SUB_SCORE_LABELS: Record<string, string> = {
   heel_impact: 'Krängungseinfluss',
   morning_circulation: 'Morgendliche Zirkulation',
   access_complexity: 'Zugangskomplexität',
+  headroom: 'Stehhöhe',
   // volume
   storage_ratio: 'Stauraumanteil',
   storage_distribution: 'Stauraumverteilung',
