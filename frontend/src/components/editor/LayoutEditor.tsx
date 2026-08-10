@@ -274,6 +274,32 @@ export default function LayoutEditor({
     markDirty()
   }
 
+  // Top-level field update (e.g. height_mm) on the selected zone.
+  const updateSelectedField = (patch: Partial<ZoneData>) => {
+    if (selectedIdx == null) return
+    setZones((prev) => prev.map((z, i) => (i === selectedIdx ? { ...z, ...patch } : z)))
+    markDirty()
+  }
+
+  // Analysis-relevant zone property (I-6). Empty/null removes the key so the
+  // analysis modules fall back to their defaults instead of storing a null.
+  const updateSelectedProp = (key: string, value: number | boolean | null) => {
+    if (selectedIdx == null) return
+    setZones((prev) =>
+      prev.map((z, i) => {
+        if (i !== selectedIdx) return z
+        const props: Record<string, unknown> = { ...(z.properties || {}) }
+        if (value === null || (typeof value === 'number' && Number.isNaN(value))) {
+          delete props[key]
+        } else {
+          props[key] = value
+        }
+        return { ...z, properties: props }
+      }),
+    )
+    markDirty()
+  }
+
   const handleDeleteZone = () => {
     if (selectedIdx == null) return
     const zone = zones[selectedIdx]
@@ -439,6 +465,84 @@ export default function LayoutEditor({
                 )}
               </select>
             </div>
+
+            {/* Analysis inputs (I-6): feed compliance/ergonomics/production. */}
+            <div className="flex items-center gap-2">
+              <label htmlFor="ed-height" className="label-premium">Höhe mm</label>
+              <input
+                id="ed-height" type="number" min={0} max={4000} step={10}
+                value={selected.height_mm ?? ''}
+                onChange={(e) => updateSelectedField({ height_mm: e.target.value === '' ? null : Number(e.target.value) })}
+                className="w-24 rounded-lg border border-sand-200 bg-white px-2 py-1.5 text-sm text-navy-900 focus:border-ocean-500 focus:outline-none"
+                placeholder="1950" title="Stehhöhe — fließt in Ergonomie (Stehhöhe) & Emotion"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <label htmlFor="ed-windows" className="label-premium">Fenster</label>
+              <input
+                id="ed-windows" type="number" min={0} max={50} step={1}
+                value={(selected.properties?.window_count as number) ?? ''}
+                onChange={(e) => updateSelectedProp('window_count', e.target.value === '' ? null : Number(e.target.value))}
+                className="w-16 rounded-lg border border-sand-200 bg-white px-2 py-1.5 text-sm text-navy-900 focus:border-ocean-500 focus:outline-none"
+                title="Fensteranzahl — fließt in Produktion (Formkomplexität)"
+              />
+            </div>
+            {selected.zone_type === 'cockpit' && (
+              <>
+                <div className="flex items-center gap-2">
+                  <label htmlFor="ed-cockpit-depth" className="label-premium">Tiefe mm</label>
+                  <input
+                    id="ed-cockpit-depth" type="number" min={0} max={2000} step={10}
+                    value={(selected.properties?.cockpit_depth_mm as number) ?? ''}
+                    onChange={(e) => updateSelectedProp('cockpit_depth_mm', e.target.value === '' ? null : Number(e.target.value))}
+                    className="w-24 rounded-lg border border-sand-200 bg-white px-2 py-1.5 text-sm text-navy-900 focus:border-ocean-500 focus:outline-none"
+                    title="Cockpittiefe — Normprüfung Cockpit-Entwässerung (ISO 11812)"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <label htmlFor="ed-drain" className="label-premium">Abfluss l/s</label>
+                  <input
+                    id="ed-drain" type="number" min={0} max={1000} step={0.5}
+                    value={(selected.properties?.drain_capacity_lps as number) ?? ''}
+                    onChange={(e) => updateSelectedProp('drain_capacity_lps', e.target.value === '' ? null : Number(e.target.value))}
+                    className="w-24 rounded-lg border border-sand-200 bg-white px-2 py-1.5 text-sm text-navy-900 focus:border-ocean-500 focus:outline-none"
+                    title="Abflusskapazität — Normprüfung Cockpit-Entwässerung"
+                  />
+                </div>
+              </>
+            )}
+            {selected.zone_type === 'engine' && (
+              <>
+                <div className="flex items-center gap-2">
+                  <label htmlFor="ed-engine-kw" className="label-premium">Motor kW</label>
+                  <input
+                    id="ed-engine-kw" type="number" min={0} max={5000} step={1}
+                    value={(selected.properties?.engine_kw as number) ?? ''}
+                    onChange={(e) => updateSelectedProp('engine_kw', e.target.value === '' ? null : Number(e.target.value))}
+                    className="w-24 rounded-lg border border-sand-200 bg-white px-2 py-1.5 text-sm text-navy-900 focus:border-ocean-500 focus:outline-none"
+                    title="Motorleistung — Normprüfung Maschinenraum-Belüftung"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <label htmlFor="ed-vent" className="label-premium">Lüftung m²</label>
+                  <input
+                    id="ed-vent" type="number" min={0} max={100} step={0.01}
+                    value={(selected.properties?.ventilation_area_sqm as number) ?? ''}
+                    onChange={(e) => updateSelectedProp('ventilation_area_sqm', e.target.value === '' ? null : Number(e.target.value))}
+                    className="w-24 rounded-lg border border-sand-200 bg-white px-2 py-1.5 text-sm text-navy-900 focus:border-ocean-500 focus:outline-none"
+                    title="Belüftungsfläche — Normprüfung Belüftung"
+                  />
+                </div>
+                <label className="flex items-center gap-1.5 text-sm text-navy-700">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(selected.properties?.has_battery)}
+                    onChange={(e) => updateSelectedProp('has_battery', e.target.checked ? true : null)}
+                  />
+                  Batterie
+                </label>
+              </>
+            )}
             <button
               onClick={handleDeleteZone}
               className="flex items-center gap-1.5 text-xs text-red-600 hover:text-red-500 transition-colors"
