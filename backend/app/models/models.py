@@ -196,6 +196,12 @@ class AnalysisResult(Base):
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     project_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
     layout_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("layouts.id", ondelete="CASCADE"), nullable=False)
+    # Links the 11 per-module rows of one Vollanalyse to a single run header so a
+    # historical run (its overall score, which modules ran) is reconstructable
+    # (H-3). Nullable/SET NULL: legacy rows and single-module analyses have none.
+    run_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("analysis_runs.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     module: Mapped[str] = mapped_column(String(50), nullable=False)
     overall_score: Mapped[float] = mapped_column(Float, nullable=False)
     sub_scores: Mapped[dict] = mapped_column(JSON, default=dict)
@@ -207,6 +213,32 @@ class AnalysisResult(Base):
 
     project: Mapped["Project"] = relationship(back_populates="analysis_results")
     layout: Mapped["Layout"] = relationship(back_populates="analysis_results")
+
+
+class AnalysisRun(Base):
+    """Header row for one full-analysis run (H-3).
+
+    Groups the per-module AnalysisResult rows of a single Vollanalyse and stores
+    the run-level outcome (overall score/confidence, module counts) so a past
+    run is later attributable and reconstructable — previously the DB held only
+    undifferentiated module rows with no run identity or overall score.
+    """
+    __tablename__ = "analysis_runs"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    project_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    layout_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("layouts.id", ondelete="CASCADE"), nullable=False
+    )
+    overall_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    overall_confidence: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    module_count: Mapped[int] = mapped_column(Integer, default=0)
+    skipped_count: Mapped[int] = mapped_column(Integer, default=0)
+    error_count: Mapped[int] = mapped_column(Integer, default=0)
+    tier: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
 
 
 # Future normalization models (not actively used in Phase 1)

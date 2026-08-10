@@ -316,3 +316,45 @@ def test_analyze_unknown_module_still_400(ctx):
         json={"module": "gibtsnicht", "layout_id": str(uuid.uuid4())},
     )
     assert res.status_code == 400
+
+
+# ---------------------------------------------------------------------------
+# H-3: analysis run header — a full analysis is reconstructable from history
+# ---------------------------------------------------------------------------
+
+
+def test_full_analysis_persists_run_header(ctx):
+    client, ids, current = ctx
+    current["user_id"] = ids["owner"]
+
+    res = client.post(
+        f"/api/v1/projects/{ids['project']}/full-analysis",
+        json={"layout_id": str(ids["layout"])},
+    )
+    assert res.status_code == 201, res.text
+    body = res.json()
+    run_id = body.get("run_id")
+    assert run_id, "full-analysis must return a run_id (H-3)"
+
+    # The run header is retrievable and carries the overall outcome.
+    runs = client.get(f"/api/v1/projects/{ids['project']}/analysis-runs")
+    assert runs.status_code == 200, runs.text
+    rows = runs.json()
+    assert any(r["id"] == run_id for r in rows)
+    run = next(r for r in rows if r["id"] == run_id)
+    assert run["overall_score"] == body["overall_score"]
+    assert run["module_count"] >= 1
+
+    # Every persisted module row links back to the run.
+    analyses = client.get(f"/api/v1/projects/{ids['project']}/analyses").json()
+    linked = [a for a in analyses if a.get("run_id") == run_id]
+    assert len(linked) == run["module_count"]
+
+
+def test_analysis_runs_owner_scoped(ctx):
+    client, ids, current = ctx
+    # Stranger cannot see another owner's project runs (404 — no access).
+    current["user_id"] = ids["stranger"]
+    res = client.get(f"/api/v1/projects/{ids['project']}/analysis-runs")
+    assert res.status_code == 404
+    current["user_id"] = ids["owner"]

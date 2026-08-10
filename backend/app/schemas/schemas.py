@@ -280,7 +280,12 @@ class WarningData(BaseModel):
     location: str | None = None
     value: float | None = None
     threshold: float | None = None
-    suggestion: str
+    # Optional: not every finding carries a suggestion, and requiring a string
+    # here made GET /analyses raise ResponseValidationError (500) on any stored
+    # warning with suggestion=None.
+    suggestion: str | None = None
+    # Per-finding confidence badge propagated by the orchestrator (M-1).
+    confidence: str | None = None
     norm: str | None = None
 
 
@@ -288,6 +293,7 @@ class AnalysisResponse(BaseModel):
     id: UUID
     project_id: UUID
     layout_id: UUID
+    run_id: UUID | None = None
     module: str
     overall_score: float
     sub_scores: dict[str, float]
@@ -295,6 +301,22 @@ class AnalysisResponse(BaseModel):
     suggestions: list[str]
     metrics: dict
     config_used: dict
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class AnalysisRunResponse(BaseModel):
+    """Header of one full-analysis run (H-3)."""
+    id: UUID
+    project_id: UUID
+    layout_id: UUID
+    overall_score: float | None
+    overall_confidence: str | None
+    module_count: int
+    skipped_count: int
+    error_count: int
+    tier: str | None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)

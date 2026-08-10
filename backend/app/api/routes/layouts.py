@@ -9,10 +9,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.permissions import effective_tier, get_accessible_project, get_current_user
 from app.db.database import get_db
-from app.models.models import AnalysisResult, Layout, LayoutVersion, Project, User
+from app.models.models import AnalysisResult, AnalysisRun, Layout, LayoutVersion, Project, User
 from app.schemas.schemas import (
     AnalysisRequest,
     AnalysisResponse,
+    AnalysisRunResponse,
     DxfImportResponse,
     FullAnalysisRequest,
     LayoutCreate,
@@ -587,6 +588,27 @@ async def list_analyses(
     return result.scalars().all()
 
 
+@router.get("/analysis-runs", response_model=list[AnalysisRunResponse])
+async def list_analysis_runs(
+    project_id: UUID,
+    layout_id: UUID | None = None,
+    _user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """List full-analysis run headers for a project (H-3), newest first.
+
+    Each run's per-module results are retrievable via GET /analyses?run_id=...
+    (filtered client-side by the returned run id).
+    """
+    await _get_project(project_id, _user, db, min_role="viewer")
+    query = select(AnalysisRun).where(AnalysisRun.project_id == project_id)
+    if layout_id:
+        query = query.where(AnalysisRun.layout_id == layout_id)
+    query = query.order_by(AnalysisRun.created_at.desc())
+    result = await db.execute(query)
+    return result.scalars().all()
+
+
 @router.post("/full-analysis", status_code=201)
 async def run_full_analysis_endpoint(
     project_id: UUID,
@@ -642,11 +664,27 @@ async def run_full_analysis_endpoint(
 
     analysis_result = await run_full_analysis(context)
 
-    # Store individual module results in DB
+    # Persist a run header (H-3) so this Vollanalyse stays reconstructable —
+    # overall score/confidence and which modules ran — then link every module
+    # row to it via run_id.
+    run = AnalysisRun(
+        project_id=project_id,
+        layout_id=data.layout_id,
+        overall_score=analysis_result.get("overall_score"),
+        overall_confidence=analysis_result.get("overall_confidence"),
+        module_count=analysis_result.get("module_count", 0),
+        skipped_count=analysis_result.get("skipped_count", 0),
+        error_count=analysis_result.get("error_count", 0),
+        tier=analysis_result.get("tier"),
+    )
+    db.add(run)
+    await db.flush()  # obtain run.id before linking results
+
     for module_name, module_result in analysis_result["modules"].items():
         db_result = AnalysisResult(
             project_id=project_id,
             layout_id=data.layout_id,
+            run_id=run.id,
             module=module_name,
             overall_score=module_result.get("overall_score", 0),
             sub_scores=module_result.get("sub_scores", {}),
@@ -659,4 +697,5 @@ async def run_full_analysis_endpoint(
 
     await db.commit()
 
+    analysis_result["run_id"] = str(run.id)
     return analysis_result
