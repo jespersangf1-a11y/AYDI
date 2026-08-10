@@ -118,6 +118,16 @@ def _check_hull_area_plausibility(
             f"Rumpfgrundfläche ({footprint:.0f} m²) — für ein Eindeck-Layout "
             f"auffällig hoch. Maßstab bzw. Deckanzahl prüfen."
         )
+    # Gross under-utilisation: the same small layout in a much longer hull uses
+    # a tiny fraction of it. Surfaces the I-1 case (identical zones scored the
+    # same in a 6 m and a 30 m boat) as a hull/length mismatch — the drawn zones
+    # remain the basis of the scores, but the mismatch is now flagged.
+    if ratio < 0.25:
+        return (
+            f"Zonenfläche ({total:.0f} m²) nutzt nur {ratio * 100:.0f} % der "
+            f"Rumpfgrundfläche ({footprint:.0f} m²) — Layout unvollständig oder "
+            f"Rumpflänge/-breite prüfen."
+        )
     return None
 
 
