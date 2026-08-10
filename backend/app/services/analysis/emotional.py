@@ -366,24 +366,34 @@ def analyze_room_proportion(zones: list[dict], config: dict) -> tuple[float, lis
         ratio = z["height_mm"] / shorter_dim
         ideal = ideal_salon if z["zone_type"] == "salon" else ideal_other
         lo, hi = ideal
+        shaft_cap = config.get("shaft_ratio_cap", 1.2)
 
-        if lo <= ratio <= hi:
-            zone_scores.append(100.0)
+        # Below the ideal band the room is low/flat (oppressive). Above the band
+        # is acceptable up to shaft-like proportions: more headroom must NOT
+        # reduce the score (J-3 — absolute height is rewarded separately by
+        # ceiling_perception; here only genuinely tall-narrow "shaft" rooms are
+        # penalised). Previously any ratio above `hi` was penalised, so raising
+        # the ceiling from 1.95 m to 2.20 m perversely lowered the score.
+        if ratio < lo:
+            deviation = (lo - ratio) / lo
+            direction = "zu flach"
+        elif ratio <= shaft_cap:
+            deviation = 0.0
+            direction = None
         else:
-            if ratio < lo:
-                deviation = (lo - ratio) / lo
-            else:
-                deviation = (ratio - hi) / hi
-            zone_score = max(0.0, 100.0 - deviation * 150.0)
-            zone_scores.append(zone_score)
+            deviation = (ratio - shaft_cap) / shaft_cap
+            direction = "schlauchartig (zu hoch/schmal)"
 
-            if deviation > 0.15:
-                label = z["name"]
-                warnings.append({
-                    "severity": "warning",
-                    "message": f"Raumproportionen in '{label}' ungünstig (Verhältnis: {ratio:.2f}, Ideal: {lo:.2f}–{hi:.2f})",
-                    "suggestion": f"Deckenhöhe oder Raumbreite in '{label}' anpassen",
-                })
+        zone_score = max(0.0, 100.0 - deviation * 150.0) if deviation > 0 else 100.0
+        zone_scores.append(zone_score)
+
+        if deviation > 0.15 and direction:
+            label = z["name"]
+            warnings.append({
+                "severity": "warning",
+                "message": f"Raumproportionen in '{label}' ungünstig ({direction}, Verhältnis: {ratio:.2f})",
+                "suggestion": f"Raumbreite bzw. Deckenhöhe in '{label}' ausgewogener wählen",
+            })
 
     if not zone_scores:
         return 50.0, warnings, {"zones_evaluated": 0}
@@ -422,6 +432,11 @@ def analyze_light_distribution(zones: list[dict], config: dict) -> tuple[float, 
     zone_scores = []
     for z in evaluable:
         pct = z["properties"]["window_area_pct"]
+        # Accept both a fraction (0–1, the documented form) and a percentage
+        # (0–100): a value above 1 is read as percent. Without this a UI/import
+        # feeding "35" instead of 0.35 saturated every zone to full marks (J-3).
+        if isinstance(pct, (int, float)) and pct > 1.0:
+            pct = pct / 100.0
         target_key = _WINDOW_TARGET_KEYS[z["zone_type"]]
         target = config[target_key]
 
