@@ -358,3 +358,26 @@ def test_analysis_runs_owner_scoped(ctx):
     res = client.get(f"/api/v1/projects/{ids['project']}/analysis-runs")
     assert res.status_code == 404
     current["user_id"] = ids["owner"]
+
+
+def test_full_analysis_uses_owner_fleet_reports(ctx):
+    """L-6: the owner's class-wide reports (no project) feed the analysis."""
+    client, ids, current = ctx
+    current["user_id"] = ids["owner"]
+
+    # A fleet-wide report: no project_id, matching boat class, owned by owner.
+    r = client.post("/api/v1/service-reports", json={
+        "report_type": "repair", "category": "water_ingress", "zone_type": "head",
+        "description": "Undichtigkeit in der Nasszelle", "severity": "high",
+        "boat_class": "cruising_sail", "boat_age_months": 40,
+    })
+    assert r.status_code == 201, r.text
+
+    res = client.post(
+        f"/api/v1/projects/{ids['project']}/full-analysis",
+        json={"layout_id": str(ids["layout"])},
+    )
+    assert res.status_code == 201, res.text
+    body = res.json()
+    # With fleet data present, service_patterns runs instead of being skipped.
+    assert "service_patterns" in body["modules"], body.get("skipped")

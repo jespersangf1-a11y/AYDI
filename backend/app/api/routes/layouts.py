@@ -383,11 +383,31 @@ async def _load_cost_items(layout_id: UUID, db: AsyncSession) -> list[dict]:
     ]
 
 
-async def _load_service_reports(project_id: UUID, db: AsyncSession) -> list[dict]:
-    """Load service reports for a project (or its boat class)."""
-    result = await db.execute(
-        select(ServiceReport).where(ServiceReport.project_id == project_id)
-    )
+async def _load_service_reports(
+    project_id: UUID,
+    db: AsyncSession,
+    *,
+    owner_id: UUID | None = None,
+    boat_class: str | None = None,
+) -> list[dict]:
+    """Load service reports for a project, plus the owner's fleet-wide reports.
+
+    Project-linked reports load by project_id. Additionally the project owner's
+    own class-wide reports (no project, matching boat_class) contribute fleet
+    experience (L-6) — previously such reports were accepted but never used.
+    Only the owner's OWN class-wide reports are included, never other users' —
+    this stays within the L-9 ownership boundary.
+    """
+    from sqlalchemy import or_
+
+    conditions = [ServiceReport.project_id == project_id]
+    if owner_id is not None and boat_class:
+        conditions.append(
+            ServiceReport.project_id.is_(None)
+            & (ServiceReport.user_id == owner_id)
+            & (ServiceReport.boat_class == boat_class)
+        )
+    result = await db.execute(select(ServiceReport).where(or_(*conditions)))
     reports = result.scalars().all()
     return [
         {
@@ -524,7 +544,9 @@ async def run_analysis(
         extra_kwargs["cost_items"] = await _load_cost_items(data.layout_id, db)
         extra_kwargs["boat_length_m"] = project.length_m
     elif data.module == "service_patterns":
-        extra_kwargs["service_reports"] = await _load_service_reports(project_id, db)
+        extra_kwargs["service_reports"] = await _load_service_reports(
+            project_id, db, owner_id=project.user_id, boat_class=project.boat_class
+        )
     elif data.module == "brand_dna":
         extra_kwargs["brand_references"] = await _load_brand_references(project.boat_class, _user, db)
     elif data.module == "market":
@@ -634,7 +656,9 @@ async def run_full_analysis_endpoint(
     zone_materials = await _load_materials_for_analysis(data.layout_id, db)
     structural_items = await _load_structural_items(data.layout_id, db)
     cost_items = await _load_cost_items(data.layout_id, db)
-    service_reports = await _load_service_reports(project_id, db)
+    service_reports = await _load_service_reports(
+        project_id, db, owner_id=project.user_id, boat_class=project.boat_class
+    )
     brand_refs = await _load_brand_references(project.boat_class, _user, db)
     competitors = await _load_competitors(
         project.boat_class, project.length_m, db
