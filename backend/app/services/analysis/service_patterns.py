@@ -212,6 +212,79 @@ _AGE_BUCKETS = [
 
 
 # ---------------------------------------------------------------------------
+# Free-text severity extraction (L-5) — Pipeline C previously ignored the
+# description field entirely, so identical structured reports with wildly
+# different text scored the same. Derive an implied severity from damage
+# keywords, with negation handling so "keine Osmose" does not escalate.
+# ---------------------------------------------------------------------------
+_TEXT_SEVERITY_KEYWORDS: dict[str, tuple[str, ...]] = {
+    "critical": (
+        "totalschaden", "kernschaden", "delaminiert", "wassereinbruch",
+        "nicht seetüchtig", "nicht mehr seetüchtig", "durchgerostet",
+        "gebrochen", "abgerissen", "gerissen", "wasser im kiel",
+    ),
+    "high": (
+        "osmose", "korrosion", "undicht", "morsch", "durchfeuchtet",
+        "leck", "defekt", "verschlissen", "ausgeschlagen", "faul", "riss",
+    ),
+    "medium": (
+        "spiel", "verschleiß", "abnutzung", "gebrauchsspuren", "oberflächlich",
+    ),
+}
+_SEVERITY_RANK = {"low": 0, "medium": 1, "high": 2, "critical": 3}
+_NEGATIONS = ("kein", "keine", "keinerlei", "ohne", "nicht", "frei von")
+
+
+def _derive_text_severity(description: str | None) -> str | None:
+    """Highest severity implied by non-negated damage keywords in the text.
+
+    Scans critical→high→medium; a keyword occurrence preceded (within ~25 chars)
+    by a negation ("keine Osmose", "ohne Befund") is ignored. Returns None when
+    no damage is described.
+    """
+    if not description:
+        return None
+    text = description.lower()
+    for sev in ("critical", "high", "medium"):
+        for kw in _TEXT_SEVERITY_KEYWORDS[sev]:
+            idx = text.find(kw)
+            while idx != -1:
+                prefix = text[max(0, idx - 25):idx]
+                if not any(neg in prefix for neg in _NEGATIONS):
+                    return sev
+                idx = text.find(kw, idx + 1)
+    return None
+
+
+def _apply_text_severity(reports: list[dict]) -> tuple[list[dict], list[dict]]:
+    """Lift each report's effective severity to at least what its text implies.
+
+    Returns (effective_reports, underreport_warnings). A report whose free text
+    describes worse damage than its recorded severity is both escalated (so the
+    text affects the score) and flagged (L-5, and partially the L-4b
+    under-reporting/contradiction case).
+    """
+    effective: list[dict] = []
+    underreports: list[dict] = []
+    for r in reports:
+        text_sev = _derive_text_severity(r.get("description"))
+        struct_sev = r.get("severity", "low")
+        if text_sev and _SEVERITY_RANK.get(text_sev, 0) > _SEVERITY_RANK.get(struct_sev, 0):
+            underreports.append({
+                "code": "SERVICE_TEXT_UNDERREPORT",
+                "severity": "warning",
+                "message": (
+                    f"Freitext (Zone '{r.get('zone_type', '?')}') deutet auf "
+                    f"Schweregrad '{text_sev}' hin, erfasst war '{struct_sev}'."
+                ),
+                "suggestion": "Schweregrad des Serviceberichts an die Beschreibung anpassen.",
+            })
+            r = {**r, "severity": text_sev}
+        effective.append(r)
+    return effective, underreports
+
+
+# ---------------------------------------------------------------------------
 # Sub-analysis 1: Zone type issues
 # ---------------------------------------------------------------------------
 
@@ -603,8 +676,12 @@ def run_service_patterns_analysis(
             ],
         }
 
+    # L-5: read the free-text description — lift effective severity from it so
+    # the analysis reflects what the text says, not only the structured fields.
+    reports, text_underreports = _apply_text_severity(reports)
+
     sub_scores: dict[str, float] = {}
-    all_warnings: list[dict] = []
+    all_warnings: list[dict] = list(text_underreports)
     all_suggestions: list[str] = []
     all_metrics: dict[str, dict] = {}
 
