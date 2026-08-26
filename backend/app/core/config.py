@@ -14,8 +14,15 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite+aiosqlite:///./aydi.db"
     CORS_ORIGINS: list[str] = ["http://localhost:5173"]
     ANTHROPIC_API_KEY: str | None = None
-    ANTHROPIC_MODEL: str = "claude-sonnet-4-20250514"
-    VISUAL_ANALYSIS_TIMEOUT_SEC: int = 30
+    # claude-sonnet-4-20250514 war zurueckgezogen: Die API antwortete mit
+    # 404 not_found_error, die visuelle Analyse schlug dadurch bei JEDEM
+    # Bild fehl. Aktuelle Modell-IDs tragen kein Datumssuffix.
+    ANTHROPIC_MODEL: str = "claude-opus-5"
+    # Gemessen: Ein Bild mit dem Standardprompt braucht auf claude-opus-5 rund
+    # 57 s (4.970 Eingabe-, 3.363 Ausgabe-Tokens). Mit 30 s lief JEDER Aufruf
+    # in den Timeout. 120 s lassen Luft fuer groessere Bilder und Lastspitzen,
+    # ohne einen haengenden Aufruf unbegrenzt offen zu halten.
+    VISUAL_ANALYSIS_TIMEOUT_SEC: int = 120
     DATABASE_POOL_SIZE: int = 10
     LOG_LEVEL: str = "INFO"
     LOG_JSON: bool = False  # production: structured JSON for log aggregators

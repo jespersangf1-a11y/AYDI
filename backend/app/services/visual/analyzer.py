@@ -65,7 +65,9 @@ class VisualAnalyzer:
     """
 
     MODEL = settings.ANTHROPIC_MODEL
-    MODEL_DETAILED = "claude-opus-4-20250514"
+    # Ebenfalls zurueckgezogen (siehe config.py). Fuer die Tiefenanalyse
+    # dasselbe aktuelle Modell wie im Standardfall.
+    MODEL_DETAILED = settings.ANTHROPIC_MODEL
     MAX_TOKENS = 4096
     MAX_TOKENS_DETAILED = 8192
     # Wartezeit-Obergrenze pro API-Versuch (Sekunden).
@@ -247,6 +249,16 @@ class VisualAnalyzer:
                     raise NonRetryableError(f"Authentication error: {e}") from e
                 if status_code == 400 or "invalid_request" in error_str:
                     raise NonRetryableError(f"Invalid request: {e}") from e
+                # 404 heisst hier praktisch immer: die konfigurierte Modell-ID gibt
+                # es nicht (mehr). Das wird beim naechsten Versuch nicht anders —
+                # zuvor galt es als "voruebergehend" und wurde viermal mit Backoff
+                # wiederholt: 7 Sekunden und 4 API-Anfragen pro Bild, jedes Mal
+                # vergeblich, und in den Logs sah es nach einer Stoerung aus statt
+                # nach einer Fehlkonfiguration.
+                if status_code == 404 or "not_found" in error_str:
+                    raise NonRetryableError(
+                        f"Modell oder Endpunkt nicht gefunden (ANTHROPIC_MODEL pruefen): {e}"
+                    ) from e
                 # Everything else (429, 5xx, timeouts, connection resets) is transient.
                 raise RetryableError(f"Transient API error: {e}") from e
 

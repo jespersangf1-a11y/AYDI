@@ -462,7 +462,7 @@ Gelesen von `app/core/config.py` (`Settings`, `env_file=".env"` relativ zum Arbe
 | `COOKIE_DOMAIN` | `None` | |
 | `CORS_ORIGINS` | `["http://localhost:5173"]` | JSON-Array |
 | `ANTHROPIC_API_KEY` | `None` | ohne Key keine Pipeline B |
-| `ANTHROPIC_MODEL` | `claude-sonnet-4-20250514` | |
+| `ANTHROPIC_MODEL` | `claude-opus-5` | Aktuelle IDs tragen **kein** Datumssuffix; `claude-sonnet-4-20250514` ist zurückgezogen (404) |
 | `VISUAL_ANALYSIS_TIMEOUT_SEC` | `30` | |
 | `MAX_IMAGE_SIZE_MB` / `UPLOAD_DIR` | `20` / `uploads` | |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` / `REFRESH_TOKEN_EXPIRE_DAYS` | `60` / `7` | |
