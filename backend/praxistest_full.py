@@ -7,8 +7,20 @@ Gruppen: A-F
 import json, os, sys, time, asyncio, importlib
 from uuid import UUID
 
-# Override DB
-os.environ["DATABASE_URL"] = "sqlite+aiosqlite:////sessions/dreamy-youthful-fermi/aydi_praxis2.db"
+from pathlib import Path
+
+# Windows-Konsolen laufen per Default unter cp1252 und brechen an den Status-Emojis.
+# UTF-8 erzwingen, sonst ist der Praxistest auf der Hauptentwicklungsplattform nicht lauffähig.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, OSError):  # pragma: no cover - z.B. umgeleitete Pipes
+        pass
+
+# Ergebnis- und DB-Ablage: per Env überschreibbar, sonst neben diesem Skript.
+_OUT = Path(os.environ.get("PRAXISTEST_OUT_DIR", Path(__file__).resolve().parent / ".praxistest"))
+_OUT.mkdir(parents=True, exist_ok=True)
+os.environ["DATABASE_URL"] = f"sqlite+aiosqlite:///{(_OUT / 'aydi_praxis2.db').as_posix()}"
 import app.core.config; importlib.reload(app.core.config)
 import app.db.database; importlib.reload(app.db.database)
 from app.db.database import engine
@@ -23,6 +35,22 @@ asyncio.run(_init_db())
 from fastapi.testclient import TestClient
 from app.main import app
 client = TestClient(app)
+
+# Dieser Praxistest simuliert den reinen Bearer-Client (API-Zugang), nicht den
+# Browser. /auth/login setzt zusaetzlich httpOnly-Session-Cookies; behaelt der
+# Client sie, ist jeder Folge-Request cookie-authentifiziert (Cookie hat in
+# _extract_token Vorrang vor dem Bearer-Header) und der CSRF-Schutz greift
+# korrekterweise. Darum nach jedem Request die Jar leeren.
+_orig_request = client.request
+
+
+def _request_without_cookie_jar(*args, **kwargs):
+    response = _orig_request(*args, **kwargs)
+    client.cookies.clear()
+    return response
+
+
+client.request = _request_without_cookie_jar
 
 results = []
 tokens = {}
@@ -91,13 +119,20 @@ for name in tokens:
     else:
         log(f"A6-Profil-{name}", "FAIL", f"{resp.status_code}")
 
-# A7: Auth-Guard
+# A7: Auth-Guard — mit EIGENEM Client ohne Cookies/Token, sonst misst man nichts.
 guarded = ["/api/v1/projects", "/api/v1/materials", "/api/v1/competitors",
-           "/api/v1/knowledge/categories", "/api/v1/community/reports",
-           "/api/v1/service-reports", "/api/v1/collaborate/sessions"]
-fails = [p for p in guarded if client.get(p).status_code != 401]
+           "/api/v1/community/reports", "/api/v1/service-reports",
+           "/api/v1/collaborate/sessions"]
+# Bewusst oeffentlich (Produktsaeule 1 "Wissensbasis": Public read, Tiefe ist PRO).
+public = ["/api/v1/knowledge/categories"]
+with TestClient(app) as anon:
+    fails = [p for p in guarded if anon.get(p).status_code != 401]
+    pub_fails = [p for p in public if anon.get(p).status_code != 200]
 log("A7-AuthGuard", "PASS" if not fails else "FAIL",
     f"{len(guarded)} Endpoints geschützt" if not fails else f"Ungeschützt: {fails}")
+log("A7b-PublicRead", "PASS" if not pub_fails else "FAIL",
+    f"{len(public)} öffentliche Endpoints erreichbar" if not pub_fails
+    else f"Öffentlich erwartet, aber gesperrt: {pub_fails}")
 
 # A8: Refresh
 resp = client.post("/api/v1/auth/login", json={"email": "kai@example.com", "password": "Segeln2024!"})
@@ -219,6 +254,9 @@ if sarah_pid and sarah_lid:
 elif not sarah_lid:
     log("B2-Einzelanalyse-Ergo", "FAIL", "Kein Layout-ID von B1 verfügbar")
 
+from app.core.subscription import get_allowed_modules
+ALLOWED_FREE = set(get_allowed_modules("free"))
+
 # B3: Vollanalyse (alle Module)
 if sarah_pid and sarah_lid:
     resp = client.post(f"/api/v1/projects/{sarah_pid}/full-analysis",
@@ -230,13 +268,56 @@ if sarah_pid and sarah_lid:
         overall = fa.get("overall_score", fa.get("overall_assessment", {}).get("overall_score", "?"))
         log("B3-Vollanalyse", "PASS",
             f"Module: {len(modules_run)}, Overall: {overall}, Keys: {list(fa.keys())[:8]}")
-        # Check that all 10+ modules returned
-        if len(modules_run) >= 10:
-            log("B3-ModulCount", "PASS", f"Alle {len(modules_run)} Module ausgeführt: {modules_run}")
+        # Sarah ist als frisch registrierte Nutzerin FREE — sie bekommt per Tarif
+        # nur die FREE-Module. Frueher stand hier "erwarte >= 10 Module", was fuer
+        # einen FREE-Nutzer nie zutreffen konnte: Der Test war seit der Einfuehrung
+        # des Tarif-Gatings dauerhaft rot und der Profi-Pfad faktisch ungeprueft.
+        gated = fa.get("tier_gated", {})
+        if fa.get("tier") == "free" and gated and all(m in ALLOWED_FREE for m in modules_run):
+            log("B3-ModulCount-Free", "PASS",
+                f"FREE: {len(modules_run)} Module gelaufen, {len(gated)} tarifgesperrt")
         else:
-            log("B3-ModulCount", "FAIL", f"Nur {len(modules_run)} Module: {modules_run}")
+            log("B3-ModulCount-Free", "FAIL",
+                f"tier={fa.get('tier')}, gelaufen={modules_run}, gesperrt={list(gated)}")
     else:
         log("B3-Vollanalyse", "FAIL", f"{resp.status_code}: {resp.text[:200]}")
+
+# B3b: Derselbe Durchlauf als PRO — das ist der Pfad, den das Produkt verkauft.
+# Der Tarif ist laut Spezifikation admin-provisioniert, es gibt keine Selbstbedienung;
+# im Test wird er darum direkt in der DB gesetzt.
+if sarah_pid and sarah_lid:
+    async def _set_tier(email, tier):
+        from sqlalchemy import update
+        from app.db.database import async_session
+        from app.models.models import User
+        async with async_session() as session:
+            await session.execute(update(User).where(User.email == email).values(tier=tier))
+            await session.commit()
+    asyncio.run(_set_tier("sarah@example.com", "pro"))
+
+    resp = client.post(f"/api/v1/projects/{sarah_pid}/full-analysis",
+        headers=auth("Sarah"), json={"layout_id": sarah_lid})
+    if resp.status_code in (200, 201):
+        fa = resp.json()
+        ran = set((fa.get("modules") or {}).keys())
+        skipped = fa.get("skipped", {})
+        gated = fa.get("tier_gated", {})
+        errors = fa.get("errors", {})
+        allowed_pro = set(get_allowed_modules("pro"))
+        unaccounted = allowed_pro - ran - set(skipped)
+        log("B3b-Vollanalyse-Pro", "PASS" if fa.get("tier") == "pro" else "FAIL",
+            f"tier={fa.get('tier')}, {len(ran)} gelaufen, {len(skipped)} mangels Daten übersprungen")
+        # Jedes freigeschaltete Modul muss entweder laufen oder einen Grund nennen.
+        log("B3b-ModulRechenschaft", "PASS" if not unaccounted and not gated and not errors else "FAIL",
+            "Jedes PRO-Modul lief oder nannte einen Grund"
+            if not unaccounted and not gated and not errors
+            else f"ohne Rechenschaft: {sorted(unaccounted)}, gesperrt: {list(gated)}, Fehler: {list(errors)}")
+        # Uebersprungen ist nur akzeptabel MIT Klartextbegruendung.
+        vague = [m for m, r in skipped.items() if not isinstance(r, str) or len(r) < 15]
+        log("B3b-SkipGruende", "PASS" if not vague else "FAIL",
+            f"{len(skipped)} Begründungen im Klartext" if not vague else f"Ohne Begründung: {vague}")
+    else:
+        log("B3b-Vollanalyse-Pro", "FAIL", f"{resp.status_code}: {resp.text[:200]}")
 
 # B4: Schnellanalyse mit verschiedenen Bootsklassen
 for bc, name, specs in [
@@ -594,11 +675,16 @@ resp = client.post("/api/v1/quick-analysis", json={
 })
 if resp.status_code in (200, 201):
     data = resp.json()
-    name_in_response = json.dumps(data)
-    if "<script>" not in name_in_response:
-        log("E4-XSS", "PASS", "Script-Tags nicht in Response reflektiert")
-    else:
-        log("E4-XSS", "WARN", "Script-Tags in Response vorhanden (prüfen ob escaped)")
+    # Eine JSON-API darf Nutzertext zurueckspiegeln — das ist per se kein XSS.
+    # Entscheidend ist, dass der Browser die Antwort nicht als HTML deuten darf
+    # (nosniff + application/json) und dass der einzige HTML-Renderpfad im
+    # Frontend (KnowledgeDetail.tsx) durch DOMPurify laeuft.
+    nosniff = resp.headers.get("X-Content-Type-Options") == "nosniff"
+    is_json = resp.headers.get("content-type", "").startswith("application/json")
+    log("E4-XSS-Sniffing", "PASS" if nosniff and is_json else "FAIL",
+        "nosniff + application/json — Reflexion nicht als HTML interpretierbar"
+        if nosniff and is_json
+        else f"nosniff={nosniff}, content-type={resp.headers.get('content-type')}")
 else:
     log("E4-XSS", "PASS" if resp.status_code == 422 else "FAIL", f"Status: {resp.status_code}")
 
@@ -690,6 +776,23 @@ for zt in all_zt:
 log("K1-ZoneTypeMapping", "PASS" if not zt_issues else "FAIL",
     f"{len(all_zt)} Zone-Types, alle gemappt" if not zt_issues else f"Unmapped: {zt_issues}")
 
+# K1b: Die beiden Vokabulare muessen deckungsgleich sein. K1 allein prueft nur
+# die Domaenen gegen sich selbst und war deshalb trivial erfuellt — waehrend
+# VALID_ZONE_TYPES und die Domaenen um je 4 Eintraege auseinandergelaufen waren.
+from app.core.validation import VALID_ZONE_TYPES, ZONE_TYPE_ALIASES, normalize_zone_type
+only_domains = sorted(set(all_zt) - VALID_ZONE_TYPES)
+only_validation = sorted(zt for zt in VALID_ZONE_TYPES if get_domain_for_zone_type(zt) is None)
+log("K1b-VokabularDeckung", "PASS" if not (only_domains or only_validation) else "FAIL",
+    f"{len(VALID_ZONE_TYPES)} gueltige Typen, alle mit Domaene" if not (only_domains or only_validation)
+    else f"nur in Domaenen: {only_domains} | ohne Domaene: {only_validation}")
+
+# K1c: Gebraeuchliche Synonyme muessen auf kanonische Typen ziehen.
+alias_issues = [f"{a} -> {t}" for a, t in ZONE_TYPE_ALIASES.items() if t not in VALID_ZONE_TYPES]
+galley_ok = normalize_zone_type("galley") in VALID_ZONE_TYPES
+log("K1c-ZoneTypeSynonyme", "PASS" if not alias_issues and galley_ok else "FAIL",
+    f"{len(ZONE_TYPE_ALIASES)} Synonyme, u.a. galley->{normalize_zone_type('galley')}"
+    if not alias_issues and galley_ok else f"Defekte Aliase: {alias_issues}")
+
 # K2: Keine Zone-Type-Duplikate
 from collections import Counter
 all_zt_list = []
@@ -742,7 +845,7 @@ if failed > 0:
             print(f"  ❌ {r['scenario']}: {r['detail'][:120]}")
 
 # Save full results
-with open("/sessions/dreamy-youthful-fermi/praxistest_results.json", "w") as f:
+with open(_OUT / "praxistest_results.json", "w", encoding="utf-8") as f:
     json.dump(results, f, indent=2, ensure_ascii=False)
 
 print(f"\n{'='*70}")

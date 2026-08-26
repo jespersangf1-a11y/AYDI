@@ -6,6 +6,9 @@ ceiling perception, and inside-outside flow. Pure function module — no databas
 import logging
 import math
 
+from app.core.validation import known_passage_widths, passage_width
+from app.services.analysis.subscore import aggregate_subscores
+
 logger = logging.getLogger(__name__)
 
 BOAT_CLASS_DEFAULTS = {
@@ -613,8 +616,11 @@ def analyze_inside_outside_flow(zones: list[dict], passages: list[dict], config:
         })
         return 20.0, warnings, {"cockpit_passages": 0, "max_passage_width_mm": 0}
 
-    max_width = max(p["width_mm"] for p in cockpit_passages)
-    widths = [p["width_mm"] for p in cockpit_passages]
+    widths = known_passage_widths(cockpit_passages)
+    if not widths:
+        # Keine bekannte Breite -> keine Aussage erfinden.
+        return 50.0, [], {"cockpit_passages": len(cockpit_passages), "widths_known": 0}
+    max_width = max(widths)
 
     passage_scores = []
     for w in widths:
@@ -772,6 +778,8 @@ def run_emotional_analysis(zones: list[dict], passages: list[dict], boat_class: 
         ("sightline_rays", lambda: analyze_sightline_rays(zones, config)),
     ]
 
+    _failed_subs: set[str] = set()
+
     for name, fn in analyses:
         try:
             score, warnings, metrics = fn()
@@ -780,14 +788,22 @@ def run_emotional_analysis(zones: list[dict], passages: list[dict], boat_class: 
             all_metrics[name] = metrics
         except Exception:
             logger.exception("Error in sub-analysis %s", name)
-            sub_scores[name] = 0.0
+            _failed_subs.add(name)
             all_warnings.append({
                 "severity": "critical",
                 "message": f"Fehler bei Analyse: {name}",
                 "suggestion": "Layoutdaten überprüfen",
             })
 
-    overall = sum(sub_scores.get(k, 0) * w for k, w in weights.items())
+    overall = aggregate_subscores(
+        sub_scores, weights, failed=_failed_subs, default=0
+    )
+    if overall is None:
+        # Jede Teilanalyse ist ausgefallen — keine Note erfinden.
+        overall = 0.0
+        _all_subs_failed = True
+    else:
+        _all_subs_failed = False
 
     for w in all_warnings:
         if w.get("suggestion") and w["suggestion"] not in all_suggestions:
@@ -795,8 +811,19 @@ def run_emotional_analysis(zones: list[dict], passages: list[dict], boat_class: 
 
     all_warnings.sort(key=lambda w: SEVERITY_ORDER.get(w.get("severity", "info"), 2))
 
+    if _all_subs_failed:
+        # Kein einziger Teilscore war verwertbar. Statt einer erfundenen
+        # Note meldet sich das Modul als nicht beurteilbar (Modul-Skip-Vertrag).
+        return {
+            "module": "emotional",
+            "available": False,
+            "reason": "Alle Teilanalysen fehlgeschlagen - kein belastbares Ergebnis.",
+            "warnings": all_warnings,
+        }
+
     return {
         "module": "emotional",
+        "degraded_subanalyses": sorted(_failed_subs),
         "overall_score": round(overall, 1),
         "sub_scores": {k: round(v, 1) for k, v in sub_scores.items()},
         "warnings": all_warnings,

@@ -307,8 +307,13 @@ def test_full_integration():
 
     assert result["module"] == "service_patterns"
     assert 0 <= result["overall_score"] <= 100
+    # severity_burden kam hinzu, weil die vier urspruenglichen Teilanalysen reine
+    # MUSTER-Detektoren sind: Sie bewerten, ob sich Meldungen haeufen, nie wie
+    # schwer das Gemeldete ist. Messbar war das daran, dass zehn kosmetische
+    # "low"-Berichte exakt dieselbe Note ergaben wie zehn Totalschaeden.
     assert set(result["sub_scores"].keys()) == {
-        "zone_issues", "age_patterns", "material_failures", "design_warnings"
+        "zone_issues", "age_patterns", "material_failures", "design_warnings",
+        "severity_burden",
     }
     assert all(0 <= v <= 100 for v in result["sub_scores"].values())
     assert isinstance(result["warnings"], list)

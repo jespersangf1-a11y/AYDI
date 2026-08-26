@@ -955,16 +955,17 @@ KNOWLEDGE_INDEX = {
         },
     },
     # =========================================================================
-    # 22. MARKDOWN-WISSENSDATEIEN (252 nummerierte Dateien, 31 Kategorien, ~840K Zeilen)
+    # 22. MARKDOWN-WISSENSDATEIEN (261 nummerierte Dateien, 32 Kategorien, ~850K Zeilen;
+    #     davon 260 kanonisch geladen — siehe description)
     # =========================================================================
     "22_markdown_knowledge": {
         "title": "Markdown-Wissensdatenbank — Vollständige Materialreferenz",
         "status": "implemented",
         "module": "markdown_knowledge_loader.py → load_all_markdown_knowledge()",
         "description": (
-            "261 nummerierte Markdown-Dateien in 32 Kategorien (~842.000 Zeilen). "
+            "261 nummerierte Markdown-Dateien in 32 Kategorien (850.268 Zeilen). "
             "Eine davon (24_05_..._clean.md) ist eine Backup-Variante und wird vom "
-            "Loader ausgeschlossen → 260 kanonische Dateien geladen "
+            "Loader ausgeschlossen → 260 kanonische Dateien geladen (847.782 Zeilen) "
             "(Slug-Kollisionen unter Komposit-Schlüssel bewahrt, kein stilles Überschreiben). "
             "Kategorie 32 (Designsprachen & Stile) ergänzt die technische Materialreferenz "
             "um Exterieur-/Interieur-Designwissen über Marken, Epochen und Jahre. "

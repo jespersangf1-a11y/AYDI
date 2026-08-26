@@ -24,6 +24,33 @@ router = APIRouter(prefix="/projects/{project_id}", tags=["import"])
 STEP_EXTENSIONS = {".step", ".stp"}
 IGES_EXTENSIONS = {".iges", ".igs"}
 
+# Upload-Obergrenze fuer CAD-Dateien — identisch zum DXF-Pfad
+# (layouts.import_dxf), damit alle Import-Endpunkte dieselbe Grenze,
+# denselben Statuscode (413) und dieselbe deutsche Meldung liefern.
+MAX_CAD_UPLOAD_BYTES = 25 * 1024 * 1024  # 25 MB
+_UPLOAD_CHUNK_BYTES = 1 * 1024 * 1024  # 1 MB
+
+
+async def _read_upload_limited(file: UploadFile, max_bytes: int = MAX_CAD_UPLOAD_BYTES) -> bytes:
+    """Read an upload in chunks and abort as soon as the limit is exceeded.
+
+    Never buffers more than ``max_bytes`` + one chunk, so an oversized upload
+    cannot exhaust memory before the size check runs (im Gegensatz zu einem
+    unbegrenzten ``await file.read()``).
+    """
+    buffer = bytearray()
+    while True:
+        chunk = await file.read(_UPLOAD_CHUNK_BYTES)
+        if not chunk:
+            break
+        buffer.extend(chunk)
+        if len(buffer) > max_bytes:
+            raise HTTPException(
+                status_code=413,
+                detail=f"Datei zu gross. Maximal {max_bytes // (1024 * 1024)} MB erlaubt.",
+            )
+    return bytes(buffer)
+
 
 async def _get_project(
     project_id: UUID, user: User, db: AsyncSession, min_role: str = "editor"
@@ -66,7 +93,7 @@ async def import_step_file(
     await _get_project(project_id, _user, db)
     _validate_file_extension(file.filename, STEP_EXTENSIONS, "STEP")
 
-    content = await file.read()
+    content = await _read_upload_limited(file)
     if not content:
         raise HTTPException(
             status_code=400,
@@ -103,7 +130,7 @@ async def import_iges_file(
     await _get_project(project_id, _user, db)
     _validate_file_extension(file.filename, IGES_EXTENSIONS, "IGES")
 
-    content = await file.read()
+    content = await _read_upload_limited(file)
     if not content:
         raise HTTPException(
             status_code=400,

@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.i18n import t
 from app.db.database import get_db
 from app.models.models import QuickAnalysisResult
 from app.schemas.quick_analysis import (
@@ -100,13 +101,12 @@ def _extract_key_findings(warnings: list[dict], max_findings: int = 5) -> list[d
 
 def _generate_summary(boat_class: str, overall_score: float, module_results: dict) -> str:
     """Generate a German-language one-sentence summary of the overall result."""
-    class_labels = {
-        "small_sail": "Kleine Segelyacht",
-        "cruising_sail": "Fahrtensegler",
-        "large_motor": "Gro\u00dfe Motoryacht",
-        "superyacht": "Superyacht",
-    }
-    class_label = class_labels.get(boat_class, boat_class)
+    # Hier standen 4 der 13 Bootsklassen hart kodiert; alle uebrigen fielen per
+    # .get(boat_class, boat_class) auf den ROHEN ENGLISCHEN Schluessel zurueck \u2014
+    # im deutschen Ergebnistext der Schnellanalyse stand dann z.B. "daysailer"
+    # statt "Daysailer / Tagessegler". Der i18n-Katalog fuehrt inzwischen alle
+    # 13 Klassen in DE/EN/ES/FR.
+    class_label = t(f"boat_class.{boat_class}")
 
     if overall_score >= 80:
         quality = "\u00dcberdurchschnittliches"

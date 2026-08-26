@@ -1,10 +1,162 @@
 # backend/app/schemas/schemas.py
+import math
 from datetime import date, datetime
 from enum import Enum
-from typing import Literal
+from typing import Annotated, Any, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
+
+# ---------------------------------------------------------------------------
+# Schranken für Layout-Geometrie (ROB-1, SEC-9)
+#
+# Warum an der Schema-Grenze: `app/core/validation.py` prüft erst beim Eintritt
+# in ein Analysemodul auf Endlichkeit. Ein Layout mit NaN-Koordinaten wird davor
+# aber schon per POST angelegt (201) und liegt dann dauerhaft in der DB — jede
+# spätere Analyse und jede Response-Serialisierung (JSON kennt kein NaN) läuft
+# darauf in einen 500er. Der Schutz gehört deshalb an die Schema-Grenze.
+#
+# Die Werte sind bewusst großzügig: ein 180-m-Superyacht-Deck misst rund
+# 180.000 mm, alle Grenzen liegen um Größenordnungen darüber. Sie sollen
+# Unsinn und Missbrauch abfangen, nicht legitime Entwürfe.
+# ---------------------------------------------------------------------------
+
+MAX_COORD_MM = 1_000_000.0        # 1 km — jede reale Yacht liegt weit darunter
+MAX_POLYGON_POINTS = 5_000        # feinaufgelöste CAD-Kontur bleibt möglich
+MAX_ZONES_PER_LAYOUT = 500        # Superyacht-Layouts liegen bei ~100-200 Zonen
+MAX_PASSAGES_PER_LAYOUT = 2_000
+MAX_PROPERTY_KEYS = 200
+MAX_PASSAGE_WIDTH_MM = 100_000.0  # 100 m
+MAX_PASSAGE_LENGTH_MM = 1_000_000.0
+MAX_ZONE_AREA_M2 = 100_000.0
+
+
+NON_FINITE_SENTINEL = "__nicht_endliche_zahl__"
+
+
+def _sanitize_non_finite(value: Any, _depth: int = 0) -> Any:
+    """Ersetzt NaN/Infinity im ROHEN Request-Body durch einen Marker-String.
+
+    Grund: FastAPIs 422-Antwort spiegelt den Eingabewert zurück
+    (``detail[].input``). Ein rohes NaN darin ist selbst nicht
+    JSON-serialisierbar — die Fehlerantwort scheitert dann und der Client
+    bekommt 500 statt 422. Der Marker ist serialisierbar; die Feld-Validatoren
+    übersetzen ihn unten in eine deutsche Meldung.
+    """
+    if _depth > 12:
+        return value
+    if isinstance(value, bool) or value is None:
+        return value
+    if isinstance(value, float):
+        return NON_FINITE_SENTINEL if not math.isfinite(value) else value
+    if isinstance(value, list):
+        return [_sanitize_non_finite(item, _depth + 1) for item in value]
+    if isinstance(value, tuple):
+        return tuple(_sanitize_non_finite(item, _depth + 1) for item in value)
+    if isinstance(value, dict):
+        return {key: _sanitize_non_finite(item, _depth + 1) for key, item in value.items()}
+    return value
+
+
+class FiniteNumbersMixin(BaseModel):
+    """Entschärft NaN/Infinity, bevor Pydantic sie in die Fehlerantwort schreibt."""
+
+    @model_validator(mode="before")
+    @classmethod
+    def _sanitize_payload(cls, data):
+        if isinstance(data, dict):
+            return _sanitize_non_finite(data)
+        return data
+
+
+def require_finite(value: Any, feld: str) -> Any:
+    """Weist NaN/Infinity mit deutscher Meldung ab; alles andere passiert unverändert.
+
+    Läuft als ``mode="before"``-Validator, damit die deutsche Meldung vor den
+    generischen ge/le-Meldungen von Pydantic greift.
+    """
+    if isinstance(value, bool) or value is None:
+        return value
+    if isinstance(value, (int, float)):
+        if not math.isfinite(float(value)):
+            raise ValueError(
+                f"{feld}: Nur endliche Zahlenwerte sind zulässig "
+                f"(NaN und Infinity werden abgelehnt)."
+            )
+    elif value == NON_FINITE_SENTINEL:
+        raise ValueError(
+            f"{feld}: Nur endliche Zahlenwerte sind zulässig "
+            f"(NaN und Infinity werden abgelehnt)."
+        )
+    elif isinstance(value, str):
+        # Pydantic würde "NaN"/"Infinity" als String noch in float wandeln.
+        try:
+            parsed = float(value)
+        except (TypeError, ValueError):
+            return value
+        if not math.isfinite(parsed):
+            raise ValueError(
+                f"{feld}: Nur endliche Zahlenwerte sind zulässig "
+                f"(NaN und Infinity werden abgelehnt)."
+            )
+    return value
+
+
+def _check_point_list(value: Any, feld: str, max_points: int) -> Any:
+    """Prüft eine Punktliste ([[x, y], ...]) auf Länge, Stelligkeit und Endlichkeit."""
+    if not isinstance(value, list):
+        return value
+    if len(value) > max_points:
+        raise ValueError(
+            f"{feld}: Maximal {max_points} Punkte je Kontur "
+            f"({len(value)} übergeben)."
+        )
+    for point in value:
+        if not isinstance(point, list):
+            continue
+        if len(point) < 2 or len(point) > 3:
+            raise ValueError(
+                f"{feld}: Jeder Punkt braucht 2 oder 3 Koordinaten "
+                f"(gefunden: {len(point)})."
+            )
+        for coord in point:
+            require_finite(coord, feld)
+    return value
+
+
+def _check_properties(value: Any, feld: str, _depth: int = 0) -> Any:
+    """Begrenzt die Größe eines frei befüllbaren properties-Dicts (SEC-9)
+    und weist NaN/Infinity darin ab (ROB-1) — auch verschachtelt.
+
+    Das properties-Dict ist der einzige unstrukturierte Kanal in die Module
+    (z.B. ``sill_height_mm`` der CE-Süllprüfung). Ohne Prüfung wandert ein NaN
+    von hier ungehindert in eine Berechnung.
+    """
+    if _depth > 6:
+        return value
+    if isinstance(value, list):
+        if len(value) > MAX_PROPERTY_KEYS:
+            raise ValueError(
+                f"{feld}: Maximal {MAX_PROPERTY_KEYS} Einträge je Eigenschaft "
+                f"({len(value)} übergeben)."
+            )
+        for entry in value:
+            _check_properties(entry, feld, _depth + 1)
+        return value
+    if not isinstance(value, dict):
+        return require_finite(value, feld)
+    if len(value) > MAX_PROPERTY_KEYS:
+        raise ValueError(
+            f"{feld}: Maximal {MAX_PROPERTY_KEYS} Eigenschaften je Element "
+            f"({len(value)} übergeben)."
+        )
+    for key, entry in value.items():
+        _check_properties(entry, f"{feld}.{key}", _depth + 1)
+    return value
+
+
+Coordinate = Annotated[float, Field(ge=-MAX_COORD_MM, le=MAX_COORD_MM)]
+PolygonPoint = Annotated[list[Coordinate], Field(min_length=2, max_length=3)]
 
 
 class BoatClass(str, Enum):
@@ -31,53 +183,124 @@ class ProjectStatus(str, Enum):
 
 
 # Zone / Passage data (JSON within Layout)
-class ZoneData(BaseModel):
+class ZoneData(FiniteNumbersMixin):
+    # allow_inf_nan=False ist der maschinelle Riegel gegen NaN/Infinity; die
+    # Validatoren darunter liefern zusätzlich die deutsche Fehlermeldung (ROB-1).
+    model_config = ConfigDict(allow_inf_nan=False)
+
     name: str = Field(..., min_length=1, max_length=100)
     zone_type: str = Field(..., min_length=1, max_length=50)
-    polygon: list[list[float]]
+    polygon: list[PolygonPoint] = Field(..., max_length=MAX_POLYGON_POINTS)
     height_mm: float | None = Field(None, ge=0, le=10000)
     is_crew_area: bool = False
     is_guest_area: bool = False
     visibility_angle: float | None = Field(None, ge=0, le=360)
     properties: dict | None = None
 
+    @field_validator("polygon", mode="before")
+    @classmethod
+    def _validate_polygon(cls, value):
+        return _check_point_list(value, "polygon", MAX_POLYGON_POINTS)
 
-class PassageData(BaseModel):
-    from_zone: str
-    to_zone: str
-    width_mm: float
-    length_mm: float | None = None
-    points: list[list[float]] | None = None
+    @field_validator("height_mm", "visibility_angle", mode="before")
+    @classmethod
+    def _validate_zone_numbers(cls, value, info):
+        return require_finite(value, info.field_name)
+
+    @field_validator("properties", mode="before")
+    @classmethod
+    def _validate_zone_properties(cls, value):
+        return _check_properties(value, "properties")
+
+
+class PassageData(FiniteNumbersMixin):
+    model_config = ConfigDict(allow_inf_nan=False)
+
+    from_zone: str = Field(..., min_length=1, max_length=100)
+    to_zone: str = Field(..., min_length=1, max_length=100)
+    # Optional, weil ein aus DXF importierter Durchgang KEINE ableitbare Breite
+    # hat (siehe services/dxf/parser.py::_detect_shared_edges). Dort stand
+    # frueher ersatzweise eine erfundene 100 — die Ergonomie meldete daraufhin
+    # jeden importierten Durchgang als "kritisch schmal" mit Konfidenz
+    # "measured". None heisst hier ausdruecklich "nicht bekannt", nicht 0.
+    width_mm: float | None = Field(None, ge=0, le=MAX_PASSAGE_WIDTH_MM)
+    length_mm: float | None = Field(None, ge=0, le=MAX_PASSAGE_LENGTH_MM)
+    points: list[PolygonPoint] | None = Field(None, max_length=MAX_POLYGON_POINTS)
     is_primary: bool = True
     # Passage-level attributes (e.g. sill_height_mm for the CE companionway-sill
     # check). Without this, Pydantic silently dropped the field and
     # CE_NO_SILL_DATA fired permanently — the check was unreachable via the API.
     properties: dict | None = None
 
+    @field_validator("width_mm", "length_mm", mode="before")
+    @classmethod
+    def _validate_passage_numbers(cls, value, info):
+        return require_finite(value, info.field_name)
+
+    @field_validator("points", mode="before")
+    @classmethod
+    def _validate_points(cls, value):
+        return _check_point_list(value, "points", MAX_POLYGON_POINTS)
+
+    @field_validator("properties", mode="before")
+    @classmethod
+    def _validate_passage_properties(cls, value):
+        return _check_properties(value, "properties")
+
 
 # Pydantic v2 validation schemas for zones and passages
-class ZoneSchema(BaseModel):
+class ZoneSchema(FiniteNumbersMixin):
     name: str
     zone_type: str
-    area_m2: float | None = None
-    polygon: list | None = None
+    area_m2: float | None = Field(None, ge=0, le=MAX_ZONE_AREA_M2)
+    polygon: list | None = Field(None, max_length=MAX_POLYGON_POINTS)
     properties: dict | None = None
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, allow_inf_nan=False)
+
+    @field_validator("area_m2", mode="before")
+    @classmethod
+    def _validate_area(cls, value, info):
+        return require_finite(value, info.field_name)
+
+    @field_validator("polygon", mode="before")
+    @classmethod
+    def _validate_polygon(cls, value):
+        return _check_point_list(value, "polygon", MAX_POLYGON_POINTS)
+
+    @field_validator("properties", mode="before")
+    @classmethod
+    def _validate_properties(cls, value):
+        return _check_properties(value, "properties")
 
 
-class PassageSchema(BaseModel):
+class PassageSchema(FiniteNumbersMixin):
     from_zone: str
     to_zone: str
-    width_mm: float
+    # Optional, weil ein aus DXF importierter Durchgang KEINE ableitbare Breite
+    # hat (siehe services/dxf/parser.py::_detect_shared_edges). Dort stand
+    # frueher ersatzweise eine erfundene 100 — die Ergonomie meldete daraufhin
+    # jeden importierten Durchgang als "kritisch schmal" mit Konfidenz
+    # "measured". None heisst hier ausdruecklich "nicht bekannt", nicht 0.
+    width_mm: float | None = Field(None, ge=0, le=MAX_PASSAGE_WIDTH_MM)
     type: str
     properties: dict | None = None
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, allow_inf_nan=False)
+
+    @field_validator("width_mm", mode="before")
+    @classmethod
+    def _validate_width(cls, value, info):
+        return require_finite(value, info.field_name)
+
+    @field_validator("properties", mode="before")
+    @classmethod
+    def _validate_properties(cls, value):
+        return _check_properties(value, "properties")
 
 
 # Project schemas
-class ProjectCreate(BaseModel):
+class ProjectCreate(FiniteNumbersMixin):
     name: str = Field(..., min_length=1, max_length=200)
     description: str | None = Field(None, max_length=2000)
     boat_class: BoatClass
@@ -85,7 +308,7 @@ class ProjectCreate(BaseModel):
     beam_m: float = Field(..., gt=0, le=50, description="Bootsbreite in Metern")
 
 
-class ProjectUpdate(BaseModel):
+class ProjectUpdate(FiniteNumbersMixin):
     name: str | None = Field(None, min_length=1, max_length=200)
     description: str | None = Field(None, max_length=2000)
     boat_class: BoatClass | None = None
@@ -214,15 +437,17 @@ class InvitationResponse(BaseModel):
 
 
 # Layout schemas
-class LayoutCreate(BaseModel):
-    name: str
-    version: str = "v1.0"
-    zones: list[ZoneData]
-    passages: list[PassageData]
-    deck_height_mm: int = 2100
+class LayoutCreate(FiniteNumbersMixin):
+    name: str = Field(..., min_length=1, max_length=200)
+    version: str = Field("v1.0", min_length=1, max_length=50)
+    # SEC-9: Ohne Obergrenze kann ein einziger Request beliebig viele Zonen
+    # einliefern; jede Folgeanalyse ist quadratisch in der Zonenzahl.
+    zones: list[ZoneData] = Field(..., max_length=MAX_ZONES_PER_LAYOUT)
+    passages: list[PassageData] = Field(..., max_length=MAX_PASSAGES_PER_LAYOUT)
+    deck_height_mm: int = Field(2100, ge=500, le=10000)
 
 
-class LayoutUpdate(BaseModel):
+class LayoutUpdate(FiniteNumbersMixin):
     """Partial layout update (pillar 3: owner refit loop).
 
     Every applied update auto-snapshots the PREVIOUS state as a LayoutVersion,
@@ -233,13 +458,19 @@ class LayoutUpdate(BaseModel):
     # min_length=1: emptying a layout is not a refit operation — a bare
     # zones=[] would only ever appear by accident (e.g. missing snapshot)
     # and every following analysis would fail on empty geometry.
-    zones: list[ZoneData] | None = Field(None, min_length=1)
-    passages: list[PassageData] | None = None
+    zones: list[ZoneData] | None = Field(
+        None, min_length=1, max_length=MAX_ZONES_PER_LAYOUT
+    )
+    passages: list[PassageData] | None = Field(
+        None, max_length=MAX_PASSAGES_PER_LAYOUT
+    )
     deck_height_mm: int | None = Field(None, ge=1000, le=5000)
     # Zone renames performed in this update ({old_name: new_name}) — the
     # server cascades them to ZoneMaterial/StructuralItem/CostItem rows,
     # which reference zones BY NAME and would otherwise be orphaned.
-    zone_renames: dict[str, str] | None = None
+    zone_renames: dict[str, str] | None = Field(
+        None, max_length=MAX_ZONES_PER_LAYOUT
+    )
     # Recorded on the auto-created version snapshot
     change_summary: str | None = Field(None, max_length=500)
 
@@ -381,7 +612,7 @@ class CommunityPositive(BaseModel):
     description: str
 
 
-class CommunityReportCreate(BaseModel):
+class CommunityReportCreate(FiniteNumbersMixin):
     source_forum: str = Field(..., min_length=1, max_length=100)
     source_url: str | None = Field(None, max_length=2000)
     source_date: date | None = None

@@ -24,6 +24,7 @@ All data is exposed as uppercase constants matching the existing module pattern.
 
 import os
 import re
+import threading
 import logging
 from typing import Dict, List, Any, Optional, Tuple
 from pathlib import Path
@@ -161,6 +162,130 @@ def _extract_section_hierarchy(content: str) -> Dict[str, Any]:
     return root
 
 
+
+# ---------------------------------------------------------------------------
+# Konzept-basierte Abschnittssuche
+#
+# Der Korpus ist ueber Jahre in mehreren Konventionen gewachsen: Kategorie 01
+# nutzt "**Firmenprofil:**"-Bloecke, andere Kategorien "## N Hersteller-Datenbank",
+# "## N Produktlinien und Hersteller" oder "**Hersteller:** X" inline. Die
+# urspruenglichen Extraktoren kannten nur die Konventionen der Kategorie 01,
+# weshalb 204 von 260 Dokumenten KEINE Herstellerdaten und 242 von 260 KEINE
+# Erfahrungsberichte lieferten — das Wissen stand im Text, war fuer das System
+# aber unsichtbar. Statt jede Ueberschriftenvariante einzeln nachzupflegen,
+# suchen wir Abschnitte ueber ihren *Begriff* und lesen dann aus, welche
+# Darstellungsform dort auch immer verwendet wird (Tabelle, Fettmarke,
+# Unterueberschrift, Blockzitat).
+# ---------------------------------------------------------------------------
+
+_HEADING_RE = re.compile(r"^(#{2,4})\s+(.+?)\s*$", re.MULTILINE)
+
+_MANUFACTURER_SECTION_RE = re.compile(
+    r"\b(?:hersteller|manufacturer|marken(?:uebersicht|übersicht)?|anbieter|"
+    r"lieferanten|produktlinien|oem[- ]spezifikationen)\b",
+    re.IGNORECASE,
+)
+
+_EXPERIENCE_SECTION_RE = re.compile(
+    r"\b(?:praxisbericht\w*|erfahrungsbericht\w*|erfahrungswert\w*|"
+    r"eigner[-\s]erfahrung\w*|eigner[-\s]feedback|feldbericht\w*|"
+    r"praxiserfahrung\w*|langzeiterfahrung\w*|"
+    r"forum[-\s](?:thread\w*|referenz\w*|konsens|erfahrung\w*))\b",
+    re.IGNORECASE,
+)
+
+# Zeilen, die Herkunft/Güte eines Berichts beschreiben statt ihn zu enthalten.
+_META_LINE_RE = re.compile(
+    r"^\**(?:Quelle|Source|Thread|Jahr|Year|Boot|Revier|Autor|Author|"
+    r"Confidence|Konfidenz|Stand)\**\s*:?",
+    re.IGNORECASE,
+)
+
+_MFR_COLUMN_RE = re.compile(
+    r"^(?:hersteller|marke|manufacturer|brand|firma|anbieter|lieferant)",
+    re.IGNORECASE,
+)
+_INSIGHT_COLUMN_RE = re.compile(
+    r"^(?:kernerkenntnis|kernaussage|erkenntnis|aussage|fazit|erfahrung)",
+    re.IGNORECASE,
+)
+
+# Ueberschriften/Zellen, die zwar in einem Hersteller-Abschnitt stehen, aber
+# keine Firma benennen.
+_GENERIC_NAME_TOKENS = (
+    "weitere", "übersicht", "uebersicht", "vergleich", "spezifikation",
+    "eigenschaft", "anwendung", "produkt", "sonstige", "gesamt", "summe",
+    "tabelle", "hinweis", "quelle", "legende", "empfehlung", "auswahl",
+    "kriterium", "kriterien", "zusammenfassung", "einleitung", "grundlagen",
+    "datenbank", "matrix", "marktposition", "verfügbarkeit", "verfuegbarkeit",
+    "preis", "bewertung", "fazit", "gesamtbewertung",
+)
+
+# Obergrenze pro Datei — schuetzt gegen Ausreisser, in denen eine einzelne
+# Tabelle hunderte Zeilen hat.
+_MAX_PER_FILE = 400
+
+
+def _iter_concept_sections(content: str, concept_re):
+    """Yield ``(heading, body)`` for every H2-H4 heading matching ``concept_re``.
+
+    The body reaches up to the next heading of the same or a higher level, so a
+    matched H2 keeps its H3/H4 children — that is where the actual data sits.
+    """
+    heads = [
+        (m.start(), m.end(), len(m.group(1)), m.group(2))
+        for m in _HEADING_RE.finditer(content)
+    ]
+    for idx, (_start, end, level, text) in enumerate(heads):
+        if not concept_re.search(text):
+            continue
+        body_end = len(content)
+        for nstart, _nend, nlevel, _ntext in heads[idx + 1:]:
+            if nlevel <= level:
+                body_end = nstart
+                break
+        yield text, content[end:body_end]
+
+
+def _iter_tables_in(body: str):
+    """Yield parsed row-dicts for every markdown table inside ``body``."""
+    lines = body.split("\n")
+    i = 0
+    while i < len(lines):
+        if lines[i].strip().startswith("|"):
+            block = []
+            while i < len(lines) and lines[i].strip().startswith("|"):
+                block.append(lines[i])
+                i += 1
+            rows = _parse_markdown_table(block)
+            if rows:
+                yield rows
+        else:
+            i += 1
+
+
+def _clean_entity_name(raw: str) -> str:
+    """Normalise a name taken from a heading or a table cell.
+
+    Returns ``""`` when the value is not a usable entity name.
+    """
+    if not raw:
+        return ""
+    name = raw.strip()
+    name = re.sub(r"^[\d.]+\s*", "", name)                    # "7.2 " Nummernprefix
+    name = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", name)      # Markdown-Links
+    name = name.replace("**", "").replace("*", "").replace("`", "")
+    name = name.strip(" -–—:|")
+    if len(name) < 2 or len(name) > 80:
+        return ""
+    lowered = name.lower()
+    if any(tok in lowered for tok in _GENERIC_NAME_TOKENS):
+        return ""
+    if not re.search(r"[A-Za-zÄÖÜäöüß]", name):
+        return ""
+    return name
+
+
 def _extract_erfahrungsberichte(content: str) -> List[Dict[str, str]]:
     """Extract experience reports (Erfahrungsbericht) from markdown.
 
@@ -247,6 +372,146 @@ def _extract_erfahrungsberichte(content: str) -> List[Dict[str, str]]:
                         })
                 continue
             i += 1
+
+    # --- Pattern 3: konzept-basiert (deckt die uebrigen Korpus-Konventionen ab) ---
+    # Viele Dokumente fuehren Praxiswissen als "### 10.3 Praxisbericht 3 — Titel
+    # (Cruisersforum, 2022)" mit folgendem Zitat/Absatz oder als Tabelle mit einer
+    # Erkenntnis-Spalte. Beides blieb bisher unerkannt.
+    _seen_texts = {r.get("text", "")[:120] for r in reports}
+
+    def _remember(source: str, user: str, year: str, text: str, kind: str) -> None:
+        key = text[:120]
+        if key in _seen_texts:
+            return
+        _seen_texts.add(key)
+        reports.append(
+            {
+                "source": source,
+                "user": user,
+                "year": year,
+                "text": text,
+                "type": kind,
+            }
+        )
+
+    for heading, body in _iter_concept_sections(content, _EXPERIENCE_SECTION_RE):
+        if len(reports) >= _MAX_PER_FILE:
+            break
+
+        # (a) Unterueberschriften mit Quellen-/Jahresangabe in Klammern
+        for m in re.finditer(r"^#{3,5}\s+(.+)$", body, re.MULTILINE):
+            if len(reports) >= _MAX_PER_FILE:
+                break
+            title = m.group(1).strip()
+            src_match = re.search(r"\(([^)]*?)(?:,\s*(\d{4}))?\)\s*$", title)
+            source = src_match.group(1).strip() if src_match else ""
+            year = src_match.group(2) if src_match and src_match.group(2) else ""
+            if re.fullmatch(r"\d{4}", source):   # "(2022)" ohne Quellenangabe
+                year, source = source, ""
+            chunk = body[m.end(): m.end() + 1500]
+            # Metadatenzeilen ("Quelle: Cruisersforum, Thread ..., 2024") sind die
+            # Herkunftsangabe, nicht der Berichtstext.
+            # Die Quellenzeile steht im Korpus meist als Blockzitat ("> Quelle: ...").
+            meta = re.search(
+                r"^>?\s*\**(?:Quelle|Source|Thread)\**\s*\:?\s*(.+)$",
+                chunk,
+                re.MULTILINE,
+            )
+            if meta:
+                meta_line = meta.group(1).strip().replace("**", "")
+                if not source:
+                    source = meta_line
+                if not year:
+                    year_match = re.search(r"\b(?:19|20)\d{2}\b", meta_line)
+                    if year_match:
+                        year = year_match.group(0)
+            if not source:
+                source = heading.strip()
+
+            text = ""
+            # (i) Erstes Blockzitat, das keine Metazeile ist. "> Quelle: ..." und
+            #     "> Confidence: ..." stehen praktisch unter jedem Bericht und
+            #     wuerden sonst als Berichtstext ausgegeben.
+            for quote in re.finditer(r'^>\s*"?(.+?)"?\s*$', chunk, re.MULTILINE):
+                candidate = quote.group(1).strip()
+                if _META_LINE_RE.match(candidate):
+                    continue
+                text = candidate
+                break
+            # (ii) Feld/Wert-Tabellen ("| Boot | ... | Fazit | ...") sind im
+            #      Korpus das haeufigste Praxisbericht-Format. Die Aussage steckt
+            #      in Fazit/Ergebnis/Problem, der Kontext in Boot/Revier.
+            if not text:
+                for rows in _iter_tables_in(chunk):
+                    fields = {
+                        (row.get(list(row.keys())[0]) or "").strip().lower():
+                        (row.get(list(row.keys())[1]) or "").strip()
+                        for row in rows
+                        if len(row) >= 2
+                    }
+                    body_text = next(
+                        (
+                            fields[k]
+                            for k in ("fazit", "ergebnis", "erkenntnis", "problem")
+                            if fields.get(k)
+                        ),
+                        "",
+                    )
+                    if not body_text:
+                        continue
+                    context = " / ".join(
+                        fields[k] for k in ("boot", "revier") if fields.get(k)
+                    )
+                    text = f"{context}: {body_text}" if context else body_text
+                    break
+            # (iii) Sonst der erste substanzielle Fliesstext-Absatz.
+            if not text:
+                for candidate in re.finditer(
+                    r"^(?![|#>\-*])[ \t]*(\S.{60,})$", chunk, re.MULTILINE
+                ):
+                    line = candidate.group(1).strip()
+                    if _META_LINE_RE.match(line):
+                        continue
+                    text = line
+                    break
+            text = text.replace("**", "").strip()
+            if len(text) < 40:
+                continue
+            _remember(source or heading.strip(), "", year, text, "forum")
+
+        # (b) Tabellen mit einer Erkenntnis-/Kernaussage-Spalte
+        for rows in _iter_tables_in(body):
+            if len(reports) >= _MAX_PER_FILE:
+                break
+            headers = list(rows[0].keys())
+            insight_col = next(
+                (h for h in headers if _INSIGHT_COLUMN_RE.match(h.strip())), None
+            )
+            if not insight_col:
+                continue
+            source_col = next(
+                (
+                    h
+                    for h in headers
+                    if re.match(r"^(?:quelle|thread|forum|thema|source)", h.strip(), re.I)
+                ),
+                None,
+            )
+            year_col = next(
+                (h for h in headers if re.match(r"^(?:jahr|year)", h.strip(), re.I)), None
+            )
+            for row in rows:
+                text = (row.get(insight_col) or "").strip().strip('"').strip("'")
+                text = text.replace("**", "").strip()
+                if len(text) < 25:
+                    continue
+                source = (row.get(source_col) or "").strip() if source_col else ""
+                year = (row.get(year_col) or "").strip() if year_col else ""
+                if not re.fullmatch(r"\d{4}", year):
+                    year = ""
+                _remember(source or heading.strip(), "", year, text, "forum")
+                if len(reports) >= _MAX_PER_FILE:
+                    break
 
     return reports
 
@@ -745,6 +1010,35 @@ def _extract_glossary(content: str) -> List[Dict[str, str]]:
     return glossary
 
 
+# Beschriftungen, unter denen der Korpus dieselben Fehlerbild-Felder fuehrt.
+# EINE Definition fuer alle drei Fundstellen (Fettmarken-Block, Merkmal/Details-
+# Tabelle, Katalog-Tabelle) — vorher kannte jeder Zweig andere Schreibweisen,
+# weshalb dasselbe Feld je nach Dokumentform mal gelesen und mal verworfen wurde.
+# Reihenfolge = Vorrang: die praezisere Beschriftung gewinnt.
+_FEHLERBILD_FIELD_LABELS: List[Tuple[str, List[str]]] = [
+    ("symptom_de", [
+        "Symptom", "Symptome", "Bild", "Erscheinungsbild", "Visuell",
+        "Optik", "Erkennung", "Beschreibung", "Diagnose", "Befund",
+    ]),
+    ("ursache_de", [
+        "Ursache", "Ursachen", "Ursache wahrscheinlich", "Mögliche Ursachen",
+        "Typische Ursache", "Typische Ursachen", "Root Cause",
+    ]),
+    ("haeufigkeit_de", [
+        "Häufigkeit", "Dringlichkeit", "Kritikalität", "Risiko", "Bewertung",
+    ]),
+    ("massnahme_de", [
+        # "Massnahme" ohne Eszett ist im Korpus eine reine Schreibvariante und
+        # war bisher unsichtbar.
+        "Maßnahme", "Massnahme", "Maßnahmen", "Massnahmen",
+        "Lösung", "Loesung", "Behebung", "Abhilfe", "Reparatur",
+        "Sanierung", "Handlungsempfehlung", "Empfehlung", "Vorbeugung",
+    ]),
+    ("material_de", ["Material", "Materialien"]),
+    ("confidence", ["Confidence", "Konfidenz"]),
+]
+
+
 def _extract_fehlerbilder(content: str) -> List[Dict[str, str]]:
     """Extract Fehlerbild (failure pattern) entries.
 
@@ -763,33 +1057,36 @@ def _extract_fehlerbilder(content: str) -> List[Dict[str, str]]:
             return
         seen_titles.add(title)
         entry = {"title_de": title, "full_text": body}
-        for field, patterns in [
-            ("symptom_de", [
-                r"\*\*Symptom:\*\*\s*(.+?)(?=\n\*\*|\Z)",
-                r"\*\*Bild:\*\*\s*(.+?)(?=\n\*\*|\Z)",
-            ]),
-            ("ursache_de", [
-                r"\*\*Ursache:\*\*\s*(.+?)(?=\n\*\*|\Z)",
-            ]),
-            ("haeufigkeit_de", [
-                r"\*\*Häufigkeit:\*\*\s*(.+?)(?=\n\*\*|\Z)",
-                r"\*\*Dringlichkeit:\*\*\s*(.+?)(?=\n\*\*|\Z)",
-            ]),
-            ("massnahme_de", [
-                r"\*\*Maßnahme:\*\*\s*(.+?)(?=\n\*\*|\Z)",
-                r"\*\*Erkennung:\*\*\s*(.+?)(?=\n\*\*|\Z)",
-            ]),
-            ("material_de", [
-                r"\*\*Material:\*\*\s*(.+?)(?=\n\*\*|\Z)",
-            ]),
-            ("confidence", [
-                r"\*\*Confidence:\*\*\s*(.+?)(?=\n|\Z)",
-            ]),
-        ]:
-            for pat in patterns:
-                field_match = re.search(pat, body, re.DOTALL)
-                if field_match:
+        # Der Korpus beschriftet dieselben Felder ueber die Kategorien hinweg
+        # unterschiedlich. Wurden nur die Erstschreibweisen erkannt, blieb bei
+        # 663 von 985 Fehlerbildern die **Massnahme** leer — ausgerechnet das
+        # Feld, das dem Bootseigner sagt, was zu tun ist. Es floss dadurch auch
+        # nie als `suggestion` in eine Analysewarnung ein.
+        # Reihenfolge = Vorrang: die praezisere Beschriftung gewinnt.
+        for field, labels in _FEHLERBILD_FIELD_LABELS:
+            for label in labels:
+                pattern = (
+                    r"\*\*" + re.escape(label) + r":\*\*\s*(.+?)(?=\n\*\*|\Z)"
+                    if field != "confidence"
+                    else r"\*\*" + re.escape(label) + r":\*\*\s*(.+?)(?=\n|\Z)"
+                )
+                field_match = re.search(pattern, body, re.DOTALL)
+                if field_match and field_match.group(1).strip():
                     entry[field] = field_match.group(1).strip()
+                    break
+            if entry.get(field):
+                continue
+            # Zweithaeufigste Form im Korpus: eine Merkmal/Details-Tabelle
+            # ("| Symptom | ... |", "| Loesung | ... |") statt Fettmarken.
+            # Ohne diesen Zweig blieben 288 Fehlerbilder ohne Massnahme.
+            for label in labels:
+                row = re.search(
+                    r"^\|\s*" + re.escape(label) + r"\s*(?:\([^)]*\))?\s*\|\s*(.+?)\s*\|",
+                    body,
+                    re.MULTILINE | re.IGNORECASE,
+                )
+                if row and row.group(1).strip():
+                    entry[field] = row.group(1).strip()
                     break
         fehlerbilder.append(entry)
 
@@ -909,6 +1206,24 @@ def _extract_fehlerbilder(content: str) -> List[Dict[str, str]]:
                             hf = row.get("Häufigkeit", "")
                             if hf and "haeufigkeit_de" not in entry:
                                 entry["haeufigkeit_de"] = hf
+                            # Katalog-Tabellen der Form
+                            # "| Nr | Fehlerbild | Symptom | Ursache | Diagnose | Lösung |"
+                            # trugen bisher nur den Titel bei — Symptom, Ursache und
+                            # vor allem die Loesung standen in den Spalten und wurden
+                            # verworfen. Betroffen waren 428 von 985 Fehlerbildern, die
+                            # dadurch als reine Titelzeile ohne Inhalt endeten.
+                            for target, column_labels in _FEHLERBILD_FIELD_LABELS:
+                                if entry.get(target):
+                                    continue
+                                for column in column_labels:
+                                    value = ""
+                                    for header, cell in row.items():
+                                        if header.strip().lower() == column.lower():
+                                            value = (cell or "").strip()
+                                            break
+                                    if value and value not in {"-", "—", "–"}:
+                                        entry[target] = value
+                                        break
                             fehlerbilder.append(entry)
                     i += 1
                 continue
@@ -1054,6 +1369,10 @@ def _extract_manufacturers(content: str) -> List[Dict[str, Any]]:
             name = profile.get("name", profile.get("origin", ""))
             if name and name not in seen_names:
                 seen_names.add(name)
+                # Der Name wurde ggf. aus "origin" abgeleitet; ohne diese Zeile
+                # landete ein Hersteller ganz ohne "name"-Feld im Ergebnis und
+                # erschien in Lexikon/API als namenloser Eintrag.
+                profile["name"] = name
                 manufacturers.append(profile)
 
     # --- Pattern 2: Old-style ## XX. Hersteller: Name (Land) ---
@@ -1120,6 +1439,87 @@ def _extract_manufacturers(content: str) -> List[Dict[str, Any]]:
                 if sub_origin:
                     profile["origin"] = sub_origin
                 manufacturers.append(profile)
+
+    # --- Pattern 4: konzept-basiert (deckt die uebrigen Korpus-Konventionen ab) ---
+    # Greift dort, wo Abschnitte "Hersteller-Datenbank", "Produktlinien und
+    # Hersteller", "Hersteller & Typische Produkte" usw. heissen und die Daten
+    # als Fettmarke oder Tabelle statt als Firmenprofil-Bulletliste stehen.
+    for _heading, body in _iter_concept_sections(content, _MANUFACTURER_SECTION_RE):
+        if len(manufacturers) >= _MAX_PER_FILE:
+            break
+
+        # (a) "**Hersteller:** AkzoNobel N.V. (Marke: International)"
+        for m in re.finditer(
+            r"^\*\*(?:Hersteller|Marke|Firma|Anbieter)\:?\*\*\:?\s*(.+)$",
+            body,
+            re.MULTILINE,
+        ):
+            raw = m.group(1)
+            brand = ""
+            brand_match = re.search(r"\((?:Marke|Brand)\:\s*([^)]+)\)", raw)
+            if brand_match:
+                brand = brand_match.group(1).strip()
+                raw = raw[: brand_match.start()]
+            name = _clean_entity_name(raw)
+            if not name or name in seen_names:
+                continue
+            seen_names.add(name)
+            profile: Dict[str, Any] = {"name": name}
+            if brand:
+                profile["brand"] = brand
+            # Begleitzeilen desselben Blocks (**Sitz:**, **Website:** ...)
+            tail = body[m.end(): m.end() + 500]
+            for label, field in (
+                ("Sitz", "origin"),
+                ("Land", "origin"),
+                ("Herkunft", "origin"),
+                ("Website", "website"),
+                ("Marktposition", "market_position"),
+                ("Gegründet", "founded"),
+            ):
+                lm = re.search(
+                    r"^\*\*" + label + r"\:?\*\*\:?\s*(.+)$", tail, re.MULTILINE
+                )
+                if lm:
+                    profile.setdefault(field, lm.group(1).strip())
+            manufacturers.append(profile)
+            if len(manufacturers) >= _MAX_PER_FILE:
+                break
+
+        # (b) Tabellen mit einer Hersteller-/Marken-Spalte
+        for rows in _iter_tables_in(body):
+            if len(manufacturers) >= _MAX_PER_FILE:
+                break
+            headers = list(rows[0].keys())
+            name_col = next(
+                (h for h in headers if _MFR_COLUMN_RE.match(h.strip())), None
+            )
+            if not name_col:
+                continue
+            for row in rows:
+                name = _clean_entity_name(row.get(name_col, ""))
+                if not name or name in seen_names:
+                    continue
+                seen_names.add(name)
+                profile = {"name": name}
+                for header in headers:
+                    if header == name_col:
+                        continue
+                    value = (row.get(header) or "").strip()
+                    if not value or value in {"-", "—", "–", "n/a", "N/A"}:
+                        continue
+                    lowered = header.lower()
+                    if "land" in lowered or "herkunft" in lowered or "sitz" in lowered:
+                        profile.setdefault("origin", value)
+                    elif "website" in lowered or "url" in lowered:
+                        profile.setdefault("website", value)
+                    elif "produkt" in lowered or "typ" in lowered or "serie" in lowered:
+                        profile.setdefault("products", value)
+                    elif "preis" in lowered:
+                        profile.setdefault("price", value)
+                manufacturers.append(profile)
+                if len(manufacturers) >= _MAX_PER_FILE:
+                    break
 
     return manufacturers
 
@@ -1345,12 +1745,26 @@ def load_all_markdown_knowledge() -> Dict[str, Dict[str, Any]]:
 
 # Lazy-loaded singleton
 _MARKDOWN_KNOWLEDGE: Optional[Dict[str, Dict[str, Any]]] = None
+_LOAD_LOCK = threading.Lock()
 
 
 def _ensure_loaded() -> Dict[str, Dict[str, Any]]:
+    """Korpus einmalig laden (Lazy Singleton).
+
+    Mit Lock, weil das Laden rund 10 s dauert und ~180 MB belegt: Ohne ihn
+    parsen zwei gleichzeitig startende Threads den kompletten Korpus doppelt —
+    doppelte CPU-Last und doppelter Speicher. Im Serverbetrieb faellt das nicht
+    auf, weil ``app/main.py`` den Korpus vor dem ersten Request vorwaermt; bei
+    Skripten, Workern und Tests, die parallel einsteigen, sehr wohl.
+    """
     global _MARKDOWN_KNOWLEDGE
-    if _MARKDOWN_KNOWLEDGE is None:
-        _MARKDOWN_KNOWLEDGE = load_all_markdown_knowledge()
+    if _MARKDOWN_KNOWLEDGE is not None:
+        return _MARKDOWN_KNOWLEDGE
+    with _LOAD_LOCK:
+        # Zweite Pruefung im Lock: Ein anderer Thread kann waehrend des Wartens
+        # fertig geworden sein.
+        if _MARKDOWN_KNOWLEDGE is None:
+            _MARKDOWN_KNOWLEDGE = load_all_markdown_knowledge()
     return _MARKDOWN_KNOWLEDGE
 
 
@@ -1452,69 +1866,199 @@ def get_all_expert_references() -> List[Dict[str, str]]:
 # ---------------------------------------------------------------------------
 
 
+# Kleingeschriebener Sammelstring des gesamten durchsuchbaren Texts je Dokument,
+# einmalig beim ersten Suchlauf berechnet und im Dokument-Dict abgelegt. Reiner
+# Suchbeschleuniger — nicht Teil der geladenen Wissensdaten.
+_SEARCH_HAYSTACK_KEY = "_search_haystack_lower"
+
+
+def _search_haystack(slug: str, data: Dict[str, Any]) -> str:
+    """Alles, was `search_markdown_knowledge` durchsucht, in einem Tiefstring."""
+    cached = data.get(_SEARCH_HAYSTACK_KEY)
+    if cached is not None:
+        return cached
+
+    parts: List[str] = [slug.replace("_", " "), data.get("title", "") or ""]
+    for faq in data.get("faq", []):
+        parts.append(faq.get("question_de", ""))
+        parts.append(faq.get("answer_de", ""))
+    for entry in data.get("glossary", []):
+        parts.extend(v for v in entry.values() if isinstance(v, str))
+    for fb in data.get("fehlerbilder", []):
+        parts.extend(
+            fb.get(k, "") for k in
+            ("title_de", "symptom_de", "massnahme_de", "full_text")
+        )
+    for report in data.get("erfahrungsberichte", []):
+        parts.append(report.get("text", ""))
+    for table in data.get("tables", []):
+        if not isinstance(table, list):
+            continue
+        for row in table:
+            if isinstance(row, dict):
+                parts.extend(v for v in row.values() if isinstance(v, str))
+
+    haystack = " ".join(p for p in parts if p).lower()
+    data[_SEARCH_HAYSTACK_KEY] = haystack
+    return haystack
+
+
 def search_markdown_knowledge(
     query: str, max_results: int = 20
 ) -> List[Dict[str, Any]]:
+    """Volltextsuche ueber den Wissenskorpus, nach Relevanz sortiert.
+
+    Zwei Defekte, die hier behoben sind — beide betrafen die Lexikon-Suche, also
+    die Kernbedienung von Produktsaeule 1:
+
+    1. **Das Dokument selbst war nie ein Treffer.** Gesucht wurde nur in FAQ,
+       Glossar, Fehlerbildern und Erfahrungsberichten. Wer den Titel eines
+       Dokuments eingab ("Fenster-Dichtungen"), bekam zwei zufaellige
+       Beifang-Treffer, aber nicht den Artikel. Fuer ein Lexikon ist das das am
+       naechsten liegende Ergebnis ueberhaupt.
+    2. **Keine Sortierung.** Die Treffer kamen in Korpus-Iterationsreihenfolge
+       und wurden bei ``max_results`` willkuerlich abgeschnitten. Eine Suche nach
+       "Osmose" lieferte auf den ersten Plaetzen FAQ-Eintraege aus
+       Dichtstoff-Dokumenten — das Osmose-Dokument war nicht einmal unter den
+       ersten fuenf.
+
+    Zusaetzlich werden jetzt Tabellen durchsucht: Ein grosser Teil der harten
+    Daten (Teilenummern, Masse, Preise) steht im Korpus in Tabellen.
+
+    Rangfolge: Dokumenttitel > Fehlerbild > FAQ > Glossar > Erfahrungsbericht >
+    Tabelle. Ein Treffer auf ein ganzes Wort zaehlt mehr als einer mitten im Wort
+    ("Ankerkette" soll nicht hinter "Sicherungsankerkettenschaekel" landen).
     """
-    Full-text search across all markdown knowledge.
-    Searches: titles, FAQ questions/answers, glossary, fehlerbilder,
-    erfahrungsberichte, expert references.
-    """
-    query_lower = query.lower()
-    results = []
+    query_lower = query.lower().strip()
+    if not query_lower:
+        return []
+
+    word_pattern = re.compile(rf"\b{re.escape(query_lower)}\b")
+
+    def _score(haystack: str, base: int) -> int:
+        """0 = kein Treffer; sonst Basisrang plus Bonus fuer Wortgrenze/Praefix."""
+        if not haystack:
+            return 0
+        lowered = haystack.lower()
+        if query_lower not in lowered:
+            return 0
+        score = base
+        if word_pattern.search(lowered):
+            score += 40
+        if lowered.startswith(query_lower):
+            score += 20
+        return score
+
+    scored: List[Tuple[int, Dict[str, Any]]] = []
 
     for slug, data in _ensure_loaded().items():
-        # Search FAQ
+        # Schneller Vorfilter: Kommt der Begriff im gesamten durchsuchbaren Text
+        # dieses Dokuments nicht vor, entfaellt jede weitere Arbeit daran.
+        # Ohne ihn wurde bei JEDER Abfrage der komplette Korpus zellen- und
+        # feldweise kleingeschrieben — rund 400 ms pro Suche, fuer ein Lexikon
+        # unbrauchbar. Der Sammelstring entsteht einmalig beim ersten Suchlauf.
+        if query_lower not in _search_haystack(slug, data):
+            continue
+
+        doc_title = data.get("title", "") or ""
+
+        # --- Das Dokument selbst ---
+        doc_score = max(_score(doc_title, 300), _score(slug.replace("_", " "), 260))
+        if doc_score:
+            scored.append((doc_score, {
+                "type": "dokument",
+                "source": slug,
+                "title": doc_title,
+                "category": data.get("category", ""),
+                "subcategory": data.get("subcategory", ""),
+                "line_count": data.get("line_count", 0),
+            }))
+
+        # --- FAQ ---
         for faq in data.get("faq", []):
             q_text = faq.get("question_de", "")
             a_text = faq.get("answer_de", "")
-            if query_lower in q_text.lower() or query_lower in a_text.lower():
-                results.append({
+            hit = max(_score(q_text, 200), _score(a_text, 140))
+            if hit:
+                scored.append((hit, {
                     "type": "faq",
                     "source": slug,
-                    "title": data["title"],
+                    "title": doc_title,
                     "question_de": q_text,
                     "answer_de": a_text,
                     "confidence": faq.get("confidence", "documented"),
-                })
+                }))
 
-        # Search glossary
+        # --- Glossar ---
         for entry in data.get("glossary", []):
-            for val in entry.values():
-                if isinstance(val, str) and query_lower in val.lower():
-                    results.append({
-                        "type": "glossary",
-                        "source": slug,
-                        "title": data["title"],
-                        **entry,
-                    })
-                    break
+            hit = 0
+            for key, val in entry.items():
+                if isinstance(val, str):
+                    hit = max(hit, _score(val, 180 if "term" in key.lower() else 130))
+            if hit:
+                scored.append((hit, {
+                    "type": "glossary",
+                    "source": slug,
+                    "title": doc_title,
+                    **entry,
+                }))
 
-        # Search fehlerbilder
+        # --- Fehlerbilder ---
         for fb in data.get("fehlerbilder", []):
-            if query_lower in fb.get("title_de", "").lower() or \
-               query_lower in fb.get("full_text", "").lower():
-                results.append({
+            hit = max(
+                _score(fb.get("title_de", ""), 240),
+                _score(fb.get("symptom_de", ""), 160),
+                _score(fb.get("massnahme_de", ""), 150),
+                _score(fb.get("full_text", ""), 110),
+            )
+            if hit:
+                scored.append((hit, {
                     "type": "fehlerbild",
                     "source": slug,
-                    "title": data["title"],
-                    "fehlerbild_title": fb["title_de"],
+                    "title": doc_title,
+                    "fehlerbild_title": fb.get("title_de", ""),
                     "symptom_de": fb.get("symptom_de", ""),
                     "massnahme_de": fb.get("massnahme_de", ""),
-                })
+                }))
 
-        # Search erfahrungsberichte
+        # --- Erfahrungsberichte ---
         for report in data.get("erfahrungsberichte", []):
-            if query_lower in report.get("text", "").lower():
-                results.append({
+            hit = _score(report.get("text", ""), 120)
+            if hit:
+                scored.append((hit, {
                     "type": "erfahrungsbericht",
                     "source": slug,
-                    "title": data["title"],
+                    "title": doc_title,
                     "forum": report.get("source", ""),
-                    "text": report["text"][:200],
-                })
+                    "text": report.get("text", "")[:200],
+                }))
 
-    return results[:max_results]
+        # --- Tabellen (Teilenummern, Masse, Preise) ---
+        # Zellenweise Kleinschreibung ueber 260 Dokumente kostete rund 350 ms JE
+        # Abfrage — fuer eine Lexikon-Suche unbrauchbar. Darum einmal je Dokument
+        # ein kleingeschriebener Sammelstring, der als schneller Vorfilter dient:
+        # kommt der Suchbegriff darin nicht vor, entfaellt der Zeilendurchlauf
+        # komplett. Das Ergebnis bleibt identisch, nur der Weg dahin ist kuerzer.
+        for table in data.get("tables", []):
+            for row in table if isinstance(table, list) else []:
+                if not isinstance(row, dict):
+                    continue
+                hit = 0
+                for val in row.values():
+                    if isinstance(val, str):
+                        hit = max(hit, _score(val, 100))
+                if hit:
+                    scored.append((hit, {
+                        "type": "tabelle",
+                        "source": slug,
+                        "title": doc_title,
+                        "row": {k: v for k, v in row.items() if v},
+                    }))
+                    break  # eine Zeile je Tabelle genuegt als Fundstelle
+
+    # Stabil sortieren: hoechster Rang zuerst, bei Gleichstand Fundreihenfolge.
+    scored.sort(key=lambda pair: -pair[0])
+    return [item for _rank, item in scored[:max_results]]
 
 
 # ---------------------------------------------------------------------------

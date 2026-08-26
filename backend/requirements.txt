@@ -28,7 +28,9 @@ bcrypt==4.0.1
 # AI / CAD
 anthropic==0.42.0
 ezdxf==1.4.3
-shapely==2.0.6
+# shapely wurde entfernt: kein Import in app/ oder tests/, zog aber die native
+# GEOS-Bibliothek in jedes Docker-Image. Wird wieder gebraucht, sobald echte
+# Polygon-Geometrie (Verschneidung, Puffer) dazukommt.
 numpy==2.2.1
 trimesh==4.5.3
 Pillow==11.1.0

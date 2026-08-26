@@ -9,7 +9,26 @@ All user-facing strings are in German.
 """
 import logging
 
+from app.services.analysis.subscore import aggregate_subscores
+
 logger = logging.getLogger(__name__)
+
+
+def _knowledge_lookup_hint(source: str) -> str:
+    """Handlungsvorschlag fuer Wissensbefunde ohne hinterlegte Massnahme.
+
+    Der Korpus fuehrt nicht zu jedem Fehlerbild eine Massnahme. Statt die
+    Warnung ohne Vorschlag auszuliefern (Konventionsbruch) oder einen Rat zu
+    erfinden (Belegbruch), verweist sie auf den Quellartikel.
+    """
+    label = (source or "").strip().replace("_", " ")
+    if not label:
+        return "Zugehörigen Wissensartikel im Lexikon nachschlagen — im Korpus ist für dieses Fehlerbild keine Maßnahme hinterlegt."
+    return (
+        f"Im Wissensartikel „{label[:80]}\" nachschlagen — für dieses Fehlerbild "
+        f"ist im Korpus keine Maßnahme hinterlegt."
+    )
+
 
 # Try to import knowledge databases for degradation and lifespan analysis
 try:
@@ -50,10 +69,11 @@ BOAT_CLASS_DEFAULTS = {
         "high_issue_threshold": 5,  # 5+ weighted score in a zone_type = concerning
         "critical_age_window_months": 36,
         "weights": {
-            "zone_issues": 0.30,
-            "age_patterns": 0.25,
-            "material_failures": 0.25,
-            "design_warnings": 0.20,
+            "zone_issues": 0.222,
+            "age_patterns": 0.185,
+            "material_failures": 0.185,
+            "design_warnings": 0.148,
+            "severity_burden": 0.26,
         },
     },
     "cruising_sail": {
@@ -61,10 +81,11 @@ BOAT_CLASS_DEFAULTS = {
         "high_issue_threshold": 5,
         "critical_age_window_months": 48,
         "weights": {
-            "zone_issues": 0.25,
-            "age_patterns": 0.25,
-            "material_failures": 0.25,
-            "design_warnings": 0.25,
+            "zone_issues": 0.185,
+            "age_patterns": 0.185,
+            "material_failures": 0.185,
+            "design_warnings": 0.185,
+            "severity_burden": 0.26,
         },
     },
     "large_motor": {
@@ -72,10 +93,11 @@ BOAT_CLASS_DEFAULTS = {
         "high_issue_threshold": 4,
         "critical_age_window_months": 60,
         "weights": {
-            "zone_issues": 0.25,
-            "age_patterns": 0.20,
-            "material_failures": 0.30,
-            "design_warnings": 0.25,
+            "zone_issues": 0.185,
+            "age_patterns": 0.148,
+            "material_failures": 0.222,
+            "design_warnings": 0.185,
+            "severity_burden": 0.26,
         },
     },
     "racing_sail": {
@@ -83,10 +105,11 @@ BOAT_CLASS_DEFAULTS = {
         "high_issue_threshold": 6,
         "critical_age_window_months": 24,
         "weights": {
-            "zone_issues": 0.35,
-            "age_patterns": 0.20,
-            "material_failures": 0.20,
-            "design_warnings": 0.25,
+            "zone_issues": 0.259,
+            "age_patterns": 0.148,
+            "material_failures": 0.148,
+            "design_warnings": 0.185,
+            "severity_burden": 0.26,
         },
     },
     "daysailer": {
@@ -94,10 +117,11 @@ BOAT_CLASS_DEFAULTS = {
         "high_issue_threshold": 5,
         "critical_age_window_months": 36,
         "weights": {
-            "zone_issues": 0.30,
-            "age_patterns": 0.25,
-            "material_failures": 0.23,
-            "design_warnings": 0.22,
+            "zone_issues": 0.222,
+            "age_patterns": 0.185,
+            "material_failures": 0.1702,
+            "design_warnings": 0.1628,
+            "severity_burden": 0.26,
         },
     },
     "motorsailer": {
@@ -105,10 +129,11 @@ BOAT_CLASS_DEFAULTS = {
         "high_issue_threshold": 5,
         "critical_age_window_months": 48,
         "weights": {
-            "zone_issues": 0.26,
-            "age_patterns": 0.24,
-            "material_failures": 0.25,
-            "design_warnings": 0.25,
+            "zone_issues": 0.1924,
+            "age_patterns": 0.1776,
+            "material_failures": 0.185,
+            "design_warnings": 0.185,
+            "severity_burden": 0.26,
         },
     },
     "catamaran_sail": {
@@ -116,10 +141,11 @@ BOAT_CLASS_DEFAULTS = {
         "high_issue_threshold": 5,
         "critical_age_window_months": 48,
         "weights": {
-            "zone_issues": 0.26,
-            "age_patterns": 0.24,
-            "material_failures": 0.25,
-            "design_warnings": 0.25,
+            "zone_issues": 0.1924,
+            "age_patterns": 0.1776,
+            "material_failures": 0.185,
+            "design_warnings": 0.185,
+            "severity_burden": 0.26,
         },
     },
     "catamaran_motor": {
@@ -127,10 +153,11 @@ BOAT_CLASS_DEFAULTS = {
         "high_issue_threshold": 4,
         "critical_age_window_months": 60,
         "weights": {
-            "zone_issues": 0.25,
-            "age_patterns": 0.20,
-            "material_failures": 0.30,
-            "design_warnings": 0.25,
+            "zone_issues": 0.185,
+            "age_patterns": 0.148,
+            "material_failures": 0.222,
+            "design_warnings": 0.185,
+            "severity_burden": 0.26,
         },
     },
     "small_motor": {
@@ -138,10 +165,11 @@ BOAT_CLASS_DEFAULTS = {
         "high_issue_threshold": 4,
         "critical_age_window_months": 55,
         "weights": {
-            "zone_issues": 0.25,
-            "age_patterns": 0.21,
-            "material_failures": 0.29,
-            "design_warnings": 0.25,
+            "zone_issues": 0.185,
+            "age_patterns": 0.1554,
+            "material_failures": 0.2146,
+            "design_warnings": 0.185,
+            "severity_burden": 0.26,
         },
     },
     "sport_cruiser": {
@@ -149,10 +177,11 @@ BOAT_CLASS_DEFAULTS = {
         "high_issue_threshold": 4,
         "critical_age_window_months": 60,
         "weights": {
-            "zone_issues": 0.25,
-            "age_patterns": 0.20,
-            "material_failures": 0.30,
-            "design_warnings": 0.25,
+            "zone_issues": 0.185,
+            "age_patterns": 0.148,
+            "material_failures": 0.222,
+            "design_warnings": 0.185,
+            "severity_burden": 0.26,
         },
     },
     "trawler": {
@@ -160,10 +189,11 @@ BOAT_CLASS_DEFAULTS = {
         "high_issue_threshold": 4,
         "critical_age_window_months": 72,
         "weights": {
-            "zone_issues": 0.24,
-            "age_patterns": 0.19,
-            "material_failures": 0.31,
-            "design_warnings": 0.26,
+            "zone_issues": 0.1776,
+            "age_patterns": 0.1406,
+            "material_failures": 0.2294,
+            "design_warnings": 0.1924,
+            "severity_burden": 0.26,
         },
     },
     "explorer": {
@@ -171,10 +201,11 @@ BOAT_CLASS_DEFAULTS = {
         "high_issue_threshold": 3,
         "critical_age_window_months": 72,
         "weights": {
-            "zone_issues": 0.20,
-            "age_patterns": 0.19,
-            "material_failures": 0.31,
-            "design_warnings": 0.30,
+            "zone_issues": 0.148,
+            "age_patterns": 0.1406,
+            "material_failures": 0.2294,
+            "design_warnings": 0.222,
+            "severity_burden": 0.26,
         },
     },
     "superyacht": {
@@ -182,10 +213,11 @@ BOAT_CLASS_DEFAULTS = {
         "high_issue_threshold": 3,
         "critical_age_window_months": 60,
         "weights": {
-            "zone_issues": 0.20,
-            "age_patterns": 0.20,
-            "material_failures": 0.30,
-            "design_warnings": 0.30,
+            "zone_issues": 0.148,
+            "age_patterns": 0.148,
+            "material_failures": 0.222,
+            "design_warnings": 0.222,
+            "severity_burden": 0.26,
         },
     },
 }
@@ -323,13 +355,25 @@ def analyze_zone_type_issues(
         weight = _REPORT_SEVERITY_WEIGHT.get(sev, 1)
         zone_type_scores[zt] = zone_type_scores.get(zt, 0.0) + weight
 
-    # L-10 (see analyze_material_failures): above ~30 reports also require a zone
-    # to stand out from the average zone, so uniform noise doesn't flag all of
-    # them; small realistic datasets keep the plain absolute threshold.
+    # L-10 (see analyze_material_failures): above ~30 reports a zone should also
+    # stand out from the average zone, so uniform noise doesn't flag everything.
+    #
+    # Dieser relative Filter darf aber nur greifen, wenn es überhaupt mehrere
+    # Zonentypen zum Vergleichen gibt. Sonst kehrt er sich um: Bei EINEM
+    # betroffenen Zonentyp ist der Mittelwert genau dessen Wert, `1.5 * mean`
+    # liegt also immer darüber und der Befund wird ausgerechnet dann unterdrückt,
+    # wenn die Evidenz am eindeutigsten ist. Gemessen: 60 Totalschäden in einer
+    # Zone wurden mit 93,8 besser bewertet als 20 (90,0), weil ab 31 Berichten
+    # alle Befunde verschwanden. Ab drei Zonentypen ist ein Mittelwert
+    # aussagekräftig — darunter zählt allein die absolute Schwelle.
     mean_zone_score = (
         sum(zone_type_scores.values()) / len(zone_type_scores)
     ) if zone_type_scores else 0.0
-    relative_gate = 1.5 * mean_zone_score if len(service_reports) > 30 else 0.0
+    relative_gate = (
+        1.5 * mean_zone_score
+        if len(service_reports) > 30 and len(zone_type_scores) >= 3
+        else 0.0
+    )
 
     problematic: list[str] = []
     for zt, score_val in zone_type_scores.items():
@@ -630,6 +674,111 @@ def analyze_design_warnings(
 # ---------------------------------------------------------------------------
 
 
+
+def analyze_severity_burden(
+    service_reports: list[dict],
+    config: dict,
+) -> tuple[float, list[dict], dict]:
+    """Bewertet die tatsaechliche Schadenslast, nicht nur deren Musterhaftigkeit.
+
+    Warum es diese Teilanalyse gibt: Die vier urspruenglichen Teilanalysen sind
+    reine MUSTER-Detektoren — sie fragen "sticht eine Zone / ein Alter / ein
+    Material heraus?". Keine davon bewertet, WIE SCHLIMM das Gemeldete ist.
+    Gemessen (vorher): ein einzelner Totalschaden mit ``severity: critical`` und
+    zehn davon ergaben exakt dieselbe Note wie zehn kosmetische ``low``-Berichte
+    (95,0 bzw. 90,0). Da der Modulwert in die Gesamtnote eingeht, hob ein
+    gemeldeter Schaden die Gesamtbewertung sogar an, statt sie zu senken.
+
+    Fuer Marc (Kaeufer) und Kai (Eigner) ist genau das die Kernfrage: Nicht
+    "haeufen sich Meldungen an einer Stelle?", sondern "wie schwer ist das, was
+    dieses Boot hinter sich hat?".
+
+    Bewertungslogik: Jeder Bericht traegt sein Schweregewicht bei
+    (kritisch 4 ... niedrig 1); dokumentierte, unauffaellige Inspektionen zaehlen
+    nicht als Last. Die Summe wird gegen eine klassenabhaengige Toleranz
+    normiert. Ein einzelner kritischer Befund kostet damit spuerbar Punkte, viele
+    schwere Befunde fuehren in den unteren Bereich.
+
+    Returns (score 0-100, warnings, metrics).
+    """
+    warnings: list[dict] = []
+
+    burden = 0.0
+    counted = 0
+    by_severity: dict[str, int] = {}
+    for report in service_reports:
+        severity = report.get("severity", "low")
+        # Eine saubere Inspektion ohne Befund und ohne Kosten ist ein POSITIVES
+        # Signal — dieselbe Ausnahme wie in analyze_zone_type_issues.
+        if (
+            report.get("report_type") == "inspection"
+            and severity in ("low", "none")
+            and not report.get("cost_eur")
+        ):
+            continue
+        weight = _REPORT_SEVERITY_WEIGHT.get(severity, 1)
+        burden += weight
+        counted += 1
+        by_severity[severity] = by_severity.get(severity, 0) + 1
+
+    if counted == 0:
+        return 100.0, warnings, {
+            "burden_points": 0.0,
+            "counted_reports": 0,
+            "by_severity": {},
+            "note": "Nur unauffaellige Inspektionen dokumentiert.",
+        }
+
+    # Toleranz: ab wie vielen Schwerepunkten gilt die Historie als deutlich
+    # belastet. Bewusst klassenabhaengig — eine Charteryacht sammelt naturgemaess
+    # mehr Eintraege als ein privat gefahrener Daysailer.
+    # Kalibrierung: Ein einzelner als "critical" gemeldeter Befund wiegt 4 Punkte.
+    # Bei einer Toleranz von 12 landet er damit bei 66,7 — deutlich sichtbar, aber
+    # nicht vernichtend; drei kritische Befunde (oder vier schwere) erreichen 0.
+    # Mit dem urspruenglichen Wert 24 kam ein kritischer Strukturschaden auf 83,3,
+    # was fuer einen Kaeufer ein irrefuehrend gutes Zeugnis gewesen waere.
+    tolerance = float(config.get("severity_burden_tolerance", 12))
+    score = max(0.0, 100.0 - (burden / tolerance) * 100.0)
+
+    critical_count = by_severity.get("critical", 0)
+    high_count = by_severity.get("high", 0)
+
+    if critical_count:
+        warnings.append({
+            "code": "SERVICE_SEVERITY_CRITICAL",
+            "severity": "critical",
+            "message": (
+                f"{critical_count} als kritisch eingestufte(r) Servicebefund(e) in der "
+                f"Historie (Schwerelast gesamt: {burden:.0f} Punkte)."
+            ),
+            "suggestion": (
+                "Befunde vor einem Kauf oder einer groesseren Investition durch eine "
+                "Sachverstaendige oder einen Sachverstaendigen pruefen lassen und die "
+                "Behebung belegen lassen."
+            ),
+        })
+    elif high_count >= 3:
+        warnings.append({
+            "code": "SERVICE_SEVERITY_HIGH",
+            "severity": "warning",
+            "message": (
+                f"{high_count} Servicebefunde mit hoher Schwere "
+                f"(Schwerelast gesamt: {burden:.0f} Punkte)."
+            ),
+            "suggestion": (
+                "Haeufung schwerer Befunde auf eine gemeinsame Ursache pruefen "
+                "(Nutzungsprofil, Revier, Wartungsintervalle)."
+            ),
+        })
+
+    return score, warnings, {
+        "burden_points": round(burden, 1),
+        "counted_reports": counted,
+        "by_severity": by_severity,
+        "tolerance": tolerance,
+    }
+
+
 def run_service_patterns_analysis(
     zones: list[dict],
     passages: list[dict],
@@ -702,7 +851,13 @@ def run_service_patterns_analysis(
             "design_warnings",
             lambda: analyze_design_warnings(zones, reports, config),
         ),
+        (
+            "severity_burden",
+            lambda: analyze_severity_burden(reports, config),
+        ),
     ]
+
+    _failed_subs: set[str] = set()
 
     for name, fn in analyses:
         try:
@@ -712,7 +867,7 @@ def run_service_patterns_analysis(
             all_metrics[name] = metrics
         except Exception:
             logger.exception("Error in service_patterns sub-analysis %s", name)
-            sub_scores[name] = 0.0
+            _failed_subs.add(name)
             all_warnings.append({
                 "code": "ANALYSIS_ERROR",
                 "severity": "critical",
@@ -720,7 +875,15 @@ def run_service_patterns_analysis(
                 "suggestion": "Serviceberichte auf Vollständigkeit und Format prüfen.",
             })
 
-    overall = sum(sub_scores.get(k, 50.0) * w for k, w in weights.items())
+    overall = aggregate_subscores(
+        sub_scores, weights, failed=_failed_subs, default=50.0
+    )
+    if overall is None:
+        # Jede Teilanalyse ist ausgefallen — keine Note erfinden.
+        overall = 0.0
+        _all_subs_failed = True
+    else:
+        _all_subs_failed = False
 
     for w in all_warnings:
         suggestion = w.get("suggestion")
@@ -759,14 +922,30 @@ def run_service_patterns_analysis(
                             f"[Wissensdatenbank: {fm.get('source', '')}] "
                             f"{fm.get('title', '')}: {fm.get('symptom', '')[:120]}"
                         ),
-                        "suggestion": fm.get("massnahme", "")[:150] if fm.get("massnahme") else None,
+                        # Siehe materials.py: Verweis statt erfundener Maßnahme.
+                        "suggestion": (
+                            fm.get("massnahme", "")[:150]
+                            if fm.get("massnahme")
+                            else _knowledge_lookup_hint(fm.get("source", ""))
+                        ),
                         "source": "markdown",
                     })
         except Exception:
             logger.exception("Error enriching service_patterns with markdown knowledge")
 
+    if _all_subs_failed:
+        # Kein einziger Teilscore war verwertbar. Statt einer erfundenen
+        # Note meldet sich das Modul als nicht beurteilbar (Modul-Skip-Vertrag).
+        return {
+            "module": "service_patterns",
+            "available": False,
+            "reason": "Alle Teilanalysen fehlgeschlagen - kein belastbares Ergebnis.",
+            "warnings": all_warnings,
+        }
+
     return {
         "module": "service_patterns",
+        "degraded_subanalyses": sorted(_failed_subs),
         "overall_score": round(overall, 1),
         "sub_scores": {k: round(v, 1) for k, v in sub_scores.items()},
         "warnings": all_warnings,

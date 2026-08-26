@@ -8,7 +8,26 @@ All user-facing strings are in German.
 import logging
 import math
 
+from app.services.analysis.subscore import aggregate_subscores
+
 logger = logging.getLogger(__name__)
+
+
+def _knowledge_lookup_hint(source: str) -> str:
+    """Handlungsvorschlag fuer Wissensbefunde ohne hinterlegte Massnahme.
+
+    Der Korpus fuehrt nicht zu jedem Fehlerbild eine Massnahme. Statt die
+    Warnung ohne Vorschlag auszuliefern (Konventionsbruch) oder einen Rat zu
+    erfinden (Belegbruch), verweist sie auf den Quellartikel.
+    """
+    label = (source or "").strip().replace("_", " ")
+    if not label:
+        return "Zugehörigen Wissensartikel im Lexikon nachschlagen — im Korpus ist für dieses Fehlerbild keine Maßnahme hinterlegt."
+    return (
+        f"Im Wissensartikel „{label[:80]}\" nachschlagen — für dieses Fehlerbild "
+        f"ist im Korpus keine Maßnahme hinterlegt."
+    )
+
 
 # Try to import knowledge databases for enriched structural analysis
 try:
@@ -1204,6 +1223,8 @@ def run_structural_analysis(
             zones, config, structural_items=structural_items)),
     ]
 
+    _failed_subs: set[str] = set()
+
     for name, fn in analyses:
         try:
             score, warnings, metrics = fn()
@@ -1212,7 +1233,7 @@ def run_structural_analysis(
             all_metrics[name] = metrics
         except Exception:
             logger.exception("Error in structural sub-analysis %s", name)
-            sub_scores[name] = 0.0
+            _failed_subs.add(name)
             all_warnings.append({
                 "code": "STRUCTURAL_ANALYSIS_ERROR",
                 "severity": "critical",
@@ -1220,7 +1241,15 @@ def run_structural_analysis(
                 "suggestion": "Layoutdaten überprüfen.",
             })
 
-    overall = sum(sub_scores.get(k, 50.0) * w for k, w in weights.items())
+    overall = aggregate_subscores(
+        sub_scores, weights, failed=_failed_subs, default=50.0
+    )
+    if overall is None:
+        # Jede Teilanalyse ist ausgefallen — keine Note erfinden.
+        overall = 0.0
+        _all_subs_failed = True
+    else:
+        _all_subs_failed = False
 
     # Honest provenance for measured items: report what entered the model,
     # what was deducted from zone heuristics (double-count prevention), what
@@ -1336,14 +1365,30 @@ def run_structural_analysis(
                             f"[Wissensdatenbank: {fd.get('title', '')}] "
                             f"{fb.get('title', '')}: {fb.get('symptom', '')[:120]}"
                         ),
-                        "suggestion": fb.get("massnahme", "")[:120] if fb.get("massnahme") else None,
+                        # Siehe materials.py: Verweis statt erfundener Maßnahme.
+                        "suggestion": (
+                            fb.get("massnahme", "")[:120]
+                            if fb.get("massnahme")
+                            else _knowledge_lookup_hint(fd.get("title", ""))
+                        ),
                         "source": f"markdown:{fd.get('slug', '')}",
                     })
         except Exception:
             logger.exception("Error enriching structural with markdown knowledge")
 
+    if _all_subs_failed:
+        # Kein einziger Teilscore war verwertbar. Statt einer erfundenen
+        # Note meldet sich das Modul als nicht beurteilbar (Modul-Skip-Vertrag).
+        return {
+            "module": "structural",
+            "available": False,
+            "reason": "Alle Teilanalysen fehlgeschlagen - kein belastbares Ergebnis.",
+            "warnings": all_warnings,
+        }
+
     return {
         "module": "structural",
+        "degraded_subanalyses": sorted(_failed_subs),
         "overall_score": round(overall, 1),
         "sub_scores": {k: round(v, 1) for k, v in sub_scores.items()},
         "warnings": all_warnings,

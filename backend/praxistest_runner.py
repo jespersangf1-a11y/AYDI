@@ -10,7 +10,20 @@ import sys
 import time
 
 # Override DB to writable location BEFORE any app imports
-os.environ["DATABASE_URL"] = "sqlite+aiosqlite:////sessions/dreamy-youthful-fermi/aydi_praxis.db"
+from pathlib import Path
+
+# Windows-Konsolen laufen per Default unter cp1252 und brechen an den Status-Emojis.
+# UTF-8 erzwingen, sonst ist der Praxistest auf der Hauptentwicklungsplattform nicht lauffähig.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, OSError):  # pragma: no cover - z.B. umgeleitete Pipes
+        pass
+
+# Ergebnis- und DB-Ablage: per Env überschreibbar, sonst neben diesem Skript.
+_OUT = Path(os.environ.get("PRAXISTEST_OUT_DIR", Path(__file__).resolve().parent / ".praxistest"))
+_OUT.mkdir(parents=True, exist_ok=True)
+os.environ["DATABASE_URL"] = f"sqlite+aiosqlite:///{(_OUT / 'aydi_praxis.db').as_posix()}"
 
 # Force config reload
 import importlib
@@ -228,6 +241,6 @@ print(f"GRUPPE A ERGEBNIS: {a_pass} PASS, {a_fail} FAIL von {len(results)}")
 print("-"*50)
 
 # Save state for subsequent groups
-with open("/sessions/dreamy-youthful-fermi/praxis_state.json", "w") as f:
+with open(_OUT / "praxis_state.json", "w", encoding="utf-8") as f:
     json.dump({"tokens": tokens, "project_ids": project_ids, "results": results}, f, indent=2)
 print(f"\nState saved. Tokens: {list(tokens.keys())}, Projects: {list(project_ids.keys())}")

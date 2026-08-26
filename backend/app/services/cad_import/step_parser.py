@@ -734,6 +734,8 @@ def _parse_step_text(content: bytes) -> tuple[list[dict], list[DeckLevel], list[
     points_3d: list[tuple[float, float, float]] = []
     lines = text.split("\n")
 
+    non_finite_points = 0
+
     for line in lines:
         line = line.strip()
         if "CARTESIAN_POINT" in line and "(" in line:
@@ -745,12 +747,26 @@ def _parse_step_text(content: bytes) -> tuple[list[dict], list[DeckLevel], list[
                 inner_end = line.index(")", inner_start)
                 coords_str = line[inner_start + 1:inner_end]
                 coords = [float(c.strip()) for c in coords_str.split(",")]
+                # float() akzeptiert "NaN"/"Infinity" und Overflow-Literale
+                # wie 1E999. Solche Werte machen Huelle, Flaeche und
+                # Deck-Erkennung unbrauchbar - Punkt verwerfen statt
+                # ungeprueft in die Zonenpolygone uebernehmen (ROB-13).
+                if not all(math.isfinite(c) for c in coords):
+                    non_finite_points += 1
+                    continue
                 if len(coords) >= 3:
                     points_3d.append((coords[0], coords[1], coords[2]))
                 elif len(coords) == 2:
                     points_3d.append((coords[0], coords[1], 0.0))
             except (ValueError, IndexError):
                 continue
+
+    if non_finite_points:
+        logger.warning(
+            "STEP-Textparser: %d CARTESIAN_POINT-Eintraege mit nicht-finiten "
+            "Koordinaten (NaN/Infinity) verworfen.",
+            non_finite_points,
+        )
 
     if not points_3d:
         warnings.append(

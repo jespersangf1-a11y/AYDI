@@ -8,25 +8,54 @@ import {
   Eye,
   EyeOff,
 } from 'lucide-react'
-import type { ImageAnalysisResult, VisualFinding } from '../../types'
+import type { VisualFinding } from '../../types'
+import type { VisualAnalysisView } from '../../services/visual-result'
 import ConfidenceBadge from '../analysis/ConfidenceBadge'
 
 interface VisualResultsProps {
-  result: ImageAnalysisResult
+  result: VisualAnalysisView
   showLowConfidence?: boolean
+  /** Deutsche Begründung, falls keine Analyse vorliegt (Leerzustand). */
+  unavailableReason?: string | null
 }
 
+// Die Prompts verwenden zwei Bewertungsskalen: gut/akzeptabel/mangelhaft/
+// kritisch (Materialien, Helm) und positiv/neutral/negativ (Raumwirkung,
+// Verarbeitung). Beide müssen hier landen, sonst zeigt das Badge den Rohwert.
 const ASSESSMENT_STYLES: Record<string, { bg: string; text: string; label: string }> = {
   gut: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', label: 'Gut' },
+  positiv: { bg: 'bg-emerald-500/10', text: 'text-emerald-400', label: 'Positiv' },
   akzeptabel: { bg: 'bg-ocean-500/10', text: 'text-ocean-600', label: 'Akzeptabel' },
+  neutral: { bg: 'bg-ocean-500/10', text: 'text-ocean-600', label: 'Neutral' },
   mangelhaft: { bg: 'bg-amber-500/10', text: 'text-amber-400', label: 'Mangelhaft' },
+  negativ: { bg: 'bg-amber-500/10', text: 'text-amber-400', label: 'Negativ' },
   kritisch: { bg: 'bg-red-500/10', text: 'text-red-400', label: 'Kritisch' },
+  'nicht beurteilbar': {
+    bg: 'bg-sand-100',
+    text: 'text-navy-600',
+    label: 'Nicht beurteilbar',
+  },
 }
 
-function AssessmentBadge({ assessment }: { assessment: string }) {
-  const key = assessment.toLowerCase()
+// Score-Schlüssel der Prompts -> deutsche Beschriftung. Ohne diese Zuordnung
+// stand im Balkendiagramm der rohe Schlüssel ("spatial_score").
+const SCORE_LABELS: Record<string, string> = {
+  spatial_score: 'Raumwirkung',
+  overall_quality_score: 'Verarbeitungsqualität',
+  material_score: 'Materialqualität',
+  emotional_score: 'Emotionale Wirkung',
+  exterior_score: 'Außendesign',
+  helm_score: 'Steuerstand',
+  overall: 'Gesamtbewertung',
+}
+
+function AssessmentBadge({ assessment }: { assessment?: string | null }) {
+  // Nicht jeder Prompt liefert eine Bewertung je Befund — ohne Wert gibt es
+  // kein Badge (statt eines leeren Kastens oder eines Absturzes).
+  if (!assessment || !assessment.trim()) return null
+  const key = assessment.trim().toLowerCase()
   const style = ASSESSMENT_STYLES[key] ?? {
-    bg: 'bg-navy-700',
+    bg: 'bg-sand-100',
     text: 'text-navy-700',
     label: assessment,
   }
@@ -61,6 +90,10 @@ function groupFindings(findings: VisualFinding[]): Record<string, VisualFinding[
   return groups
 }
 
+function scoreLabel(key: string): string {
+  return SCORE_LABELS[key] ?? key
+}
+
 function ScoreBar({ label, score }: { label: string; score: number }) {
   const color =
     score >= 80 ? 'bg-emerald-400' : score >= 60 ? 'bg-amber-400' : score >= 40 ? 'bg-orange-400' : 'bg-red-400'
@@ -84,6 +117,7 @@ function ScoreBar({ label, score }: { label: string; score: number }) {
 export default function VisualResults({
   result,
   showLowConfidence: initialShowLow = false,
+  unavailableReason = null,
 }: VisualResultsProps) {
   const [showLow, setShowLow] = useState(initialShowLow)
   const [cannotAssessOpen, setCannotAssessOpen] = useState(false)
@@ -122,8 +156,8 @@ export default function VisualResults({
             Keine visuelle Analyse verfügbar
           </p>
           <p className="text-xs text-navy-600">
-            Die visuelle Analyse (Claude Vision) ist in dieser Umgebung nicht
-            aktiv. Das Bild wurde gespeichert, aber nicht bewertet.
+            {unavailableReason ??
+              'Die visuelle Analyse (Claude Vision) ist in dieser Umgebung nicht aktiv. Das Bild wurde gespeichert, aber nicht bewertet.'}
           </p>
         </div>
       </div>
@@ -151,7 +185,7 @@ export default function VisualResults({
           </h4>
           <div className="space-y-3">
             {Object.entries(scores).map(([key, value]) => (
-              <ScoreBar key={key} label={key} score={value} />
+              <ScoreBar key={key} label={scoreLabel(key)} score={value} />
             ))}
           </div>
         </div>

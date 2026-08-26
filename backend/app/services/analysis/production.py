@@ -9,6 +9,9 @@ import logging
 import math
 from collections import deque
 
+from app.core.validation import known_passage_widths, passage_width
+from app.services.analysis.subscore import aggregate_subscores
+
 logger = logging.getLogger(__name__)
 
 # Try to import knowledge databases for production analysis
@@ -636,7 +639,9 @@ def analyze_service_access(
     max_width_for: dict[str, float] = {}
     for p in passages:
         a, b = p["from_zone"], p["to_zone"]
-        w = p["width_mm"]
+        w = passage_width(p)
+        if w is None:
+            continue
         max_width_for[a] = max(max_width_for.get(a, 0.0), w)
         max_width_for[b] = max(max_width_for.get(b, 0.0), w)
 
@@ -740,6 +745,13 @@ def analyze_standardization(
         (furniture) width so real cabins never matched and identical vs varied
         cabins scored the same (J-4b).
         """
+        # Leere Eingabe ist moeglich, seit Durchgaenge ohne bekannte Breite
+        # ehrlich als "nicht bekannt" durchgereicht werden (DXF-Import). Ohne
+        # diesen Guard warf max() auf einer leeren Folge — die Teilanalyse
+        # stuerzte ab. Keine Signaturen heisst: nichts zu vergleichen, also
+        # keine Abweichung feststellbar.
+        if not signatures:
+            return 1.0, 0
         counts: dict = {}
         for s in signatures:
             counts[s] = counts.get(s, 0) + 1
@@ -749,10 +761,10 @@ def analyze_standardization(
     passage_match_ratio = 1.0
     passage_distinct = 0
     if has_passages:
-        widths = [round(p["width_mm"] / tolerance) for p in passages]
+        widths = [round(w / tolerance) for w in known_passage_widths(passages)]
         passage_match_ratio, passage_distinct = _dominant_share(widths)
         if passage_distinct > 1:
-            uniq = sorted({round(p["width_mm"]) for p in passages})
+            uniq = sorted({round(w) for w in known_passage_widths(passages)})
             warnings.append({
                 "code": "STANDARD_PASSAGE_INCONSISTENT",
                 "severity": "warning",
@@ -1134,6 +1146,8 @@ def run_production_analysis(
         ("flat_panel_ratio", lambda: analyze_flat_panel_ratio(zones, config)),
     ]
 
+    _failed_subs: set[str] = set()
+
     for name, fn in analyses:
         try:
             score, warnings, metrics = fn()
@@ -1142,7 +1156,7 @@ def run_production_analysis(
             all_metrics[name] = metrics
         except Exception:
             logger.exception("Fehler in Teilanalyse %s", name)
-            sub_scores[name] = 0.0
+            _failed_subs.add(name)
             all_warnings.append({
                 "code": "PRODUCTION_ANALYSIS_ERROR",
                 "severity": "critical",
@@ -1150,7 +1164,15 @@ def run_production_analysis(
                 "suggestion": "Layoutdaten überprüfen.",
             })
 
-    overall = sum(sub_scores.get(k, 0.0) * w for k, w in weights.items())
+    overall = aggregate_subscores(
+        sub_scores, weights, failed=_failed_subs, default=0.0
+    )
+    if overall is None:
+        # Jede Teilanalyse ist ausgefallen — keine Note erfinden.
+        overall = 0.0
+        _all_subs_failed = True
+    else:
+        _all_subs_failed = False
 
     for w in all_warnings:
         suggestion = w.get("suggestion")
@@ -1188,8 +1210,19 @@ def run_production_analysis(
         except Exception:
             logger.exception("Error enriching production with markdown knowledge")
 
+    if _all_subs_failed:
+        # Kein einziger Teilscore war verwertbar. Statt einer erfundenen
+        # Note meldet sich das Modul als nicht beurteilbar (Modul-Skip-Vertrag).
+        return {
+            "module": "production",
+            "available": False,
+            "reason": "Alle Teilanalysen fehlgeschlagen - kein belastbares Ergebnis.",
+            "warnings": all_warnings,
+        }
+
     return {
         "module": "production",
+        "degraded_subanalyses": sorted(_failed_subs),
         "overall_score": round(overall, 1),
         "sub_scores": {k: round(v, 1) for k, v in sub_scores.items()},
         "warnings": all_warnings,

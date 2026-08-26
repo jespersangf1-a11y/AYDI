@@ -41,3 +41,6 @@ frontend/.vite/
 *.swp
 *.swo
 *~
+
+# Praxistest-Arbeitsverzeichnis (DB + Ergebnis-JSON, per PRAXISTEST_OUT_DIR umlenkbar)
+backend/.praxistest/

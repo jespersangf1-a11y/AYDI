@@ -34,6 +34,16 @@ services:
       - key: SECRET_KEY
         sync: false
       # Production hardening
+      #
+      # ENVIRONMENT=production ist der Schalter, der den Boot-Guard in
+      # backend/app/core/config.py (_enforce_production_security) scharf macht:
+      # Ohne ihn startet die App auch dann, wenn SECRET_KEY oben im Dashboard
+      # vergessen wurde — dann mit dem im Repo öffentlich lesbaren Default-Key,
+      # mit dem sich beliebige JWTs inklusive Admin-Rolle fälschen lassen.
+      # Bewusst "fail closed": lieber ein fehlgeschlagenes Deployment als ein
+      # laufendes mit fälschbaren Tokens.
+      - key: ENVIRONMENT
+        value: "production"
       - key: AUTH_COOKIE_ONLY
         value: "true"
       - key: COOKIE_SECURE

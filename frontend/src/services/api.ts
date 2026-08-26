@@ -30,22 +30,54 @@ import type {
 const BASE = '/api/v1'
 
 // ─── Auth Token Management ───
+const ACCESS_STORAGE_KEY = 'aydi_token'
+const REFRESH_STORAGE_KEY = 'aydi_refresh_token'
+
 let _authToken: string | null = null
+let _refreshToken: string | null = null
 
 export function setAuthToken(token: string | null) {
-  _authToken = token
-  if (token) {
-    try { localStorage.setItem('aydi_token', token) } catch { /* SSR/incognito */ }
-  } else {
-    try { localStorage.removeItem('aydi_token') } catch { /* SSR/incognito */ }
+  if (!token) {
+    // Dropping the access token ends the session — the refresh token must go
+    // with it, otherwise a "logout" would be silently undone by the next
+    // transparent refresh.
+    clearAuthToken()
+    return
   }
+  _authToken = token
+  try { localStorage.setItem(ACCESS_STORAGE_KEY, token) } catch { /* SSR/incognito */ }
 }
 
 export function getAuthToken(): string | null {
   if (_authToken) return _authToken
   try {
-    const stored = localStorage.getItem('aydi_token')
+    const stored = localStorage.getItem(ACCESS_STORAGE_KEY)
     if (stored) _authToken = stored
+    return stored
+  } catch {
+    return null
+  }
+}
+
+/**
+ * The refresh token from /auth/login. The backend's POST /auth/refresh reads
+ * it from the request BODY (`RefreshRequest.refresh_token`) — auth.py has no
+ * cookie fallback and answers 400 "Refresh-Token fehlt" without it — so the
+ * client has to keep it even on the cookie transport.
+ */
+export function setRefreshToken(token: string | null) {
+  _refreshToken = token
+  try {
+    if (token) localStorage.setItem(REFRESH_STORAGE_KEY, token)
+    else localStorage.removeItem(REFRESH_STORAGE_KEY)
+  } catch { /* SSR/incognito */ }
+}
+
+export function getRefreshToken(): string | null {
+  if (_refreshToken) return _refreshToken
+  try {
+    const stored = localStorage.getItem(REFRESH_STORAGE_KEY)
+    if (stored) _refreshToken = stored
     return stored
   } catch {
     return null
@@ -54,7 +86,30 @@ export function getAuthToken(): string | null {
 
 export function clearAuthToken() {
   _authToken = null
-  try { localStorage.removeItem('aydi_token') } catch { /* SSR/incognito */ }
+  _refreshToken = null
+  try { localStorage.removeItem(ACCESS_STORAGE_KEY) } catch { /* SSR/incognito */ }
+  try { localStorage.removeItem(REFRESH_STORAGE_KEY) } catch { /* SSR/incognito */ }
+}
+
+// ─── Session expiry notification ───
+// Fired once when a refresh definitively failed (refresh token gone, expired
+// or rejected). The shell can listen and route to /login instead of leaving
+// the user staring at an "Authentifizierung erforderlich" banner.
+export const SESSION_EXPIRED_EVENT = 'aydi:session-expired'
+
+export function onSessionExpired(handler: () => void): () => void {
+  if (typeof window === 'undefined') return () => { /* SSR */ }
+  const listener = () => handler()
+  window.addEventListener(SESSION_EXPIRED_EVENT, listener)
+  return () => window.removeEventListener(SESSION_EXPIRED_EVENT, listener)
+}
+
+function endSession() {
+  const hadSession = !!(getAuthToken() || getRefreshToken())
+  clearAuthToken()
+  if (hadSession && typeof window !== 'undefined') {
+    window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT))
+  }
 }
 
 // ─── CSRF token helper ───
@@ -82,8 +137,72 @@ const HTTP_ERROR_MESSAGES: Record<number, string> = {
   504: 'Gateway-Timeout',
 }
 
+// ─── Transparent token refresh ───
+// The access token lives 60 min. Without this the user's work broke off hard
+// mid-project. On a 401 we renew ONCE and replay the original request.
+//
+// Both auth transports are covered: /auth/refresh returns a fresh
+// access_token (bearer path) AND re-sets the aydi_access/aydi_csrf cookies
+// (cookie path, permissions.py::_extract_token prefers the cookie).
+const AUTH_PATHS = ['/auth/login', '/auth/register', '/auth/refresh', '/auth/logout']
+
+function isAuthEndpoint(url: string): boolean {
+  return AUTH_PATHS.some((p) => url.startsWith(`${BASE}${p}`))
+}
+
+// Single in-flight refresh: N concurrent 401s must trigger exactly ONE
+// /auth/refresh, otherwise the later ones renew against an already-rotated
+// refresh token and log the user out.
+let _refreshInFlight: Promise<boolean> | null = null
+
+async function refreshSession(): Promise<boolean> {
+  if (_refreshInFlight) return _refreshInFlight
+
+  _refreshInFlight = (async (): Promise<boolean> => {
+    const refreshToken = getRefreshToken()
+    if (!refreshToken) {
+      endSession()
+      return false
+    }
+    let res: Response
+    try {
+      // /auth/refresh is CSRF-exempt (middleware.py EXEMPT_PATH_PREFIXES) and
+      // must not carry the stale Authorization header, so it bypasses request().
+      res = await fetch(`${BASE}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: refreshToken }),
+        credentials: 'include',
+      })
+    } catch {
+      // Network hiccup — keep the session, the caller surfaces the error.
+      return false
+    }
+    if (!res.ok) {
+      endSession()
+      return false
+    }
+    const data = (await res.json().catch(() => null)) as
+      | { access_token?: string; refresh_token?: string }
+      | null
+    if (!data?.access_token) {
+      endSession()
+      return false
+    }
+    setAuthToken(data.access_token)
+    if (data.refresh_token) setRefreshToken(data.refresh_token)
+    return true
+  })()
+
+  try {
+    return await _refreshInFlight
+  } finally {
+    _refreshInFlight = null
+  }
+}
+
 // ─── Core Request Function ───
-async function request<T>(url: string, options?: RequestInit): Promise<T> {
+function buildHeaders(options?: RequestInit): Record<string, string> {
   const token = getAuthToken()
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -102,12 +221,28 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
     const callerHeaders = options.headers as Record<string, string>
     Object.assign(headers, callerHeaders)
   }
+  return headers
+}
 
-  const res = await fetch(url, {
-    ...options,
-    headers,
-    credentials: 'include',  // send cookies for cross-origin requests
-  })
+async function request<T>(url: string, options?: RequestInit): Promise<T> {
+  // Headers are rebuilt per attempt — after a refresh both the bearer token
+  // and the aydi_csrf cookie are new.
+  const send = () =>
+    fetch(url, {
+      ...options,
+      headers: buildHeaders(options),
+      credentials: 'include', // send cookies for cross-origin requests
+    })
+
+  let res = await send()
+
+  // Exactly one retry, and never for the auth endpoints themselves (a 401 from
+  // /auth/login means wrong credentials, not an expired session) — no loops.
+  if (res.status === 401 && !isAuthEndpoint(url)) {
+    if (await refreshSession()) {
+      res = await send()
+    }
+  }
 
   if (!res.ok) {
     const error = await res.json().catch(() => ({ detail: undefined }))
@@ -137,22 +272,31 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
 
 // Helper for FormData requests that need auth but NOT Content-Type header
 async function requestFormData<T>(url: string, form: FormData, method = 'POST'): Promise<T> {
-  const token = getAuthToken()
-  const headers: Record<string, string> = {}
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`
+  const send = () => {
+    const token = getAuthToken()
+    const headers: Record<string, string> = {}
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`
+    }
+    if (!['GET', 'HEAD', 'OPTIONS'].includes(method.toUpperCase())) {
+      const csrf = readCsrfToken()
+      if (csrf) headers['X-CSRF-Token'] = csrf
+    }
+    // Do NOT set Content-Type — browser sets it with boundary for FormData
+    return fetch(url, {
+      method,
+      headers,
+      body: form,
+      credentials: 'include',
+    })
   }
-  if (!['GET', 'HEAD', 'OPTIONS'].includes(method.toUpperCase())) {
-    const csrf = readCsrfToken()
-    if (csrf) headers['X-CSRF-Token'] = csrf
+
+  let res = await send()
+  if (res.status === 401 && !isAuthEndpoint(url)) {
+    if (await refreshSession()) {
+      res = await send()
+    }
   }
-  // Do NOT set Content-Type — browser sets it with boundary for FormData
-  const res = await fetch(url, {
-    method,
-    headers,
-    body: form,
-    credentials: 'include',
-  })
   if (!res.ok) {
     const error = await res.json().catch(() => ({ detail: res.statusText }))
     const userMessage = error.detail || HTTP_ERROR_MESSAGES[res.status] || res.statusText
@@ -173,8 +317,10 @@ export async function getProject(id: string): Promise<Project> {
   return request<Project>(`${BASE}/projects/${id}`)
 }
 
+// Backend route is @router.post("") → /api/v1/projects WITHOUT trailing slash.
+// With the slash FastAPI answers 307 and the POST body is not reliably carried.
 export async function createProject(data: ProjectCreate): Promise<Project> {
-  return request<Project>(`${BASE}/projects/`, {
+  return request<Project>(`${BASE}/projects`, {
     method: 'POST',
     body: JSON.stringify(data),
   })
@@ -573,8 +719,10 @@ export async function updateLayout(
 }
 
 // ─── Benchmarks ───
+// Backend route: GET /api/v1/class-benchmarks/{boat_class} (benchmarks.py).
+// The old /benchmarks/... path does not exist and always 404'd.
 export async function getClassBenchmarks(boatClass: string): Promise<unknown> {
-  return request<unknown>(`${BASE}/benchmarks/${boatClass}`)
+  return request<unknown>(`${BASE}/class-benchmarks/${encodeURIComponent(boatClass)}`)
 }
 
 // ─── Auth ───
@@ -586,8 +734,10 @@ export async function login(
     method: 'POST',
     body: JSON.stringify({ email, password }),
   })
-  // Auto-store token on successful login
+  // Auto-store tokens on successful login. The refresh token is what keeps the
+  // session alive past the 60-minute access-token lifetime.
   setAuthToken(result.access_token)
+  setRefreshToken(result.refresh_token ?? null)
   return result
 }
 

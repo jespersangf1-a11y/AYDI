@@ -884,7 +884,11 @@ async def search_knowledge(
                         )
                     )
         except Exception:
-            pass
+            # Die Korpus-Suche ist Anreicherung — ein Fehler darf die uebrigen
+            # Treffer nicht kosten. Er darf aber auch nicht spurlos verschwinden:
+            # Zuvor stand hier ein nacktes `pass`, wodurch eine dauerhaft
+            # kaputte Suche als "keine Treffer" erschien und in keinem Log auftauchte.
+            logger.exception("Korpus-Suche fehlgeschlagen; liefere die uebrigen Treffer")
 
         elapsed_ms = (time.time() - start_time) * 1000
         matches.sort(key=lambda m: m.relevance_score, reverse=True)

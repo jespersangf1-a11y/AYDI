@@ -23,7 +23,15 @@ def _enable_sqlite_fk(dbapi_connection, _connection_record):  # pragma: no cover
         cursor.close()
 
 
-engine = create_async_engine(settings.DATABASE_URL, echo=False)
+# pool_size gilt nur fuer Pools, die eine Groesse kennen. SQLite laeuft hier ueber
+# NullPool/SingletonThreadPool und lehnt das Argument ab — darum nur fuer echte
+# Server-Datenbanken setzen. DATABASE_POOL_SIZE war zuvor deklariert, aber
+# nirgends gelesen.
+_engine_kwargs: dict = {"echo": False}
+if not settings.DATABASE_URL.startswith("sqlite"):
+    _engine_kwargs["pool_size"] = settings.DATABASE_POOL_SIZE
+
+engine = create_async_engine(settings.DATABASE_URL, **_engine_kwargs)
 async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 

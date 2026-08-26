@@ -872,7 +872,7 @@ Für Reparaturen und kleine Projekte empfohlen:
 ### 5.9 Marine Tank Plate — Spezielle Normen
 
 **Hochbelastete Tanks (über Wasserlinie):**
-- **Wanddicke:** Mindestens 2,0 mm (ISO 12217)
+- **Wanddicke:** Mindestens 2,0 mm — ⚠️ **ZU PRÜFEN (Audit):** Die zuvor hier angegebene Quelle „ISO 12217" ist die **Stabilitätsnorm** und regelt keine Tankwandstärken. Maßgeblich sind **ISO 21487** (fest eingebaute Benzin-/Dieseltanks) bzw. **ISO 12215** für tragende Strukturen. Wert ist unverifiziert.
 - **Material:** 316L obligatorisch (304 NICHT akzeptabel)
 - **Oberfläche:** Mindestens #240 geschliffen
 - **Schweißung:** Durchschweißung mit mindestens 80 % Naht-Festigkeit
@@ -2843,7 +2843,9 @@ Für marine Anwendungen unterhalb der Wasserlinie sollte mindestens #240 oder po
 
 ## ANHANG B — Chainplate-Dimensionierungstabelle (Komplett)
 
-Die Wahl der Chainplate-Größe ist kritisch für die strukturelle Integrität des Segelboots. Eine zu kleine Chainplate kann zu Versagen führen; eine zu große ist kostspielig und unnötig. Die folgenden Tabellen basieren auf ISO 12217 Stabilität-Standards und realen Rigg-Dimensionierungen.
+Die Wahl der Chainplate-Größe ist kritisch für die strukturelle Integrität des Segelboots. Eine zu kleine Chainplate kann zu Versagen führen; eine zu große ist kostspielig und unnötig. Die folgenden Tabellen basieren auf realen Rigg-Dimensionierungen und den Scantling-Regeln der **ISO 12215** (Rumpfbau/Dimensionierung).
+
+> ⚠️ **ZU PRÜFEN (Audit):** Hier stand zuvor „ISO 12217 Stabilität-Standards". **ISO 12217 ist die Stabilitätsnorm** (Gewicht, Schwerpunkt, Kenterverhalten) und sagt über Beschlagdimensionierung nichts aus. Struktur- und Scantling-Fragen regelt **ISO 12215**; Chainplates als Rigg-Anschluss gehören zum Krafteinleitungsnachweis. Konkrete Zahlenwerte der Tabellen sind gegen die aktuelle Normfassung zu verifizieren.
 
 ### B.1 Chainplate nach Rigg-Drahtgröße und Yachtlänge
 

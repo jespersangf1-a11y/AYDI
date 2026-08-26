@@ -46,7 +46,9 @@ class DomainConfig(NamedTuple):
 DOMAIN_CONFIGS: dict[AnalysisDomain, DomainConfig] = {
     AnalysisDomain.HULL_STRUCTURE: DomainConfig(
         i18n_key="domain.hull_structure",
-        zone_types=frozenset({"hull", "keel", "rudder", "bulkhead", "frame", "transom"}),
+        # "void" (nicht genutzter Hohlraum im Rumpfverband) stand in
+        # VALID_ZONE_TYPES ohne Domänenbezug.
+        zone_types=frozenset({"hull", "keel", "rudder", "bulkhead", "frame", "transom", "void"}),
         component_categories=frozenset({
             "hull_laminate", "keel_bolt", "rudder_bearing", "hull_fitting",
             "gelcoat", "fairing", "osmosis_barrier", "structural_bulkhead",
@@ -168,6 +170,10 @@ DOMAIN_CONFIGS: dict[AnalysisDomain, DomainConfig] = {
         zone_types=frozenset({
             "cabin", "saloon", "pantry", "storage", "workshop",
             "forepeak", "aft_cabin", "quarter_berth",
+            # Generische Wohnbereiche: standen in VALID_ZONE_TYPES, waren aber
+            # keiner Domäne zugeordnet und fielen damit still aus der
+            # Domänen-Abdeckung heraus.
+            "crew_area", "guest_area",
         }),
         component_categories=frozenset({
             "berth", "mattress", "cushion", "upholstery",
@@ -238,7 +244,8 @@ DOMAIN_CONFIGS: dict[AnalysisDomain, DomainConfig] = {
 
     AnalysisDomain.MAINTENANCE_SERVICE: DomainConfig(
         i18n_key="domain.maintenance_service",
-        zone_types=frozenset({"service_area", "maintenance_hatch", "boatyard"}),  # Maintenance-specific zones
+        # "technical" (Technikraum) stand in VALID_ZONE_TYPES ohne Domänenbezug.
+        zone_types=frozenset({"service_area", "maintenance_hatch", "boatyard", "technical"}),
         component_categories=frozenset({
             "antifouling", "zinc_anode", "engine_oil", "gear_oil",
             "coolant", "impeller", "fuel_filter", "oil_filter",

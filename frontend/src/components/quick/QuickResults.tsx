@@ -1,5 +1,14 @@
 import { useState, useEffect } from 'react'
-import { RotateCcw, CheckCircle, AlertTriangle, XCircle } from 'lucide-react'
+import {
+  RotateCcw,
+  CheckCircle,
+  AlertTriangle,
+  XCircle,
+  Lightbulb,
+  MapPin,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react'
 import type { QuickAnalysisResponse, QuickModuleResult, AnalysisModule } from '../../types'
 import { ANALYSIS_MODULE_LABELS } from '../../types'
 import ScoreGauge from '../analysis/ScoreGauge'
@@ -25,6 +34,31 @@ const CONFIDENCE_STYLES: Record<string, string> = {
   benchmark: 'bg-sand-100 text-navy-700 border-sand-300',
 }
 
+/**
+ * Ein Einzelbefund, wie ihn das Backend liefert
+ * (`_extract_key_findings` in `app/api/routes/quick_analysis.py`):
+ * finding, severity, suggestion, confidence, location.
+ * Suggestion/location sind pro Warnung optional — die Analysemodule setzen sie
+ * nicht durchgängig. Deshalb werden sie hier nur gerendert, wenn vorhanden.
+ */
+interface QuickKeyFinding {
+  finding: string
+  severity: string
+  suggestion?: string | null
+  confidence?: string | null
+  location?: string | null
+}
+
+/**
+ * Module, die die Schnellanalyse (Level 1) überhaupt ausführt — Spiegel von
+ * `LEVEL1_MODULES` in `app/api/routes/quick_analysis.py`. Ist eines davon
+ * `available: false`, liegt das NICHT an der Zugangsstufe, sondern an fehlenden
+ * Daten; der Grund darf dann nicht als „Level 2+" etikettiert werden.
+ */
+const LEVEL1_MODULE_NAMES = new Set(['ergonomics', 'volume_storage', 'emotional', 'market'])
+
+const FINDINGS_COLLAPSED_COUNT = 3
+
 const SEVERITY_ICONS = {
   critical: XCircle,
   warning: AlertTriangle,
@@ -39,6 +73,7 @@ const SEVERITY_COLORS = {
 
 function ModuleCard({ name, result, index = 0 }: { name: string; result: QuickModuleResult; index?: number }) {
   const label = ANALYSIS_MODULE_LABELS[name as AnalysisModule] ?? name
+  const [showAllFindings, setShowAllFindings] = useState(false)
   const scoreColor =
     result.score != null
       ? result.score >= 80
@@ -51,21 +86,37 @@ function ModuleCard({ name, result, index = 0 }: { name: string; result: QuickMo
       : 'text-navy-500'
 
   if (!result.available) {
+    // Ein Level-1-Modul ohne Ergebnis scheitert an Daten, nicht an der
+    // Zugangsstufe — sonst behauptet die Karte einen falschen Grund.
+    const isLevel1 = LEVEL1_MODULE_NAMES.has(name)
     return (
       <div
         className="bg-sand-50 border border-sand-200 rounded-xl p-5 opacity-70 shadow-sm animate-fade-in-up"
         style={{ animationDelay: `${index * 80}ms` }}
       >
-        <div className="flex items-start justify-between mb-2">
+        <div className="flex items-start justify-between gap-2 mb-2">
           <span className="text-sm font-semibold text-navy-700">{label}</span>
-          <span className="text-xs px-2.5 py-1 rounded-full bg-sand-100 border border-sand-300 text-navy-600">
-            Level 2+
+          <span
+            className={`text-xs px-2.5 py-1 rounded-full border whitespace-nowrap ${
+              isLevel1
+                ? 'bg-amber-100 border-amber-300 text-amber-700'
+                : 'bg-sand-100 border-sand-300 text-navy-600'
+            }`}
+          >
+            {isLevel1 ? 'Nicht beurteilbar' : 'Level 2+'}
           </span>
         </div>
-        {result.reason && <p className="text-xs text-navy-600 leading-relaxed">{result.reason}</p>}
+        <p className="text-xs text-navy-600 leading-relaxed">
+          {result.reason ?? 'Kein Grund angegeben — dieses Modul lieferte kein Ergebnis.'}
+        </p>
       </div>
     )
   }
+
+  const findings: QuickKeyFinding[] = result.key_findings ?? []
+  const hasMoreFindings = findings.length > FINDINGS_COLLAPSED_COUNT
+  const visibleFindings =
+    hasMoreFindings && !showAllFindings ? findings.slice(0, FINDINGS_COLLAPSED_COUNT) : findings
 
   return (
     <div
@@ -102,21 +153,76 @@ function ModuleCard({ name, result, index = 0 }: { name: string; result: QuickMo
         </div>
       )}
 
-      {/* Key findings */}
-      {result.key_findings && result.key_findings.length > 0 && (
-        <ul className="space-y-2">
-          {result.key_findings.slice(0, 3).map((f, i) => {
-            const sev = f.severity as keyof typeof SEVERITY_ICONS
-            const Icon = SEVERITY_ICONS[sev] ?? CheckCircle
-            const color = SEVERITY_COLORS[sev] ?? 'text-navy-600'
-            return (
-              <li key={i} className="flex items-start gap-2">
-                <Icon className={`w-3.5 h-3.5 mt-0.5 shrink-0 ${color}`} />
-                <span className="text-xs text-navy-700 leading-relaxed">{f.finding}</span>
-              </li>
-            )
-          })}
-        </ul>
+      {/* Key findings — Befund, Ort und Empfehlung (Konvention: jeder Befund
+          nennt seinen Ort, jede Warnung ihre Empfehlung) */}
+      {findings.length > 0 && (
+        <>
+          <ul className="space-y-3">
+            {visibleFindings.map((f, i) => {
+              const sev = f.severity as keyof typeof SEVERITY_ICONS
+              const Icon = SEVERITY_ICONS[sev] ?? CheckCircle
+              const color = SEVERITY_COLORS[sev] ?? 'text-navy-600'
+              // Abweichende Einzelkonfidenz sichtbar machen; entspricht sie der
+              // Modulkonfidenz, wäre das Badge nur Rauschen.
+              const findingConfidence =
+                f.confidence && f.confidence !== result.confidence ? f.confidence : null
+              return (
+                <li key={i} className="flex items-start gap-2">
+                  <Icon className={`w-3.5 h-3.5 mt-0.5 shrink-0 ${color}`} />
+                  <div className="min-w-0">
+                    <p className="text-xs text-navy-700 leading-relaxed">{f.finding}</p>
+                    {f.location && (
+                      <p className="mt-1 flex items-start gap-1.5 text-xs text-navy-500 leading-relaxed">
+                        <MapPin className="w-3 h-3 mt-0.5 shrink-0" />
+                        <span>
+                          <span className="font-medium">Ort:</span> {f.location}
+                        </span>
+                      </p>
+                    )}
+                    {f.suggestion && (
+                      <p className="mt-1 flex items-start gap-1.5 text-xs text-ocean-700 leading-relaxed">
+                        <Lightbulb className="w-3 h-3 mt-0.5 shrink-0" />
+                        <span>
+                          <span className="font-medium">Empfehlung:</span> {f.suggestion}
+                        </span>
+                      </p>
+                    )}
+                    {findingConfidence && (
+                      <span
+                        className={`mt-1.5 inline-block text-xs px-2 py-0.5 rounded-full border ${
+                          CONFIDENCE_STYLES[findingConfidence] ?? CONFIDENCE_STYLES.benchmark
+                        }`}
+                      >
+                        {CONFIDENCE_LABELS[findingConfidence] ?? findingConfidence}
+                      </span>
+                    )}
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
+
+          {hasMoreFindings && (
+            <button
+              type="button"
+              onClick={() => setShowAllFindings((prev) => !prev)}
+              className="mt-3 flex items-center gap-1.5 text-xs font-medium text-ocean-600 hover:text-ocean-700 transition-colors duration-200"
+              aria-expanded={showAllFindings}
+            >
+              {showAllFindings ? (
+                <>
+                  <ChevronUp className="w-3.5 h-3.5" />
+                  Weniger anzeigen
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="w-3.5 h-3.5" />
+                  Alle {findings.length} Befunde anzeigen
+                </>
+              )}
+            </button>
+          )}
+        </>
       )}
 
       {/* Confidence badge */}
@@ -246,8 +352,13 @@ export default function QuickResults({ result, onNewAnalysis }: QuickResultsProp
         {/* Unavailable modules */}
         {unavailableModules.length > 0 && (
           <div className="animate-fade-in-up" style={{ animationDelay: '300ms' }}>
-            <p className="text-xs font-semibold tracking-wider-premium uppercase text-navy-500 mb-4">
-              Zusätzliche Module (Level 2+)
+            <p className="text-xs font-semibold tracking-wider-premium uppercase text-navy-500 mb-2">
+              Nicht ausgewertete Module
+            </p>
+            <p className="text-xs text-navy-600 mb-4 leading-relaxed">
+              Jede Karte nennt den Grund: „Level 2+" heißt, das Modul braucht die
+              Profi-Datenbasis; „Nicht beurteilbar" heißt, für dieses Boot fehlten die
+              nötigen Angaben.
             </p>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {unavailableModules.map(([name, mod], idx) => (

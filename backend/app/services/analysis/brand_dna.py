@@ -12,6 +12,8 @@ mistaken for a real score.
 import logging
 import math
 
+from app.services.analysis.subscore import aggregate_subscores
+
 try:
     import numpy as np
 
@@ -876,6 +878,8 @@ def run_brand_dna_analysis(
         ),
     ]
 
+    _failed_subs: set[str] = set()
+
     for name, fn in analyses:
         try:
             score, warnings, metrics = fn()  # type: ignore[operator]
@@ -884,7 +888,7 @@ def run_brand_dna_analysis(
             all_metrics[name] = metrics
         except Exception:
             logger.exception("Error in brand_dna sub-analysis %s", name)
-            sub_scores[name] = 0.0
+            _failed_subs.add(name)
             all_warnings.append({
                 "code": "ANALYSIS_ERROR",
                 "severity": "critical",
@@ -892,7 +896,15 @@ def run_brand_dna_analysis(
                 "suggestion": "Eingabedaten und Referenzmodelle überprüfen.",
             })
 
-    overall = sum(sub_scores.get(k, 50.0) * w for k, w in weights.items())
+    overall = aggregate_subscores(
+        sub_scores, weights, failed=_failed_subs, default=50.0
+    )
+    if overall is None:
+        # Jede Teilanalyse ist ausgefallen — keine Note erfinden.
+        overall = 0.0
+        _all_subs_failed = True
+    else:
+        _all_subs_failed = False
 
     # Collect unique suggestions from warnings
     all_suggestions: list[str] = []
@@ -903,8 +915,19 @@ def run_brand_dna_analysis(
 
     all_warnings.sort(key=lambda w: SEVERITY_ORDER.get(w.get("severity", "info"), 2))
 
+    if _all_subs_failed:
+        # Kein einziger Teilscore war verwertbar. Statt einer erfundenen
+        # Note meldet sich das Modul als nicht beurteilbar (Modul-Skip-Vertrag).
+        return {
+            "module": "brand_dna",
+            "available": False,
+            "reason": "Alle Teilanalysen fehlgeschlagen - kein belastbares Ergebnis.",
+            "warnings": all_warnings,
+        }
+
     return {
         "module": "brand_dna",
+        "degraded_subanalyses": sorted(_failed_subs),
         "overall_score": round(overall, 1),
         "sub_scores": {k: round(v, 1) for k, v in sub_scores.items()},
         "warnings": all_warnings,

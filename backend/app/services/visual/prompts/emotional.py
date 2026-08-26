@@ -1,16 +1,43 @@
 """Emotional design impact prompt for yacht photos."""
 
+from app.services.visual.prompt_context import (
+    ASSESSABILITY_RULES,
+    CLASS_FALLBACK_NOTICE,
+    build_zone_note,
+    resolve_boat_class_context,
+)
+
+# Alle 13 Bootsklassen aus BoatClass. Ohne eigenen Eintrag wuerde eine Klasse
+# still gegen den Fahrtensegler-Massstab bewertet (B-3).
 BOAT_CLASS_CONTEXT = {
     "small_sail": "Kleine Segelyacht (8-12m). Gemuetlichkeit und Geborgenheit sind positiv. Kompaktheit ist normal. Bewerte, ob der Raum trotz begrenzter Groesse einladend wirkt.",
     "cruising_sail": "Fahrtensegelyacht (12-18m). Balance zwischen Geborgenheit und Offenheit. Der Raum soll zum laengeren Aufenthalt einladen. Natuerliches Licht ist wichtig.",
+    "racing_sail": "Regattayacht. Die emotionale Wirkung entsteht aus Purismus und Zweckform, nicht aus Wohnlichkeit. Sichtbares Laminat, offene Struktur und Kargheit sind Teil der Identitaet. Bewerte Klarheit, Konsequenz und sportliche Anmutung.",
+    "daysailer": "Daysailer/Weekender. Die Wirkung entsteht im Cockpit und an Deck: Leichtigkeit, Naehe zum Wasser, klare Linien. Unter Deck genuegt eine freundliche, helle Rueckzugsecke - Luxuswirkung wird nicht erwartet.",
+    "motorsailer": "Motorsegler. Der Deckssalon mit Rundumsicht ist das emotionale Zentrum: Helligkeit und Panoramablick sind die Staerke. Bewerte, ob der Uebergang vom hellen Salon ins dunklere Unterdeck bewusst gestaltet oder ein harter Bruch ist.",
+    "catamaran_sail": "Segel-Katamaran. Erwartet wird Helligkeit, Weite und ein flaechiger, offener Salon mit Durchblick nach aussen. Die schmalen Rumpfkabinen duerfen hoehlenartig wirken, solange Licht und Belueftung stimmen - bewerte sie nicht am Massstab des Salons.",
+    "catamaran_motor": "Motor-Katamaran. Grosszuegigkeit und fliessender Uebergang zwischen Innen- und Aussenbereich praegen den Eindruck. Erwartet wird eine loungeartige, helle Wirkung mit klarer Zonierung.",
+    "small_motor": "Kleine Motoryacht (unter 12m). Freundlich, hell und unkompliziert. Kompakte Kajuete ist normal. Bewerte, ob der Aufenthalt an Bord einladend wirkt - nicht, ob der Raum beeindruckt.",
     "large_motor": "Grosse Motoryacht (18-30m). Luxurioese Grosszuegigkeit erwartet. Raeume sollen beeindrucken und gleichzeitig Wohlbefinden vermitteln. Raumdramaturgie wichtig.",
+    "sport_cruiser": "Sport-Cruiser. Dynamik, Sportlichkeit und ein loungeartiges Cockpit praegen die Wirkung. Niedrige Innenhoehen sind bauartbedingt und kein emotionaler Mangel. Bewerte, ob das sportliche Versprechen des Aussendesigns innen eingeloest wird.",
+    "trawler": "Trawler/Verdraenger. Erwartet werden Behaglichkeit, Soliditaet und ein wohnliches, fast hausartiges Gefuehl. Das Steuerhaus mit Aussicht ist ein emotionaler Schwerpunkt. Nicht Glamour, sondern Geborgenheit auf langer Fahrt ist der Massstab.",
+    "explorer": "Explorer/Expeditionsyacht. Der Eindruck lebt von Robustheit, Ehrlichkeit der Materialien und dem Gefuehl von Autarkie. Sichtbare Technik und funktionale Raeume sind Teil der Erzaehlung, kein Mangel. Warmes Licht gegen die harte Bauweise ist ein Qualitaetsmerkmal.",
     "superyacht": "Superyacht (30m+). Architektonisches Erlebnis. Jede Sichtachse kuratiert, jeder Raum inszeniert. Emotionale Wirkung auf hoechstem Niveau erwartet.",
 }
 
 SPATIAL_EXPECTATIONS_BY_CLASS = {
     "small_sail": "Auf einer kleinen Segelyacht ist Kompaktheit NORMAL. Ein Raum, der sich trotz 2m Breite gemuetlich anfuehlt, verdient eine hohe Bewertung. Bewerte nicht nach absoluter Groesse, sondern nach Raumgefuehl relativ zur Bootsklasse.",
     "cruising_sail": "Auf einer Fahrtenyacht wird ein ausgewogenes Raumgefuehl erwartet. Nicht luxurioes, aber auch nicht beengend. Natuerliches Licht und durchdachte Proportionen sind entscheidend.",
-    "large_motor": "Auf einer grossen Motoryacht wird Grosszuegigkeit erwartet. Raeume sollen eine gewisse Dramaturgie haben — der Salon soll beeindrucken, die Kabinen sollen Rueckzugsort sein.",
+    "racing_sail": "Auf einer Regattayacht ist ein karger, offener Innenraum die Norm. Fehlender Ausbau ist kein Mangel. Bewerte, ob die Reduktion konsequent und sauber gestaltet ist.",
+    "daysailer": "Auf einem Daysailer wird unter Deck kein Wohnraum erwartet. Der emotionale Massstab liegt im Cockpit: Offenheit, Sitzkomfort, Naehe zum Wasser.",
+    "motorsailer": "Auf einem Motorsegler wird ein heller Deckssalon mit Rundumsicht erwartet. Der Massstab ist der Kontrast zwischen Panorama-Ebene und geschuetztem Unterdeck.",
+    "catamaran_sail": "Auf einem Segel-Katamaran wird ein breiter, heller Salon erwartet, aber schmale Rumpfkabinen sind bauartbedingt normal. Bewerte beide Bereiche mit unterschiedlichem Massstab.",
+    "catamaran_motor": "Auf einem Motor-Katamaran wird viel nutzbare Flaeche und ein fliessender Uebergang nach aussen erwartet. Der Massstab ist Weite und Zonierung, nicht Deckenhoehe.",
+    "small_motor": "Auf einer kleinen Motoryacht ist eine kompakte Kajuete normal. Bewerte Helligkeit und Aufenthaltsqualitaet, nicht Volumen.",
+    "large_motor": "Auf einer grossen Motoryacht wird Grosszuegigkeit erwartet. Raeume sollen eine gewisse Dramaturgie haben - der Salon soll beeindrucken, die Kabinen sollen Rueckzugsort sein.",
+    "sport_cruiser": "Auf einem Sport-Cruiser sind niedrige Innenhoehen bauartbedingt. Der Massstab ist die Aussenlounge und die sportliche Konsequenz der Linien.",
+    "trawler": "Auf einem Trawler wird ein wohnliches, seegehendes Raumgefuehl mit durchgehender Stehhoehe erwartet. Massstab ist Behaglichkeit und Sicherheit bei Seegang, nicht Repraesentation.",
+    "explorer": "Auf einer Expeditionsyacht duerfen Technik- und Vorratsraeume Wohnflaeche kosten. Massstab ist Funktion und Autarkie; Waerme entsteht ueber Licht und Materialien, nicht ueber Flaeche.",
     "superyacht": "Auf einer Superyacht wird architektonische Rauminszenierung erwartet. Jede Sichtachse, jeder Uebergang, jede Materialwahl muss einem Gesamtkonzept folgen.",
 }
 
@@ -24,7 +51,7 @@ def get_emotional_impact_prompt(
     """Generate the emotional design impact prompt for Claude vision API.
 
     Args:
-        boat_class: One of small_sail, cruising_sail, large_motor, superyacht.
+        boat_class: One of the 13 BoatClass values (e.g. 'cruising_sail', 'trawler').
         zone_type: Optional zone type for context.
         context: Optional additional context dict.
         visual_context: Optional boat-specific context from BoatDNA (includes expert knowledge).
@@ -32,12 +59,12 @@ def get_emotional_impact_prompt(
     Returns:
         German-language prompt string requesting JSON output.
     """
-    class_desc = BOAT_CLASS_CONTEXT.get(boat_class, BOAT_CLASS_CONTEXT["cruising_sail"])
-    spatial_expectation = SPATIAL_EXPECTATIONS_BY_CLASS.get(boat_class, SPATIAL_EXPECTATIONS_BY_CLASS["cruising_sail"])
+    class_desc, class_is_fallback = resolve_boat_class_context(boat_class, BOAT_CLASS_CONTEXT)
+    spatial_expectation, _ = resolve_boat_class_context(boat_class, SPATIAL_EXPECTATIONS_BY_CLASS)
+    fallback_notice = CLASS_FALLBACK_NOTICE if class_is_fallback else ""
 
-    zone_note = ""
-    if zone_type:
-        zone_note = f"\nDieser Bereich ist: {zone_type}."
+    # Nutzerfreitext darf NICHT roh in den Prompt (Prompt-Injection, SEC-3/B-6).
+    zone_note = build_zone_note(zone_type)
 
     visual_context_section = ""
     if visual_context:
@@ -45,10 +72,10 @@ def get_emotional_impact_prompt(
 
     return f"""Du bist ein erfahrener Yachtdesigner und Innenarchitekt mit besonderem Gespuer fuer emotionale Raumwirkung. Du verstehst, warum manche Raeume als premium, einladend oder beklemmend empfunden werden. Analysiere dieses Bild.{visual_context_section}
 
-Bootsklasse: {class_desc}{zone_note}
+Bootsklasse: {class_desc}{fallback_notice}{zone_note}
 
 {spatial_expectation}
-
+{ASSESSABILITY_RULES}
 Bewerte die emotionale Wirkung dieses Raums aus der Perspektive eines anspruchsvollen Kunden:
 
 1. **Erster Eindruck**: Was ist die unmittelbare emotionale Reaktion beim Betrachten?
@@ -67,7 +94,7 @@ REGELN:
 Antworte ausschliesslich mit einem JSON-Objekt (kein zusaetzlicher Text):
 
 {{
-    "emotional_score": <float 0-100>,
+    "emotional_score": <float 0-100 oder null>,
     "assessable": <bool>,
     "first_impression": {{
         "description": "<string: 1-2 Saetze zum Gesamteindruck>",

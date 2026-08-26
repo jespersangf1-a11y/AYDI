@@ -6,6 +6,7 @@ and integrated into the AYDI knowledge retrieval system.
 """
 
 import pytest
+import re
 import sys
 import os
 
@@ -31,6 +32,10 @@ from app.services.knowledge.markdown_knowledge_loader import (
     get_markdown_knowledge_summary,
     get_relevant_slugs_for_context,
     SLUG_TO_RETRIEVAL_CONTEXT,
+    _iter_concept_sections,
+    _iter_tables_in,
+    _clean_entity_name,
+    _MANUFACTURER_SECTION_RE,
 )
 
 
@@ -239,3 +244,111 @@ class TestSummary:
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
+
+
+class TestCorpusWideExtractionCoverage:
+    """Der Korpus nutzt mehrere Dokumentkonventionen — die Extraktoren muessen alle lesen.
+
+    Vor der Generalisierung der Extraktoren lieferten nur 22 von 260 Dokumenten
+    Herstellerdaten und nur 8 von 260 Erfahrungsberichte: Das Wissen stand im
+    Text, war fuer Analyse und Lexikon aber unsichtbar. Diese Tests halten die
+    Abdeckung fest, damit sie nicht still zurueckfaellt.
+    """
+
+    def test_manufacturers_cover_large_share_of_corpus(self):
+        knowledge = get_markdown_knowledge()
+        with_mfr = [k for k, v in knowledge.items() if v.get("manufacturers")]
+        assert len(with_mfr) >= 140, (
+            f"Nur {len(with_mfr)} von {len(knowledge)} Dokumenten liefern Herstellerdaten "
+            f"(erwartet >= 140). Vermutlich erkennt ein Extraktor eine Dokumentkonvention nicht mehr."
+        )
+
+    def test_erfahrungsberichte_cover_corpus(self):
+        knowledge = get_markdown_knowledge()
+        with_reports = [k for k, v in knowledge.items() if v.get("erfahrungsberichte")]
+        assert len(with_reports) >= 50, (
+            f"Nur {len(with_reports)} von {len(knowledge)} Dokumenten liefern Erfahrungsberichte "
+            f"(erwartet >= 50)."
+        )
+
+    def test_reports_carry_content_not_metadata(self):
+        """"> Quelle: ..." und "> Confidence: ..." stehen unter fast jedem Bericht.
+
+        Sie sind Herkunftsangabe, nicht Berichtstext — landen sie im Text-Feld,
+        bekommt der Nutzer im Lexikon eine Quellenzeile statt einer Erfahrung.
+        """
+        offenders = [
+            r
+            for r in get_all_erfahrungsberichte()
+            if re.match(r"^\**(?:Quelle|Source|Confidence|Konfidenz)\b", r.get("text", ""), re.I)
+        ]
+        assert not offenders, (
+            f"{len(offenders)} Erfahrungsberichte enthalten eine Metazeile als Text, "
+            f"z.B. {offenders[0]['text'][:120]!r}"
+        )
+
+    def test_manufacturer_names_are_plausible(self):
+        """Namen kommen aus Ueberschriften und Tabellenzellen — Muell muss gefiltert sein."""
+        names = [m.get("name", "") for m in get_all_manufacturers()]
+        assert names, "Keine Hersteller extrahiert"
+        bad = [
+            n
+            for n in names
+            if not n
+            or len(n) > 80
+            or not re.search(r"[A-Za-zÄÖÜäöüß]", n)
+            or n.strip().startswith(("|", "#", "-"))
+        ]
+        assert not bad, f"Unplausible Herstellernamen: {bad[:10]}"
+
+    def test_reports_have_a_source(self):
+        missing = [r for r in get_all_erfahrungsberichte() if not (r.get("source") or "").strip()]
+        assert not missing, (
+            f"{len(missing)} Erfahrungsberichte ohne Quellenangabe — "
+            f"der Fensterdichtungs-Standard verlangt Quellenbelege."
+        )
+
+
+class TestConceptSectionHelpers:
+    """Unit-Tests der konzeptbasierten Abschnittssuche."""
+
+    def test_section_keeps_child_headings(self):
+        content = (
+            "## 7. Weitere Hersteller\n"
+            "### 7.1 Veneziani\n"
+            "Text A\n"
+            "## 8. Anderes Thema\n"
+            "Text B\n"
+        )
+        sections = list(_iter_concept_sections(content, _MANUFACTURER_SECTION_RE))
+        assert len(sections) == 1
+        _heading, body = sections[0]
+        assert "Veneziani" in body and "Text A" in body
+        assert "Text B" not in body, "Abschnitt darf nicht in das naechste H2 hineinlaufen"
+
+    def test_non_matching_heading_is_skipped(self):
+        content = "## 3. Materialien im Detail\nText\n"
+        assert list(_iter_concept_sections(content, _MANUFACTURER_SECTION_RE)) == []
+
+    def test_clean_entity_name_strips_markup_and_numbering(self):
+        assert _clean_entity_name("**AkzoNobel N.V.**") == "AkzoNobel N.V."
+        assert _clean_entity_name("7.2 Veneziani") == "Veneziani"
+
+    def test_clean_entity_name_rejects_generic_and_empty(self):
+        assert _clean_entity_name("Weitere Hersteller") == ""
+        assert _clean_entity_name("Vergleichsmatrix") == ""
+        assert _clean_entity_name("---") == ""
+        assert _clean_entity_name("") == ""
+        assert _clean_entity_name("x" * 200) == ""
+
+    def test_tables_are_found_in_body(self):
+        body = (
+            "Intro\n\n"
+            "| Hersteller | Land |\n"
+            "|---|---|\n"
+            "| Jabsco | USA |\n\n"
+            "Nachtext\n"
+        )
+        tables = list(_iter_tables_in(body))
+        assert len(tables) == 1
+        assert tables[0][0]["Hersteller"] == "Jabsco"

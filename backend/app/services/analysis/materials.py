@@ -6,7 +6,26 @@ All user-facing strings are in German.
 """
 import logging
 
+from app.services.analysis.subscore import aggregate_subscores
+
 logger = logging.getLogger(__name__)
+
+
+def _knowledge_lookup_hint(source: str) -> str:
+    """Handlungsvorschlag fuer Wissensbefunde ohne hinterlegte Massnahme.
+
+    Der Korpus fuehrt nicht zu jedem Fehlerbild eine Massnahme. Statt die
+    Warnung ohne Vorschlag auszuliefern (Konventionsbruch) oder einen Rat zu
+    erfinden (Belegbruch), verweist sie auf den Quellartikel.
+    """
+    label = (source or "").strip().replace("_", " ")
+    if not label:
+        return "Zugehörigen Wissensartikel im Lexikon nachschlagen — im Korpus ist für dieses Fehlerbild keine Maßnahme hinterlegt."
+    return (
+        f"Im Wissensartikel „{label[:80]}\" nachschlagen — für dieses Fehlerbild "
+        f"ist im Korpus keine Maßnahme hinterlegt."
+    )
+
 
 # Try to import knowledge databases for enriched analysis
 try:
@@ -300,7 +319,7 @@ def analyze_material_durability(
     missing_data = 0
 
     for zm in zone_materials:
-        mat = zm["material"]
+        mat = zm.get("material") or {}
         lifespan = mat.get("lifespan_years")
 
         if lifespan is None:
@@ -387,7 +406,7 @@ def analyze_maintenance_burden(
     annual_maintenance = 0.0
 
     for zm in zone_materials:
-        mat = zm["material"]
+        mat = zm.get("material") or {}
         area = zm.get("area_sqm", 0.0)
         cost = mat.get("cost_per_unit", 0.0)
         factor = mat.get("maintenance_cost_factor", 0.0)
@@ -470,7 +489,7 @@ def analyze_known_issues(
     critical_issues = 0
 
     for zm in zone_materials:
-        mat = zm["material"]
+        mat = zm.get("material") or {}
         issues = mat.get("known_issues") or []
 
         for issue in issues:
@@ -575,7 +594,7 @@ def analyze_material_compatibility(
         # Check dissimilar metals
         metals = [
             zm for zm in mats
-            if zm["material"].get("subcategory") == "metal"
+            if (zm.get("material") or {}).get("subcategory") == "metal"
         ]
         if len(metals) >= 2:
             metal_types = set()
@@ -642,7 +661,7 @@ def analyze_material_weight(
     missing_data = 0
 
     for zm in zone_materials:
-        mat = zm["material"]
+        mat = zm.get("material") or {}
         props = mat.get("properties") or {}
         density = props.get("density_kg_m3")
         thickness = props.get("thickness_mm")
@@ -738,7 +757,7 @@ def analyze_lifecycle_cost(
     total_area = 0.0
 
     for zm in zone_materials:
-        mat = zm["material"]
+        mat = zm.get("material") or {}
         area = zm.get("area_sqm", 0.0)
         cost_per_unit = mat.get("cost_per_unit", 0.0)
         maintenance_factor = mat.get("maintenance_cost_factor", 0.0)
@@ -779,7 +798,7 @@ def analyze_lifecycle_cost(
         avg_cost = total_lifecycle / len(lifecycle_costs)
         for i, zm in enumerate(zone_materials):
             if avg_cost > 0 and lifecycle_costs[i] > 3.0 * avg_cost:
-                mat = zm["material"]
+                mat = zm.get("material") or {}
                 warnings.append({
                     "severity": "warning",
                     "message": (
@@ -847,7 +866,7 @@ def analyze_uv_exposure(
             continue
 
         uv_zones_checked += 1
-        mat = zm["material"]
+        mat = zm.get("material") or {}
         mat_props = mat.get("properties") or {}
         uv_resistant = mat_props.get("uv_resistant", True)
 
@@ -910,7 +929,7 @@ def analyze_moisture_risk(
         if zone_type not in _HIGH_MOISTURE_ZONE_TYPES:
             continue
 
-        mat = zm["material"]
+        mat = zm.get("material") or {}
         subcategory = mat.get("subcategory")
         if subcategory not in _WOOD_SUBCATEGORIES:
             continue
@@ -1006,6 +1025,8 @@ def run_materials_analysis(
         ("moisture_risk", lambda: analyze_moisture_risk(zone_materials, config)),
     ]
 
+    _failed_subs: set[str] = set()
+
     for name, fn in analyses:
         try:
             score, warnings, metrics = fn()
@@ -1014,7 +1035,7 @@ def run_materials_analysis(
             all_metrics[name] = metrics
         except Exception:
             logger.exception("Error in materials sub-analysis %s", name)
-            sub_scores[name] = 0.0
+            _failed_subs.add(name)
             all_warnings.append({
                 "code": "ANALYSIS_ERROR",
                 "severity": "critical",
@@ -1022,7 +1043,15 @@ def run_materials_analysis(
                 "suggestion": "Materialzuweisungen überprüfen.",
             })
 
-    overall = sum(sub_scores.get(k, 50.0) * w for k, w in weights.items())
+    overall = aggregate_subscores(
+        sub_scores, weights, failed=_failed_subs, default=50.0
+    )
+    if overall is None:
+        # Jede Teilanalyse ist ausgefallen — keine Note erfinden.
+        overall = 0.0
+        _all_subs_failed = True
+    else:
+        _all_subs_failed = False
 
     for w in all_warnings:
         suggestion = w.get("suggestion")
@@ -1078,14 +1107,33 @@ def run_materials_analysis(
                             f"[Wissensdatenbank] {fb.get('title_de', '')}: "
                             f"{fb.get('symptom_de', '')[:150]}"
                         ),
-                        "suggestion": fb.get("massnahme_de", "")[:150] if fb.get("massnahme_de") else None,
+                        # Kein erfundener Rat: Fehlt im Korpus die Maßnahme, verweist
+                        # die Empfehlung auf den Quellartikel. Die Projektkonvention
+                        # "jede Warnung hat einen Handlungsvorschlag" bleibt so erfüllt,
+                        # ohne etwas zu behaupten, das nicht belegt ist.
+                        "suggestion": (
+                            fb.get("massnahme_de", "")[:150]
+                            if fb.get("massnahme_de")
+                            else _knowledge_lookup_hint(fb.get("knowledge_source", ""))
+                        ),
                         "source": f"markdown:{fb.get('knowledge_source', '')}",
                     })
         except Exception:
             logger.exception("Error enriching materials with markdown knowledge")
 
+    if _all_subs_failed:
+        # Kein einziger Teilscore war verwertbar. Statt einer erfundenen
+        # Note meldet sich das Modul als nicht beurteilbar (Modul-Skip-Vertrag).
+        return {
+            "module": "materials",
+            "available": False,
+            "reason": "Alle Teilanalysen fehlgeschlagen - kein belastbares Ergebnis.",
+            "warnings": all_warnings,
+        }
+
     return {
         "module": "materials",
+        "degraded_subanalyses": sorted(_failed_subs),
         "overall_score": round(overall, 1),
         "sub_scores": {k: round(v, 1) for k, v in sub_scores.items()},
         "warnings": all_warnings,

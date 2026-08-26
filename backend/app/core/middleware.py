@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 import time
 import uuid
 from collections import defaultdict
@@ -128,16 +129,23 @@ class CSRFMiddleware(BaseHTTPMiddleware):
         "/api/v1/auth/register",
         "/api/v1/auth/refresh",
         "/api/v1/auth/logout",
-        "/api/v1/quick-analysis",  # public endpoint
         "/health",
         "/docs",
         "/openapi.json",
     )
+    # Exakte Pfade statt Praefix: "/api/v1/quick-analysis" stand zuvor in der
+    # Praefixliste und nahm damit auch die Unterrouten vom CSRF-Schutz aus —
+    # insbesondere POST /api/v1/quick-analysis/{id}/images. Ausgenommen gehoert
+    # nur der oeffentliche, unauthentifizierte Einstieg selbst.
+    EXEMPT_PATHS = frozenset({"/api/v1/quick-analysis"})
 
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response:
         if request.method in self.EXEMPT_METHODS:
+            return await call_next(request)
+        path = request.url.path.rstrip("/") or "/"
+        if path in self.EXEMPT_PATHS:
             return await call_next(request)
         if any(request.url.path.startswith(p) for p in self.EXEMPT_PATH_PREFIXES):
             return await call_next(request)
@@ -180,14 +188,44 @@ class LocaleMiddleware(BaseHTTPMiddleware):
         return response
 
     def _detect_locale(self, request: Request) -> str:
+        """Sprache aus ``?lang=`` oder ``Accept-Language`` bestimmen.
+
+        Die Qualitaetswerte (``q=``) wurden zuvor ignoriert — es gewann schlicht
+        der erste unterstuetzte Eintrag in der Kopfzeile. Bei
+        ``Accept-Language: de;q=0.2, en;q=0.9`` kam damit Deutsch heraus, obwohl
+        der Browser ausdruecklich Englisch bevorzugt. Ohne q-Angabe gilt laut
+        RFC 9110 q=1.0.
+        """
         lang = request.query_params.get("lang")
         if lang and lang.lower() in self.SUPPORTED:
             return lang.lower()
+
+        candidates: list[tuple[float, int, str]] = []
         accept = request.headers.get("accept-language", "")
-        for part in accept.split(","):
-            code = part.strip().split(";")[0].strip().split("-")[0].lower()
-            if code in self.SUPPORTED:
-                return code
+        for position, part in enumerate(accept.split(",")):
+            token = part.strip()
+            if not token:
+                continue
+            pieces = token.split(";")
+            code = pieces[0].strip().split("-")[0].lower()
+            if code not in self.SUPPORTED:
+                continue
+            quality = 1.0
+            for parameter in pieces[1:]:
+                name, _, value = parameter.partition("=")
+                if name.strip().lower() == "q":
+                    try:
+                        quality = float(value.strip())
+                    except ValueError:
+                        quality = 0.0
+                    break
+            if quality <= 0.0:  # q=0 heisst ausdruecklich "nicht akzeptiert"
+                continue
+            # Bei gleichem q entscheidet die Reihenfolge in der Kopfzeile.
+            candidates.append((-quality, position, code))
+
+        if candidates:
+            return min(candidates)[2]
         return "de"
 
 
@@ -273,23 +311,59 @@ class ErrorHandlingMiddleware(BaseHTTPMiddleware):
 # ---------------------------------------------------------------------------
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
-    LIMITS: dict[str, tuple[int, int]] = {
-        "/api/v1/quick-analysis": (30, 60),
-        "/api/v1/auth": (20, 60),
-        "/api/v1/images": (10, 60),
-        "/api/v1/import-cad": (10, 60),
-        "/api/v1/projects": (120, 60),
-        "/api/v1/layouts": (120, 60),
-        "/api/v1/knowledge": (60, 60),
-    }
+    """Einfaches IP-Limit je Routengruppe.
+
+    Die Zuordnung lief frueher ueber reine Praefixe und traf damit die teuersten
+    Routen NICHT:
+
+    * ``/api/v1/projects/{id}/images`` — die Route, die eine kostenpflichtige
+      Claude-Vision-Analyse ausloest — beginnt mit ``/api/v1/projects`` und
+      landete im 120/min-Eimer statt im 10/min-Eimer fuer Bilder.
+    * ``/api/v1/import-cad`` existierte als Route ueberhaupt nicht; die echten
+      Pfade sind ``/api/v1/projects/{id}/import/step|iges`` und
+      ``/api/v1/projects/{id}/layouts/import-dxf`` — alle ebenfalls im
+      120/min-Eimer. Der CAD-Eimer war also vollstaendig wirkungslos.
+
+    Darum jetzt gemusterte Zuordnung statt Praefix, und die Reihenfolge
+    entscheidet: **teuerste zuerst**. Ein Treffer weiter oben gewinnt, damit eine
+    Unterroute nie in den grosszuegigeren Eimer ihres Elternpfads faellt.
+    """
+
+    # (Name, Muster, (max_requests, window_seconds)) — Reihenfolge = Vorrang.
+    RULES: list[tuple[str, "re.Pattern[str]", tuple[int, int]]] = [
+        # Bildanalyse: jeder Aufruf kann eine kostenpflichtige Vision-Anfrage
+        # nach sich ziehen. Gilt fuer /images/analyze, /images/analyze-batch,
+        # /projects/{id}/images und /quick-analysis/{id}/images.
+        ("images", re.compile(r"^/api/v1/(?:.*/)?images(?:/|$)"), (10, 60)),
+        # CAD-Import: Parsen grosser Dateien, CPU-intensiv.
+        ("cad_import", re.compile(r"^/api/v1/.*/(?:import/|import-dxf)"), (10, 60)),
+        # Anmeldung: Schutz gegen Passwort-Durchprobieren.
+        ("auth", re.compile(r"^/api/v1/auth(?:/|$)"), (20, 60)),
+        # Unauthentifizierte Schnellanalyse.
+        ("quick_analysis", re.compile(r"^/api/v1/quick-analysis(?:/|$)"), (30, 60)),
+        ("knowledge", re.compile(r"^/api/v1/knowledge(?:/|$)"), (60, 60)),
+        ("projects", re.compile(r"^/api/v1/projects(?:/|$)"), (120, 60)),
+        ("layouts", re.compile(r"^/api/v1/layouts(?:/|$)"), (120, 60)),
+    ]
     DEFAULT_LIMIT = (120, 60)
+
+    # Zaehlerstand modulweit statt je Instanz, damit er von aussen geleert werden
+    # kann. Tests, die Autorisierung pruefen, teilen sich eine Client-IP und
+    # laufen sonst gegen das Limit der Route, die sie gerade testen — sie wuerden
+    # 429 statt 403/404 sehen und damit am eigentlichen Pruefgegenstand
+    # vorbeimessen.
+    _requests: dict[str, dict[str, list[float]]] = defaultdict(
+        lambda: defaultdict(list)
+    )
 
     def __init__(self, app: Any) -> None:
         super().__init__(app)
-        self._requests: dict[str, dict[str, list[float]]] = defaultdict(
-            lambda: defaultdict(list)
-        )
         self._lock = asyncio.Lock()
+
+    @classmethod
+    def reset(cls) -> None:
+        """Alle Zaehler leeren (fuer Tests)."""
+        cls._requests.clear()
 
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
@@ -299,7 +373,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
         client_ip = _client_ip(request)
         route_prefix = self._match_route(request.url.path)
-        max_requests, window = self.LIMITS.get(route_prefix, self.DEFAULT_LIMIT)
+        max_requests, window = self._limit_for(route_prefix)
 
         allowed = await self._check_rate(client_ip, route_prefix, max_requests, window)
         if not allowed:
@@ -316,10 +390,17 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
     def _match_route(self, path: str) -> str:
-        for prefix in self.LIMITS:
-            if path.startswith(prefix):
-                return prefix
+        """Name des Eimers fuer diesen Pfad — erste passende Regel gewinnt."""
+        for name, pattern, _limit in self.RULES:
+            if pattern.search(path):
+                return name
         return "default"
+
+    def _limit_for(self, route: str) -> tuple[int, int]:
+        for name, _pattern, limit in self.RULES:
+            if name == route:
+                return limit
+        return self.DEFAULT_LIMIT
 
     async def _check_rate(
         self, ip: str, route: str, max_requests: int, window: int
@@ -348,6 +429,47 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
 
 # ---------------------------------------------------------------------------
+# Security headers
+# ---------------------------------------------------------------------------
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    """Set the baseline browser-side security headers on every response.
+
+    Bisher setzte die App keinen einzigen dieser Header. Der wichtigste ist
+    ``X-Content-Type-Options: nosniff``: Nutzertext (z.B. ein ``model_name``
+    mit ``<script>``) wird in JSON-Antworten zurueckgespiegelt, und ohne
+    nosniff darf ein Browser eine solche Antwort als HTML interpretieren und
+    das Skript ausfuehren. Die uebrigen Header schliessen Clickjacking und
+    Referrer-Leaks aus.
+
+    HSTS wird nur gesetzt, wenn die App ohnehin sichere Cookies verlangt
+    (``COOKIE_SECURE``) — sonst wuerde eine lokale HTTP-Entwicklungsumgebung
+    sich selbst aussperren.
+    """
+
+    STATIC_HEADERS = {
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "DENY",
+        "Referrer-Policy": "no-referrer",
+        # Die API liefert ausschliesslich Daten, kein aktives Markup.
+        "Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'",
+        "Cross-Origin-Resource-Policy": "same-site",
+    }
+
+    async def dispatch(
+        self, request: Request, call_next: RequestResponseEndpoint
+    ) -> Response:
+        response = await call_next(request)
+        for header, value in self.STATIC_HEADERS.items():
+            response.headers.setdefault(header, value)
+        if getattr(settings, "COOKIE_SECURE", False):
+            response.headers.setdefault(
+                "Strict-Transport-Security", "max-age=31536000; includeSubDomains"
+            )
+        return response
+
+
+# ---------------------------------------------------------------------------
 # Registration helper
 # ---------------------------------------------------------------------------
 
@@ -360,12 +482,16 @@ def register_middleware(app: FastAPI) -> None:
     3. RateLimit (enforced before any work)
     4. CSRF (only on mutating cookie-authenticated requests)
     5. Locale (sets request-scoped locale)
+
+    SecurityHeaders wird zuletzt hinzugefuegt und laeuft damit weit aussen: die
+    Header sollen auch auf Fehler- und Rate-Limit-Antworten stehen.
     """
     app.add_middleware(LocaleMiddleware)
     app.add_middleware(CSRFMiddleware)
     app.add_middleware(RateLimitMiddleware)
     app.add_middleware(ErrorHandlingMiddleware)
     app.add_middleware(RequestContextMiddleware)
+    app.add_middleware(SecurityHeadersMiddleware)
     # Suppress access-log noise unless explicitly raised
     if not access_logger.handlers:
         access_logger.setLevel(settings.LOG_LEVEL)

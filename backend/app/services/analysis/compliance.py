@@ -8,6 +8,9 @@ import logging
 import math
 from collections import deque
 
+from app.core.validation import known_passage_widths, passage_width
+from app.services.analysis.subscore import aggregate_subscores
+
 logger = logging.getLogger(__name__)
 
 # Try to import knowledge databases for electrical and safety compliance
@@ -575,8 +578,9 @@ def _widest_passage_between(passages: list[dict], zone_a: str, zone_b: str) -> f
         if (p["from_zone"] == zone_a and p["to_zone"] == zone_b) or (
             p["from_zone"] == zone_b and p["to_zone"] == zone_a
         ):
-            if p["width_mm"] > best:
-                best = p["width_mm"]
+            width = passage_width(p)
+            if width is not None and width > best:
+                best = width
     return best
 
 
@@ -1538,6 +1542,8 @@ def run_compliance_analysis(
         ("ventilation", lambda: analyze_ventilation(zones, config)),
     ]
 
+    _failed_subs: set[str] = set()
+
     for name, fn in analyses:
         try:
             score, warnings, metrics = fn()
@@ -1546,7 +1552,7 @@ def run_compliance_analysis(
             all_metrics[name] = metrics
         except Exception:
             logger.exception("Error in compliance sub-analysis %s", name)
-            sub_scores[name] = 0.0
+            _failed_subs.add(name)
             all_warnings.append({
                 "code": "ANALYSIS_ERROR",
                 "severity": "critical",
@@ -1554,7 +1560,15 @@ def run_compliance_analysis(
                 "suggestion": "Layoutdaten überprüfen.",
             })
 
-    overall = sum(sub_scores.get(k, 50.0) * w for k, w in weights.items())
+    overall = aggregate_subscores(
+        sub_scores, weights, failed=_failed_subs, default=50.0
+    )
+    if overall is None:
+        # Jede Teilanalyse ist ausgefallen — keine Note erfinden.
+        overall = 0.0
+        _all_subs_failed = True
+    else:
+        _all_subs_failed = False
 
     for w in all_warnings:
         suggestion = w.get("suggestion")
@@ -1593,8 +1607,19 @@ def run_compliance_analysis(
         except Exception:
             logger.exception("Error enriching compliance with markdown knowledge")
 
+    if _all_subs_failed:
+        # Kein einziger Teilscore war verwertbar. Statt einer erfundenen
+        # Note meldet sich das Modul als nicht beurteilbar (Modul-Skip-Vertrag).
+        return {
+            "module": "compliance",
+            "available": False,
+            "reason": "Alle Teilanalysen fehlgeschlagen - kein belastbares Ergebnis.",
+            "warnings": all_warnings,
+        }
+
     return {
         "module": "compliance",
+        "degraded_subanalyses": sorted(_failed_subs),
         "overall_score": round(overall, 1),
         "sub_scores": {k: round(v, 1) for k, v in sub_scores.items()},
         "warnings": all_warnings,

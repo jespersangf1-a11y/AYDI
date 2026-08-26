@@ -7,6 +7,9 @@ import logging
 import math
 from collections import deque
 
+from app.core.validation import known_passage_widths, passage_width
+from app.services.analysis.subscore import aggregate_subscores
+
 logger = logging.getLogger(__name__)
 
 BOAT_CLASS_DEFAULTS = {
@@ -323,9 +326,28 @@ def analyze_passage_widths(passages: list[dict], config: dict) -> tuple[float, l
     warnings = []
     narrow = 0
     critical = 0
+    unknown = 0
 
     for p in passages:
-        w = p["width_mm"]
+        w = p.get("width_mm")
+        # Aus einem DXF-Import laesst sich die Tuerbreite nicht ableiten (siehe
+        # dxf/parser.py::_detect_shared_edges). Frueher stand dort ersatzweise
+        # eine erfundene 100, was JEDEN importierten Durchgang als "kritisch
+        # schmal" mit Konfidenz "measured" erscheinen liess. Unbekannt heisst
+        # jetzt: nicht beurteilbar — weder gut noch schlecht gewertet.
+        if w is None or not isinstance(w, (int, float)) or w != w:
+            unknown += 1
+            warnings.append({
+                "severity": "info",
+                "message": (
+                    f"Durchgang {p.get('from_zone')}→{p.get('to_zone')}: Breite nicht "
+                    f"beurteilbar — aus der importierten Geometrie nicht ableitbar."
+                ),
+                "suggestion": (
+                    "Durchgangsbreite nachtragen, damit die Ergonomie sie prüfen kann."
+                ),
+            })
+            continue
         if w < critical_width:
             critical += 1
             warnings.append({
@@ -342,12 +364,30 @@ def analyze_passage_widths(passages: list[dict], config: dict) -> tuple[float, l
             })
 
     total = len(passages)
-    ok_count = total - narrow - critical
-    score = (ok_count / total) * 100.0
-    if critical > 0:
-        score = max(0.0, score - (critical / total) * 50.0)
+    # Nur bewertbare Durchgaenge zaehlen in die Note. Sind ALLE Breiten unbekannt,
+    # gibt es nichts zu bewerten — dann 100.0 wie im Fall "keine Durchgaenge",
+    # begleitet von den Info-Warnungen oben. Eine schlechte Note fuer fehlende
+    # Daten waere eine erfundene Aussage.
+    assessable = total - unknown
+    if assessable <= 0:
+        return 100.0, warnings, {
+            "total_passages": total,
+            "narrow_passages": 0,
+            "critical_passages": 0,
+            "unknown_width_passages": unknown,
+        }
 
-    return score, warnings, {"total_passages": total, "narrow_passages": narrow, "critical_passages": critical}
+    ok_count = assessable - narrow - critical
+    score = (ok_count / assessable) * 100.0
+    if critical > 0:
+        score = max(0.0, score - (critical / assessable) * 50.0)
+
+    return score, warnings, {
+        "total_passages": total,
+        "narrow_passages": narrow,
+        "critical_passages": critical,
+        "unknown_width_passages": unknown,
+    }
 
 
 def analyze_path_efficiency(zones: list[dict], passages: list[dict], config: dict) -> tuple[float, list[dict], dict]:
@@ -534,7 +574,10 @@ def analyze_heel_impact(passages: list[dict], config: dict) -> tuple[float, list
     below_critical = 0
 
     for p in passages:
-        effective_width = p["width_mm"] * cos_heel
+        raw_width = passage_width(p)
+        if raw_width is None:
+            continue
+        effective_width = raw_width * cos_heel
         if effective_width < critical_width:
             below_critical += 1
             warnings.append({
@@ -799,6 +842,8 @@ def run_ergonomics_analysis(zones: list[dict], passages: list[dict], boat_class:
         ("headroom", lambda: analyze_headroom(zones, config)),
     ]
 
+    _failed_subs: set[str] = set()
+
     for name, fn in analyses:
         try:
             score, warnings, metrics = fn()
@@ -807,7 +852,7 @@ def run_ergonomics_analysis(zones: list[dict], passages: list[dict], boat_class:
             all_metrics[name] = metrics
         except Exception:
             logger.exception("Error in sub-analysis %s", name)
-            sub_scores[name] = 0.0
+            _failed_subs.add(name)
             all_warnings.append({
                 "severity": "critical",
                 "message": f"Fehler bei Analyse: {name}",
@@ -817,7 +862,15 @@ def run_ergonomics_analysis(zones: list[dict], passages: list[dict], boat_class:
     # Normalise by the actual weight sum so adding a dimension (headroom) keeps
     # the result on 0–100 regardless of whether the class weights total 1.0.
     total_weight = sum(weights.values()) or 1.0
-    overall = sum(sub_scores.get(k, 0) * w for k, w in weights.items()) / total_weight
+    overall = aggregate_subscores(
+        sub_scores, weights, failed=_failed_subs, default=0
+    )
+    if overall is None:
+        # Jede Teilanalyse ist ausgefallen — keine Note erfinden.
+        overall = 0.0
+        _all_subs_failed = True
+    else:
+        _all_subs_failed = False
 
     for w in all_warnings:
         if w.get("suggestion") and w["suggestion"] not in all_suggestions:
@@ -825,8 +878,19 @@ def run_ergonomics_analysis(zones: list[dict], passages: list[dict], boat_class:
 
     all_warnings.sort(key=lambda w: SEVERITY_ORDER.get(w.get("severity", "info"), 2))
 
+    if _all_subs_failed:
+        # Kein einziger Teilscore war verwertbar. Statt einer erfundenen
+        # Note meldet sich das Modul als nicht beurteilbar (Modul-Skip-Vertrag).
+        return {
+            "module": "ergonomics",
+            "available": False,
+            "reason": "Alle Teilanalysen fehlgeschlagen - kein belastbares Ergebnis.",
+            "warnings": all_warnings,
+        }
+
     return {
         "module": "ergonomics",
+        "degraded_subanalyses": sorted(_failed_subs),
         "overall_score": round(overall, 1),
         "sub_scores": {k: round(v, 1) for k, v in sub_scores.items()},
         "warnings": all_warnings,

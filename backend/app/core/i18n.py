@@ -146,10 +146,13 @@ class NumberFormatter:
             s = s[:-3]
         int_str = fmt["thousands_sep"].join(reversed(groups))
 
-        # Decimal part
-        frac_str = f"{frac_part:.{decimals}f}"[2:]  # strip "0."
-
-        result = f"{int_str}{fmt['decimal_sep']}{frac_str}"
+        # Dezimalteil — bei decimals <= 0 entfaellt der Dezimaltrenner komplett,
+        # sonst entstuende z. B. "1.235," statt "1.235".
+        if decimals <= 0:
+            result = int_str
+        else:
+            frac_str = f"{frac_part:.{decimals}f}"[2:]  # strip "0."
+            result = f"{int_str}{fmt['decimal_sep']}{frac_str}"
         return f"-{result}" if neg else result
 
     @classmethod
@@ -392,18 +395,37 @@ _register("condition.poor", "Mangelhaft", "Poor", "Deficiente", "Mediocre")
 _register("condition.critical", "Kritisch", "Critical", "Critico", "Critique")
 
 # ---- Boat Classes ----
+# Reihenfolge und Schluessel folgen exakt dem BoatClass-Enum (app/schemas/schemas.py).
+# Neue Enum-Werte MUESSEN hier in allen vier Locales ergaenzt werden —
+# test_i18n_boat_class_sync.py haelt beide Seiten deckungsgleich.
 _register("boat_class.small_sail", "Kleine Segelyacht", "Small Sailboat", "Velero pequeno", "Petit voilier")
 _register("boat_class.cruising_sail", "Fahrtensegler", "Cruising Sailboat", "Velero de crucero", "Voilier de croisiere")
+_register("boat_class.racing_sail", "Regattasegler", "Racing Sailboat", "Velero de regatas", "Voilier de course")
+_register("boat_class.daysailer", "Daysailer / Tagessegler", "Daysailer", "Velero de dia", "Voilier de jour")
+_register("boat_class.motorsailer", "Motorsailer", "Motorsailer", "Motovelero", "Motor-voilier")
+_register("boat_class.catamaran_sail", "Segel-Katamaran", "Sailing Catamaran", "Catamaran de vela", "Catamaran a voile")
+_register("boat_class.catamaran_motor", "Motor-Katamaran", "Power Catamaran", "Catamaran a motor", "Catamaran a moteur")
+_register("boat_class.small_motor", "Kleines Motorboot", "Small Motorboat", "Lancha pequena", "Petit bateau a moteur")
+_register("boat_class.large_motor", "Grosse Motoryacht", "Large Motor Yacht", "Yate a motor grande", "Grand yacht a moteur")
+_register("boat_class.sport_cruiser", "Sportkreuzer", "Sport Cruiser", "Crucero deportivo", "Vedette sportive")
+_register("boat_class.trawler", "Trawler", "Trawler", "Trawler", "Trawler")
+_register("boat_class.explorer", "Explorer-Yacht", "Explorer Yacht", "Yate explorador", "Yacht explorateur")
+_register("boat_class.superyacht", "Superyacht", "Superyacht", "Superyate", "Superyacht")
+
+# Historische Schluessel aus einer frueheren, 13-teiligen Klassen-Liste.
+# Sie sind KEINE BoatClass-Werte mehr, werden aber weiterhin ausgeliefert,
+# damit aeltere gespeicherte Analysen/Reports lesbar bleiben.
+LEGACY_BOAT_CLASS_KEYS: frozenset[str] = frozenset({
+    "boat_class.performance_sail",
+    "boat_class.bluewater_sail",
+    "boat_class.cruising_motor",
+    "boat_class.catamaran_power",
+    "boat_class.dinghy",
+})
 _register("boat_class.performance_sail", "Performance-Segler", "Performance Sailboat", "Velero de regata", "Voilier de performance")
 _register("boat_class.bluewater_sail", "Blauwasser-Segler", "Bluewater Cruiser", "Velero de altura", "Voilier hauturier")
-_register("boat_class.catamaran_sail", "Segel-Katamaran", "Sailing Catamaran", "Catamaran de vela", "Catamaran a voile")
-_register("boat_class.small_motor", "Kleines Motorboot", "Small Motorboat", "Lancha pequena", "Petit bateau a moteur")
 _register("boat_class.cruising_motor", "Motorkreuzer", "Motor Cruiser", "Crucero a motor", "Vedette de croisiere")
-_register("boat_class.large_motor", "Grosse Motoryacht", "Large Motor Yacht", "Yate a motor grande", "Grand yacht a moteur")
-_register("boat_class.trawler", "Trawler", "Trawler", "Trawler", "Chalutier")
-_register("boat_class.motorsailer", "Motorsailer", "Motorsailer", "Motovelero", "Motonautisme a voile")
 _register("boat_class.catamaran_power", "Motor-Katamaran", "Power Catamaran", "Catamaran a motor", "Catamaran a moteur")
-_register("boat_class.superyacht", "Superyacht", "Superyacht", "Superyate", "Superyacht")
 _register("boat_class.dinghy", "Jolle / Dinghy", "Dinghy", "Bote / Dinghy", "Deriveur")
 
 # ---- Units ----

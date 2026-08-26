@@ -27,11 +27,46 @@ T = TypeVar("T")
 # Known enums (prevent string typos)
 # ---------------------------------------------------------------------------
 
-VALID_BOAT_CLASSES = frozenset({
-    "small_sail", "cruising_sail", "performance_sail", "bluewater_sail",
-    "catamaran_sail", "small_motor", "cruising_motor", "large_motor",
-    "trawler", "motorsailer", "catamaran_power", "superyacht", "dinghy",
-})
+# Einzelquelle: das BoatClass-Enum. Die Liste war zuvor von Hand gepflegt und
+# gegenüber dem Enum verrutscht — fünf der dreizehn offiziellen Klassen
+# (racing_sail, daysailer, catamaran_motor, sport_cruiser, explorer) wurden von
+# der Validierung ABGELEHNT, obwohl das Frontend sie zur Auswahl anbietet und die
+# Analysemodule BOAT_CLASS_DEFAULTS für sie führen. Gleichzeitig galten fünf
+# längst umbenannte Namen weiter als gültig. Ableiten statt duplizieren schließt
+# diese Fehlerquelle dauerhaft.
+#
+# Import-Richtung ist unkritisch: app/schemas/schemas.py importiert nichts aus
+# app/core, es entsteht also kein Zyklus.
+from app.schemas.schemas import BoatClass as _BoatClass  # noqa: E402
+
+VALID_BOAT_CLASSES = frozenset(bc.value for bc in _BoatClass)
+
+# Zurückgezogene Klassennamen früherer Fassungen → kanonischer Wert.
+# Sie können noch in gespeicherten Level-1-Schnellanalysen stehen, die
+# `boat_class` als freien String annehmen.
+BOAT_CLASS_ALIASES = {
+    # Reine Umbenennungen (identische Bezeichnung im i18n-Katalog):
+    "catamaran_power": "catamaran_motor",
+    # Fachlich eindeutige Zuordnungen:
+    "performance_sail": "racing_sail",      # Performance-Segler → Regattasegler
+    "bluewater_sail": "cruising_sail",      # Blauwasser-Segler ist ein Fahrtensegler
+    # Näherungen für zurückgezogene Sammelbegriffe — bewusst als solche markiert,
+    # damit niemand sie für exakte Umbenennungen hält:
+    "dinghy": "daysailer",                  # Jolle: kleines, offenes Tagesboot
+    "cruising_motor": "small_motor",        # Motorkreuzer: Kajütboot ohne Sportanspruch
+}
+
+
+def normalize_boat_class(boat_class: str) -> str:
+    """Zieht einen zurückgezogenen Klassennamen auf den kanonischen Wert.
+
+    Unbekanntes kommt unverändert (getrimmt/lowercased) zurück, damit der
+    Aufrufer noch ablehnen oder warnen kann.
+    """
+    if not isinstance(boat_class, str):
+        return boat_class
+    normalized = boat_class.strip().lower()
+    return BOAT_CLASS_ALIASES.get(normalized, normalized)
 
 VALID_ZONE_TYPES = frozenset({
     # Interior
@@ -51,9 +86,105 @@ VALID_ZONE_TYPES = frozenset({
     "safety_locker", "liferaft_storage", "fire_station",
     # Helm
     "helm", "flybridge_helm",
+    # Electrical
+    "charger_area",
+    # Maintenance / service
+    "boatyard", "maintenance_hatch", "service_area",
     # Generic
     "crew_area", "guest_area", "technical", "void",
 })
+
+# Gebräuchliche Synonyme → kanonischer Zonentyp.
+#
+# Warum das nötig ist: Ein unbekannter Zonentyp wurde bisher nur geloggt und
+# unverändert weitergereicht. `get_domain_for_zone_type()` liefert dafür None,
+# die Zone fällt also still aus der Domänen-Abdeckung heraus — das Ergebnis wirkt
+# vollständig, ist es aber nicht. Betroffen sind ausgerechnet naheliegende
+# Eingaben: "galley" ist der englische Standardbegriff für die Bordküche
+# (kanonisch heißt sie hier "pantry"), und eine deutschsprachige Oberfläche
+# liefert plausibel "kombuese" oder "nasszelle".
+ZONE_TYPE_ALIASES = {
+    # Bordküche
+    "galley": "pantry",
+    "kitchen": "pantry",
+    "kombuese": "pantry",
+    "kombüse": "pantry",
+    "kueche": "pantry",
+    "küche": "pantry",
+    # Nasszelle
+    "wc": "head",
+    "toilet": "head",
+    "toilette": "head",
+    "bathroom": "head",
+    "nasszelle": "head",
+    "bad": "head",
+    "shower_room": "shower",
+    # Wohnbereich
+    "salon": "saloon",
+    "main_cabin": "saloon",
+    "kabine": "cabin",
+    "master_cabin": "cabin",
+    "owner_cabin": "cabin",
+    "v_berth": "forepeak",
+    "vberth": "forepeak",
+    "vorschiff": "forepeak",
+    "achterkabine": "aft_cabin",
+    # Stauraum
+    "locker": "storage",
+    "lazarette": "storage",
+    "cockpit_locker": "storage",
+    "stowage": "storage",
+    "stauraum": "storage",
+    # Maschine
+    "engine_bay": "engine_room",
+    "motor_room": "engine_room",
+    "maschinenraum": "engine_room",
+    # Navigation / Steuerstand
+    "chart_table": "nav_station",
+    "kartentisch": "nav_station",
+    "helm_station": "helm",
+    "steering_position": "helm",
+    # Deck
+    "swim_step": "swim_platform",
+    "bathing_platform": "swim_platform",
+    "badeplattform": "swim_platform",
+}
+
+
+def passage_width(passage: dict) -> float | None:
+    """Die Durchgangsbreite in mm — oder ``None``, wenn sie nicht bekannt ist.
+
+    Ein aus DXF importierter Durchgang hat keine ableitbare Breite (siehe
+    ``services/dxf/parser.py::_detect_shared_edges``); dort steht bewusst
+    ``None`` statt einer erfundenen Zahl. Jeder Konsument muss diesen Fall
+    behandeln, statt ihn wie eine gemessene 0 zu behandeln.
+    """
+    width = passage.get("width_mm") if isinstance(passage, dict) else None
+    if width is None or isinstance(width, bool) or not isinstance(width, (int, float)):
+        return None
+    if not math.isfinite(width):
+        return None
+    return float(width)
+
+
+def known_passage_widths(passages: list[dict] | None) -> list[float]:
+    """Alle bekannten, endlichen Durchgangsbreiten — unbekannte fallen heraus."""
+    if not passages:
+        return []
+    widths = [passage_width(p) for p in passages]
+    return [w for w in widths if w is not None]
+
+
+def normalize_zone_type(zone_type: str) -> str:
+    """Map a zone-type synonym onto its canonical value.
+
+    Unknown values are returned unchanged (lower-cased/trimmed) so the caller can
+    still warn about them.
+    """
+    if not isinstance(zone_type, str):
+        return zone_type
+    normalized = zone_type.strip().lower()
+    return ZONE_TYPE_ALIASES.get(normalized, normalized)
 
 VALID_CONFIDENCE_LEVELS = frozenset({
     "measured", "calculated", "visual_high", "visual_medium",
@@ -177,7 +308,10 @@ def validate_boat_class(boat_class: str | None) -> str:
 
     Returns normalized boat class or raises DataValidationError.
     """
-    result = validate_enum(boat_class, "boat_class", VALID_BOAT_CLASSES)
+    # Erst den Alias auflösen, dann prüfen — sonst scheitert ein gespeicherter
+    # Altname an einer Liste, die ihn nur unter neuem Namen kennt.
+    candidate = normalize_boat_class(boat_class) if isinstance(boat_class, str) else boat_class
+    result = validate_enum(candidate, "boat_class", VALID_BOAT_CLASSES)
     assert result is not None  # validate_enum with allow_none=False
     return result
 
@@ -194,10 +328,20 @@ def validate_zone(zone: dict, index: int = 0) -> dict:
     # Name or ID required
     name = zone.get("name") or zone.get("id") or f"zone_{index}"
 
-    # Zone type — validate but don't reject unknown (log warning instead)
-    zone_type = zone.get("zone_type") or zone.get("type", "")
-    if isinstance(zone_type, str):
-        zone_type = zone_type.strip().lower()
+    # Zone type — Synonyme auf den kanonischen Wert ziehen, Unbekanntes nur
+    # melden (nicht ablehnen). Der normalisierte Wert wird ZURÜCKGESCHRIEBEN,
+    # sonst verliert die Zone ihre Domänenzuordnung.
+    raw_zone_type = zone.get("zone_type") or zone.get("type", "")
+    zone_type = normalize_zone_type(raw_zone_type)
+    if zone_type and isinstance(raw_zone_type, str) and zone_type != raw_zone_type.strip().lower():
+        logger.debug(
+            "Zone type '%s' normalised to '%s' in zone '%s'", raw_zone_type, zone_type, name
+        )
+    if zone_type:
+        if "zone_type" in zone:
+            zone["zone_type"] = zone_type
+        elif "type" in zone:
+            zone["type"] = zone_type
     if zone_type and zone_type not in VALID_ZONE_TYPES:
         logger.warning("Unknown zone type '%s' in zone '%s'", zone_type, name)
 

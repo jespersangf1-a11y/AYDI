@@ -1121,7 +1121,9 @@ def get_knowledge_for_compliance(
 
     # Electrical standards
     knowledge["electrical_standards"] = [
-        "ISO 13849-1 — Sicherheit von Schiffe unter 24 m",
+        # ISO 13849 ist Maschinensicherheit (Steuerungen), keine Bordnetz-Norm.
+        "ISO 13297 — Wechselstromanlagen (AC) auf Kleinfahrzeugen",
+        "ISO 10133 — Kleinspannungs-Gleichstromanlagen (DC)",
         "IEC 60092-504 — Schiffs-Elektrik",
         "12V DC oder 230V AC mit Isolationsüberwachung",
     ]

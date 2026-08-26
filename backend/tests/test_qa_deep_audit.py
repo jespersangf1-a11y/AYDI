@@ -195,11 +195,17 @@ class TestInputValidationBoatClass:
 
     def test_valid_boat_classes(self):
         """Valid boat classes should validate without error."""
+        # Kanonische Klassen (BoatClass-Enum) gehen unveraendert durch.
+        # "performance_sail" stand hier frueher mit dabei und wurde als kanonisch
+        # festgeschrieben — es ist aber ein zurueckgezogener Name. Die Liste war
+        # gegenueber dem Enum verrutscht: fuenf echte Klassen (racing_sail,
+        # daysailer, catamaran_motor, sport_cruiser, explorer) wurden abgelehnt,
+        # fuenf Altnamen galten weiter. Siehe tests/test_boat_class_vocabulary.py.
         valid_classes = [
             "cruising_sail",
             "large_motor",
             "small_sail",
-            "performance_sail",
+            "racing_sail",
             "superyacht",
             "catamaran_sail",
             "motorsailer",
@@ -207,6 +213,9 @@ class TestInputValidationBoatClass:
         for bc in valid_classes:
             result = validate_boat_class(bc)
             assert result == bc
+
+        # Der Altname wird auf den kanonischen Wert gezogen, nicht abgelehnt.
+        assert validate_boat_class("performance_sail") == "racing_sail"
 
 
 class TestInputValidationConfigOverrides:

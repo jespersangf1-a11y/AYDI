@@ -8,6 +8,8 @@ database access. All user-facing strings are in German.
 import logging
 import math
 
+from app.services.analysis.subscore import aggregate_subscores
+
 logger = logging.getLogger(__name__)
 
 # German labels for benchmark metrics — the UX is German, so warning texts must
@@ -957,6 +959,8 @@ def run_market_analysis(
         ),
     ]
 
+    _failed_subs: set[str] = set()
+
     for name, fn in analyses:
         try:
             score, warnings, metrics = fn()
@@ -965,7 +969,7 @@ def run_market_analysis(
             all_metrics[name] = metrics
         except Exception:
             logger.exception("Error in market sub-analysis %s", name)
-            sub_scores[name] = 0.0
+            _failed_subs.add(name)
             all_warnings.append({
                 "code": "ANALYSIS_ERROR",
                 "severity": "critical",
@@ -973,7 +977,15 @@ def run_market_analysis(
                 "suggestion": "Eingabedaten und Wettbewerbsmodelle überprüfen.",
             })
 
-    overall = sum(sub_scores.get(k, 50.0) * w for k, w in weights.items())
+    overall = aggregate_subscores(
+        sub_scores, weights, failed=_failed_subs, default=50.0
+    )
+    if overall is None:
+        # Jede Teilanalyse ist ausgefallen — keine Note erfinden.
+        overall = 0.0
+        _all_subs_failed = True
+    else:
+        _all_subs_failed = False
 
     for w in all_warnings:
         suggestion = w.get("suggestion")
@@ -984,8 +996,19 @@ def run_market_analysis(
 
     all_metrics["layout_metrics"] = layout_metrics
 
+    if _all_subs_failed:
+        # Kein einziger Teilscore war verwertbar. Statt einer erfundenen
+        # Note meldet sich das Modul als nicht beurteilbar (Modul-Skip-Vertrag).
+        return {
+            "module": "market",
+            "available": False,
+            "reason": "Alle Teilanalysen fehlgeschlagen - kein belastbares Ergebnis.",
+            "warnings": all_warnings,
+        }
+
     return {
         "module": "market",
+        "degraded_subanalyses": sorted(_failed_subs),
         "overall_score": round(overall, 1),
         "sub_scores": {k: round(v, 1) for k, v in sub_scores.items()},
         "warnings": all_warnings,

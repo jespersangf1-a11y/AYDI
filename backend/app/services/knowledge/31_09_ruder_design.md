@@ -1049,7 +1049,9 @@ fehlerbild_001 = RuderDesignFehlerbild(
         "Prototyp-Test vor Serie"
     ],
     inspektions_intervall_jahre=2,
-    normen_referenzen=["ISO 12217-3", "DNV GL Rules"],
+    # ISO 12215-8 ist die Ruder-Norm (Ruderkraft, Schaftdimensionierung).
+    # Zuvor stand hier ISO 12217-3 — das ist die Stabilitaetsnorm.
+    normen_referenzen=["ISO 12215-8", "DNV GL Rules"],
     verwandte_fehlerbilder=["31_09_002", "31_09_005"]
 )
 ```

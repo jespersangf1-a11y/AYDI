@@ -3,7 +3,9 @@ import { useNavigate, useParams } from 'react-router-dom'
 import {
   Anchor,
   ArrowLeft,
+  Camera,
   Ship,
+  Wrench,
   Zap,
   Clock,
   Layers,
@@ -11,6 +13,7 @@ import {
   Euro,
   GitCompare,
   BarChart3,
+  ImageIcon,
   ChevronRight,
   Loader2,
   Box,
@@ -54,6 +57,7 @@ import {
   BOAT_CLASS_LABELS,
   STATUS_LABELS,
   ANALYSIS_MODULE_LABELS,
+  IMAGE_TYPE_LABELS,
 } from '../../types'
 import ScoreGauge from '../analysis/ScoreGauge'
 import SubScoreBars from '../analysis/SubScoreBars'
@@ -68,6 +72,8 @@ import LayoutViewer from '../analysis/LayoutViewer'
 import FullAnalysisView from '../analysis/FullAnalysisView'
 import ModuleSelector from '../analysis/ModuleSelector'
 import CostOverview from '../costs/CostOverview'
+import ImageUpload from '../images/ImageUpload'
+import ServiceReportList from '../service/ServiceReportList'
 import DiffViewer from '../compare/DiffViewer'
 // ConfidenceBadge is used by FullAnalysisView internally
 
@@ -513,9 +519,23 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
       icon: <Zap className="w-4 h-4" />,
       badge: Object.keys(latestModuleResults).length,
     },
+    {
+      // Pipeline B (Bildanalyse): ohne diesen Einstieg war der Bild-Upload im
+      // Projektkontext nur über die freie Schnellanalyse erreichbar.
+      id: 'images',
+      label: 'Bilder',
+      icon: <Camera className="w-4 h-4" />,
+      badge: images.length > 0 ? images.length : undefined,
+    },
     { id: 'materials', label: 'Materialien', icon: <Package className="w-4 h-4" /> },
     { id: 'structural', label: 'Struktur', icon: <Anchor className="w-4 h-4" /> },
     { id: 'costs', label: 'Kosten', icon: <Euro className="w-4 h-4" /> },
+    {
+      // Pipeline C (Textanalyse): Datengrundlage für das Modul service_patterns.
+      id: 'service',
+      label: 'Serviceberichte',
+      icon: <Wrench className="w-4 h-4" />,
+    },
     {
       id: 'history',
       label: 'Versionen',
@@ -1290,6 +1310,101 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
         )}
 
         {/* ═══════════════════════════════════════════════════════════════
+            TAB: IMAGES — Pipeline B (Bildanalyse) im Projektkontext
+        ═══════════════════════════════════════════════════════════════ */}
+        {activeTab === 'images' && (
+          <div className="space-y-8 animate-fade-in-up">
+            <div className="card-premium px-8 py-6">
+              <div className="flex items-start gap-4">
+                <Camera className="w-6 h-6 text-ocean-500 shrink-0 mt-0.5" />
+                <div>
+                  <h2 className="font-serif text-xl text-navy-900 mb-1">
+                    Bilder & visuelle Analyse
+                  </h2>
+                  <p className="text-navy-700 text-sm max-w-2xl">
+                    Fotos und Renderings speisen Pipeline B. Sie fließen als visueller
+                    Anteil in die Score-Fusion ein — besonders stark in Emotion,
+                    Materialien und Markenidentität. Jeder Befund erhält eine eigene
+                    Konfidenz; unsichere Befunde sind standardmäßig ausgeblendet.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {canEdit ? (
+              <ImageUpload
+                boatClass={project.boat_class}
+                projectId={projectId}
+                onUploadComplete={(img) => setImages((prev) => [img, ...prev])}
+              />
+            ) : (
+              <div className="card-premium px-8 py-12 text-center">
+                <Camera className="w-12 h-12 mx-auto mb-4 text-navy-600" />
+                <p className="text-navy-600">{READ_ONLY_HINT}</p>
+                <p className="text-navy-500 text-xs mt-2">
+                  Bereits hochgeladene Bilder können Sie unten einsehen.
+                </p>
+              </div>
+            )}
+
+            {/* Bereits hinterlegte Projektbilder (GET /projects/{id}/images) */}
+            <div className="card-premium px-8 py-6">
+              <h3 className="font-serif text-lg text-navy-900 mb-4">
+                Hinterlegte Projektbilder
+                {images.length > 0 && (
+                  <span className="ml-2 font-mono text-sm text-navy-600">
+                    ({images.length})
+                  </span>
+                )}
+              </h3>
+              {images.length === 0 ? (
+                <div className="py-8 text-center">
+                  <ImageIcon className="w-10 h-10 mx-auto mb-3 text-navy-600" />
+                  <p className="text-navy-600 text-sm">
+                    Für dieses Projekt sind noch keine Bilder hinterlegt.
+                  </p>
+                  <p className="text-navy-500 text-xs mt-2">
+                    Ohne Bilder bleibt die visuelle Analyse (Pipeline B)
+                    „nicht beurteilbar“ — die Module bewerten dann rein strukturell.
+                  </p>
+                </div>
+              ) : (
+                <ul className="divide-y divide-sand-200">
+                  {images.map((img) => (
+                    <li
+                      key={img.id}
+                      className="py-3 flex flex-wrap items-center justify-between gap-3"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-navy-900 text-sm font-medium truncate">
+                          {IMAGE_TYPE_LABELS[img.image_type] ?? img.image_type}
+                          {img.zone_name && (
+                            <span className="text-navy-600 font-normal"> · {img.zone_name}</span>
+                          )}
+                        </p>
+                        <p className="text-navy-600 text-xs font-mono mt-0.5">
+                          {new Date(img.uploaded_at).toLocaleDateString('de-DE')} ·{' '}
+                          {Math.round(img.file_size_bytes / 1024)} KB
+                        </p>
+                      </div>
+                      <span
+                        className={`text-xs px-2.5 py-1 rounded-full border whitespace-nowrap ${
+                          img.ai_analysis
+                            ? 'bg-ocean-100 text-ocean-700 border-ocean-300'
+                            : 'bg-sand-100 text-navy-600 border-sand-300'
+                        }`}
+                      >
+                        {img.ai_analysis ? 'Visuell analysiert' : 'Noch nicht analysiert'}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ═══════════════════════════════════════════════════════════════
             TAB: MATERIALS — Materialzuweisungen (Refit: Optik/Material)
         ═══════════════════════════════════════════════════════════════ */}
         {activeTab === 'materials' && (
@@ -1360,6 +1475,32 @@ export default function ProjectDetail({ projectId, onBack }: ProjectDetailProps)
                 </p>
               </div>
             )}
+          </div>
+        )}
+
+        {/* ═══════════════════════════════════════════════════════════════
+            TAB: SERVICE — Pipeline C (Serviceberichte / Textanalyse)
+        ═══════════════════════════════════════════════════════════════ */}
+        {activeTab === 'service' && (
+          <div className="space-y-8 animate-fade-in-up">
+            <div className="card-premium px-8 py-6">
+              <div className="flex items-start gap-4">
+                <Wrench className="w-6 h-6 text-ocean-500 shrink-0 mt-0.5" />
+                <div>
+                  <h2 className="font-serif text-xl text-navy-900 mb-1">
+                    Serviceberichte (Pipeline C)
+                  </h2>
+                  <p className="text-navy-700 text-sm max-w-2xl">
+                    Wartungs-, Garantie-, Umbau- und Reklamationsberichte sind die
+                    Datengrundlage des Moduls „Service-Muster“. Ohne erfasste Berichte
+                    meldet das Modul dauerhaft „nicht beurteilbar“ und wird bei der
+                    Vollanalyse übersprungen.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <ServiceReportList />
           </div>
         )}
 

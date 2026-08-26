@@ -251,3 +251,25 @@ def make_community_pattern(
         "source_report_ids": source_report_ids or [1, 2, 3, 4, 5],
         "is_positive": is_positive,
     }
+
+# ---------------------------------------------------------------------------
+# Rate-Limit zwischen Tests zuruecksetzen
+# ---------------------------------------------------------------------------
+
+import pytest  # noqa: E402
+
+from app.core.middleware import RateLimitMiddleware  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def _reset_rate_limits():
+    """Jeder Test startet mit leerem Zaehler.
+
+    Alle Tests teilen sich die Client-IP "testclient". Ohne dieses Zuruecksetzen
+    laufen Tests, die eine gedrosselte Route mehrfach aufrufen (z.B. die
+    Bild-Routen mit 10/min), gegen das Limit und sehen 429 statt des Status, den
+    sie eigentlich pruefen — sie messen dann am Pruefgegenstand vorbei.
+    """
+    RateLimitMiddleware.reset()
+    yield
+    RateLimitMiddleware.reset()

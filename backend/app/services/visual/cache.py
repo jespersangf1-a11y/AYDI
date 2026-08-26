@@ -15,12 +15,37 @@ logger = logging.getLogger(__name__)
 class AnalysisCache:
     """File-based cache for visual analysis results."""
 
-    def __init__(self, cache_dir: str = "backend/uploads/cache"):
-        self.cache_dir = Path(cache_dir)
+    def __init__(self, cache_dir: str | None = None):
+        """Cache-Verzeichnis festlegen.
+
+        Der Default war der RELATIVE Pfad "backend/uploads/cache" und haing damit
+        am Arbeitsverzeichnis: Startet der Prozess aus ``backend/`` — der
+        dokumentierte Weg (``cd backend && uvicorn ...``) — entsteht
+        ``backend/backend/uploads/cache``. Genau dieses verwaiste Verzeichnis lag
+        im Repo, mit 46 Cache-Dateien darin, waehrend das konfigurierte
+        Upload-Volume leer blieb. Im Container heisst das: Der Cache liegt
+        ausserhalb des persistenten Volumes und ist nach jedem Neustart weg.
+
+        Jetzt wird ``settings.UPLOAD_DIR`` verwendet und auf das Paketverzeichnis
+        bezogen, wenn er relativ ist — unabhaengig vom Arbeitsverzeichnis.
+        """
+        if cache_dir is not None:
+            resolved = Path(cache_dir)
+        else:
+            from app.core.config import settings
+
+            upload_dir = Path(settings.UPLOAD_DIR)
+            if not upload_dir.is_absolute():
+                # app/services/visual/cache.py -> backend/
+                backend_root = Path(__file__).resolve().parents[3]
+                upload_dir = backend_root / upload_dir
+            resolved = upload_dir / "cache"
+
+        self.cache_dir = resolved
         try:
             self.cache_dir.mkdir(parents=True, exist_ok=True)
         except OSError:
-            logger.warning("Could not create cache directory: %s", cache_dir)
+            logger.warning("Could not create cache directory: %s", self.cache_dir)
 
     # Bump when prompts or the model change so stale entries are not reused.
     CACHE_VERSION = "v2"

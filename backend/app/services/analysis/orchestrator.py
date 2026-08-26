@@ -7,6 +7,7 @@ Integrates:
 - Partial failure handling
 """
 import asyncio
+import contextvars
 import inspect
 import logging
 from datetime import datetime, timezone
@@ -196,7 +197,10 @@ async def run_full_analysis(
         validation_warnings.append(str(e))
         logger.warning("Boat class validation warning: %s (proceeding with fallback)", e)
     try:
-        validate_zones(context.zones)
+        # Rückgabewert übernehmen: validate_zones() zieht Zonentyp-Synonyme auf
+        # den kanonischen Wert. Wurde er verworfen, blieb z.B. "galley" stehen,
+        # fand keine Domäne und fiel still aus der Domänen-Abdeckung.
+        context.zones = validate_zones(context.zones)
     except DataValidationError as e:
         validation_warnings.append(str(e))
         logger.warning("Zone validation warning: %s", e)
@@ -354,9 +358,16 @@ async def _run_single_module(
         kwargs.setdefault("data_source", context.data_source)
 
     loop = asyncio.get_event_loop()
+    # Den aktuellen Kontext mitnehmen: Ein Worker-Thread startet sonst mit
+    # LEEREN contextvars, und die anfragebezogene Sprache (app/core/i18n.py setzt
+    # sie per contextvar in der Middleware) faellt im Modul stumm auf Deutsch
+    # zurueck. Heute faellt das nicht auf, weil noch kein Analysemodul `t()`
+    # benutzt — genau deshalb waere es eine Falle fuer den ersten, der es tut.
+    ctx = contextvars.copy_context()
     result = await loop.run_in_executor(
         None,
-        lambda: runner(
+        lambda: ctx.run(
+            runner,
             context.zones,
             context.passages,
             context.boat_class,

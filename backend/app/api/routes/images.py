@@ -10,7 +10,9 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.permissions import get_accessible_project, get_current_user
+from app.core.config import settings
+from app.core.permissions import effective_tier, get_accessible_project, get_current_user
+from app.core.subscription import Feature, has_feature
 from app.db.database import get_db
 from app.models.models import ImageUpload, Project, QuickAnalysisResult, User
 from app.schemas.images import (
@@ -29,11 +31,33 @@ router = APIRouter(tags=["images"])
 UPLOAD_DIR = Path(__file__).resolve().parents[3] / "uploads" / "images"
 # heic dropped: unsupported downstream (analyzer MEDIA_TYPE_MAP + Claude Vision).
 ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "webp"}
-MAX_FILE_SIZE = 20 * 1024 * 1024  # 20 MB
+# Aus der Konfiguration statt fest verdrahtet: MAX_IMAGE_SIZE_MB war als
+# Einstellung deklariert, wurde aber nirgends gelesen — wer sie setzte,
+# aenderte nichts. Eine Konfiguration, die nichts bewirkt, ist irrefuehrender
+# als gar keine.
+MAX_FILE_SIZE = settings.MAX_IMAGE_SIZE_MB * 1024 * 1024
 MAX_BATCH_FILES = 20
 # Authoritative content-based format -> stored extension (defends against
 # polyglot / disguised non-image uploads that pass the filename-extension check).
 _PIL_FORMAT_TO_EXT = {"JPEG": "jpg", "PNG": "png", "WEBP": "webp"}
+
+# Version der Bildanalyse-Pipeline (Prompts + Auswertung). Wird NUR gesetzt,
+# wenn tatsächlich ein Modell gelaufen ist. Das konkrete Modell steht im
+# Ergebnis selbst unter ``ai_analysis["model_used"]`` — die Spalte ist auf
+# 20 Zeichen begrenzt und kann eine Modell-ID nicht aufnehmen.
+AI_ANALYSIS_VERSION = "1.0"
+
+# Provenienz-Schlüssel in ``ImageUpload.metadata_extra``: wer das Bild
+# hochgeladen hat. Trägt bei Schnellanalysen zusätzlich die Zugriffsprüfung.
+UPLOADER_META_KEY = "uploaded_by_user_id"
+
+# Nutzertext für das Tarif-Gate der visuellen Analyse (PRO-Feature
+# VISUAL_ANALYSIS). Bewusst erklärend statt nacktem 403.
+VISUAL_TIER_MESSAGE = (
+    "KI-Bildanalyse ist im PRO-Tarif enthalten. Bilder lassen sich weiterhin "
+    "hochladen und speichern — für die visuelle Auswertung (Pipeline B) ist "
+    "ein Upgrade auf PRO erforderlich."
+)
 
 
 def _ensure_upload_dir() -> None:
@@ -199,6 +223,92 @@ def _analysis_succeeded(result: dict | None) -> bool:
     return bool(result) and result.get("analysis") is not None and not result.get("error")
 
 
+def _visual_analysis_allowed(user: User | None) -> bool:
+    """Server-seitiges Tarif-Gate für Pipeline B (CLAUDE.md: require_feature an
+    der Route-Grenze).
+
+    ``None`` = anonymer Level-1-Aufruf. Anonym bedeutet kein PRO, also auch
+    kein (kostenpflichtiger) Claude-Vision-Aufruf — das ist die sichere
+    Auslegung. Der effektive Tarif wird gelesen, damit eine ENTERPRISE-Org die
+    Analyse für ihre Mitglieder freischaltet.
+    """
+    if user is None:
+        return False
+    return has_feature(effective_tier(user), Feature.VISUAL_ANALYSIS)
+
+
+def _require_visual_analysis(user: User | None) -> None:
+    """Harte Sperre für Routen, deren einziger Zweck die Analyse ist."""
+    if not _visual_analysis_allowed(user):
+        raise HTTPException(status_code=403, detail=VISUAL_TIER_MESSAGE)
+
+
+def _tier_skipped_analysis() -> dict:
+    """Modul-Skip-Ergebnis für Upload-Routen: Bild wird gespeichert, die
+    Analyse unterbleibt tarifbedingt — sichtbar statt stillschweigend."""
+    return {"available": False, "reason": VISUAL_TIER_MESSAGE}
+
+
+async def _run_visual_analysis_if_allowed(
+    user: User | None,
+    *,
+    file_path: str,
+    image_type: str,
+    boat_class: str,
+    zone_type: str | None = None,
+    analysis_depth: str = "standard",
+) -> dict | None:
+    """Analyse im Thread-Pool ausführen — nie im laufenden Event-Loop.
+
+    ``analyze_image`` ist ein synchroner Wrapper um eine Coroutine und nutzt
+    intern ``asyncio.run``; direkt aufgerufen wirft er im laufenden Loop einen
+    RuntimeError, der als "Analyse fehlgeschlagen" verschluckt würde.
+    """
+    if not _visual_analysis_allowed(user):
+        return _tier_skipped_analysis()
+    return await asyncio.to_thread(
+        _try_visual_analysis,
+        file_path=file_path,
+        image_type=image_type,
+        boat_class=boat_class,
+        zone_type=zone_type,
+        analysis_depth=analysis_depth,
+    )
+
+
+async def _assert_quick_analysis_claim(
+    quick_analysis_id: UUID, user: User, db: AsyncSession
+) -> None:
+    """SEC-12: Bezug zwischen Aufrufer und Schnellanalyse prüfen.
+
+    ``quick_analysis_results`` trägt keine Nutzer-Spalte — Level 1 ist bewusst
+    anonym. Ein echter Eigentümer-Bezug ist ohne Schema-Erweiterung nicht
+    möglich, deshalb gilt Erst-Beanspruchung: der erste Upload hinterlegt die
+    Nutzer-ID in der Bild-Provenienz; danach dürfen nur noch dieselben
+    Nutzer:innen Bilder an diese Schnellanalyse hängen. Fremde Konten mit
+    Kenntnis der ID können so keine Bilder mehr unterschieben.
+    """
+    result = await db.execute(
+        select(ImageUpload.metadata_extra)
+        .where(ImageUpload.quick_analysis_id == quick_analysis_id)
+        .order_by(ImageUpload.uploaded_at.asc())
+    )
+    for (meta,) in result.all():
+        claimant = (meta or {}).get(UPLOADER_META_KEY)
+        if not claimant:
+            continue
+        if claimant != str(user.id):
+            raise HTTPException(
+                status_code=403,
+                detail=(
+                    "Diese Schnellanalyse ist bereits einem anderen Konto "
+                    "zugeordnet. Bilder lassen sich nur an eigene "
+                    "Schnellanalysen anhängen."
+                ),
+            )
+        return
+
+
 async def _get_project(
     project_id: UUID, user: User, db: AsyncSession, min_role: str = "editor"
 ) -> Project:
@@ -224,6 +334,11 @@ async def analyze_image_standalone(
     db: AsyncSession = Depends(get_db),
 ):
     """Upload a single image, run visual analysis, return results."""
+    # Diese Route existiert nur zur Analyse -> harte Tarif-Sperre VOR dem
+    # Upload (SEC-4). Ohne sie lösen FREE-Konten unbegrenzt kostenpflichtige
+    # Claude-Vision-Aufrufe aus.
+    _require_visual_analysis(_user)
+
     # Validate image_type enum
     try:
         ImageType(image_type)
@@ -239,8 +354,8 @@ async def analyze_image_standalone(
 
     metadata = await asyncio.to_thread(_extract_image_metadata, file_path)
 
-    ai_result = await asyncio.to_thread(
-        _try_visual_analysis,
+    ai_result = await _run_visual_analysis_if_allowed(
+        _user,
         file_path=file_path,
         image_type=image_type,
         boat_class=boat_class,
@@ -263,8 +378,9 @@ async def analyze_image_standalone(
         zone_name=zone_type,
         tags=parsed_tags,
         ai_analysis=ai_result,
-        ai_analysis_version="1.0" if ai_result else None,
-        metadata_extra=metadata,
+        # Nur eine tatsächlich gelaufene Analyse bekommt eine Version (ROB-8).
+        ai_analysis_version=AI_ANALYSIS_VERSION if _analysis_succeeded(ai_result) else None,
+        metadata_extra={**(metadata or {}), UPLOADER_META_KEY: str(_user.id)},
     )
     db.add(image)
     await db.commit()
@@ -307,8 +423,11 @@ async def upload_project_image(
     file_path, file_type, file_size = await _save_file(file)
     metadata = await asyncio.to_thread(_extract_image_metadata, file_path)
 
-    ai_result = await asyncio.to_thread(
-        _try_visual_analysis,
+    # Zweck dieser Route ist die Ablage am Projekt; die Analyse ist Zugabe.
+    # Deshalb weiches Gate: FREE darf hochladen, die kostenpflichtige Analyse
+    # unterbleibt aber sichtbar (SEC-4).
+    ai_result = await _run_visual_analysis_if_allowed(
+        _user,
         file_path=file_path,
         image_type=image_type,
         boat_class=project.boat_class,
@@ -332,8 +451,8 @@ async def upload_project_image(
         deck_number=deck_number,
         tags=parsed_tags,
         ai_analysis=ai_result,
-        ai_analysis_version="1.0" if ai_result else None,
-        metadata_extra=metadata,
+        ai_analysis_version=AI_ANALYSIS_VERSION if _analysis_succeeded(ai_result) else None,
+        metadata_extra={**(metadata or {}), UPLOADER_META_KEY: str(_user.id)},
     )
     db.add(image)
     await db.commit()
@@ -383,6 +502,8 @@ async def analyze_batch(
     db: AsyncSession = Depends(get_db),
 ):
     """Upload multiple images and get a combined visual assessment."""
+    # Reine Analyse-Route -> harte Tarif-Sperre vor jedem Upload (SEC-4).
+    _require_visual_analysis(_user)
     _validate_boat_class(boat_class)
     if not files:
         raise HTTPException(status_code=400, detail="Keine Dateien hochgeladen.")
@@ -426,8 +547,8 @@ async def analyze_batch(
             image_type="interior_overview",
             zone_name=zone_type,
             ai_analysis=ai_result,
-            ai_analysis_version="1.0" if _analysis_succeeded(ai_result) else None,
-            metadata_extra=metadata,
+            ai_analysis_version=AI_ANALYSIS_VERSION if _analysis_succeeded(ai_result) else None,
+            metadata_extra={**(metadata or {}), UPLOADER_META_KEY: str(_user.id)},
         )
         db.add(image)
         images_saved += 1
@@ -503,6 +624,9 @@ async def upload_quick_analysis_image(
     if not qa:
         raise HTTPException(status_code=404, detail="Schnellanalyse nicht gefunden")
 
+    # SEC-12: nur der Erst-Uploader darf weitere Bilder anhängen.
+    await _assert_quick_analysis_claim(quick_analysis_id, _user, db)
+
     try:
         ImageType(image_type)
     except ValueError:
@@ -515,7 +639,11 @@ async def upload_quick_analysis_image(
     file_path, file_type, file_size = await _save_file(file)
     metadata = await asyncio.to_thread(_extract_image_metadata, file_path)
 
-    ai_result = _try_visual_analysis(
+    # ROB-7: der synchrone Analyzer-Wrapper MUSS in einen Thread — direkt im
+    # laufenden Event-Loop scheiterte er bisher an ``asyncio.run`` und die
+    # Route meldete trotzdem 201, ohne dass Pipeline B je gelaufen wäre.
+    ai_result = await _run_visual_analysis_if_allowed(
+        _user,
         file_path=file_path,
         image_type=image_type,
         boat_class=qa.boat_class,
@@ -538,8 +666,9 @@ async def upload_quick_analysis_image(
         zone_name=zone_name,
         tags=parsed_tags,
         ai_analysis=ai_result,
-        ai_analysis_version="1.0" if ai_result else None,
-        metadata_extra=metadata,
+        ai_analysis_version=AI_ANALYSIS_VERSION if _analysis_succeeded(ai_result) else None,
+        # Provenienz + Erst-Beanspruchung dieser Schnellanalyse (SEC-12).
+        metadata_extra={**(metadata or {}), UPLOADER_META_KEY: str(_user.id)},
     )
     db.add(image)
     await db.commit()

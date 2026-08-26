@@ -43,7 +43,9 @@ Die Kielbauart bestimmt Stabilität, Performance, Grounding-Widerstandsfähigkei
 - Boote 8–30m LOA
 - CE-Kategorien A, B, C
 
-**Dimensionierung nach ISO 12217-1:**
+**Dimensionierung — Basis-Startwerte (NICHT normersetzend):**
+
+> ⚠️ **ZU PRÜFEN (Audit):** Diese Überschrift lautete zuvor „Dimensionierung nach ISO 12217-1". Das ist eine Fehlzitierung: **ISO 12217 ist die Stabilitätsnorm**. Kielanschluss und Ballastbefestigung regelt **ISO 12215-9** (Kiele und Anhänge), die Rumpfstruktur ISO 12215-5. Die folgenden Formeln sind Näherungen für den Entwurfsbeginn und ersetzen keinen Nachweis nach ISO 12215-9.
 
 ```
 Fin_Area [m²] = LOA [m] × Beam [m] / 12  (Basis-Startwert)

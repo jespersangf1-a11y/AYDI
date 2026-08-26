@@ -2,6 +2,8 @@
 from datetime import datetime, timezone
 from typing import Optional
 
+from app.core.i18n import t
+
 
 def generate_report(
     project: dict,
@@ -30,12 +32,10 @@ def generate_report(
         "market": "Markt & Wettbewerb",
     }
 
-    BOAT_CLASS_LABELS = {
-        "small_sail": "Kleine Segelyacht",
-        "cruising_sail": "Fahrtensegler",
-        "large_motor": "Große Motoryacht",
-        "superyacht": "Superyacht",
-    }
+    # Die frueher hier gefuehrte BOAT_CLASS_LABELS-Tabelle kannte 4 der 13
+    # Bootsklassen; alle uebrigen erschienen im Bericht als roher englischer
+    # Enum-Schluessel ("daysailer"). Die Bezeichnungen kommen jetzt aus dem
+    # i18n-Katalog, der alle 13 Klassen in DE/EN/ES/FR fuehrt.
 
     # Sort results by module order
     module_order = list(MODULE_LABELS.keys())
@@ -97,7 +97,11 @@ def generate_report(
     header = {
         "title": f"AYDI Analysebericht — {project.get('name', 'Unbenannt')}",
         "subtitle": f"{layout.get('name', '')} ({layout.get('version', '')})",
-        "boat_class": BOAT_CLASS_LABELS.get(project.get("boat_class", ""), project.get("boat_class", "")),
+        "boat_class": (
+            t(f"boat_class.{project['boat_class']}")
+            if project.get("boat_class")
+            else ""
+        ),
         "length_m": project.get("length_m"),
         "beam_m": project.get("beam_m"),
         "generated_at": datetime.now(timezone.utc).isoformat(),

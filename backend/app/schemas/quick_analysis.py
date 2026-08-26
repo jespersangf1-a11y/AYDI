@@ -5,6 +5,33 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from app.schemas.schemas import FiniteNumbersMixin, require_finite
+
+# ---------------------------------------------------------------------------
+# Schranken der öffentlichen Schnellanalyse (ROB-2, ROB-3)
+#
+# Dieser Endpunkt ist UNAUTHENTIFIZIERT. Alles, was hier hereinkommt, geht ohne
+# weitere Prüfung in `estimate_layout_from_specs()` und von dort in die
+# Analysemodule. Zwei Klassen von Eingaben sind gefährlich:
+#
+#  * NaN/Infinity — die Module rechnen still weiter, das Ergebnis ist NaN, und
+#    spätestens die JSON-Serialisierung der Response bricht (JSON kennt kein
+#    NaN). ROB-2.
+#  * Unbegrenzte Zähler — `cabin_count`/`head_count` erzeugen je eine Zone; die
+#    Ergonomie-Analyse ist quadratisch in der Zonenzahl. Gemessen: 5.000 Kabinen
+#    = 75 s in EINEM Modul, 500.000 blockieren den Event-Loop praktisch
+#    unbegrenzt. ROB-3.
+#
+# Die Grenzen sind an den 13 Bootsklassen ausgerichtet (bis > 100 m Superyacht)
+# und großzügig gewählt: 100 Kabinen und 400 Kojen liegen deutlich über allem,
+# was real gebaut wird, kappen die Laufzeit aber auf Millisekunden.
+# ---------------------------------------------------------------------------
+
+MAX_CABIN_COUNT = 100
+MAX_HEAD_COUNT = 100
+MAX_BERTH_COUNT = 400
+MAX_ENGINE_COUNT = 12
+
 
 class ConfidenceLevel(str, Enum):
     measured = "measured"
@@ -13,49 +40,63 @@ class ConfidenceLevel(str, Enum):
     benchmark = "benchmark"
 
 
-class PublicSpecs(BaseModel):
+class PublicSpecs(FiniteNumbersMixin):
     """What someone can enter from a brochure or website."""
     # Required
     # Accepted classes: small_sail, cruising_sail, racing_sail, daysailer, motorsailer,
     # catamaran_sail, catamaran_motor, small_motor, large_motor, sport_cruiser, trawler,
     # explorer, superyacht
-    boat_class: str
+    # allow_inf_nan=False riegelt NaN/Infinity maschinell ab; der Validator
+    # darunter liefert zusätzlich die deutsche Fehlermeldung (ROB-2).
+    model_config = ConfigDict(allow_inf_nan=False)
+
+    boat_class: str = Field(..., min_length=1, max_length=50)
     length_m: float = Field(..., gt=0, lt=200)
 
     # Optional — each additional field improves analysis quality
-    beam_m: Optional[float] = Field(None, gt=0, lt=200)
-    draft_m: Optional[float] = None
-    displacement_kg: Optional[float] = None
-    cabin_count: Optional[int] = None
-    berth_count: Optional[int] = None
-    head_count: Optional[int] = None
+    beam_m: Optional[float] = Field(None, gt=0, le=80)
+    draft_m: Optional[float] = Field(None, ge=0, le=30)
+    displacement_kg: Optional[float] = Field(None, ge=0, le=50_000_000)
+    cabin_count: Optional[int] = Field(None, ge=0, le=MAX_CABIN_COUNT)
+    berth_count: Optional[int] = Field(None, ge=0, le=MAX_BERTH_COUNT)
+    head_count: Optional[int] = Field(None, ge=0, le=MAX_HEAD_COUNT)
 
     # Layout hints
-    cockpit_area_sqm: Optional[float] = None
-    salon_area_sqm: Optional[float] = None
-    pantry_type: Optional[str] = None
-    helm_position: Optional[str] = None
+    cockpit_area_sqm: Optional[float] = Field(None, ge=0, le=10_000)
+    salon_area_sqm: Optional[float] = Field(None, ge=0, le=10_000)
+    pantry_type: Optional[str] = Field(None, max_length=50)
+    helm_position: Optional[str] = Field(None, max_length=50)
     has_flybridge: Optional[bool] = None
     has_crew_quarters: Optional[bool] = None
 
     # Performance
-    engine_hp: Optional[float] = None
-    engine_count: Optional[int] = None
-    fuel_capacity_l: Optional[float] = None
-    water_capacity_l: Optional[float] = None
-    sail_area_sqm: Optional[float] = None
-    max_speed_kn: Optional[float] = None
+    engine_hp: Optional[float] = Field(None, ge=0, le=200_000)
+    engine_count: Optional[int] = Field(None, ge=0, le=MAX_ENGINE_COUNT)
+    fuel_capacity_l: Optional[float] = Field(None, ge=0, le=5_000_000)
+    water_capacity_l: Optional[float] = Field(None, ge=0, le=5_000_000)
+    sail_area_sqm: Optional[float] = Field(None, ge=0, le=50_000)
+    max_speed_kn: Optional[float] = Field(None, ge=0, le=200)
 
     # Commercial
-    price_eur: Optional[float] = None
+    price_eur: Optional[float] = Field(None, ge=0, le=10_000_000_000)
     # Bounded: an unchecked typo ("202") would otherwise drive the buyer
     # report's age logic into an "1824 Jahre alt" analysis presented as real.
     year: Optional[int] = Field(None, ge=1900, le=2100)
     brand: Optional[str] = Field(None, max_length=100)
     model_name: Optional[str] = Field(None, max_length=100)
 
-    deck_height_mm: Optional[float] = None
-    storage_volume_l: Optional[float] = None
+    deck_height_mm: Optional[float] = Field(None, gt=0, le=10_000)
+    storage_volume_l: Optional[float] = Field(None, ge=0, le=5_000_000)
+
+    @field_validator('*', mode='before')
+    @classmethod
+    def _reject_non_finite(cls, value, info):
+        """NaN/Infinity in JEDEM Zahlenfeld abweisen — mit deutscher Meldung.
+
+        Läuft als before-Validator, damit die verständliche Meldung vor den
+        generischen ge/le-Meldungen von Pydantic greift.
+        """
+        return require_finite(value, info.field_name)
 
     @field_validator('beam_m')
     @classmethod

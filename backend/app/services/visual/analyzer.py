@@ -4,9 +4,12 @@ Uses Claude's vision API to analyze yacht photos for spatial quality,
 craftsmanship, materials, emotional impact, exterior design, and helm
 ergonomics. Pure service — no database access.
 """
+import asyncio
 import base64
+import io
 import json
 import logging
+import math
 import os
 import re
 from pathlib import Path
@@ -34,6 +37,24 @@ SCORE_KEYS = (
     "helm_score",
 )
 
+# Gueltiger Score-Bereich (siehe CLAUDE.md: Scores sind immer 0-100)
+SCORE_MIN = 0.0
+SCORE_MAX = 100.0
+
+# Keys, unter denen die Prompts ihre Einzelbefunde liefern. Der
+# Build-Quality-Prompt (quality.py) verwendet "overall_findings", alle
+# anderen "findings" — die Aggregation muss BEIDE einsammeln, sonst sieht
+# der Nutzer die Verarbeitungsbefunde nie.
+FINDING_KEYS = ("findings", "overall_findings")
+
+# --- Bildvorbereitung ------------------------------------------------------
+# Die Vision-API rechnet Bilder intern ohnehin auf ~1568 px laengste Kante
+# herunter. Alles darueber kostet nur Upload-Zeit, Latenz und Tokens.
+MAX_IMAGE_EDGE_PX = 1568
+# Rohbytes, ab denen auch ein masshaltiges Bild neu komprimiert wird.
+MAX_IMAGE_BYTES = 3_000_000
+JPEG_QUALITY = 85
+
 
 class VisualAnalyzer:
     """Orchestrates image analysis via Claude's vision API.
@@ -47,6 +68,10 @@ class VisualAnalyzer:
     MODEL_DETAILED = "claude-opus-4-20250514"
     MAX_TOKENS = 4096
     MAX_TOKENS_DETAILED = 8192
+    # Wartezeit-Obergrenze pro API-Versuch (Sekunden).
+    # Aus der Konfiguration: VISUAL_ANALYSIS_TIMEOUT_SEC war deklariert, wurde
+    # aber nirgends gelesen.
+    API_TIMEOUT_S = float(settings.VISUAL_ANALYSIS_TIMEOUT_SEC)
 
     def __init__(self):
         self._client = None
@@ -163,32 +188,53 @@ class VisualAnalyzer:
                 "API vorübergehend nicht verfügbar (Circuit Breaker offen). Bitte später erneut versuchen.",
             )
 
+        def _blocking_create():
+            """Der eigentliche — synchrone und blockierende — SDK-Aufruf."""
+            return self.client.messages.create(
+                model=model,
+                max_tokens=max_tokens,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "image",
+                                "source": {
+                                    "type": "base64",
+                                    "media_type": media_type,
+                                    "data": image_data,
+                                },
+                            },
+                            {
+                                "type": "text",
+                                "text": prompt,
+                            },
+                        ],
+                    }
+                ],
+                # Eigenes SDK-Timeout: begrenzt die Lebensdauer des
+                # Worker-Threads, den wait_for nicht abbrechen kann.
+                timeout=self.API_TIMEOUT_S,
+            )
+
         async def _call_claude_api():
-            """Wrapper for the synchronous Anthropic SDK call."""
+            """Wrapper for the synchronous Anthropic SDK call.
+
+            Der SDK-Aufruf ist blockierend und laeuft deshalb via
+            ``asyncio.to_thread`` in einem Worker-Thread. Nur so bleibt der
+            Event-Loop frei und das in ``retry_async`` gesetzte
+            ``asyncio.wait_for``-Timeout kann ueberhaupt greifen: Stuende der
+            blockierende Aufruf direkt unter ``wait_for``, kaeme der Loop
+            waehrend des Aufrufs nie zum Zug und das Timeout waere wirkungslos.
+
+            WICHTIG: Ein ``wait_for``-Timeout beendet den Worker-Thread NICHT —
+            Python kann einen laufenden Thread nicht abbrechen. Es begrenzt
+            ausschliesslich unsere Wartezeit; der Thread laeuft im Hintergrund
+            weiter, bis der SDK-Aufruf selbst zurueckkehrt. Deshalb bekommt der
+            SDK zusaetzlich sein eigenes Client-Timeout mit (siehe _blocking_create).
+            """
             try:
-                return self.client.messages.create(
-                    model=model,
-                    max_tokens=max_tokens,
-                    messages=[
-                        {
-                            "role": "user",
-                            "content": [
-                                {
-                                    "type": "image",
-                                    "source": {
-                                        "type": "base64",
-                                        "media_type": media_type,
-                                        "data": image_data,
-                                    },
-                                },
-                                {
-                                    "type": "text",
-                                    "text": prompt,
-                                },
-                            ],
-                        }
-                    ],
-                )
+                return await asyncio.to_thread(_blocking_create)
             except Exception as e:
                 # Classify so the retry layer actually acts: permanent errors
                 # (auth, 400 bad request) must NOT be retried; transient ones
@@ -209,7 +255,7 @@ class VisualAnalyzer:
             max_retries=3,
             base_delay=1.0,
             max_delay=15.0,
-            timeout=60.0,
+            timeout=self.API_TIMEOUT_S,
             context=f"vision_api:{image_type}:{Path(image_path).name}",
         )
 
@@ -354,9 +400,16 @@ class VisualAnalyzer:
         all_findings = []
         seen_observations = set()
         for r in usable:
-            analysis = r.get("analysis", {})
-            findings = analysis.get("findings", [])
-            if isinstance(findings, list):
+            analysis = r.get("analysis")
+            if not isinstance(analysis, dict):
+                continue
+            # Beide Befund-Keys beruecksichtigen: der Build-Quality-Prompt
+            # liefert "overall_findings" — diese Befunde wurden bisher
+            # stillschweigend verworfen und erreichten den Nutzer nie.
+            for findings_key in FINDING_KEYS:
+                findings = analysis.get(findings_key)
+                if not isinstance(findings, list):
+                    continue
                 for f in findings:
                     obs = f.get("observation", "") if isinstance(f, dict) else str(f)
                     if obs and obs not in seen_observations:
@@ -411,7 +464,83 @@ class VisualAnalyzer:
         with open(path, "rb") as f:
             data = f.read()
 
+        # Grosse Fotos (Handy-Aufnahmen: 10-20 MB) vor dem Kodieren
+        # herunterrechnen — spart Upload-Zeit, Latenz und Token-Kosten.
+        data, media_type = self._prepare_image_bytes(data, media_type)
+
         return base64.b64encode(data).decode("utf-8"), media_type
+
+    def _prepare_image_bytes(self, raw: bytes, media_type: str) -> tuple[bytes, str]:
+        """Skaliere/komprimiere ein Bild vor der base64-Kodierung.
+
+        Die Vision-API rechnet Bilder ohnehin auf ~1568 px laengste Kante
+        herunter; alles darueber ist reine Upload-, Latenz- und Token-
+        Verschwendung. Bilder innerhalb der Grenzen werden unveraendert
+        durchgereicht (kein unnoetiger Qualitaetsverlust durch Re-Encoding).
+
+        Faellt Pillow aus (nicht installiert, defekte oder unlesbare Datei),
+        werden die Originalbytes unveraendert zurueckgegeben — die Analyse
+        laeuft dann wie bisher, nur eben ungeskaliert.
+
+        Args:
+            raw: Originalbytes der Bilddatei.
+            media_type: Media-Type aus der Dateiendung.
+
+        Returns:
+            Tuple (bytes, media_type) — der Media-Type kann sich beim
+            Re-Encoding aendern (z.B. GIF/WebP -> JPEG).
+        """
+        try:
+            from PIL import Image
+        except ImportError:
+            logger.debug("Pillow nicht installiert — Bild wird ungeskaliert gesendet")
+            return raw, media_type
+
+        try:
+            with Image.open(io.BytesIO(raw)) as img:
+                img.load()
+                width, height = img.size
+                longest = max(width, height)
+                needs_resize = longest > MAX_IMAGE_EDGE_PX
+                if not needs_resize and len(raw) <= MAX_IMAGE_BYTES:
+                    return raw, media_type
+
+                if needs_resize:
+                    scale = MAX_IMAGE_EDGE_PX / longest
+                    img = img.resize(
+                        (max(1, round(width * scale)), max(1, round(height * scale))),
+                        Image.LANCZOS,
+                    )
+
+                has_alpha = img.mode in ("RGBA", "LA") or (
+                    img.mode == "P" and "transparency" in img.info
+                )
+                buffer = io.BytesIO()
+                if has_alpha:
+                    out_media_type = "image/png"
+                    img.convert("RGBA").save(buffer, format="PNG", optimize=True)
+                else:
+                    out_media_type = "image/jpeg"
+                    img.convert("RGB").save(
+                        buffer, format="JPEG", quality=JPEG_QUALITY, optimize=True
+                    )
+                prepared = buffer.getvalue()
+        except Exception:
+            logger.warning(
+                "Bild konnte nicht skaliert werden — sende Originalbytes",
+                exc_info=True,
+            )
+            return raw, media_type
+
+        # Re-Encoding ohne Groessengewinn: Original behalten.
+        if not needs_resize and len(prepared) >= len(raw):
+            return raw, media_type
+
+        logger.info(
+            "Bild fuer Vision-API aufbereitet: %dx%d, %.2f MB -> %.2f MB (%s)",
+            width, height, len(raw) / 1e6, len(prepared) / 1e6, out_media_type,
+        )
+        return prepared, out_media_type
 
     def _parse_json_response(self, response_text: str) -> dict | None:
         """Parse JSON from AI response, handling markdown code blocks.
@@ -419,20 +548,36 @@ class VisualAnalyzer:
         The AI may wrap its JSON in ```json ... ``` blocks or include
         leading/trailing text. This method extracts and parses the JSON.
 
+        Schema-Guard: Akzeptiert wird ausschliesslich ein JSON-OBJEKT. Liefert
+        das Modell eine Liste, eine Zahl oder einen String — auch innerhalb von
+        Markdown-Fences —, wird das Ergebnis verworfen und None zurueckgegeben.
+        Sonst schlaegt die Weiterverarbeitung mit AttributeError fehl, weil auf
+        dem Resultat ``.get()`` aufgerufen wird.
+
         Args:
             response_text: Raw text response from the AI.
 
         Returns:
-            Parsed dict, or None if parsing fails.
+            Parsed dict, or None if parsing fails or the JSON is not an object.
         """
         if not response_text:
             return None
 
         text = response_text.strip()
 
+        def _as_object(candidate: object) -> dict | None:
+            """Nur Objekte durchlassen — alles andere ist Schema-Verletzung."""
+            if isinstance(candidate, dict):
+                return candidate
+            logger.warning(
+                "KI-Antwort ist kein JSON-Objekt, sondern %s — verworfen",
+                type(candidate).__name__,
+            )
+            return None
+
         # Try direct parse first
         try:
-            return json.loads(text)
+            return _as_object(json.loads(text))
         except json.JSONDecodeError:
             pass
 
@@ -441,7 +586,7 @@ class VisualAnalyzer:
         match = re.search(code_block_pattern, text, re.DOTALL)
         if match:
             try:
-                return json.loads(match.group(1).strip())
+                return _as_object(json.loads(match.group(1).strip()))
             except json.JSONDecodeError:
                 pass
 
@@ -450,7 +595,7 @@ class VisualAnalyzer:
         last_brace = text.rfind("}")
         if first_brace >= 0 and last_brace > first_brace:
             try:
-                return json.loads(text[first_brace:last_brace + 1])
+                return _as_object(json.loads(text[first_brace:last_brace + 1]))
             except json.JSONDecodeError:
                 pass
 
@@ -490,14 +635,44 @@ class VisualAnalyzer:
         """Extract the primary score from a parsed analysis result.
 
         Different prompt types use different score key names.
-        Returns the first matching score found, or None.
+        Returns the first VALID score found, or None.
+
+        Validierung (B-11): ``True`` ist in Python ein ``int`` und wuerde
+        stillschweigend zu 1.0 — ein erfundener Score. Ebenso werden NaN/Inf
+        und Werte ausserhalb 0-100 verworfen. In all diesen Faellen liefern wir
+        lieber None ("nicht beurteilbar") als eine erfundene Zahl.
         """
+        if not isinstance(parsed, dict):
+            return None
+
         for key in SCORE_KEYS:
-            if key in parsed:
-                try:
-                    return float(parsed[key])
-                except (TypeError, ValueError):
-                    pass
+            if key not in parsed:
+                continue
+            raw = parsed[key]
+
+            # bool ist Subklasse von int: True -> 1.0 waere ein Fantasie-Score.
+            if isinstance(raw, bool):
+                logger.warning("Score '%s' ist ein Boolean (%r) — verworfen", key, raw)
+                continue
+
+            try:
+                value = float(raw)
+            except (TypeError, ValueError):
+                continue
+
+            if not math.isfinite(value):
+                logger.warning("Score '%s' ist nicht endlich (%r) — verworfen", key, raw)
+                continue
+
+            if not SCORE_MIN <= value <= SCORE_MAX:
+                logger.warning(
+                    "Score '%s' ausserhalb des gueltigen Bereichs 0-100 (%r) — verworfen",
+                    key, value,
+                )
+                continue
+
+            return value
+
         return None
 
     def _unavailable_result(self, image_path: str, image_type: str, boat_class: str) -> dict:

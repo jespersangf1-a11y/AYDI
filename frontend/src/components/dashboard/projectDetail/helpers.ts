@@ -12,9 +12,11 @@ export type TabType =
   | 'overview'
   | 'layouts'
   | 'analysis'
+  | 'images'
   | 'materials'
   | 'structural'
   | 'costs'
+  | 'service'
   | 'history'
 export type ViewerMode = '2d' | '3d'
 
@@ -22,9 +24,11 @@ export const ALL_TABS: readonly TabType[] = [
   'overview',
   'layouts',
   'analysis',
+  'images',
   'materials',
   'structural',
   'costs',
+  'service',
   'history',
 ] as const
 

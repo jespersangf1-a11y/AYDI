@@ -75,27 +75,81 @@
 
 ## 2. Hersteller & Typische Produkte
 
-### 2.1 EPIRB-Hersteller
+### 2.1 EPIRB-Hersteller (fest am Schiff, 406 MHz)
+
+> **Geräteklassen nicht verwechseln.** EPIRB, PLB und SART sind drei verschiedene
+> Gerätearten und **nicht gegeneinander austauschbar**. Eine EPIRB ist dem
+> *Schiff* zugeordnet und wird bei den meisten Ausrüstungsvorschriften verlangt;
+> eine PLB ist einer *Person* zugeordnet und ersetzt die EPIRB nicht; ein SART
+> ist überhaupt kein Funkbaken-Sender, sondern ein Radar-Transponder (siehe 2.3).
+> Diese Unterscheidung war in einer früheren Fassung dieser Datei vermischt.
+
+| Hersteller | Modellreihe | Typ | Merkmale |
+|-----------|-------------|-----|----------|
+| **ACR Electronics** (USA) | GlobalFix V5 / V6 | EPIRB 406 MHz | GPS, Kat. I/II, RLS-Varianten |
+| **ACR Electronics** (USA) | GlobalFix iPRO | EPIRB 406 MHz | Mit integriertem GPS |
+| **McMurdo** (UK) | SmartFind G8 | EPIRB 406 MHz | GPS, Kat. I/II |
+| **McMurdo** (UK) | SmartFind E100 / E100G | EPIRB 406 MHz | G-Variante mit GPS |
+| **Ocean Signal** (UK) | SafeSea EPIRB1 Pro | EPIRB 406 MHz | Kompakt, GPS |
+| **Ocean Signal** (UK) | SafeSea EPIRB3 Pro | EPIRB 406 MHz + AIS + RLS | AIS-Zusatzsignal für Schiffe in der Nähe |
+| **Jotron** (NO) | Tron 40S / 60S | EPIRB 406 MHz | Berufsschifffahrt, Skandinavien stark verbreitet |
+| **Jotron** (NO) | Tron 60GPS / 60AIS RLS | EPIRB 406 MHz | AIS-/RLS-Varianten |
+
+> Confidence: `measured` — Hersteller und Modellreihen belegt (siehe Quellen am
+> Abschnittsende). **Konkrete Artikelnummer, Batteriedatum und Zulassung
+> (MED/Wheelmark, FCC, RTCM) immer beim Händler für das Zielrevier prüfen** —
+> die Zulassungen unterscheiden sich zwischen EU, USA und AUS/NZ.
+
+### 2.2 PLB-Hersteller (personengebunden, 406 MHz) — KEIN EPIRB-Ersatz
+
+| Hersteller | Modellreihe | Typ | Merkmale |
+|-----------|-------------|-----|----------|
+| **ACR Electronics** (USA) | ResQLink (u.a. 400/personal) | PLB 406 MHz | 5 W, Herstellerangabe ~30 h Sendedauer |
+| **McMurdo** (UK) | FastFind | PLB 406 MHz | Herstellerangabe ~24 h Sendedauer |
+| **Ocean Signal** (UK) | rescueME PLB1 | PLB 406 MHz | Sehr kompakt, für Rettungsweste |
+
+> Confidence: `measured` (Hersteller/Reihe) — Laufzeitangaben sind
+> Herstellerangaben und temperaturabhängig.
+> ⚠️ **ZU PRÜFEN (Audit):** In einer früheren Fassung standen `ACR PLB ResQLink+`,
+> `McMurdo FastFind Rescue` und `JRC JLR-7250` in der **EPIRB**-Tabelle. ResQLink
+> und FastFind sind PLBs; „JLR" ist bei JRC die Baureihe der GPS-Navigatoren,
+> keine EPIRB. Ebenfalls entfernt: `Samyung SB-812` (Modellbezeichnung nicht
+> belegbar).
+
+### 2.3 SART-Hersteller (Radar-Transponder, 9 GHz X-Band)
+
+> Ein SART antwortet **ausschließlich** auf X-Band-Radar (9 GHz / 3 cm).
+> Ein S-Band-Radar (3 GHz) löst ihn NICHT aus. Typische Ansprechweite rund
+> 8 sm zum auslösenden Radar.
 
 | Hersteller | Modell | Typ | Merkmale |
 |-----------|--------|-----|----------|
-| **ACR** | GlobalFix V4 | 406 MHz | 5 W, GPS, 48 h Batterie, Hochzuverlässig |
-| **ACR** | PLB ResQLink + | 406 MHz | Tragbar, 24 h, Personal |
-| **McMurdo** | FastFind Rescue | 406 MHz | Professionell, Hohe Sendeleistung |
-| **Ocean Signal** | EPIRB1 | 406 MHz | Kompakt, wirtschaftlich |
-| **Samyung** | SB-812 | 406 MHz | Budget-Option, Asien |
-| **JRC** | JLR-7250 | 406 MHz | Japanischer Standard, Schiffe |
+| **Jotron** (NO) | Tron SART20 | Radar-SART, X-Band | Weit verbreiteter Standard, Schottbügel-Halterung |
+| **Jotron** (NO) | Tron AIS-SART | AIS-SART | Sendet AIS statt Radar-Echo |
+| **McMurdo** (UK) | S4 Rescue SART | Radar-SART, X-Band | 9 GHz |
+| **Cobham SAILOR** (DK) | SAILOR SART II | Radar-SART, X-Band | Berufsschifffahrt |
+| **ACR Electronics** (USA) | Pathfinder PRO SART 2914 | Radar-SART, X-Band | |
+| **Ocean Signal** (UK) | S100 SART | Radar-SART, X-Band | |
 
-### 2.2 SART-Hersteller
+> Confidence: `measured` — Hersteller und Modelle belegt (Quellen unten).
+> ⚠️ **ZU PRÜFEN (Audit):** Eine frühere Fassung nannte hier `Mammarth SART4`
+> (**Hersteller existiert nicht**), `Furuno FAR-2127` (das ist eine **Radaranlage**,
+> kein SART) und `ACR AquaLink SART` (AquaLink ist bei ACR eine **Baken**-Reihe,
+> kein SART). Diese drei Zeilen waren sachlich falsch und sind ersetzt.
+> **Sicherheitsrelevant:** Wer danach beschafft hätte, hätte kein funktionsfähiges
+> SART an Bord gehabt.
 
-| Hersteller | Modell | Typ | Merkmale |
-|-----------|--------|-----|----------|
-| **Jotron** | SART2 | X-Band | Zuverlässig, Weltstandard |
-| **ACR** | AquaLink SART | X-Band | Kompakt, Prüf-Funktion |
-| **Mammarth** | SART4 | X-Band | Robust, Militär-erprobt |
-| **Furuno** | FAR-2127 | X-Band | Japanischer Standard |
+**Quellen zu 2.1–2.3** (abgerufen 08/2026):
+- Jotron, SART- und AIS-SART-Produktseite: <https://www.jotron.com/products/maritime-communication/sart-and-ais-sart>
+- Jotron Tron SART20: <https://www.jotron.com/products/maritime-communication/sart-and-ais-sart/tron-sart20-radar-transponder-with-bulkhead-bracket>
+- McMurdo S4 Rescue SART: <https://www.marinsat.com/en/product/s4-rescue-sart>
+- SART-Händlerübersicht (McMurdo, Jotron, JRC, SAILOR, Ocean Signal, ACR): <https://buynav.com/collections/sart>
+- Funktionsprinzip SART (X-Band, Ansprechweite): <https://en.wikipedia.org/wiki/Search_and_rescue_transponder>
+- Bakentypen EPIRB/PLB/ELT (Behördenquelle AMSA): <https://beacons.amsa.gov.au/about/beacon-types.asp>
+- Modellreihen-Übersicht EPIRB/PLB: <https://www.marinesuperstore.com/safety-beacons-guide>
 
-### 2.3 Flare-Hersteller
+
+### 2.4 Flare-Hersteller
 
 | Hersteller | Produkt | Typ | Merkmal |
 |-----------|---------|-----|----------|
