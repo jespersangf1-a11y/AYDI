@@ -64,7 +64,7 @@ Zielbild: alle drei speisen ein einheitliches Scoring pro Zone und Modul.
 angestoßen (`app/api/routes/images.py` → `app/services/visual/analyzer.analyze_image`), nicht vom
 Orchestrator. Ihre Ergebnisse werden folglich **nicht** mit den strukturierten Modulnoten
 verschmolzen: die Verschmelzung liegt fertig, aber unaufgerufen in `score_fusion.py` — siehe
-**Score Fusion Weights — NICHT VERDRAHTET**.
+**Score Fusion Weights — verdrahtet** (siehe unten).
 
 ---
 
@@ -213,16 +213,32 @@ strukturierten Modul-Runner auf und aggregiert deren `overall_score` in `_comput
 
 ---
 
-## Score Fusion Weights — NICHT VERDRAHTET
+## Score Fusion Weights — VERDRAHTET
 
-`app/services/analysis/score_fusion.py` existiert und ist getestet
-(`tests/test_score_fusion.py`, `tests/test_qa_error_handling.py`), aber der String `score_fusion`
-kommt **in keiner einzigen Datei unter `app/` vor** — es gibt keinen Aufrufer, nicht einmal einen
-auskommentierten. Die geplante Verschmelzung von Pipeline A und Pipeline B findet im Produktivpfad
-also nicht statt. Wer sie aktiviert, ruft `fuse_all_modules(structured, visual, boat_class)` auf
-und lässt das Ergebnis in `_compute_overall_score` einfließen; der Test
-`test_claude_md_spec_matches_code.py::test_score_fusion_has_no_caller_in_app_and_spec_says_so`
-schlägt dann fehl und erinnert daran, diesen Abschnitt umzuschreiben.
+Der Orchestrator verschmilzt Pipeline A und Pipeline B. Ablauf in
+`run_full_analysis`, nach den Modul-Läufen und **vor** `_compute_overall_score`:
+
+1. `visual_fusion.visual_results_to_module_scores(context.visual_analyses)` verdichtet die
+   Bildanalysen zu modulweisen Visual-Scores. Die Zuordnung Bild → Modul steht in
+   `IMAGE_TYPE_TO_MODULES` und leitet sich aus dem **Prompt** ab, nicht aus dem Etikett des
+   Bildtyps (ein Raumbild sagt etwas über Ergonomie/Volumen/Raumwirkung, ein Detailfoto über
+   Verarbeitung und Material). Ein Bildtyp ohne Eintrag trägt bewusst zu **keinem** Modul bei.
+2. `score_fusion.fuse_all_modules(structured, visual, boat_class)` fusioniert.
+3. Die fusionierte Note ersetzt `overall_score` des Moduls; die strukturierte bleibt als
+   `structured_score` erhalten, der komplette Fusionsblock als `fusion`.
+
+**Zwei Dinge fehlten zwischen den Pipelines und sind jetzt gelöst:**
+`score_fusion` erwartet `confidence` als **String**, der Analyzer liefert ein **Dict**
+(`{"level": …, "is_usable": …}`) — `CONFIDENCE_DISCOUNT.get(dict)` wäre mit
+`TypeError: unhashable type: 'dict'` abgebrochen. Und die Fusion erwartet Ergebnisse je
+**Modul**, der Analyzer liefert sie je **Bild**. Beides übersetzt `visual_fusion.py`.
+
+**Unbrauchbare Bildbefunde fließen nicht ein.** Setzt der Konfidenz-Wächter `is_usable: False`
+(schlechtes Bild, fremdes Motiv, unsicheres Modell), wird das Ergebnis verworfen — sonst würde
+genau die Unsicherheit zur Zahl, die der Wächter gerade festgestellt hat. Ohne Bilder ist die
+Fusion wirkungslos; sie ist rein additiv.
+
+Die Antwort führt zusätzlich `fusion` (je Modul) und `fused_module_count`.
 
 `FUSION_WEIGHTS` (Ist-Zustand im Code, 12 Einträge):
 

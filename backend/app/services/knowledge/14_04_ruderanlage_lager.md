@@ -1,5 +1,13 @@
 # 14.04 — Ruderanlage und Lager (Rudertypen, Lager, Schäfte, Koker, Skeg/Spaten/Doppelruder): Vollständige Wissensreferenz
 
+> **Paralleldokument beachten.** Zum Thema „Ruderanlage und Lager" existiert im Korpus ein
+> zweites, **unabhängig geschriebenes** Dokument: [20_03_ruderanlage_lager.md](20_03_ruderanlage_lager.md).
+> Beide sind je rund 3.800 Zeilen lang und teilen nur etwa 2 % ihrer Zeilen — sie
+> ergänzen einander, driften aber auseinander (nachgewiesen an der DIN-766-Teilung
+> in den Ankerketten-Dokumenten). Bei widersprüchlichen Angaben: beide lesen und
+> gegen Hersteller-/Normdaten prüfen, statt einer Zahl zu vertrauen.
+
+
 > **AYDI Wissensdatei 14.04** — Kategorie 14: Steueranlagen
 > **Confidence-Quelle:** measured (Hersteller-TDS, ISO-Normen), documented (Surveyor-Berichte, Fachpublikationen), estimated (Erfahrungswerte, Eigner-Berichte)
 > **Letzte Aktualisierung:** 2026-04-26

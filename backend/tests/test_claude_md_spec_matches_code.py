@@ -73,17 +73,32 @@ def test_only_the_clean_copy_is_skipped_and_spec_names_it(spec: str) -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_score_fusion_has_no_caller_in_app_and_spec_says_so(spec: str) -> None:
+def test_score_fusion_is_wired_and_spec_says_so(spec: str) -> None:
+    """Die Fusion war implementiert, getestet — und ohne einen einzigen Aufrufer.
+
+    Fotos beeinflussten damit keinen Score, waehrend CLAUDE.md eine
+    Gewichtstabelle fuehrte, die nichts steuerte. Dieser Test hielt den Zustand
+    frueher fest ("NICHT VERDRAHTET") und dreht sich jetzt um: Er stellt sicher,
+    dass die Verdrahtung bestehen bleibt und die Spezifikation sie beschreibt.
+    """
     callers = [
-        p
+        Path(p).name
         for p in glob.glob(str(BACKEND / "app" / "**" / "*.py"), recursive=True)
         if "score_fusion" in Path(p).read_text(encoding="utf-8")
+        and Path(p).name != "score_fusion.py"
     ]
-    assert callers == [], (
-        "score_fusion.py wird jetzt aufgerufen — CLAUDE.md darf es dann nicht "
-        f"mehr als NICHT VERDRAHTET fuehren. Aufrufer: {callers}"
+    assert "orchestrator.py" in callers, (
+        f"Der Orchestrator ruft die Score-Fusion nicht mehr auf. Aufrufer: {callers}"
     )
-    assert "NICHT VERDRAHTET" in spec
+    # Gezielt die Score-Fusion-Ueberschrift pruefen, nicht den ganzen Text:
+    # "NICHT VERDRAHTET" steht weiterhin zu Recht bei den drei Fusions-
+    # Confidence-Badges (measured+visual / visual_only / discrepant), die das
+    # Backend bewusst NICHT emittiert — _fuse_both vermeidet sie ausdruecklich.
+    assert "## Score Fusion Weights — NICHT VERDRAHTET" not in spec, (
+        "CLAUDE.md fuehrt die Score-Fusion noch als nicht verdrahtet, "
+        "obwohl der Orchestrator sie aufruft."
+    )
+    assert "## Score Fusion Weights — VERDRAHTET" in spec
 
 
 def test_fusion_weight_keys_match_spec_table(spec: str) -> None:
@@ -154,12 +169,23 @@ def test_orchestrator_tiers_in_spec_match_code(spec: str) -> None:
         )
 
 
-def test_orchestrator_runs_no_visual_analysis_and_no_fusion() -> None:
+def test_orchestrator_performs_the_fusion() -> None:
+    """Der Orchestrator bezieht Pipeline B jetzt ein.
+
+    Frueher pruefte dieser Test das Gegenteil ("visual" und "fusion" kommen im
+    Orchestrator nicht vor) und dokumentierte damit die Luecke. Er ist bewusst
+    umgedreht, statt geloescht: Faellt die Verdrahtung wieder heraus, schlaegt er an.
+    """
     src = (BACKEND / "app" / "services" / "analysis" / "orchestrator.py").read_text(
         encoding="utf-8"
     )
-    assert "visual" not in src
-    assert "fusion" not in src
+    assert "fuse_all_modules" in src
+    assert "visual_results_to_module_scores" in src
+
+    from app.services.analysis.orchestrator import AnalysisContext
+
+    # Ohne Bilder bleibt alles wie zuvor — die Fusion ist rein additiv.
+    assert "visual_analyses" in AnalysisContext.__dataclass_fields__
 
 
 # ---------------------------------------------------------------------------

@@ -14,6 +14,14 @@ confidence_quellen:
 
 # 20.04 — Steuerräder und Pinnen: Materialien, Größen, Ergonomie, Hersteller, Montage im Yachtbau
 
+> **Paralleldokument beachten.** Zum Thema „Steuerräder und Pinnen" existiert im Korpus ein
+> zweites, **unabhängig geschriebenes** Dokument: [14_07_steuerraeder_pinnen.md](14_07_steuerraeder_pinnen.md).
+> Beide sind je rund 3.800 Zeilen lang und teilen nur etwa 2 % ihrer Zeilen — sie
+> ergänzen einander, driften aber auseinander (nachgewiesen an der DIN-766-Teilung
+> in den Ankerketten-Dokumenten). Bei widersprüchlichen Angaben: beide lesen und
+> gegen Hersteller-/Normdaten prüfen, statt einer Zahl zu vertrauen.
+
+
 > **AYDI Wissensdatei 20.04** — Kategorie 20: Steueranlagen und Ruderanlagen
 > **Confidence-Quelle:** measured (Hersteller-TDS, ISO-Normen), documented (Hersteller-Kataloge, Werftunterlagen), estimated (Erfahrungswerte, Werft-Konsens)
 > **Letzte Aktualisierung:** 2026-05-02

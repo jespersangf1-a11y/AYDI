@@ -1,5 +1,13 @@
 # 20.02 — Hydraulische Steuerung (Hydraulikzylinder, Pumpen, Leitungen, Dimensionierung, Wartung)
 
+> **Paralleldokument beachten.** Zum Thema „Hydraulische Steuerung" existiert im Korpus ein
+> zweites, **unabhängig geschriebenes** Dokument: [14_03_hydraulische_steuerung.md](14_03_hydraulische_steuerung.md).
+> Beide sind je rund 3.800 Zeilen lang und teilen nur etwa 2 % ihrer Zeilen — sie
+> ergänzen einander, driften aber auseinander (nachgewiesen an der DIN-766-Teilung
+> in den Ankerketten-Dokumenten). Bei widersprüchlichen Angaben: beide lesen und
+> gegen Hersteller-/Normdaten prüfen, statt einer Zahl zu vertrauen.
+
+
 > **Dokumentversion:** 2.0
 > **Letzte Aktualisierung:** 2026-05-02
 > **Autor:** AYDI Knowledge Engineering

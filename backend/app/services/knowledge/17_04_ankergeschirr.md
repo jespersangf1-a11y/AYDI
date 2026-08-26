@@ -9,6 +9,14 @@ autor: "AYDI Maritime Knowledge Base"
 
 # 17_04 — Ankergeschirr und Zubehör
 
+> **Paralleldokument beachten.** Zum Thema „Ankergeschirr" existiert im Korpus ein
+> zweites, **unabhängig geschriebenes** Dokument: [13_04_ankergeschirr.md](13_04_ankergeschirr.md).
+> Beide sind je rund 3.800 Zeilen lang und teilen nur etwa 2 % ihrer Zeilen — sie
+> ergänzen einander, driften aber auseinander (nachgewiesen an der DIN-766-Teilung
+> in den Ankerketten-Dokumenten). Bei widersprüchlichen Angaben: beide lesen und
+> gegen Hersteller-/Normdaten prüfen, statt einer Zahl zu vertrauen.
+
+
 ---
 
 ## Inhaltsverzeichnis

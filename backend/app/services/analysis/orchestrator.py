@@ -20,6 +20,8 @@ from app.core.domains import (
     get_domains_for_module,
 )
 from app.core.subscription import SubscriptionTier, get_allowed_modules
+from app.services.analysis.score_fusion import fuse_all_modules
+from app.services.analysis.visual_fusion import visual_results_to_module_scores
 from app.core.validation import (
     validate_boat_class,
     validate_zones,
@@ -49,6 +51,8 @@ class AnalysisContext:
     brand_references: list[dict] = field(default_factory=list)
     competitors: list[dict] = field(default_factory=list)
     community_patterns: list[dict] = field(default_factory=list)
+    # Ergebnisse der Bildanalyse (Pipeline B). Leer = reine Pipeline-A-Analyse.
+    visual_analyses: list[dict] = field(default_factory=list)
     # Subscription tier for gating (defaults to "pro" for backward compat)
     tier: str = "pro"
     # Provenance of the input data — drives the confidence code modules emit
@@ -274,6 +278,39 @@ async def run_full_analysis(
                     # Store in context so later tiers can reference earlier results
                     context.module_results[name] = result
 
+    # --- Pipeline B einbeziehen: Score-Fusion ---
+    #
+    # Bis hierher stammen alle Noten aus Pipeline A. `score_fusion.py` war
+    # vollstaendig implementiert und getestet, hatte aber KEINEN Aufrufer — Fotos
+    # beeinflussten also keinen einzigen Score, und die in CLAUDE.md
+    # dokumentierten Fusionsgewichte steuerten nichts.
+    #
+    # Ohne Bildanalysen bleibt alles unveraendert; die Fusion ist rein additiv.
+    fusion: dict[str, dict] = {}
+    visual_scores = visual_results_to_module_scores(context.visual_analyses)
+    if visual_scores:
+        try:
+            fusion = fuse_all_modules(results, visual_scores, context.boat_class)
+            for name, fused in fusion.items():
+                result = results.get(name)
+                if not result or fused.get("fused_score") is None:
+                    continue
+                # Die fusionierte Note ersetzt die strukturierte; beide Rohwerte
+                # bleiben sichtbar, damit nachvollziehbar ist, woher sie kommt.
+                result["structured_score"] = result.get("overall_score")
+                result["overall_score"] = fused["fused_score"]
+                result["confidence"] = fused.get("confidence", result.get("confidence"))
+                result["fusion"] = fused
+                if fused.get("needs_review"):
+                    # Widerspruch zwischen Messung und Foto: NICHT mitteln,
+                    # sondern kennzeichnen (Zuverlaessigkeitsregel aus CLAUDE.md).
+                    result["needs_review"] = True
+        except Exception:
+            logger.exception(
+                "Score-Fusion fehlgeschlagen; strukturierte Noten bleiben unveraendert"
+            )
+            fusion = {}
+
     # Compute overall weighted score
     overall = _compute_overall_score(results, context.boat_class, confidence_threshold)
 
@@ -293,6 +330,8 @@ async def run_full_analysis(
         "overall_score": overall["score"],
         "overall_confidence": overall["confidence"],
         "domain_coverage": domain_coverage,
+        "fusion": fusion,
+        "fused_module_count": len(fusion),
         "module_count": len(results),
         "skipped_count": len(skipped),
         "error_count": len(errors),
@@ -381,6 +420,14 @@ async def _run_single_module(
 # ---------------------------------------------------------------------------
 # Overall score computation
 # ---------------------------------------------------------------------------
+
+# Module, die einen SCHADEN beschreiben statt eine Entwurfsqualitaet. Sie gehen
+# als Abzug in die Gesamtnote ein, nicht als gewichtetes Mitglied — siehe
+# _compute_overall_score. Genau deshalb summieren sich OVERALL_WEIGHTS ohne sie
+# auf 1.0; die frueheren 1.05 waren das nachtraeglich angehaengte
+# service_patterns-Gewicht und zugleich die Ursache des Vorzeichenfehlers.
+PENALTY_MODULES: frozenset[str] = frozenset({"service_patterns"})
+
 
 # Module weights for computing overall score per boat class
 OVERALL_WEIGHTS: dict[str, dict[str, float]] = {
@@ -474,6 +521,8 @@ def _compute_overall_score(results: dict[str, dict], boat_class: str, confidence
     weighted_sum = 0.0
 
     for module, result in results.items():
+        if module in PENALTY_MODULES:
+            continue  # separat, siehe unten
         score = result.get("overall_score")
         if score is None:
             continue
@@ -487,6 +536,30 @@ def _compute_overall_score(results: dict[str, dict], boat_class: str, confidence
 
     # Normalise by actual weights used (in case some modules were skipped)
     overall = weighted_sum / total_weight
+
+    # --- Schadenshistorie als ABZUG, nicht als Mittelwert-Mitglied ---
+    #
+    # `service_patterns` bewertet, was dem Boot nachweislich zugestossen ist.
+    # Als gewichtetes Mitglied hob es die Gesamtnote, sobald sein Wert ueber dem
+    # bisherigen Mittel lag — gemessen stieg sie durch zwei gemeldete Schaeden
+    # (1x kritisch, 1x hoch) von 63,0 auf 64,0. Ein dokumentierter Mangel darf
+    # ein Boot nie besser dastehen lassen.
+    #
+    # Als Abzug ist das Vorzeichen garantiert: 100 Punkte (nichts gemeldet)
+    # kosten nichts, jeder Punkt darunter zieht anteilig ab. Die HOEHE bleibt
+    # ueber OVERALL_WEIGHTS steuerbar — sie ist eine Produktentscheidung, das
+    # Vorzeichen war ein Fehler.
+    penalty = 0.0
+    for module in PENALTY_MODULES:
+        result = results.get(module)
+        if not result:
+            continue
+        score = result.get("overall_score")
+        if score is None:
+            continue
+        penalty += (100.0 - max(0.0, min(100.0, score))) * weights.get(module, 0.0)
+
+    overall = max(0.0, overall - penalty)
 
     # Confidence: if most modules are "measured" / "calculated", overall is too
     confidences = [r.get("confidence", "estimated") for r in results.values()]

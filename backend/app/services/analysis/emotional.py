@@ -350,6 +350,7 @@ def analyze_room_proportion(zones: list[dict], config: dict) -> tuple[float, lis
     evaluable = [z for z in zones if z["zone_type"] in _PROPORTION_ZONE_TYPES and z.get("height_mm") is not None]
     if not evaluable:
         warnings.append({
+            "code": "EMO_NO_HEIGHT_DATA",
             "severity": "info",
             "message": "Keine Höhendaten vorhanden — Raumproportionen nicht bewertbar",
             "suggestion": "height_mm für Zonen angeben",
@@ -393,6 +394,7 @@ def analyze_room_proportion(zones: list[dict], config: dict) -> tuple[float, lis
         if deviation > 0.15 and direction:
             label = z["name"]
             warnings.append({
+                "code": "EMO_PROPORTIONS_POOR",
                 "severity": "warning",
                 "message": f"Raumproportionen in '{label}' ungünstig ({direction}, Verhältnis: {ratio:.2f})",
                 "suggestion": f"Raumbreite bzw. Deckenhöhe in '{label}' ausgewogener wählen",
@@ -426,6 +428,7 @@ def analyze_light_distribution(zones: list[dict], config: dict) -> tuple[float, 
 
     if not evaluable:
         warnings.append({
+            "code": "EMO_NO_WINDOW_DATA",
             "severity": "info",
             "message": "Keine Fensterdaten vorhanden — Lichtverteilung nicht bewertbar",
             "suggestion": "window_area_pct in Zone-Eigenschaften angeben (0.0–1.0)",
@@ -450,6 +453,7 @@ def analyze_light_distribution(zones: list[dict], config: dict) -> tuple[float, 
             zone_scores.append(ratio * 100.0)
             if ratio < 0.6:
                 warnings.append({
+                    "code": "EMO_ZONE_TOO_DARK",
                     "severity": "warning",
                     "message": f"Zone '{z['name']}' zu dunkel (Fensteranteil: {pct:.0%}, Ziel: {target:.0%})",
                     "suggestion": f"Fensterfläche in '{z['name']}' vergrößern",
@@ -473,6 +477,7 @@ def analyze_sightline(zones: list[dict], config: dict) -> tuple[float, list[dict
     evaluable = [z for z in zones if z["zone_type"] in _SIGHTLINE_ZONE_TYPES]
     if not evaluable:
         warnings.append({
+            "code": "EMO_NO_SIGHTLINE_ZONES",
             "severity": "info",
             "message": "Keine bewertbaren Zonen für Sichtachsen vorhanden",
             "suggestion": "Salon- oder Kabinen-Zonen zum Layout hinzufügen",
@@ -495,6 +500,7 @@ def analyze_sightline(zones: list[dict], config: dict) -> tuple[float, list[dict
             ratio = dist / min_sight if min_sight > 0 else 0.0
             zone_scores.append(ratio * 70.0)
             warnings.append({
+                "code": "EMO_SIGHTLINE_SHORT",
                 "severity": "warning",
                 "message": f"Sichtachse in '{z['name']}' kurz ({dist:.1f}m, empfohlen: {min_sight:.1f}m)",
                 "suggestion": f"Raumgeometrie in '{z['name']}' öffnen für längere Sichtachsen",
@@ -518,6 +524,7 @@ def analyze_visual_calm(zones: list[dict], config: dict) -> tuple[float, list[di
 
     if not evaluable:
         warnings.append({
+            "code": "EMO_NO_MATERIAL_DATA",
             "severity": "info",
             "message": "Keine Materialdaten vorhanden — visuelle Ruhe nicht bewertbar",
             "suggestion": "material_count in Zone-Eigenschaften angeben",
@@ -532,6 +539,7 @@ def analyze_visual_calm(zones: list[dict], config: dict) -> tuple[float, list[di
         elif count < ideal_lo:
             zone_scores.append(max(0.0, count / ideal_lo * 70.0))
             warnings.append({
+                "code": "EMO_ZONE_STERILE",
                 "severity": "info",
                 "message": f"Zone '{z['name']}' wirkt steril ({count} Materialien, empfohlen: {ideal_lo}–{ideal_hi})",
                 "suggestion": f"Materialvielfalt in '{z['name']}' erhöhen",
@@ -540,6 +548,7 @@ def analyze_visual_calm(zones: list[dict], config: dict) -> tuple[float, list[di
             excess = count - ideal_hi
             zone_scores.append(max(0.0, 100.0 - excess * 15.0))
             warnings.append({
+                "code": "EMO_ZONE_BUSY",
                 "severity": "warning",
                 "message": f"Zone '{z['name']}' wirkt unruhig ({count} Materialien, empfohlen: {ideal_lo}–{ideal_hi})",
                 "suggestion": f"Materialvielfalt in '{z['name']}' reduzieren",
@@ -558,6 +567,7 @@ def analyze_ceiling_perception(zones: list[dict], config: dict) -> tuple[float, 
     evaluable = [z for z in zones if z.get("height_mm") is not None]
     if not evaluable:
         warnings.append({
+            "code": "EMO_NO_CEILING_DATA",
             "severity": "info",
             "message": "Keine Deckenhöhendaten vorhanden — Raumhöheneindruck nicht bewertbar",
             "suggestion": "height_mm für Zonen angeben",
@@ -579,6 +589,7 @@ def analyze_ceiling_perception(zones: list[dict], config: dict) -> tuple[float, 
             ratio = h / min_h if min_h > 0 else 0.0
             zone_scores.append(ratio * 60.0)
             warnings.append({
+                "code": "EMO_CEILING_LOW",
                 "severity": "warning",
                 "message": f"Deckenhöhe in '{z['name']}' zu niedrig ({h:.0f}mm, Minimum: {min_h:.0f}mm)",
                 "suggestion": f"Deckenhöhe in '{z['name']}' auf mindestens {min_h:.0f}mm erhöhen",
@@ -597,6 +608,7 @@ def analyze_inside_outside_flow(zones: list[dict], passages: list[dict], config:
     cockpit_zones = {z["name"] for z in zones if z["zone_type"] == "cockpit"}
     if not cockpit_zones:
         warnings.append({
+            "code": "EMO_NO_COCKPIT",
             "severity": "warning",
             "message": "Kein Cockpit im Layout — Innen-Außen-Übergang nicht bewertbar",
             "suggestion": "Cockpit-Zone zum Layout hinzufügen",
@@ -610,6 +622,7 @@ def analyze_inside_outside_flow(zones: list[dict], passages: list[dict], config:
 
     if not cockpit_passages:
         warnings.append({
+            "code": "EMO_NO_COCKPIT_PASSAGE",
             "severity": "warning",
             "message": "Kein Durchgang zum Cockpit vorhanden",
             "suggestion": "Durchgang zwischen Innenraum und Cockpit hinzufügen",
@@ -633,6 +646,7 @@ def analyze_inside_outside_flow(zones: list[dict], passages: list[dict], config:
             ratio = w / min_width if min_width > 0 else 0.0
             passage_scores.append(ratio * 70.0)
             warnings.append({
+                "code": "EMO_COCKPIT_PASSAGE_NARROW",
                 "severity": "warning",
                 "message": f"Cockpit-Durchgang zu schmal ({w:.0f}mm, empfohlen: {min_width:.0f}mm)",
                 "suggestion": f"Cockpit-Durchgang auf mindestens {min_width:.0f}mm erweitern",
@@ -684,6 +698,7 @@ def analyze_sightline_rays(zones: list[dict], config: dict) -> tuple[float, list
     evaluable = [z for z in zones if z["zone_type"] in _SIGHTLINE_ZONE_TYPES and z.get("polygon")]
     if not evaluable:
         warnings.append({
+            "code": "EMO_NO_RAYTRACE_ZONES",
             "severity": "info",
             "message": "Keine bewertbaren Zonen für Sichtachsen-Raytracing vorhanden",
             "suggestion": "Salon- oder Kabinen-Zonen mit Polygondaten zum Layout hinzufügen",
@@ -732,6 +747,7 @@ def analyze_sightline_rays(zones: list[dict], config: dict) -> tuple[float, list
 
         if base_score < 60.0:
             warnings.append({
+                "code": "EMO_SIGHTLINE_RESTRICTED",
                 "severity": "warning",
                 "message": (
                     f"Sichtachsen in '{z['name']}' eingeschränkt "
@@ -790,6 +806,7 @@ def run_emotional_analysis(zones: list[dict], passages: list[dict], boat_class: 
             logger.exception("Error in sub-analysis %s", name)
             _failed_subs.add(name)
             all_warnings.append({
+                "code": "ANALYSIS_ERROR",
                 "severity": "critical",
                 "message": f"Fehler bei Analyse: {name}",
                 "suggestion": "Layoutdaten überprüfen",

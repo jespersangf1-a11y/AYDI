@@ -77,18 +77,29 @@ Status: **erledigt** · **empfohlen** (Entscheidung mit Tragweite, Optionen doku
 | 45 | B | `config.py`, `.env.example` | Nachdem `VISUAL_ANALYSIS_TIMEOUT_SEC` verdrahtet war (Befund 42), wirkte der Wert **30 s** erstmals — und war zu knapp: Gemessene Rohlatenz auf `claude-opus-5` sind **56,9 s** je Bild (4.970 Ein-/3.363 Ausgabe-Tokens). Jeder Aufruf lief in den Timeout. | Auf 120 s angehoben, mit der Messung als Begründung dokumentiert. | hoch | erledigt |
 | 46 | D | Pipeline B, echter Durchlauf | **Erstmals mit echtem API-Aufruf verifiziert** (vorher durchgängig gemockt). Ergebnis am realen Yacht-Salon-Foto: Score 76,0, Konfidenz `visual_medium` (nicht `visual_high` — Inhaltsrelevanz 0,4, weil nur ein Ausschnitt sichtbar), valides JSON, 8 fachlich korrekte Befunde (u.a. fehlende Schlingerleisten am Tisch) und **7 ausdrückliche „nicht beurteilbar"-Einträge** für alles außerhalb des Bildausschnitts. Der Konfidenz-Wächter stuft also korrekt ab, statt Vollständigkeit vorzutäuschen. | Kein Fix nötig — Nachweis, dass die Kernzusage des Systems im Echtbetrieb trägt. | — | verifiziert |
 
+| 47 | B/D | `orchestrator.py::_compute_overall_score` (**E2**) | **Ein dokumentierter Schaden hob die Gesamtnote.** `service_patterns` war ein gewichtetes Mittelwert-Mitglied und zog den Schnitt nach oben, sobald es darüber lag (gemessen 63,0 → 64,0). Der Ursprung war in den Gewichten sichtbar: `OVERALL_WEIGHTS` summierte in **allen** Klassen auf **1,05** — die überzähligen 0,05 waren exakt das nachträglich angehängte service_patterns-Gewicht. | Das Modul geht jetzt als **Abzug** ein (`PENALTY_MODULES`): 100 Punkte kosten nichts, jeder Punkt darunter zieht anteilig ab. Damit ist das Vorzeichen garantiert; gemessen fällt die Note jetzt monoton (61,8 → 61,5 → 61,2 → 60,1). Die Entwurfsgewichte summieren wieder exakt auf 1,0. Die **Höhe** bleibt über `OVERALL_WEIGHTS` steuerbar — sie ist Produktkalibrierung, das Vorzeichen war ein Fehler. 12 neue Tests; 3 Orchestrator-Tests auf den neuen Vertrag gezogen. | hoch | erledigt |
+| 48 | B | `ergonomics.py`, `volume_storage.py`, `emotional.py` (**E5-Vorarbeit**) | **47 Warnungen ohne stabilen `code`** (15/15/17). Ohne Code lässt sich eine Warnung weder übersetzen noch auf einen Hilfeartikel verlinken — es ist die Vorbedingung dafür, die Übersetzung aus den Analysemodulen in die Präsentationsschicht zu heben (E5, Option A). | Alle 47 mit sprechenden, stabilen Codes versehen (`ERGO_*`, `VOL_*`, `EMO_*`). Drei neue Tests erzwingen: jede Warnung hat einen Code, Codes sind einheitlich geformt, ein Code steht nie für zwei Schweregrade. | mittel | erledigt |
+| 49 | D | `visual_fusion.py` (neu), `orchestrator.py`, `layouts.py` (**E3**) | **Fotos beeinflussten keinen einzigen Score.** `score_fusion.py` war implementiert und getestet, hatte aber **keinen Aufrufer** — die in CLAUDE.md dokumentierte Gewichtstabelle steuerte nichts. Zwei Dinge fehlten dazwischen: die Fusion erwartet Ergebnisse je **Modul**, der Analyzer liefert sie je **Bild**; und sie erwartet `confidence` als **String**, der Analyzer liefert ein **Dict** — `CONFIDENCE_DISCOUNT.get(dict)` wäre mit `TypeError: unhashable type: 'dict'` abgestürzt. Die Fusion war also nicht nur unverdrahtet, sie wäre beim bloßen Anschließen gescheitert. | Neues Bindeglied `visual_fusion.py` (Zuordnung Bild→Modul aus dem **Prompt** abgeleitet, Konfidenz-Normalisierung, unbrauchbare Befunde werden verworfen), Verdrahtung im Orchestrator vor der Notenbildung, Laden der gespeicherten Bildanalysen in der Route. Gemessen: ohne Foto 61,8 → mit gutem Foto 65,4 (6 Module fusioniert); unbrauchbares Foto verhält sich wie kein Foto. **Widerspruchsregel verifiziert**: bei 47 Punkten Abstand bleibt die strukturierte Note stehen, `needs_review: True`, Gewichte 1,0/0,0 — geflaggt statt gemittelt. 21 neue Tests; die beiden Spezifikations-Wächter, die den unverdrahteten Zustand festhielten, sind umgedreht statt gelöscht. | hoch | erledigt |
+| 50 | A | 12 Korpusdokumente (**E4**) | Sechs Themen-Dubletten, unabhängig geschrieben (~2 % gemeinsame Zeilen). Ein Widerspruch war bereits belegt: die DIN-766-Teilung. Web-verifiziert — **8 mm → 24 mm, 10 mm → 28 mm**; damit stimmt `13_02`, und die Teilungsspalte in `17_02` ist falsch (ihr 8-mm-Wert ist die 10-mm-Teilung, die Spalte ist verschoben). Folge im Ernstfall: Die Kette passt nicht auf die Kettennuss und springt beim Ankermanöver. | Widerspruch in `17_02` mit Quellen geflaggt und auf die maßgebliche Tabelle verwiesen. Alle 12 Dokumente gegenseitig verlinkt, mit Hinweis auf das Driftrisiko. **Bewusst nicht zusammengeführt** — siehe E4 unten. | mittel | teilweise |
+| 51 | D | `analyzer.py`, `images.py` (Latenz) | Meine frühere Vermutung, `effort` sei der Hebel gegen die 61 s, war **falsch** — gemessen: low 52,0 s / medium 61,5 s / high 58,2 s, identischer Score. Die Zeit ist **ausgabetoken-gebunden** (~60 Tokens/s bei ~3.400 Tokens), nicht denkzeit-gebunden. Fast Mode (der richtige Hebel) ist auf diesem Konto rate-limitiert und blieb ungemessen. **Der eigentliche Befund liegt woanders:** Der 60-s-Aufruf läuft **inline in der HTTP-Anfrage** (kein `BackgroundTasks`) — Browser, nginx und die PaaS-Proxys brechen typischerweise bei 60 s ab. | Messung dokumentiert, Vermutung korrigiert. Die Umstellung auf einen Hintergrundauftrag ist ein Architektureingriff → siehe E6. | mittel | empfohlen |
+
 ---
 
 ## Empfehlungen mit Tragweite (bewusst NICHT allein entschieden)
 
-### E1 — Der Anthropic-API-Key muss rotiert werden (SOFORT)
+### E1 — ERLEDIGT: Der Anthropic-API-Key ist rotiert
+Der alte Schlüssel wurde widerrufen, ein neuer erstellt und in `backend/.env` hinterlegt (gitignoriert, nie getrackt). `.env.local` ist aus dem Tracking entfernt und lokal gelöscht. Der Eintrag in Commit `d5162c5` bleibt in der History, ist aber wertlos.
+
+<details><summary>Ursprüngliche Handlungsanweisung</summary>
+
 Der Schlüssel ist aus dem Tracking entfernt, steht aber weiterhin in der Git-History (Commit `d5162c5`).
 Entfernen aus HEAD ≠ entfernen aus der History.
 - **Option A (empfohlen):** Schlüssel in der Anthropic-Konsole widerrufen und neu ausstellen. Sofort wirksam, kein History-Eingriff.
 - **Option B (zusätzlich):** History mit `git filter-repo` bereinigen. Schreibt alle Commit-Hashes um — nur sinnvoll, solange das Repo nicht geteilt ist.
 - Ohne A bleibt der Schlüssel kompromittiert, egal was mit der History passiert.
+</details>
 
-### E2 — Darf ein dokumentierter Schaden die Gesamtnote anheben?
+### E2 — ERLEDIGT (Befund 47): Darf ein dokumentierter Schaden die Gesamtnote anheben?
 Gemessen nach allen Korrekturen: Zwei Serviceberichte (1× kritisch, 1× hoch) heben die Gesamtnote von **63,0 auf 64,0**.
 Ursache ist nicht mehr das Modul (dessen Note fällt jetzt korrekt), sondern die **Zusammensetzung der Gesamtnote**:
 `service_patterns` hat Gewicht 0,05 und liegt mit 78,4 über dem gewichteten Mittel von 63,0 — jedes Modul über dem Mittel hebt den Schnitt.
@@ -97,7 +108,7 @@ Ursache ist nicht mehr das Modul (dessen Note fällt jetzt korrekt), sondern die
 - **Option C:** Schadenshistorie gar nicht in die eine Zahl falten, sondern separat ausweisen (für Marc/Kai vermutlich am verständlichsten).
 - Nebenbefund: `OVERALL_WEIGHTS["cruising_sail"]` summiert auf **1,05** statt 1,0 (harmlos, da über die beitragenden Gewichte normiert wird — aber es kaschiert Tippfehler).
 
-### E3 — Score-Fusion (Pipeline B → Gesamtwertung) ist nicht verdrahtet
+### E3 — ERLEDIGT (Befund 49): Score-Fusion ist jetzt verdrahtet
 `score_fusion.py` hat **keinen einzigen Produktionsaufrufer**: Fotos beeinflussen derzeit keinen Score.
 CLAUDE.md ist entsprechend korrigiert (als nicht verdrahtet gekennzeichnet), der Zustand bleibt aber eine Produktlücke.
 Erschwerend: Das Modul würde mit dem heutigen Ergebnisformat des Analyzers abstürzen (Befund B-17) — es ist also nicht „nur anschließen".
@@ -105,7 +116,7 @@ Erschwerend: Das Modul würde mit dem heutigen Ergebnisformat des Analyzers abst
 - **Option B:** Visuelle Befunde bewusst getrennt ausweisen und die Fusionsgewichte aus der Spezifikation streichen.
 - Nicht empfohlen: den jetzigen Zustand belassen, ohne ihn zu benennen — dann steht in der Spezifikation eine Tabelle, die nichts steuert.
 
-### E5 — i18n endet an der Modulgrenze
+### E5 — TEILWEISE (Befund 48): i18n endet an der Modulgrenze
 `t()` wird nur in `middleware.py`, `permissions.py` und `subscription.py` aufgerufen. **Kein einziges der 12 Analysemodule benutzt i18n.**
 Ein Vollanalyse-Lauf mit `set_locale("en")` liefert 237 deutsche Strings im JSON — 97 aus hartkodierten Modul-Literalen, 140 aus dem deutschsprachigen Wissenskorpus.
 Der Katalog selbst ist vollständig (232 Schlüssel, 0 Lücken in EN/ES/FR); die technischen Defekte sind behoben (Zahlformat, 5 fehlende Bootsklassen). Das Problem ist die **Reichweite**, nicht der Mechanismus.
@@ -114,12 +125,23 @@ Der Katalog selbst ist vollständig (232 Schlüssel, 0 Lücken in EN/ES/FR); die
 - **Option C (ehrlich):** DE als einzige Ergebnissprache dokumentieren und `Feature.MULTI_LANGUAGE` streichen, bis A oder B umgesetzt ist.
 - Der Korpusanteil (140 Strings) ist in keiner Variante kurzfristig lösbar — 850.000 Zeilen Fachtext sind nicht nebenbei übersetzbar. Das gehört ausdrücklich benannt, statt Mehrsprachigkeit zu versprechen.
 
-### E4 — Themen-Dubletten im Korpus (6 Paare, 12 Dokumente)
+### E4 — TEILWEISE (Befund 50): Themen-Dubletten im Korpus (6 Paare, 12 Dokumente)
 13_02/17_02 Ankerketten, 13_03/17_03 Ankerwinden, 13_04/17_04 Ankergeschirr, 14_03/20_02 Hydraulische Steuerung, 14_04/20_03 Ruderanlage, 14_07/20_04 Steuerräder.
 Es sind **unabhängig geschriebene** Texte (je ~3.800 Zeilen, nur ~2 % gemeinsame Zeilen) — sie werden auseinanderdriften und tun es bereits (belegt: widersprüchliche DIN-766-Kettenteilung, beide als Fakt ausgeliefert).
 - **Option A:** Zusammenführen, eine Kategorie behält das Dokument, die andere bekommt einen Verweis. Inhaltliche Arbeit, dauerhaft die sauberste Lösung.
 - **Option B:** Beide behalten, aber gegeneinander abgleichen und gegenseitig verlinken.
 - Der Loader behandelt die Kollisionen bereits verlustfrei (Komposit-Schlüssel) — das Problem ist redaktionell, nicht technisch.
+
+---
+
+### E6 — Die Bildanalyse blockiert die HTTP-Anfrage (NEU)
+Gemessen: **56–62 s** je Bild, und der Aufruf läuft **inline im Request-Handler** (`images.py`, kein `BackgroundTasks`).
+Browser, nginx (Default 60 s) und die PaaS-Proxys brechen in dieser Größenordnung ab — der Pfad wird in Produktion sporadisch scheitern, obwohl er lokal funktioniert.
+Die Denktiefe ist **nicht** der Hebel (gemessen: low 52,0 / medium 61,5 / high 58,2 s bei identischem Score); die Zeit ist ausgabetoken-gebunden.
+- **Option A (empfohlen):** Upload antwortet sofort mit `202` und einer Analyse-ID, die Auswertung läuft als Hintergrundauftrag, das Frontend fragt den Status ab. Löst das Problem unabhängig von Modell und Latenz.
+- **Option B:** Fast Mode (`speed: "fast"`, nur Opus 5/4.8) — laut Dokumentation bis 2,5× höhere Ausgaberate bei Aufpreis. Auf diesem Konto rate-limitiert, **ungemessen**.
+- **Option C:** Kompakteres Ausgabeschema (weniger zu erzeugende Tokens). Senkt die Analysetiefe.
+- Nicht empfohlen: so lassen. Der Pfad funktioniert lokal und fällt erst hinter einem Proxy um.
 
 ---
 
@@ -137,7 +159,7 @@ Behoben außerdem: sicherheitskritisch erfundene GMDSS-Produkte, vier ISO-Fehlzi
 **Offen:** 6 Themen-Dubletten (E4), Kategorien 27–30 ohne regionale Bezugsquellen/Preise, ein vollständiger Faktencheck aller 260 Dokumente (nur stichprobenartig geprüft).
 
 ### Bereich B — Code & Backend
-**1.721 Tests grün** (vorher 1.224), Backend startet sauber, Korpus wird beim Start vorgewärmt.
+**1.757 Tests grün** (vorher 1.224), Backend startet sauber, Korpus wird beim Start vorgewärmt.
 Kaltstart ist jetzt dokumentiert: neues README mit verifiziertem Schnellstart, `.env.example` deckt alle 18 Settings ab (vorher 5, ohne die sicherheitsrelevanten).
 Zwei Vokabulare, die still auseinandergelaufen waren, werden jetzt aus ihrer Einzelquelle abgeleitet — Zonentypen und Bootsklassen; bei letzteren wurden **5 der 13 offiziellen Klassen** von der Validierung abgelehnt.
 Das Rate-Limit trifft jetzt die Routen, für die es gedacht war: Bild-Upload und CAD-Import lagen bei 120/min statt 10/min — ausgerechnet die Pfade, die kostenpflichtige Vision-Aufrufe bzw. CPU-intensives Parsen auslösen.

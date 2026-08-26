@@ -289,6 +289,7 @@ def analyze_volume_utilization(zones: list[dict], config: dict) -> tuple[float, 
 
     if not zones:
         warnings.append({
+            "code": "VOL_NO_ZONES",
             "severity": "info",
             "message": "Keine Zonen definiert — Volumennutzung kann nicht bewertet werden",
             "suggestion": "Zonen zum Layout hinzufügen",
@@ -298,6 +299,7 @@ def analyze_volume_utilization(zones: list[dict], config: dict) -> tuple[float, 
     all_points = [p for z in zones for p in z["polygon"]]
     if not all_points:
         warnings.append({
+            "code": "VOL_NO_POLYGONS",
             "severity": "info",
             "message": "Keine Polygondaten vorhanden — Volumennutzung kann nicht bewertet werden",
             "suggestion": "Zonenpolygone überprüfen",
@@ -312,6 +314,7 @@ def analyze_volume_utilization(zones: list[dict], config: dict) -> tuple[float, 
     bbox_area = (max_x - min_x) * (max_y - min_y)
     if bbox_area == 0:
         warnings.append({
+            "code": "VOL_AREA_DEGENERATE",
             "severity": "info",
             "message": "Zonenfläche nicht berechenbar (degenerierte Geometrie)",
             "suggestion": "Zonenpolygone überprüfen",
@@ -329,6 +332,7 @@ def analyze_volume_utilization(zones: list[dict], config: dict) -> tuple[float, 
     elif ratio >= minimum:
         score = 50.0 + (ratio - minimum) / (target - minimum) * 50.0
         warnings.append({
+            "code": "VOL_UTILISATION_BELOW_TARGET",
             "severity": "info",
             "message": f"Flächennutzung unter Zielwert ({ratio:.0%}, Ziel: {target:.0%})",
             "suggestion": f"Flächennutzung auf {target:.0%} erhöhen",
@@ -336,6 +340,7 @@ def analyze_volume_utilization(zones: list[dict], config: dict) -> tuple[float, 
     else:
         score = (ratio / minimum) * 50.0 if minimum > 0 else 0.0
         warnings.append({
+            "code": "VOL_UTILISATION_LOW",
             "severity": "warning",
             "message": f"Flächennutzung gering ({ratio:.0%}, Ziel: {target:.0%})",
             "suggestion": f"Flächennutzung auf mindestens {minimum:.0%} erhöhen",
@@ -368,6 +373,7 @@ def analyze_furniture_ratio(zones: list[dict], config: dict) -> tuple[float, lis
 
     if not evaluable:
         warnings.append({
+            "code": "VOL_NO_FURNITURE_DATA",
             "severity": "info",
             "message": "Keine Möblierungsdaten vorhanden — Bewertung nicht möglich",
             "suggestion": "furniture_area_pct in Zone-Eigenschaften angeben (0.0–1.0)",
@@ -386,6 +392,7 @@ def analyze_furniture_ratio(zones: list[dict], config: dict) -> tuple[float, lis
             zone_score = max(0.0, 100.0 - (excess / max_ratio) * 100.0)
             zone_label = z["name"]
             warnings.append({
+                "code": "VOL_OVERFURNISHED",
                 "severity": "warning",
                 "message": f"Zone '{zone_label}' übermöbliert ({pct:.0%}, max: {max_ratio:.0%})",
                 "suggestion": f"Möblierung in '{zone_label}' reduzieren",
@@ -395,6 +402,7 @@ def analyze_furniture_ratio(zones: list[dict], config: dict) -> tuple[float, lis
             zone_score = max(0.0, (pct / min_ratio) * 80.0)
             zone_label = z["name"]
             warnings.append({
+                "code": "VOL_UNDERFURNISHED",
                 "severity": "info",
                 "message": f"Zone '{zone_label}' spärlich möbliert ({pct:.0%}, min: {min_ratio:.0%})",
                 "suggestion": f"Möblierung in '{zone_label}' erhöhen oder Zonengröße reduzieren",
@@ -415,6 +423,7 @@ def analyze_storage_ratio(zones: list[dict], config: dict) -> tuple[float, list[
 
     if not storage_zones:
         warnings.append({
+            "code": "VOL_NO_STORAGE",
             "severity": "critical",
             "message": "Keine Stauräume im Layout definiert",
             "suggestion": "Stauräume (storage) zum Layout hinzufügen",
@@ -438,6 +447,7 @@ def analyze_storage_ratio(zones: list[dict], config: dict) -> tuple[float, list[
     else:
         score = (ratio / minimum) * 50.0 if minimum > 0 else 0.0
         warnings.append({
+            "code": "VOL_STORAGE_RATIO_LOW",
             "severity": "warning",
             "message": f"Stauraumanteil zu gering ({ratio:.1%}, empfohlen: mindestens {minimum:.1%})",
             "suggestion": f"Stauraumanteil auf mindestens {minimum:.1%} erhöhen",
@@ -454,6 +464,7 @@ def analyze_storage_distribution(zones: list[dict], config: dict) -> tuple[float
     if len(storage_zones) < 2:
         if storage_zones:
             warnings.append({
+                "code": "VOL_STORAGE_COUNT_LOW",
                 "severity": "info",
                 "message": f"Nur {len(storage_zones)} Stauraum definiert (empfohlen: {config['min_storage_zones']})",
                 "suggestion": "Weitere Stauräume an verschiedenen Positionen hinzufügen",
@@ -485,6 +496,7 @@ def analyze_storage_distribution(zones: list[dict], config: dict) -> tuple[float
     max_imbalance = config["max_distribution_imbalance"]
     if imbalance > max_imbalance:
         warnings.append({
+            "code": "VOL_STORAGE_IMBALANCED",
             "severity": "warning",
             "message": f"Stauräume ungleichmäßig verteilt (Ungleichgewicht: {imbalance:.2f}, max: {max_imbalance:.2f})",
             "suggestion": "Stauräume gleichmäßiger über das Layout verteilen",
@@ -492,6 +504,7 @@ def analyze_storage_distribution(zones: list[dict], config: dict) -> tuple[float
 
     if len(storage_zones) < config["min_storage_zones"]:
         warnings.append({
+            "code": "VOL_STORAGE_FEW",
             "severity": "info",
             "message": f"Wenige Stauräume ({len(storage_zones)}, empfohlen: {config['min_storage_zones']})",
             "suggestion": "Weitere Stauräume hinzufügen",
@@ -524,6 +537,7 @@ def analyze_storage_accessibility(zones: list[dict], passages: list[dict], confi
             accessible += 1
         else:
             warnings.append({
+                "code": "VOL_STORAGE_UNREACHABLE",
                 "severity": "warning",
                 "message": f"Stauraum '{sz['name']}' ist nicht erreichbar",
                 "suggestion": f"Durchgang zu Stauraum '{sz['name']}' hinzufügen",
@@ -568,6 +582,7 @@ def run_volume_storage_analysis(zones: list[dict], passages: list[dict], boat_cl
             logger.exception("Error in sub-analysis %s", name)
             _failed_subs.add(name)
             all_warnings.append({
+                "code": "ANALYSIS_ERROR",
                 "severity": "critical",
                 "message": f"Fehler bei Analyse: {name}",
                 "suggestion": "Layoutdaten überprüfen",

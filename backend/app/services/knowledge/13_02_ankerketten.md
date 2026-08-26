@@ -38,6 +38,14 @@ boot_klassen:
 
 # 13.02 — Ankerketten und Kettenvorlauf im Yachtbau: Vollständige Wissensreferenz
 
+> **Paralleldokument beachten.** Zum Thema „Ankerketten" existiert im Korpus ein
+> zweites, **unabhängig geschriebenes** Dokument: [17_02_ankerketten.md](17_02_ankerketten.md).
+> Beide sind je rund 3.800 Zeilen lang und teilen nur etwa 2 % ihrer Zeilen — sie
+> ergänzen einander, driften aber auseinander (nachgewiesen an der DIN-766-Teilung
+> in den Ankerketten-Dokumenten). Bei widersprüchlichen Angaben: beide lesen und
+> gegen Hersteller-/Normdaten prüfen, statt einer Zahl zu vertrauen.
+
+
 > **AYDI Wissensdatei 13.02** — Kategorie 13: Ankergeschirr und Ankersysteme
 > **Confidence-Quelle:** measured (Hersteller-TDS, DIN/ISO-Normen), documented (Hersteller-Kataloge, Fachliteratur), estimated (Erfahrungswerte)
 > **Letzte Aktualisierung:** 2026-04-26

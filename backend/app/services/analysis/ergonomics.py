@@ -338,6 +338,7 @@ def analyze_passage_widths(passages: list[dict], config: dict) -> tuple[float, l
         if w is None or not isinstance(w, (int, float)) or w != w:
             unknown += 1
             warnings.append({
+                "code": "ERGO_PASSAGE_WIDTH_UNKNOWN",
                 "severity": "info",
                 "message": (
                     f"Durchgang {p.get('from_zone')}→{p.get('to_zone')}: Breite nicht "
@@ -351,6 +352,7 @@ def analyze_passage_widths(passages: list[dict], config: dict) -> tuple[float, l
         if w < critical_width:
             critical += 1
             warnings.append({
+                "code": "ERGO_PASSAGE_CRITICAL",
                 "severity": "critical",
                 "message": f"Durchgang {p['from_zone']}→{p['to_zone']} ist kritisch schmal ({w:.0f}mm, Minimum: {critical_width:.0f}mm)",
                 "suggestion": f"Durchgangsbreite auf mindestens {min_width:.0f}mm erweitern",
@@ -358,6 +360,7 @@ def analyze_passage_widths(passages: list[dict], config: dict) -> tuple[float, l
         elif w < min_width:
             narrow += 1
             warnings.append({
+                "code": "ERGO_PASSAGE_NARROW",
                 "severity": "warning",
                 "message": f"Durchgang {p['from_zone']}→{p['to_zone']} ist zu schmal ({w:.0f}mm, empfohlen: {min_width:.0f}mm)",
                 "suggestion": f"Durchgangsbreite auf mindestens {min_width:.0f}mm erweitern",
@@ -402,6 +405,7 @@ def analyze_path_efficiency(zones: list[dict], passages: list[dict], config: dic
     isolated = zone_names - connected_names
     for name in isolated:
         warnings.append({
+            "code": "ERGO_ZONE_ISOLATED",
             "severity": "warning",
             "message": f"Zone '{name}' ist isoliert (keine Durchgänge)",
             "suggestion": f"Durchgang zu Zone '{name}' hinzufügen",
@@ -414,6 +418,7 @@ def analyze_path_efficiency(zones: list[dict], passages: list[dict], config: dic
         cockpit_pantry_steps = _bfs_distance(graph, cockpit_zones[0], pantry_zones[0])
         if cockpit_pantry_steps > config["max_steps_cockpit_pantry"]:
             warnings.append({
+                "code": "ERGO_PATH_TOO_LONG",
                 "severity": "warning",
                 "message": f"Weg Cockpit→Pantry zu lang ({cockpit_pantry_steps} Schritte, max: {config['max_steps_cockpit_pantry']})",
                 "suggestion": "Direktere Verbindung zwischen Cockpit und Pantry schaffen",
@@ -453,6 +458,7 @@ def analyze_crew_guest_separation(zones: list[dict], passages: list[dict], confi
         if (from_crew and to_guest) or (from_guest and to_crew):
             shared += 1
             warnings.append({
+                "code": "ERGO_CREW_GUEST_MIX",
                 "severity": "warning",
                 "message": f"Durchgang {p['from_zone']}→{p['to_zone']} verbindet Crew- und Gastbereich",
                 "suggestion": "Separate Durchgänge für Crew und Gäste planen",
@@ -476,6 +482,7 @@ def analyze_accessibility(zones: list[dict], passages: list[dict], config: dict)
             missing.append(req)
             zone_label = {"engine": "Maschinenraum", "pantry": "Pantry", "helm": "Steuerstand", "head": "WC/Bad"}.get(req, req)
             warnings.append({
+                "code": "ERGO_ZONE_MISSING",
                 "severity": "critical",
                 "message": f"Kritische Zone fehlt: {zone_label}",
                 "suggestion": f"{zone_label} in das Layout aufnehmen",
@@ -492,6 +499,7 @@ def analyze_accessibility(zones: list[dict], passages: list[dict], config: dict)
                 unreachable.append(req)
                 zone_label = {"engine": "Maschinenraum", "pantry": "Pantry", "helm": "Steuerstand", "head": "WC/Bad"}.get(req, req)
                 warnings.append({
+                    "code": "ERGO_ZONE_UNREACHABLE",
                     "severity": "warning",
                     "message": f"{zone_label} ist nicht erreichbar",
                     "suggestion": f"Durchgang zu {zone_label} hinzufügen",
@@ -510,6 +518,7 @@ def analyze_helm_ergonomics(zones: list[dict], config: dict) -> tuple[float, lis
 
     if not helm_zones:
         warnings.append({
+            "code": "ERGO_NO_HELM",
             "severity": "critical",
             "message": "Kein Steuerstand im Layout definiert",
             "suggestion": "Steuerstand-Zone (helm) zum Layout hinzufügen",
@@ -528,6 +537,7 @@ def analyze_helm_ergonomics(zones: list[dict], config: dict) -> tuple[float, lis
 
     if area < min_area:
         warnings.append({
+            "code": "ERGO_HELM_TOO_SMALL",
             "severity": "warning",
             "message": f"Steuerstand zu klein ({area:.1f}m², empfohlen: {min_area:.1f}m²)",
             "suggestion": f"Steuerstand auf mindestens {min_area:.1f}m² vergrößern",
@@ -538,6 +548,7 @@ def analyze_helm_ergonomics(zones: list[dict], config: dict) -> tuple[float, lis
 
     if vis_angle < min_vis:
         warnings.append({
+            "code": "ERGO_HELM_VISIBILITY",
             "severity": "warning",
             "message": f"Sichtwinkel am Steuerstand zu gering ({vis_angle:.0f}°, empfohlen: {min_vis:.0f}°)",
             "suggestion": f"Sichtwinkel auf mindestens {min_vis:.0f}° erweitern",
@@ -581,6 +592,7 @@ def analyze_heel_impact(passages: list[dict], config: dict) -> tuple[float, list
         if effective_width < critical_width:
             below_critical += 1
             warnings.append({
+                "code": "ERGO_PASSAGE_HEEL_NARROW",
                 "severity": "warning",
                 "message": (
                     f"Durchgang {p['from_zone']}→{p['to_zone']} unter Krängung zu schmal "
@@ -692,6 +704,7 @@ def analyze_morning_circulation(zones: list[dict], passages: list[dict], config:
     for edge, count in passage_usage.items():
         if count > 2:
             warnings.append({
+                "code": "ERGO_MORNING_BOTTLENECK",
                 "severity": "warning",
                 "message": f"Durchgang {edge[0]}↔{edge[1]} ist Engpass im Morgenverkehr ({count} Kabinenwege)",
                 "suggestion": "Alternativen Durchgang oder breiteren Zugang schaffen",
@@ -726,6 +739,7 @@ def analyze_access_complexity(zones: list[dict], config: dict) -> tuple[float, l
         if access_score < 50:
             zone_label = {"engine": "Maschinenraum", "head": "WC/Bad", "storage": "Stauraum"}.get(z["zone_type"], z["name"])
             warnings.append({
+                "code": "ERGO_ACCESS_DIFFICULT",
                 "severity": "warning",
                 "message": f"Zugang zu '{z['name']}' ({zone_label}) schwierig: {access_type} (Bewertung: {access_score}/100)",
                 "suggestion": f"Einfacheren Zugang zu '{z['name']}' schaffen (z.B. Inspektionsluken oder abnehmbare Paneele)",
@@ -854,6 +868,7 @@ def run_ergonomics_analysis(zones: list[dict], passages: list[dict], boat_class:
             logger.exception("Error in sub-analysis %s", name)
             _failed_subs.add(name)
             all_warnings.append({
+                "code": "ANALYSIS_ERROR",
                 "severity": "critical",
                 "message": f"Fehler bei Analyse: {name}",
                 "suggestion": "Layoutdaten überprüfen",

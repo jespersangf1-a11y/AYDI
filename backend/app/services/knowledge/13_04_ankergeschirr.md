@@ -56,6 +56,14 @@ boot_klassen:
 
 # 13.04 — Ankergeschirr und Zubehör: Vollständige Wissensreferenz
 
+> **Paralleldokument beachten.** Zum Thema „Ankergeschirr" existiert im Korpus ein
+> zweites, **unabhängig geschriebenes** Dokument: [17_04_ankergeschirr.md](17_04_ankergeschirr.md).
+> Beide sind je rund 3.800 Zeilen lang und teilen nur etwa 2 % ihrer Zeilen — sie
+> ergänzen einander, driften aber auseinander (nachgewiesen an der DIN-766-Teilung
+> in den Ankerketten-Dokumenten). Bei widersprüchlichen Angaben: beide lesen und
+> gegen Hersteller-/Normdaten prüfen, statt einer Zahl zu vertrauen.
+
+
 > **AYDI Wissensdatei 13.04** — Kategorie 13: Ankerausrüstung und Zubehör
 > **Confidence-Quelle:** measured (Hersteller-TDS), documented (Hersteller-Kataloge, Forum-Konsens), estimated (Erfahrungswerte)
 > **Letzte Aktualisierung:** 2026-04-26

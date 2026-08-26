@@ -3,6 +3,8 @@ import asyncio
 from unittest.mock import patch, MagicMock
 
 from app.services.analysis.orchestrator import (
+    OVERALL_WEIGHTS,
+    PENALTY_MODULES,
     AnalysisContext,
     EXECUTION_TIERS,
     ALL_MODULE_NAMES,
@@ -16,6 +18,25 @@ from app.services.analysis.orchestrator import (
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
+
+def _expected_overall(uniform_score: float, boat_class: str = "cruising_sail") -> float:
+    """Erwartete Gesamtnote, wenn ALLE Module denselben Wert liefern.
+
+    Frueher war das schlicht der Wert selbst (reiner gewichteter Mittelwert).
+    Seit `service_patterns` als ABZUG statt als Mittelwert-Mitglied eingeht
+    (ein dokumentierter Schaden darf die Note nie anheben), kommt der Abzug
+    hinzu: Ein Boot, dessen Servicehistorie 80 Punkte erreicht, hat
+    dokumentierte Probleme und muss unter einem Boot mit makelloser Historie
+    liegen.
+    """
+    weights = OVERALL_WEIGHTS.get(boat_class, OVERALL_WEIGHTS["cruising_sail"])
+    penalty = sum(
+        (100.0 - uniform_score) * weights.get(module, 0.0)
+        for module in PENALTY_MODULES
+    )
+    return round(max(0.0, uniform_score - penalty), 1)
+
 
 def _make_context(**overrides) -> AnalysisContext:
     """Create a minimal AnalysisContext with optional overrides."""
@@ -192,8 +213,9 @@ def test_full_analysis_overall_score_value():
     runners = _make_runners(default_score=80.0)
     result = asyncio.run(run_full_analysis(ctx, module_runners=runners))
 
-    # All modules return 80 -> weighted average = 80 regardless of weights
-    assert result["overall_score"] == 80.0
+    # Alle Module liefern 80 -> gewichtetes Mittel 80, abzueglich des
+    # Schadens-Abzugs aus service_patterns (siehe _expected_overall).
+    assert result["overall_score"] == _expected_overall(80.0)
 
 
 # ---------------------------------------------------------------------------
@@ -433,7 +455,7 @@ def test_full_analysis_empty_zones_graceful():
     result = asyncio.run(run_full_analysis(ctx, module_runners=runners))
 
     assert result["module_count"] == 12
-    assert result["overall_score"] == 50.0
+    assert result["overall_score"] == _expected_overall(50.0, "small_sail")
 
 
 def test_full_analysis_unknown_boat_class_uses_fallback():
@@ -443,7 +465,7 @@ def test_full_analysis_unknown_boat_class_uses_fallback():
     result = asyncio.run(run_full_analysis(ctx, module_runners=runners))
 
     # Should still compute an overall score using fallback weights
-    assert result["overall_score"] == 70.0
+    assert result["overall_score"] == _expected_overall(70.0, "cruising_sail")
 
 
 # ---------------------------------------------------------------------------

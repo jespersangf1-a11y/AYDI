@@ -1,5 +1,13 @@
 # 20.03 — Ruderanlage und Lager — Rudertypen, Ruderlager, Ruderschaft, Koker, Dichtungen, Konstruktion
 
+> **Paralleldokument beachten.** Zum Thema „Ruderanlage und Lager" existiert im Korpus ein
+> zweites, **unabhängig geschriebenes** Dokument: [14_04_ruderanlage_lager.md](14_04_ruderanlage_lager.md).
+> Beide sind je rund 3.800 Zeilen lang und teilen nur etwa 2 % ihrer Zeilen — sie
+> ergänzen einander, driften aber auseinander (nachgewiesen an der DIN-766-Teilung
+> in den Ankerketten-Dokumenten). Bei widersprüchlichen Angaben: beide lesen und
+> gegen Hersteller-/Normdaten prüfen, statt einer Zahl zu vertrauen.
+
+
 > **Scope**: Vollständige Wissenssammlung über Ruderanlagen im Yachtbau. Rudertypen (Spaten-, Skeg-, Langkiel-, Doppelruder, Klappruder), Ruderlager (Gleitlager, Kugellager, Nadellager, Kunststofflager), Ruderschäfte (Edelstahl, Bronze, Composite), Koker-Konstruktionen, Dichtungssysteme, NACA-Profile, Strömungsmechanik, Kavitation, Dimensionierung, alle relevanten Hersteller, Teilenummern, Fehlerbild-Atlas, Troubleshooting, Pydantic-Modelle.
 >
 > **AYDI-Kontexte**: structural, materials, compliance, production, service_patterns, ergonomics

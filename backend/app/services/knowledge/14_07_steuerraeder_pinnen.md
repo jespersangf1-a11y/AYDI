@@ -14,6 +14,14 @@ confidence_quellen:
 
 # 14.07 — Steuerraeder und Pinnen im Yachtbau: Vollstaendige Wissensreferenz
 
+> **Paralleldokument beachten.** Zum Thema „Steuerräder und Pinnen" existiert im Korpus ein
+> zweites, **unabhängig geschriebenes** Dokument: [20_04_steuerraeder_pinnen.md](20_04_steuerraeder_pinnen.md).
+> Beide sind je rund 3.800 Zeilen lang und teilen nur etwa 2 % ihrer Zeilen — sie
+> ergänzen einander, driften aber auseinander (nachgewiesen an der DIN-766-Teilung
+> in den Ankerketten-Dokumenten). Bei widersprüchlichen Angaben: beide lesen und
+> gegen Hersteller-/Normdaten prüfen, statt einer Zahl zu vertrauen.
+
+
 > **AYDI Wissensdatei 14.07** — Kategorie 14: Steueranlagen und Autopilot
 > **Confidence-Quelle:** measured (Hersteller-TDS, ISO-Normen), documented (Hersteller-Kataloge, Werftunterlagen), estimated (Erfahrungswerte, Praxis)
 > **Letzte Aktualisierung:** 2026-04-26

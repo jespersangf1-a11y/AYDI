@@ -1,5 +1,13 @@
 # 14.03 — Hydraulische Steuerung (Helmpumpen, Zylinder, Servolenkung, Autopilot-Integration): Vollständige Wissensreferenz
 
+> **Paralleldokument beachten.** Zum Thema „Hydraulische Steuerung" existiert im Korpus ein
+> zweites, **unabhängig geschriebenes** Dokument: [20_02_hydraulische_steuerung.md](20_02_hydraulische_steuerung.md).
+> Beide sind je rund 3.800 Zeilen lang und teilen nur etwa 2 % ihrer Zeilen — sie
+> ergänzen einander, driften aber auseinander (nachgewiesen an der DIN-766-Teilung
+> in den Ankerketten-Dokumenten). Bei widersprüchlichen Angaben: beide lesen und
+> gegen Hersteller-/Normdaten prüfen, statt einer Zahl zu vertrauen.
+
+
 > **AYDI Wissensdatei 14.03** — Kategorie 14: Steueranlagen
 > **Confidence-Quelle:** measured (Hersteller-TDS), documented (Hersteller-Kataloge, Testberichte), estimated (Erfahrungswerte)
 > **Letzte Aktualisierung:** 2026-04-26

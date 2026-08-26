@@ -17,6 +17,7 @@ Dieser Test haelt beide Korrekturen fest.
 """
 
 import asyncio
+import re
 
 import pytest
 
@@ -124,6 +125,41 @@ class TestJedeWarnungHatEinenVorschlag:
             f"{len(missing)} Warnungen ohne Handlungsvorschlag "
             f"(CLAUDE.md: 'Every warning has a suggestion'): {missing[:10]}"
         )
+
+    def test_every_warning_has_a_stable_code(self, analysis):
+        """Ohne stabilen Code laesst sich eine Warnung weder uebersetzen noch verlinken.
+
+        Gemessen fehlten 47 Codes (ergonomics 15, volume_storage 15, emotional 17).
+        Sie sind die Vorbedingung dafuer, die Uebersetzung aus den Analysemodulen
+        in die Praesentationsschicht zu heben (E5, Option A): Reine Funktionen
+        sollten keine lokalisierte Prosa erzeugen, sondern Code + Parameter.
+        """
+        missing = [
+            f"{module}: {warning.get('message', '')[:60]}"
+            for module, warning in _all_warnings(analysis)
+            if not (warning.get("code") or "").strip()
+        ]
+        assert not missing, f"{len(missing)} Warnungen ohne Code: {missing[:10]}"
+
+    def test_codes_look_like_identifiers(self, analysis):
+        """GROSSBUCHSTABEN_MIT_UNTERSTRICH — greppbar und als i18n-Schluessel tauglich."""
+        odd = [
+            warning["code"]
+            for _module, warning in _all_warnings(analysis)
+            if warning.get("code") and not re.fullmatch(r"[A-Z][A-Z0-9_]*", warning["code"])
+        ]
+        assert not odd, f"Codes ohne einheitliche Form: {sorted(set(odd))[:10]}"
+
+    def test_a_code_always_means_the_same_thing(self, analysis):
+        """Derselbe Code darf nicht fuer zwei verschiedene Schweregrade stehen."""
+        by_code: dict[str, set[str]] = {}
+        for _module, warning in _all_warnings(analysis):
+            code = warning.get("code")
+            if code:
+                by_code.setdefault(code, set()).add(warning.get("severity", ""))
+        ambiguous = {c: s for c, s in by_code.items() if len(s) > 1}
+        # ANALYSIS_ERROR ist bewusst modueluebergreifend, aber immer "critical".
+        assert not ambiguous, f"Codes mit uneinheitlichem Schweregrad: {ambiguous}"
 
     def test_every_warning_has_a_severity(self, analysis):
         allowed = {"critical", "warning", "info"}

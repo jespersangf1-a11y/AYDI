@@ -9,7 +9,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.permissions import effective_tier, get_accessible_project, get_current_user
 from app.db.database import get_db
-from app.models.models import AnalysisResult, AnalysisRun, Layout, LayoutVersion, Project, User
+from app.models.models import (
+    AnalysisResult,
+    AnalysisRun,
+    ImageUpload,
+    Layout,
+    LayoutVersion,
+    Project,
+    User,
+)
 from app.schemas.schemas import (
     AnalysisRequest,
     AnalysisResponse,
@@ -326,6 +334,32 @@ async def import_dxf(
         raise HTTPException(status_code=400, detail="Ungültige DXF-Datei. Bitte Format und Layer prüfen.")
 
     return result
+
+
+
+async def _load_visual_analyses(project_id: UUID, db: AsyncSession) -> list[dict]:
+    """Gespeicherte Bildanalysen des Projekts fuer die Score-Fusion laden.
+
+    Ohne diesen Schritt blieb Pipeline B folgenlos: `score_fusion.py` war
+    implementiert und getestet, hatte aber keinen Aufrufer — ein hochgeladenes
+    und analysiertes Foto beeinflusste keinen einzigen Score.
+
+    Nur ausgewertete Bilder zaehlen; ein Upload ohne `ai_analysis` traegt nichts
+    bei. Die Filterung nach Brauchbarkeit passiert danach in
+    `visual_results_to_module_scores`.
+    """
+    result = await db.execute(
+        select(ImageUpload).where(ImageUpload.project_id == project_id)
+    )
+    analyses: list[dict] = []
+    for image in result.scalars().all():
+        if not image.ai_analysis:
+            continue
+        entry = dict(image.ai_analysis)
+        # Der Bildtyp steht am Datensatz, nicht zwingend im Analyseergebnis.
+        entry.setdefault("image_type", image.image_type)
+        analyses.append(entry)
+    return analyses
 
 
 async def _load_materials_for_analysis(layout_id: UUID, db: AsyncSession) -> list[dict]:
@@ -684,6 +718,7 @@ async def run_full_analysis_endpoint(
         brand_references=brand_refs,
         competitors=competitors,
         community_patterns=community_patterns,
+        visual_analyses=await _load_visual_analyses(project_id, db),
     )
 
     analysis_result = await run_full_analysis(context)

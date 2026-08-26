@@ -9,6 +9,14 @@ autor: "AYDI Maritime Knowledge Base"
 
 # 17_02 — Ankerketten — Güten, Dimensionierung und Pflege
 
+> **Paralleldokument beachten.** Zum Thema „Ankerketten" existiert im Korpus ein
+> zweites, **unabhängig geschriebenes** Dokument: [13_02_ankerketten.md](13_02_ankerketten.md).
+> Beide sind je rund 3.800 Zeilen lang und teilen nur etwa 2 % ihrer Zeilen — sie
+> ergänzen einander, driften aber auseinander (nachgewiesen an der DIN-766-Teilung
+> in den Ankerketten-Dokumenten). Bei widersprüchlichen Angaben: beide lesen und
+> gegen Hersteller-/Normdaten prüfen, statt einer Zahl zu vertrauen.
+
+
 > **AYDI Wissensdatei 17.02** — Kategorie 17: Anker und Kette
 > **Confidence-Quelle:** measured (Hersteller-TDS, ISO/DIN-Normen), documented (Hersteller-Kataloge, Klassifikationsgesellschaften), estimated (Erfahrungswerte, Forum-Konsens)
 > **Letzte Aktualisierung:** 2026-04
@@ -210,6 +218,19 @@ Der wichtigste Unterschied bei Ankerketten für Yachten ist die Kalibrierung. Ka
 **DIN 766: Rundstahlkette, kalibriert, kurzgliedrig**
 
 Dies ist der Standard für Yacht-Ankerketten in Europa. Die DIN 766 definiert exakte Maße für jeden Durchmesser und garantiert Windlass-Kompatibilität.
+
+> ⚠️ **ZU PRÜFEN (Audit) — Teilungsspalte widerspricht 13_02 und ist nachweislich falsch.**
+> Die Spalte „Teilung" unten stimmt in jeder Zeile mit „Innenlänge" überein — bei
+> kurzgliedriger Kette sind das aber verschiedene Maße. Gegenprobe an Handelsdaten:
+> DIN 766 **8 mm → Teilung 24 mm**, **10 mm → Teilung 28 mm**. Die Tabelle unten
+> nennt 28 bzw. 35 mm; ihr 8-mm-Wert ist also die Teilung der 10-mm-Kette — die
+> Spalte ist offenbar verschoben.
+> **Maßgeblich ist die Tabelle in [13_02 Ankerketten](13_02_ankerketten.md), Abschnitt 2.2.1.**
+> Warum das zählt: Eine falsche Teilung bedeutet, dass die Kette nicht auf die
+> Kettennuss der Ankerwinde passt — sie springt oder blockiert beim Ankermanöver.
+> Vor dem Kauf immer gegen das Datenblatt der Winde prüfen.
+> Quellen (abgerufen 08/2026): <https://www.12seemeilen.de/ankerkette-verzinkt-durchmesser-8-mm-laenge-10-m-din-766.html>,
+> <https://www.kettentechnik-shop.de/Ketten/Rundstahlketten/Rundstahlketten-DIN-766/>
 
 **Spezifikationen DIN 766:**
 
