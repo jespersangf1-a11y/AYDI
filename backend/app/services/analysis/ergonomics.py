@@ -340,6 +340,7 @@ def analyze_passage_widths(passages: list[dict], config: dict) -> tuple[float, l
             warnings.append({
                 "code": "ERGO_PASSAGE_WIDTH_UNKNOWN",
                 "severity": "info",
+                "params": {"from_zone": p.get("from_zone"), "to_zone": p.get("to_zone")},
                 "message": (
                     f"Durchgang {p.get('from_zone')}→{p.get('to_zone')}: Breite nicht "
                     f"beurteilbar — aus der importierten Geometrie nicht ableitbar."
@@ -354,6 +355,15 @@ def analyze_passage_widths(passages: list[dict], config: dict) -> tuple[float, l
             warnings.append({
                 "code": "ERGO_PASSAGE_CRITICAL",
                 "severity": "critical",
+                # params traegt die Messwerte getrennt vom Text, damit
+                # warning_i18n die Meldung in jeder Sprache neu zusammensetzen
+                # kann (siehe app/services/analysis/warning_i18n.py).
+                "params": {
+                    "from_zone": p["from_zone"],
+                    "to_zone": p["to_zone"],
+                    "width": w,
+                    "minimum": critical_width,
+                },
                 "message": f"Durchgang {p['from_zone']}→{p['to_zone']} ist kritisch schmal ({w:.0f}mm, Minimum: {critical_width:.0f}mm)",
                 "suggestion": f"Durchgangsbreite auf mindestens {min_width:.0f}mm erweitern",
             })
@@ -362,6 +372,12 @@ def analyze_passage_widths(passages: list[dict], config: dict) -> tuple[float, l
             warnings.append({
                 "code": "ERGO_PASSAGE_NARROW",
                 "severity": "warning",
+                "params": {
+                    "from_zone": p["from_zone"],
+                    "to_zone": p["to_zone"],
+                    "width": w,
+                    "recommended": min_width,
+                },
                 "message": f"Durchgang {p['from_zone']}→{p['to_zone']} ist zu schmal ({w:.0f}mm, empfohlen: {min_width:.0f}mm)",
                 "suggestion": f"Durchgangsbreite auf mindestens {min_width:.0f}mm erweitern",
             })
@@ -407,6 +423,7 @@ def analyze_path_efficiency(zones: list[dict], passages: list[dict], config: dic
         warnings.append({
             "code": "ERGO_ZONE_ISOLATED",
             "severity": "warning",
+            "params": {"zone": name},
             "message": f"Zone '{name}' ist isoliert (keine Durchgänge)",
             "suggestion": f"Durchgang zu Zone '{name}' hinzufügen",
         })
@@ -484,6 +501,7 @@ def analyze_accessibility(zones: list[dict], passages: list[dict], config: dict)
             warnings.append({
                 "code": "ERGO_ZONE_MISSING",
                 "severity": "critical",
+                "params": {"zone_label": zone_label, "zone_type": req},
                 "message": f"Kritische Zone fehlt: {zone_label}",
                 "suggestion": f"{zone_label} in das Layout aufnehmen",
             })
@@ -501,6 +519,7 @@ def analyze_accessibility(zones: list[dict], passages: list[dict], config: dict)
                 warnings.append({
                     "code": "ERGO_ZONE_UNREACHABLE",
                     "severity": "warning",
+                    "params": {"zone_label": zone_label, "zone_type": req},
                     "message": f"{zone_label} ist nicht erreichbar",
                     "suggestion": f"Durchgang zu {zone_label} hinzufügen",
                 })

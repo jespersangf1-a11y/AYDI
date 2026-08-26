@@ -455,6 +455,7 @@ def analyze_light_distribution(zones: list[dict], config: dict) -> tuple[float, 
                 warnings.append({
                     "code": "EMO_ZONE_TOO_DARK",
                     "severity": "warning",
+                    "params": {"zone": z["name"], "pct": pct, "target": target},
                     "message": f"Zone '{z['name']}' zu dunkel (Fensteranteil: {pct:.0%}, Ziel: {target:.0%})",
                     "suggestion": f"Fensterfläche in '{z['name']}' vergrößern",
                 })
@@ -591,6 +592,7 @@ def analyze_ceiling_perception(zones: list[dict], config: dict) -> tuple[float, 
             warnings.append({
                 "code": "EMO_CEILING_LOW",
                 "severity": "warning",
+                "params": {"zone": z["name"], "height": h, "minimum": min_h},
                 "message": f"Deckenhöhe in '{z['name']}' zu niedrig ({h:.0f}mm, Minimum: {min_h:.0f}mm)",
                 "suggestion": f"Deckenhöhe in '{z['name']}' auf mindestens {min_h:.0f}mm erhöhen",
             })

@@ -539,6 +539,7 @@ def analyze_storage_accessibility(zones: list[dict], passages: list[dict], confi
             warnings.append({
                 "code": "VOL_STORAGE_UNREACHABLE",
                 "severity": "warning",
+                "params": {"zone": sz["name"]},
                 "message": f"Stauraum '{sz['name']}' ist nicht erreichbar",
                 "suggestion": f"Durchgang zu Stauraum '{sz['name']}' hinzufügen",
             })

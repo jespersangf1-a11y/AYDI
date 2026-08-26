@@ -28,6 +28,7 @@ from app.schemas.schemas import (
     LayoutResponse,
     LayoutUpdate,
 )
+from app.services.analysis.warning_i18n import localize_analysis
 from app.services.analysis.ergonomics import run_ergonomics_analysis
 from app.services.analysis.volume_storage import run_volume_storage_analysis
 from app.services.analysis.emotional import run_emotional_analysis
@@ -757,4 +758,8 @@ async def run_full_analysis_endpoint(
     await db.commit()
 
     analysis_result["run_id"] = str(run.id)
-    return analysis_result
+    # Erst hier uebersetzen, nicht in den Modulen: Gespeichert wird das
+    # sprachneutrale Ergebnis (Code + Parameter + deutscher Originaltext), damit
+    # dieselbe Analyse spaeter in einer anderen Sprache dargestellt werden kann.
+    # Ohne Uebersetzung fuer einen Code bleibt die deutsche Meldung stehen.
+    return localize_analysis(analysis_result)

@@ -83,6 +83,9 @@ Status: **erledigt** · **empfohlen** (Entscheidung mit Tragweite, Optionen doku
 | 50 | A | 12 Korpusdokumente (**E4**) | Sechs Themen-Dubletten, unabhängig geschrieben (~2 % gemeinsame Zeilen). Ein Widerspruch war bereits belegt: die DIN-766-Teilung. Web-verifiziert — **8 mm → 24 mm, 10 mm → 28 mm**; damit stimmt `13_02`, und die Teilungsspalte in `17_02` ist falsch (ihr 8-mm-Wert ist die 10-mm-Teilung, die Spalte ist verschoben). Folge im Ernstfall: Die Kette passt nicht auf die Kettennuss und springt beim Ankermanöver. | Widerspruch in `17_02` mit Quellen geflaggt und auf die maßgebliche Tabelle verwiesen. Alle 12 Dokumente gegenseitig verlinkt, mit Hinweis auf das Driftrisiko. **Bewusst nicht zusammengeführt** — siehe E4 unten. | mittel | teilweise |
 | 51 | D | `analyzer.py`, `images.py` (Latenz) | Meine frühere Vermutung, `effort` sei der Hebel gegen die 61 s, war **falsch** — gemessen: low 52,0 s / medium 61,5 s / high 58,2 s, identischer Score. Die Zeit ist **ausgabetoken-gebunden** (~60 Tokens/s bei ~3.400 Tokens), nicht denkzeit-gebunden. Fast Mode (der richtige Hebel) ist auf diesem Konto rate-limitiert und blieb ungemessen. **Der eigentliche Befund liegt woanders:** Der 60-s-Aufruf läuft **inline in der HTTP-Anfrage** (kein `BackgroundTasks`) — Browser, nginx und die PaaS-Proxys brechen typischerweise bei 60 s ab. | Messung dokumentiert, Vermutung korrigiert. Die Umstellung auf einen Hintergrundauftrag ist ein Architektureingriff → siehe E6. | mittel | empfohlen |
 
+| 52 | B/D | `warning_i18n.py` (neu), `ergonomics.py`, `volume_storage.py`, `emotional.py`, `layouts.py` (**E5**) | i18n endete an der Modulgrenze: Der Katalog war vollständig, aber `t()` wurde in **keinem** der zwölf Analysemodule aufgerufen — ein EN-Lauf lieferte 237 deutsche Strings. | **Option A umgesetzt** (Übersetzung an der Präsentationsgrenze, Module bleiben reine Funktionen): Warnungen tragen `code` + `params`, `localize_warning` setzt die Meldung in der aktiven Sprache zusammen. Verdrahtet in der Vollanalyse-Route. Gespeichert wird **sprachneutral** — dieselbe Analyse ist später in einer anderen Sprache darstellbar. Fehlt eine Übersetzung, gewinnt der deutsche Originaltext. Auch Zonentyp-Bezeichnungen werden übersetzt (sonst stünde „Critical zone missing: **Maschinenraum**"), Nutzernamen dagegen nicht. 20 Codes × 4 Sprachen; im Realllauf **13 von 39** Warnungen übersetzt (33 %), Rest deutsch. 18 neue Tests. | hoch | teilweise |
+| 53 | A | 6 Dokumentpaare (**E4**) | Versuch, Widersprüche zwischen den Dubletten **automatisch** zu finden: Abgleich der Zahlen je gemeinsamem Tabellen-Zeilenschlüssel. | **Ergebnis: untauglich.** 27 Kandidaten, die geprüften durchweg Fehlalarme — derselbe Zeilenschlüssel steht in beiden Dokumenten in verschiedenen Tabellenkontexten. Beispiel `Ruderkraft`: in `14_04` die **Balance in Prozent** (15–25 %), in `20_03` die **resultierende Kraft in Newton** (500–5.000 N). Kein Widerspruch, nur gleiche Beschriftung. Der eine echte Widerspruch (DIN-766-Teilung) war durch **Lesen** vergleichbarer Tabellen gefunden worden, nicht durch Mustersuche. Festgehalten, damit niemand denselben Weg nochmal geht. | mittel | geprüft, verworfen |
+
 ---
 
 ## Empfehlungen mit Tragweite (bewusst NICHT allein entschieden)
@@ -116,7 +119,7 @@ Erschwerend: Das Modul würde mit dem heutigen Ergebnisformat des Analyzers abst
 - **Option B:** Visuelle Befunde bewusst getrennt ausweisen und die Fusionsgewichte aus der Spezifikation streichen.
 - Nicht empfohlen: den jetzigen Zustand belassen, ohne ihn zu benennen — dann steht in der Spezifikation eine Tabelle, die nichts steuert.
 
-### E5 — TEILWEISE (Befund 48): i18n endet an der Modulgrenze
+### E5 — MECHANISMUS FERTIG (Befunde 48, 52): i18n endet an der Modulgrenze
 `t()` wird nur in `middleware.py`, `permissions.py` und `subscription.py` aufgerufen. **Kein einziges der 12 Analysemodule benutzt i18n.**
 Ein Vollanalyse-Lauf mit `set_locale("en")` liefert 237 deutsche Strings im JSON — 97 aus hartkodierten Modul-Literalen, 140 aus dem deutschsprachigen Wissenskorpus.
 Der Katalog selbst ist vollständig (232 Schlüssel, 0 Lücken in EN/ES/FR); die technischen Defekte sind behoben (Zahlformat, 5 fehlende Bootsklassen). Das Problem ist die **Reichweite**, nicht der Mechanismus.
@@ -125,7 +128,12 @@ Der Katalog selbst ist vollständig (232 Schlüssel, 0 Lücken in EN/ES/FR); die
 - **Option C (ehrlich):** DE als einzige Ergebnissprache dokumentieren und `Feature.MULTI_LANGUAGE` streichen, bis A oder B umgesetzt ist.
 - Der Korpusanteil (140 Strings) ist in keiner Variante kurzfristig lösbar — 850.000 Zeilen Fachtext sind nicht nebenbei übersetzbar. Das gehört ausdrücklich benannt, statt Mehrsprachigkeit zu versprechen.
 
-### E4 — TEILWEISE (Befund 50): Themen-Dubletten im Korpus (6 Paare, 12 Dokumente)
+
+**Stand nach Befund 52:** Der Mechanismus steht und ist verdrahtet; 20 Codes sind in allen vier Sprachen hinterlegt, im Realllauf sind 13 von 39 Warnungen übersetzt (33 %).
+**Was bleibt:** Die übrigen 135 Codes. Das ist reine Fleißarbeit nach feststehendem Muster (Template + `params` am Fundort) und braucht keine Architekturentscheidung mehr — aber es sind 135 × 4 fachlich korrekte Übersetzungen.
+**Nicht lösbar bleibt der Korpusanteil:** 140 der 237 deutschen Strings stammen aus dem Wissenskorpus. 850.000 Zeilen Fachtext sind nicht nebenbei übersetzbar; das gehört benannt, statt Mehrsprachigkeit zu versprechen.
+
+### E4 — SO WEIT WIE VERANTWORTBAR (Befunde 50, 53): Themen-Dubletten im Korpus
 13_02/17_02 Ankerketten, 13_03/17_03 Ankerwinden, 13_04/17_04 Ankergeschirr, 14_03/20_02 Hydraulische Steuerung, 14_04/20_03 Ruderanlage, 14_07/20_04 Steuerräder.
 Es sind **unabhängig geschriebene** Texte (je ~3.800 Zeilen, nur ~2 % gemeinsame Zeilen) — sie werden auseinanderdriften und tun es bereits (belegt: widersprüchliche DIN-766-Kettenteilung, beide als Fakt ausgeliefert).
 - **Option A:** Zusammenführen, eine Kategorie behält das Dokument, die andere bekommt einen Verweis. Inhaltliche Arbeit, dauerhaft die sauberste Lösung.
@@ -133,6 +141,12 @@ Es sind **unabhängig geschriebene** Texte (je ~3.800 Zeilen, nur ~2 % gemeinsam
 - Der Loader behandelt die Kollisionen bereits verlustfrei (Komposit-Schlüssel) — das Problem ist redaktionell, nicht technisch.
 
 ---
+
+
+**Stand nach Befunden 50 und 53:** Alle 12 Dokumente sind gegenseitig verlinkt und tragen einen Hinweis auf das Driftrisiko. Der eine belegte Widerspruch (DIN-766-Teilung) ist web-verifiziert, geflaggt und auf die maßgebliche Tabelle verwiesen.
+**Warum hier Schluss ist:** Ein automatischer Widerspruchsabgleich ist an diesen Dokumenten nachweislich untauglich (Befund 53) — gleiche Zeilenschlüssel, verschiedene Größen. Und ein echtes Zusammenführen bedeutet, ~46.000 Zeilen Fachtext redaktionell zu verschmelzen und dabei zu entscheiden, welche Fassung gilt. Das ist Facharbeit mit realem Risiko, Inhalte zu verlieren — kein Refactoring. Ich halte es für falsch, das nebenbei zu erledigen.
+- **Option A:** Ein Paar exemplarisch zusammenführen (Ankerketten, wo der Widerspruch belegt ist), Aufwand messen, dann über die übrigen fünf entscheiden.
+- **Option B:** Bei Verlinkung belassen. Die Dokumente ergänzen einander inhaltlich; das Risiko ist Drift, nicht Fehlinformation.
 
 ### E6 — Die Bildanalyse blockiert die HTTP-Anfrage (NEU)
 Gemessen: **56–62 s** je Bild, und der Aufruf läuft **inline im Request-Handler** (`images.py`, kein `BackgroundTasks`).
@@ -159,7 +173,7 @@ Behoben außerdem: sicherheitskritisch erfundene GMDSS-Produkte, vier ISO-Fehlzi
 **Offen:** 6 Themen-Dubletten (E4), Kategorien 27–30 ohne regionale Bezugsquellen/Preise, ein vollständiger Faktencheck aller 260 Dokumente (nur stichprobenartig geprüft).
 
 ### Bereich B — Code & Backend
-**1.757 Tests grün** (vorher 1.224), Backend startet sauber, Korpus wird beim Start vorgewärmt.
+**1.775 Tests grün** (vorher 1.224), Backend startet sauber, Korpus wird beim Start vorgewärmt.
 Kaltstart ist jetzt dokumentiert: neues README mit verifiziertem Schnellstart, `.env.example` deckt alle 18 Settings ab (vorher 5, ohne die sicherheitsrelevanten).
 Zwei Vokabulare, die still auseinandergelaufen waren, werden jetzt aus ihrer Einzelquelle abgeleitet — Zonentypen und Bootsklassen; bei letzteren wurden **5 der 13 offiziellen Klassen** von der Validierung abgelehnt.
 Das Rate-Limit trifft jetzt die Routen, für die es gedacht war: Bild-Upload und CAD-Import lagen bei 120/min statt 10/min — ausgerechnet die Pfade, die kostenpflichtige Vision-Aufrufe bzw. CPU-intensives Parsen auslösen.
