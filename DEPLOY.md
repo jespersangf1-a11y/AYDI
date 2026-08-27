@@ -37,35 +37,72 @@ Gesamt: 0 €/Monat. Cold-Start ist der einzige spürbare Trade-off — die erst
 1. https://render.com → Sign up (GitHub-Login empfehlenswert, dann sieht Render dein AYDI-Repo)
 2. New → **Blueprint** → AYDI-Repo auswählen
 3. Render liest `render.yaml` und schlägt `aydi-backend` als Web Service vor → bestätigen
-4. Im Service-Detail unter **Environment** diese vier Secrets setzen:
+4. Im Service-Detail unter **Environment** diese drei Secrets setzen. Alles
+   Übrige steht bereits in `render.yaml` und wird von Render übernommen —
+   auch `CORS_ORIGINS` und `TRUST_PROXY_HEADERS`.
 
    | Key | Wert |
    |---|---|
    | `DATABASE_URL` | der Neon-String von oben (mit `+asyncpg` und `?ssl=require`) |
-   | `ANTHROPIC_API_KEY` | dein Claude-API-Key |
+   | `ANTHROPIC_API_KEY` | dein Claude-API-Key — ohne ihn läuft Pipeline B (Bildanalyse) nicht, alles Übrige schon |
    | `SECRET_KEY` | `python -c "import secrets; print(secrets.token_urlsafe(64))"` |
-   | `CORS_ORIGINS` | `["https://<dein-frontend>.vercel.app"]` (anpassen, wenn die URL steht) |
+
+   `SECRET_KEY` ist Pflicht: mit `ENVIRONMENT=production` und dem
+   Repo-Default bricht der Boot-Guard in `app/core/config.py` den Start ab.
+   Das ist Absicht — lieber ein fehlgeschlagenes Deployment als eines mit
+   fälschbaren Tokens.
 
 5. Manual Deploy → Render baut den Docker-Container und startet ihn.
 6. Erfolgs-Check: in den Logs erscheint
    ```
    [entrypoint] Running alembic upgrade head...
    INFO  [alembic.runtime.migration] Running upgrade  -> 000_initial, ...
-   INFO  [alembic.runtime.migration] Running upgrade 000_initial -> 001_user_prefs, ...
+   ... 9 Revisionen, zuletzt 007_image_analysis_status -> 008_merge_owner_and_utc
    [entrypoint] Starting uvicorn on 0.0.0.0:10000...
+   AYDI starting up (json_logs=True)
+   Knowledge corpus warmed: 260 documents
    ```
-7. Backend-URL ist jetzt z. B. `https://aydi-backend.onrender.com` → in `vercel.json` und `frontend/public/_redirects` eintragen, falls die URL anders heißt (Standard ist passend gewählt).
+   Die letzte Zeile ist die wichtige: der Korpus wird **vor** dem ersten
+   Request geparst, der Dienst nimmt bis dahin nichts an. Rechne beim ersten
+   Deploy mit ein bis zwei Minuten, bis `/health/ready` antwortet — Render
+   markiert den Deploy erst danach als erfolgreich.
+
+7. Backend-URL notieren. Render vergibt `https://aydi-backend.onrender.com`,
+   **hängt aber eine Kennung an, wenn der Name schon vergeben ist.** Weicht sie
+   ab, muss sie an zwei Stellen nachgetragen werden:
+   `frontend/vercel.json` (Rewrite-Ziel für `/api/*`) und
+   `frontend/public/_redirects` (Cloudflare-Pages-Variante).
 
 ---
 
 ## Schritt 3 — Vercel (Frontend)
 
-1. https://vercel.com → Sign up mit GitHub
-2. Add New → Project → AYDI-Repo importieren
-3. **Root Directory** auf `frontend` setzen
-4. Build-Command, Output-Dir und Install-Command werden aus `vercel.json` gezogen — nichts ändern
-5. Deploy → ~30 Sek später läuft das Frontend
+**Das Projekt `aydi` existiert bereits** und ist mit dem Repo verbunden — es
+muss also nicht neu importiert, sondern eine Einstellung korrigiert werden.
+Ohne sie baut Vercel im Repo-Wurzelverzeichnis, findet dort keine
+`package.json`, erzeugt ein leeres Ergebnis und liefert auf **jedem** Pfad
+`404: NOT_FOUND`. Erkennbar im Build-Log an:
+
+```
+Running "vercel build"
+Build Completed in /vercel/output [1s]
+Skipping cache upload because no files were prepared
+```
+
+Kein `npm ci`, kein `vite build`, keine Dateien — genau das Bild.
+
+1. Vercel → Projekt `aydi` → **Settings → Build & Deployment**
+2. **Root Directory** auf `frontend` setzen und speichern
+3. **Deployments → ⋯ → Redeploy** (die Einstellung wirkt erst beim nächsten Build)
+4. Build-Command, Output-Dir und Install-Command kommen aus
+   `frontend/vercel.json` — nichts ändern. Diese Datei wird überhaupt erst
+   gelesen, wenn Root Directory stimmt.
+5. Im Build-Log muss jetzt `npm ci`, `vite build` und `dist/index.html`
+   auftauchen.
 6. Optional: Custom Domain unter Settings → Domains
+
+Bei einem **neuen** Projekt lässt sich Root Directory direkt beim Import
+setzen; nachträglich geht es nur über Settings.
 
 **Alternative — Cloudflare Pages:**
 - https://dash.cloudflare.com → Pages → Create application → AYDI-Repo
@@ -94,7 +131,10 @@ Wenn beide stehen, ist AYDI online. Erst-Login: `/auth/register` über die UI.
 
 ## Was du im Hinterkopf behalten musst
 
-- **Render-Free schläft.** Nach 15 Min ohne Traffic geht der Container schlafen. Erste Request danach: ~30 Sek Cold-Start. Für Demo/Beta ok, für Produktionskunden nicht.
+- **Render-Free schläft.** Nach 15 Min ohne Traffic geht der Container schlafen. Der Aufwachvorgang ist mehr als nur Containerstart: `alembic upgrade head` läuft durch, danach parst der Lifespan den 260-Dokumente-Korpus, bevor der erste Request angenommen wird (lokal 3 s, auf Renders geteilter CPU deutlich mehr). Rechne mit 30–60 Sek. Für Demo/Beta ok, für Produktionskunden nicht.
+- **Hochgeladene Bilder überleben keinen Neustart.** Der Free-Plan hat keine persistente Platte; `UPLOAD_DIR` liegt im Container. Nach Neustart oder Deploy zeigen die `image_uploads`-Zeilen auf Dateien, die es nicht mehr gibt. Für echten Betrieb braucht es eine Render-Disk oder Objektspeicher.
+- **`/docs` ist zu.** Mit `ENVIRONMENT=production` liefern `/docs`, `/redoc` und `/openapi.json` bewusst 404 — die interaktive Doku listet jede Route und jede Prüfregel. Zum Nachsehen vorübergehend `DOCS_ENABLED=true` setzen.
+- **`TRUST_PROXY_HEADERS=true` gehört zu Render, nicht in jede Umgebung.** Der Schalter steht im Blueprint, weil hinter Render ein vertrauenswürdiger Proxy sitzt und `X-Forwarded-For` sonst die tatsächliche Absenderadresse verdeckt — Ratenbegrenzung und Anmeldesperre würden dann für alle Besucher gemeinsam zählen. Läuft das Backend je direkt aus dem Netz erreichbar, muss der Schalter wieder aus, sonst ist die Kopfzeile fälschbar.
 - **Neon-Free pausiert.** Nach längerer Inaktivität (Tagen) pausiert die Datenbank, wacht aber innerhalb von Sekunden bei der ersten Query wieder auf.
 - **Migrationen laufen bei jedem Deploy.** Wenn du eine Alembic-Migration schreibst und pushst, läuft sie automatisch im Render-Entrypoint. Schreib sie idempotent.
 - **Skalierung kostet:** sobald du dauerhaft mehr brauchst — Render Starter $7/Monat (kein Sleep), Neon Pro $19/Monat (10 GB), Vercel Pro $20/Monat. In dieser Reihenfolge upgraden, wenn die Limits beißen.
