@@ -6,6 +6,8 @@ from sqlalchemy import Boolean, CheckConstraint, Date, DateTime, Float, ForeignK
 from sqlalchemy import JSON, Uuid
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
+from app.db.types import UtcDateTime
+
 
 def _utcnow() -> datetime:
     return datetime.now(timezone.utc)
@@ -33,8 +35,8 @@ class Project(Base):
     length_m: Mapped[float] = mapped_column(Float, nullable=False)
     beam_m: Mapped[float] = mapped_column(Float, nullable=False)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="draft")
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, onupdate=_utcnow)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime, default=_utcnow)
+    updated_at: Mapped[datetime] = mapped_column(UtcDateTime, default=_utcnow, onupdate=_utcnow)
 
     layouts: Mapped[list["Layout"]] = relationship(back_populates="project", cascade="all, delete-orphan")
     analysis_results: Mapped[list["AnalysisResult"]] = relationship(
@@ -65,7 +67,7 @@ class ProjectMember(Base):
         ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
     role: Mapped[str] = mapped_column(String(20), nullable=False, default="viewer")  # viewer, editor
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime, default=_utcnow)
 
 
 class Organization(Base):
@@ -89,8 +91,8 @@ class Organization(Base):
     created_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, onupdate=_utcnow)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime, default=_utcnow)
+    updated_at: Mapped[datetime] = mapped_column(UtcDateTime, default=_utcnow, onupdate=_utcnow)
 
 
 class OrganizationMember(Base):
@@ -113,7 +115,7 @@ class OrganizationMember(Base):
         ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
     org_role: Mapped[str] = mapped_column(String(20), nullable=False, default="member")  # owner, admin, member
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime, default=_utcnow)
 
 
 class Invitation(Base):
@@ -151,16 +153,16 @@ class Invitation(Base):
         ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")  # pending|accepted|declined|revoked
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
-    expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-    responded_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime, default=_utcnow)
+    expires_at: Mapped[datetime] = mapped_column(UtcDateTime, nullable=False)
+    responded_at: Mapped[datetime | None] = mapped_column(UtcDateTime, nullable=True)
 
 
 class Layout(Base):
     __tablename__ = "layouts"
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
-    project_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
     version: Mapped[str] = mapped_column(String(50), default="v1.0")
     file_path: Mapped[str | None] = mapped_column(String, nullable=True)
@@ -168,8 +170,8 @@ class Layout(Base):
     zones: Mapped[dict | list] = mapped_column(JSON, default=list)
     passages: Mapped[dict | list] = mapped_column(JSON, default=list)
     deck_height_mm: Mapped[int] = mapped_column(Integer, default=2100)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, onupdate=_utcnow)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime, default=_utcnow)
+    updated_at: Mapped[datetime] = mapped_column(UtcDateTime, default=_utcnow, onupdate=_utcnow)
 
     project: Mapped["Project"] = relationship(back_populates="layouts")
     analysis_results: Mapped[list["AnalysisResult"]] = relationship(
@@ -194,8 +196,8 @@ class AnalysisResult(Base):
     __tablename__ = "analysis_results"
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
-    project_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
-    layout_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("layouts.id", ondelete="CASCADE"), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    layout_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("layouts.id", ondelete="CASCADE"), nullable=False, index=True)
     # Links the 11 per-module rows of one Vollanalyse to a single run header so a
     # historical run (its overall score, which modules ran) is reconstructable
     # (H-3). Nullable/SET NULL: legacy rows and single-module analyses have none.
@@ -209,7 +211,7 @@ class AnalysisResult(Base):
     suggestions: Mapped[list] = mapped_column(JSON, default=list)
     metrics: Mapped[dict] = mapped_column(JSON, default=dict)
     config_used: Mapped[dict] = mapped_column(JSON, default=dict)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime, default=_utcnow)
 
     project: Mapped["Project"] = relationship(back_populates="analysis_results")
     layout: Mapped["Layout"] = relationship(back_populates="analysis_results")
@@ -238,7 +240,7 @@ class AnalysisRun(Base):
     skipped_count: Mapped[int] = mapped_column(Integer, default=0)
     error_count: Mapped[int] = mapped_column(Integer, default=0)
     tier: Mapped[str | None] = mapped_column(String(20), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime, default=_utcnow)
 
 
 # Future normalization models (not actively used in Phase 1)
@@ -246,7 +248,7 @@ class Zone(Base):
     __tablename__ = "zones"
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
-    layout_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("layouts.id", ondelete="CASCADE"), nullable=False)
+    layout_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("layouts.id", ondelete="CASCADE"), nullable=False, index=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     zone_type: Mapped[str] = mapped_column(String(50), nullable=False)
     polygon: Mapped[list] = mapped_column(JSON, nullable=False)
@@ -258,7 +260,7 @@ class Passage(Base):
     __tablename__ = "passages"
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
-    layout_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("layouts.id", ondelete="CASCADE"), nullable=False)
+    layout_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("layouts.id", ondelete="CASCADE"), nullable=False, index=True)
     from_zone: Mapped[str] = mapped_column(String(100), nullable=False)
     to_zone: Mapped[str] = mapped_column(String(100), nullable=False)
     width_mm: Mapped[float] = mapped_column(Float, nullable=False)
@@ -287,21 +289,21 @@ class Material(Base):
     maintenance_cost_factor: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     known_issues: Mapped[list | None] = mapped_column(JSON, nullable=True)
     alternatives: Mapped[list | None] = mapped_column(JSON, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, onupdate=_utcnow)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime, default=_utcnow)
+    updated_at: Mapped[datetime] = mapped_column(UtcDateTime, default=_utcnow, onupdate=_utcnow)
 
 
 class ZoneMaterial(Base):
     __tablename__ = "zone_materials"
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
-    layout_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("layouts.id", ondelete="CASCADE"), nullable=False)
+    layout_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("layouts.id", ondelete="CASCADE"), nullable=False, index=True)
     zone_name: Mapped[str] = mapped_column(String(100), nullable=False)
     surface_type: Mapped[str] = mapped_column(String(50), nullable=False)
-    material_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("materials.id", ondelete="CASCADE"), nullable=False)
+    material_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("materials.id", ondelete="CASCADE"), nullable=False, index=True)
     area_sqm: Mapped[float] = mapped_column(Float, nullable=False)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime, default=_utcnow)
 
     material: Mapped["Material"] = relationship()
     layout: Mapped["Layout"] = relationship(back_populates="zone_materials")
@@ -337,7 +339,7 @@ class ServiceReport(Base):
     images: Mapped[list | None] = mapped_column(JSON, nullable=True)
     reported_by: Mapped[str | None] = mapped_column(String(255), nullable=True)
     reported_at: Mapped[date | None] = mapped_column(Date, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime, default=_utcnow)
     metadata_extra: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
     project: Mapped["Project | None"] = relationship()
@@ -360,7 +362,7 @@ class CostItem(Base):
     zone_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
     source: Mapped[str] = mapped_column(String(50), nullable=False, default="estimate")
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime, default=_utcnow)
 
     layout: Mapped["Layout"] = relationship(back_populates="cost_items")
 
@@ -381,7 +383,7 @@ class StructuralItem(Base):
     position_z_mm: Mapped[float | None] = mapped_column(Float, nullable=True)
     dimensions: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     properties: Mapped[dict | None] = mapped_column(JSON, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime, default=_utcnow)
 
     layout: Mapped["Layout"] = relationship(back_populates="structural_items")
 
@@ -408,7 +410,7 @@ class CompetitorModel(Base):
     source_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     images: Mapped[list | None] = mapped_column(JSON, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime, default=_utcnow)
 
 
 class BrandReferenceModel(Base):
@@ -436,7 +438,7 @@ class BrandReferenceModel(Base):
     features: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     images: Mapped[list | None] = mapped_column(JSON, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime, default=_utcnow)
 
 
 class LayoutVersion(Base):
@@ -464,7 +466,7 @@ class LayoutVersion(Base):
     layout_meta_snapshot: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     change_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     changed_by: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime, default=_utcnow)
     tags: Mapped[list | None] = mapped_column(JSON, nullable=True)
 
 
@@ -481,7 +483,7 @@ class Deck(Base):
     height_mm: Mapped[float] = mapped_column(Float, nullable=False, default=2100.0)
     is_open: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     zones: Mapped[list | None] = mapped_column(JSON, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime, default=_utcnow)
 
     layout: Mapped["Layout"] = relationship(back_populates="decks")
 
@@ -490,24 +492,27 @@ class QuickAnalysisResult(Base):
     __tablename__ = "quick_analysis_results"
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    owner_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True
+    )
     boat_class: Mapped[str] = mapped_column(String(20), nullable=False)
     length_m: Mapped[float] = mapped_column(Float, nullable=False)
     specs_input: Mapped[dict] = mapped_column(JSON, nullable=False)
     overall_score: Mapped[float] = mapped_column(Float, nullable=False)
     module_results: Mapped[dict] = mapped_column(JSON, nullable=False)
     estimated_layout: Mapped[dict | None] = mapped_column(JSON, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime, default=_utcnow)
 
 
 class Report(Base):
     __tablename__ = "reports"
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
-    project_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
-    layout_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("layouts.id", ondelete="CASCADE"), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True)
+    layout_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("layouts.id", ondelete="CASCADE"), nullable=False, index=True)
     report_type: Mapped[str] = mapped_column(String(20), nullable=False, default="full")
     report_data: Mapped[dict] = mapped_column(JSON, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime, default=_utcnow)
 
     project: Mapped["Project"] = relationship()
 
@@ -525,8 +530,8 @@ class User(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     locale: Mapped[str] = mapped_column(String(5), nullable=False, default="de")  # de, en, es, fr
     unit_system: Mapped[str] = mapped_column(String(10), nullable=False, default="metric")  # metric, imperial
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, onupdate=_utcnow)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime, default=_utcnow)
+    updated_at: Mapped[datetime] = mapped_column(UtcDateTime, default=_utcnow, onupdate=_utcnow)
 
 
 class ImageUpload(Base):
@@ -557,7 +562,7 @@ class ImageUpload(Base):
     # unterscheiden: beide haetten schlicht ai_analysis = NULL.
     # pending | running | done | failed | skipped_tier
     ai_analysis_status: Mapped[str | None] = mapped_column(String(20), nullable=True)
-    uploaded_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
+    uploaded_at: Mapped[datetime] = mapped_column(UtcDateTime, default=_utcnow)
     metadata_extra: Mapped[dict | None] = mapped_column(JSON, nullable=True)  # EXIF, camera info
 
     project: Mapped["Project | None"] = relationship(back_populates="images")
@@ -568,8 +573,8 @@ class CommunityReport(Base):
     __tablename__ = "community_reports"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
-    updated_at: Mapped[datetime | None] = mapped_column(DateTime, onupdate=_utcnow)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime, default=_utcnow)
+    updated_at: Mapped[datetime | None] = mapped_column(UtcDateTime, onupdate=_utcnow)
     source_forum: Mapped[str] = mapped_column(String(100), nullable=False)
     source_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     source_date: Mapped[date | None] = mapped_column(Date, nullable=True)
@@ -595,8 +600,8 @@ class CommunityPattern(Base):
     __tablename__ = "community_patterns"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
-    updated_at: Mapped[datetime | None] = mapped_column(DateTime, onupdate=_utcnow)
+    created_at: Mapped[datetime] = mapped_column(UtcDateTime, default=_utcnow)
+    updated_at: Mapped[datetime | None] = mapped_column(UtcDateTime, onupdate=_utcnow)
     manufacturer: Mapped[str | None] = mapped_column(String(100), nullable=True)
     boat_model: Mapped[str | None] = mapped_column(String(100), nullable=True)
     issue_category: Mapped[str] = mapped_column(String(50), nullable=False)

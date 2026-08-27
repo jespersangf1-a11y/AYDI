@@ -5,8 +5,8 @@ compatibility, and weight impact. Pure function module — no database access.
 All user-facing strings are in German.
 """
 import logging
+from app.services.analysis.scoring import weighted_overall, hinweis_teilanalysen
 
-from app.services.analysis.subscore import aggregate_subscores
 
 logger = logging.getLogger(__name__)
 
@@ -377,13 +377,14 @@ def analyze_material_durability(
 def analyze_maintenance_burden(
     zone_materials: list[dict],
     config: dict,
-) -> tuple[float, list[dict], dict]:
+) -> tuple[float | None, list[dict], dict]:
     """Estimate annual maintenance cost and compare to benchmark.
 
     Annual maintenance per assignment = area_sqm * cost_per_unit * maintenance_cost_factor.
     Total is compared against max_annual_maintenance_pct * total_material_cost.
 
-    Returns (score 0-100, warnings, metrics).
+    Returns (score 0-100 oder None, warnings, metrics). ``None`` bedeutet
+    "nicht beurteilbar" — es lag keine verwertbare Kostenangabe vor.
     """
     warnings: list[dict] = []
 
@@ -393,33 +394,99 @@ def analyze_maintenance_burden(
             "severity": "info",
             "message": "Keine Materialzuweisungen für Wartungskosten-Analyse vorhanden.",
             "suggestion": "Materialien den Zonen zuweisen.",
+            "location": "layout.materials",
         })
-        return 50.0, warnings, {
-            "annual_maintenance_eur": 0.0,
-            "total_material_cost_eur": 0.0,
-            "maintenance_ratio": 0.0,
+        # Ohne Materialzuweisung gibt es keine Wartungskosten zu pruefen. Die
+        # bisherige 50.0 war eine Zahl ohne Messung und ging voll gewichtet in
+        # die Modulnote ein.
+        return None, warnings, {
+            "annual_maintenance_eur": None,
+            "total_material_cost_eur": None,
+            "maintenance_ratio": None,
         }
 
     max_pct = config.get("max_annual_maintenance_pct", 0.025)
 
     total_material_cost = 0.0
     annual_maintenance = 0.0
+    # Zuweisungen ohne Kosten- oder Wartungsfaktor werden gezaehlt, nicht
+    # stillschweigend mit 0.0 gerechnet: ein fehlender Wartungsfaktor haette
+    # als "verursacht keine Wartungskosten" gezaehlt und das Verhaeltnis
+    # guenstiger aussehen lassen, als es gemessen ist.
+    ohne_kostenangabe: list[str] = []
+    ohne_wartungsfaktor: list[str] = []
+    bewertete_zuweisungen = 0
 
     for zm in zone_materials:
         mat = zm.get("material") or {}
-        area = zm.get("area_sqm", 0.0)
-        cost = mat.get("cost_per_unit", 0.0)
-        factor = mat.get("maintenance_cost_factor", 0.0)
+        area = zm.get("area_sqm") or 0.0
+        cost = mat.get("cost_per_unit")
+        factor = mat.get("maintenance_cost_factor")
+        bezeichnung = f"{mat.get('name', '?')} ({zm.get('zone_name', '?')})"
+
+        if cost is None:
+            ohne_kostenangabe.append(bezeichnung)
+            continue
+        if factor is None:
+            ohne_wartungsfaktor.append(bezeichnung)
+            continue
 
         mat_cost = area * cost
         total_material_cost += mat_cost
         annual_maintenance += mat_cost * factor
+        bewertete_zuweisungen += 1
+
+    if ohne_kostenangabe or ohne_wartungsfaktor:
+        fehlend = ohne_kostenangabe + ohne_wartungsfaktor
+        warnings.append({
+            "code": "MAINTENANCE_DATA_INCOMPLETE",
+            "severity": "info",
+            "message": (
+                "Für folgende Materialzuweisungen fehlt eine Kosten- oder "
+                "Wartungsfaktor-Angabe; sie sind in der Wartungskosten-Analyse "
+                f"nicht enthalten: {', '.join(fehlend)}."
+            ),
+            "suggestion": (
+                "Preis je Einheit und Wartungsfaktor im Materialstamm "
+                "nachtragen, damit die Wartungslast vollständig gerechnet wird."
+            ),
+            "location": "layout.materials",
+        })
+
+    if bewertete_zuweisungen == 0:
+        warnings.append({
+            "code": "MAINTENANCE_NOT_ASSESSABLE",
+            "severity": "info",
+            "message": (
+                "Wartungskosten nicht beurteilbar: keine der Materialzuweisungen "
+                "trägt Kosten- und Wartungsfaktor-Angaben."
+            ),
+            "suggestion": "Materialstammdaten um Preis und Wartungsfaktor ergänzen.",
+            "location": "layout.materials",
+        })
+        return None, warnings, {
+            "annual_maintenance_eur": None,
+            "total_material_cost_eur": None,
+            "maintenance_ratio": None,
+        }
 
     if total_material_cost <= 0:
-        return 50.0, warnings, {
-            "annual_maintenance_eur": 0.0,
-            "total_material_cost_eur": 0.0,
-            "maintenance_ratio": 0.0,
+        # Kostensumme null trotz vorhandener Angaben: entweder alle Flaechen 0
+        # oder alle Preise 0. Ein Verhaeltnis ist daraus nicht bildbar.
+        warnings.append({
+            "code": "MAINTENANCE_NOT_ASSESSABLE",
+            "severity": "info",
+            "message": (
+                "Wartungskosten nicht beurteilbar: die Materialkosten des Layouts "
+                "summieren sich auf 0 EUR (fehlende Flächen- oder Preisangaben)."
+            ),
+            "suggestion": "Flächen je Zuweisung und Preis je Einheit prüfen.",
+            "location": "layout.materials",
+        })
+        return None, warnings, {
+            "annual_maintenance_eur": None,
+            "total_material_cost_eur": None,
+            "maintenance_ratio": None,
         }
 
     ratio = annual_maintenance / total_material_cost
@@ -599,6 +666,8 @@ def analyze_material_compatibility(
         if len(metals) >= 2:
             metal_types = set()
             for m in metals:
+                # ``or {}``: ein Material ohne gepflegte Eigenschaften traegt
+                # properties = None, nicht ein fehlendes Feld.
                 mt = (m["material"].get("properties") or {}).get("metal_type", "unknown")
                 metal_types.add(mt)
 
@@ -730,7 +799,7 @@ def analyze_material_weight(
 def analyze_lifecycle_cost(
     zone_materials: list[dict],
     config: dict,
-) -> tuple[float, list[dict], dict]:
+) -> tuple[float | None, list[dict], dict]:
     """Estimate 20-year total cost of ownership per material.
 
     Considers purchase cost, annual maintenance, and replacement cycles.
@@ -746,25 +815,33 @@ def analyze_lifecycle_cost(
             "message": "Keine Materialzuweisungen für Lebenszykluskosten-Analyse vorhanden.",
             "suggestion": "Materialien den Zonen zuweisen.",
         })
-        return 50.0, warnings, {
-            "total_lifecycle_cost_eur": 0.0,
-            "annualized_cost_eur": 0.0,
-            "total_area_sqm": 0.0,
+        # Ohne Materialzuweisung gibt es keine Lebenszykluskosten zu rechnen.
+        return None, warnings, {
+            "total_lifecycle_cost_eur": None,
+            "annualized_cost_eur": None,
+            "total_area_sqm": None,
         }
 
     max_annualized = config.get("max_annualized_cost_per_sqm", 50)
     lifecycle_costs: list[float] = []
+    bewertete_zuweisungen: list[dict] = []
+    # Fehlende Stammdaten werden gesammelt statt durch guenstige Vorgabewerte
+    # ersetzt: cost_per_unit=0.0 machte ein Material kostenlos,
+    # maintenance_cost_factor=0.0 wartungsfrei und lifespan_years=20 traf genau
+    # das 20-Jahres-Fenster, sodass rechnerisch nie ein Ersatz anfiel. Alle drei
+    # Vorgaben waren jeweils das guenstigste denkbare Ergebnis.
+    ohne_stammdaten: list[str] = []
     total_area = 0.0
 
     for zm in zone_materials:
         mat = zm.get("material") or {}
-        area = zm.get("area_sqm", 0.0)
-        cost_per_unit = mat.get("cost_per_unit", 0.0)
-        maintenance_factor = mat.get("maintenance_cost_factor", 0.0)
-        lifespan = mat.get("lifespan_years", 20)
+        area = zm.get("area_sqm") or 0.0
+        cost_per_unit = mat.get("cost_per_unit")
+        maintenance_factor = mat.get("maintenance_cost_factor")
+        lifespan = mat.get("lifespan_years")
 
         # Try to enrich lifespan from knowledge database
-        mat_name = mat.get("name", "").lower()
+        mat_name = (mat.get("name") or "").lower()
         if MATERIAL_LIFESPAN_DATABASE:
             for mat_key, mat_data in MATERIAL_LIFESPAN_DATABASE.items():
                 if mat_key.lower() in mat_name or mat_name in mat_key.lower():
@@ -781,14 +858,53 @@ def analyze_lifecycle_cost(
                             pass
                     break
 
+        bezeichnung = f"{mat.get('name', '?')} ({zm.get('zone_name', '?')})"
+        if cost_per_unit is None or maintenance_factor is None or lifespan is None:
+            ohne_stammdaten.append(bezeichnung)
+            continue
+
         purchase = area * cost_per_unit
         annual_maintenance = purchase * maintenance_factor
-        replacements = max(0, (20 // lifespan) - 1) if lifespan and lifespan > 0 else 0
+        replacements = max(0, (20 // lifespan) - 1) if lifespan > 0 else 0
         replacement_cost = replacements * purchase * 0.8
         lifecycle_total = purchase + (annual_maintenance * 20) + replacement_cost
 
         lifecycle_costs.append(lifecycle_total)
+        bewertete_zuweisungen.append(zm)
         total_area += area
+
+    if ohne_stammdaten:
+        warnings.append({
+            "code": "LIFECYCLE_DATA_INCOMPLETE",
+            "severity": "info",
+            "message": (
+                "Für folgende Materialzuweisungen fehlen Preis, Wartungsfaktor "
+                "oder Lebensdauer; sie sind in der Lebenszykluskosten-Rechnung "
+                f"nicht enthalten: {', '.join(ohne_stammdaten)}."
+            ),
+            "suggestion": (
+                "Preis je Einheit, Wartungsfaktor und Lebensdauer im "
+                "Materialstamm nachtragen."
+            ),
+            "location": "layout.materials",
+        })
+
+    if not lifecycle_costs:
+        warnings.append({
+            "code": "LIFECYCLE_NOT_ASSESSABLE",
+            "severity": "info",
+            "message": (
+                "Lebenszykluskosten nicht beurteilbar: keine der "
+                "Materialzuweisungen trägt vollständige Kostenstammdaten."
+            ),
+            "suggestion": "Materialstammdaten vervollständigen.",
+            "location": "layout.materials",
+        })
+        return None, warnings, {
+            "total_lifecycle_cost_eur": None,
+            "annualized_cost_eur": None,
+            "total_area_sqm": None,
+        }
 
     total_lifecycle = sum(lifecycle_costs)
     annualized = total_lifecycle / 20.0
@@ -796,7 +912,7 @@ def analyze_lifecycle_cost(
     # Check for outliers: any single material > 3× average
     if lifecycle_costs:
         avg_cost = total_lifecycle / len(lifecycle_costs)
-        for i, zm in enumerate(zone_materials):
+        for i, zm in enumerate(bewertete_zuweisungen):
             if avg_cost > 0 and lifecycle_costs[i] > 3.0 * avg_cost:
                 mat = zm.get("material") or {}
                 warnings.append({
@@ -820,7 +936,19 @@ def analyze_lifecycle_cost(
         else:
             score = max(0.0, (max_annualized / annualized_per_sqm) * 100.0)
     else:
-        score = 50.0
+        # Ohne Flaechenangabe laesst sich kein Kostenwert je Quadratmeter
+        # bilden. Die bisherige 50.0 war eine Zahl ohne Bezugsgroesse.
+        warnings.append({
+            "code": "LIFECYCLE_NOT_ASSESSABLE",
+            "severity": "info",
+            "message": (
+                "Lebenszykluskosten nicht beurteilbar: für die bewerteten "
+                "Materialzuweisungen ist keine Fläche hinterlegt."
+            ),
+            "suggestion": "Fläche (area_sqm) je Materialzuweisung erfassen.",
+            "location": "layout.materials",
+        })
+        score = None
 
     return score, warnings, {
         "total_lifecycle_cost_eur": round(total_lifecycle, 2),
@@ -839,7 +967,7 @@ _HIGH_UV_ZONE_TYPES = {"cockpit", "flybridge", "foredeck", "swim_platform"}
 def analyze_uv_exposure(
     zone_materials: list[dict],
     config: dict,
-) -> tuple[float, list[dict], dict]:
+) -> tuple[float | None, list[dict], dict]:
     """Flag materials in high-UV zones without UV resistance.
 
     Returns (score 0-100, warnings, metrics).
@@ -852,10 +980,12 @@ def analyze_uv_exposure(
             "message": "Keine Materialzuweisungen für UV-Analyse vorhanden.",
             "suggestion": "Materialien den Zonen zuweisen.",
         })
-        return 50.0, warnings, {"uv_zones_checked": 0, "non_uv_resistant_count": 0}
+        return None, warnings, {"uv_zones_checked": 0, "non_uv_resistant_count": 0}
 
     non_uv_resistant_count = 0
     uv_zones_checked = 0
+    ohne_uv_angabe: list[str] = []
+    uv_zonen_gefunden = 0
 
     for zm in zone_materials:
         zone_type = zm.get("zone_type")
@@ -865,10 +995,20 @@ def analyze_uv_exposure(
         if zone_type not in _HIGH_UV_ZONE_TYPES:
             continue
 
-        uv_zones_checked += 1
+        uv_zonen_gefunden += 1
+
         mat = zm.get("material") or {}
         mat_props = mat.get("properties") or {}
-        uv_resistant = mat_props.get("uv_resistant", True)
+        # Fruehere Fassung: mat_props.get("uv_resistant", True). Ein Material ohne
+        # Angabe galt damit als UV-bestaendig — die guenstigste Annahme, und keine
+        # Messung. Fehlt die Angabe, wird das Material nicht mitgezaehlt und der
+        # Anwender darauf hingewiesen.
+        uv_resistant = mat_props.get("uv_resistant")
+        if uv_resistant is None:
+            ohne_uv_angabe.append(f"{mat.get('name', '?')} ({zm['zone_name']})")
+            continue
+
+        uv_zones_checked += 1
 
         if not uv_resistant:
             non_uv_resistant_count += 1
@@ -883,6 +1023,41 @@ def analyze_uv_exposure(
                     f"UV-Schutzbehandlung vorsehen."
                 ),
             })
+
+    if ohne_uv_angabe:
+        warnings.append({
+            "code": "UV_RESISTANCE_UNKNOWN",
+            "severity": "info",
+            "message": (
+                "UV-Beständigkeit nicht angegeben für: "
+                + ", ".join(ohne_uv_angabe)
+                + ". Diese Materialien gehen nicht in die Bewertung ein."
+            ),
+            "suggestion": (
+                "Eigenschaft uv_resistant beim Material hinterlegen."
+            ),
+            "location": "materials",
+        })
+
+    if uv_zonen_gefunden == 0:
+        warnings.append({
+            "code": "UV_NOT_ASSESSABLE",
+            "severity": "info",
+            "message": (
+                "Keine sonnenexponierten Zonen mit Materialzuweisung gefunden — "
+                "die UV-Belastung konnte nicht bewertet werden."
+            ),
+            "suggestion": (
+                "Materialien den Decksbereichen (cockpit, foredeck, side_deck, "
+                "flybridge, swim_platform) zuweisen."
+            ),
+            "location": "materials",
+        })
+        return None, warnings, {"uv_zones_checked": 0, "non_uv_resistant_count": 0}
+
+    if uv_zones_checked == 0:
+        # Zonen vorhanden, aber zu keinem Material eine UV-Angabe.
+        return None, warnings, {"uv_zones_checked": 0, "non_uv_resistant_count": 0}
 
     score = max(0.0, min(100.0, 100.0 - non_uv_resistant_count * 20))
 
@@ -903,7 +1078,7 @@ _WOOD_SUBCATEGORIES = {"wood", "plywood", "veneer"}
 def analyze_moisture_risk(
     zone_materials: list[dict],
     config: dict,
-) -> tuple[float, list[dict], dict]:
+) -> tuple[float | None, list[dict], dict]:
     """Flag wood-based materials in high-moisture zones without moisture sealing.
 
     Returns (score 0-100, warnings, metrics).
@@ -916,7 +1091,7 @@ def analyze_moisture_risk(
             "message": "Keine Materialzuweisungen für Feuchtigkeitsrisiko-Analyse vorhanden.",
             "suggestion": "Materialien den Zonen zuweisen.",
         })
-        return 50.0, warnings, {"moisture_zones_checked": 0, "unsealed_count": 0}
+        return None, warnings, {"moisture_zones_checked": 0, "unsealed_count": 0}
 
     unsealed_count = 0
     moisture_zones_checked = 0
@@ -952,6 +1127,22 @@ def analyze_moisture_risk(
                     f"'{zm['zone_name']}' vorsehen oder feuchtigkeitsresistentes Material wählen."
                 ),
             })
+
+    if moisture_zones_checked == 0:
+        warnings.append({
+            "code": "MOISTURE_NOT_ASSESSABLE",
+            "severity": "info",
+            "message": (
+                "Keine Holzwerkstoffe in feuchtebelasteten Zonen (Nasszelle, "
+                "Pantry, Maschinenraum, Stauraum) gefunden — das Feuchterisiko "
+                "konnte nicht bewertet werden."
+            ),
+            "suggestion": (
+                "Materialzuweisungen für diese Zonen erfassen, sofern vorhanden."
+            ),
+            "location": "materials",
+        })
+        return None, warnings, {"moisture_zones_checked": 0, "unsealed_count": 0}
 
     score = max(0.0, min(100.0, 100.0 - unsealed_count * 15))
 
@@ -996,20 +1187,24 @@ def run_materials_analysis(
 
     zone_materials = materials or []
 
-    # No materials assigned → nothing to analyse. Report as unavailable rather
-    # than running every sub-analysis on empty input and fabricating a 50/100
-    # score ("never present uncertain results as facts").
+    # Anders als die uebrigen Module hatte dieses gar keinen Zweig fuer den Fall
+    # ohne Daten: jede der acht Teilanalysen gab einzeln 50.0 zurueck, woraus
+    # sich ein Gesamtwert von genau 50.0 ergab. Der sah nach einem Ergebnis aus
+    # und war doch nur die Abwesenheit von Materialzuweisungen.
     if not zone_materials:
         return {
             "module": "materials",
             "available": False,
-            "reason": "Keine Materialien zugewiesen — Materialanalyse nicht möglich.",
+            "reason": (
+                "Keine Materialzuweisungen vorhanden — Haltbarkeit, Wartungsaufwand "
+                "und Lebenszykluskosten setzen zugewiesene Materialien voraus."
+            ),
             "suggestions": [
-                "Materialien den Zonen zuweisen, um eine Materialanalyse zu erhalten."
+                "Den Zonen Materialien zuweisen, um die Materialanalyse zu aktivieren."
             ],
         }
 
-    sub_scores: dict[str, float] = {}
+    sub_scores: dict[str, float | None] = {}
     all_warnings: list[dict] = []
     all_suggestions: list[str] = []
     all_metrics: dict[str, dict] = {}
@@ -1035,6 +1230,10 @@ def run_materials_analysis(
             all_metrics[name] = metrics
         except Exception:
             logger.exception("Error in materials sub-analysis %s", name)
+            # Kein Messwert. None statt 0.0: weighted_overall nimmt die
+            # Teilanalyse damit aus Zaehler UND Nenner, statt einen internen
+            # Fehler als schlechte Note am Boot auszugeben.
+            sub_scores[name] = None
             _failed_subs.add(name)
             all_warnings.append({
                 "code": "ANALYSIS_ERROR",
@@ -1043,15 +1242,22 @@ def run_materials_analysis(
                 "suggestion": "Materialzuweisungen überprüfen.",
             })
 
-    overall = aggregate_subscores(
-        sub_scores, weights, failed=_failed_subs, default=50.0
-    )
+    # Teilanalysen ohne Datengrundlage geben None zurueck und bleiben aus der
+    # Rechnung heraus; ihr Gewicht verteilt sich auf die geprueften. Frueher
+    # ging hier ein Vorgabewert ein — bei fehlenden Eintraegen 0.0 bzw. 50.0 —
+    # und erzeugte eine Note fuer etwas, das nie geprueft wurde.
+    overall, _nicht_bewertet = weighted_overall(sub_scores, weights)
     if overall is None:
-        # Jede Teilanalyse ist ausgefallen — keine Note erfinden.
-        overall = 0.0
-        _all_subs_failed = True
-    else:
-        _all_subs_failed = False
+        return {
+            "module": "materials",
+            "available": False,
+            "reason": "Keine der Teilanalysen konnte mangels Datengrundlage durchgeführt werden.",
+            "degraded_subanalyses": sorted(_failed_subs),
+            "warnings": all_warnings,
+            "suggestions": [
+                "Layout- und Stammdaten vervollständigen, um eine Bewertung zu ermöglichen."
+            ],
+        }
 
     for w in all_warnings:
         suggestion = w.get("suggestion")
@@ -1121,21 +1327,17 @@ def run_materials_analysis(
         except Exception:
             logger.exception("Error enriching materials with markdown knowledge")
 
-    if _all_subs_failed:
-        # Kein einziger Teilscore war verwertbar. Statt einer erfundenen
-        # Note meldet sich das Modul als nicht beurteilbar (Modul-Skip-Vertrag).
-        return {
-            "module": "materials",
-            "available": False,
-            "reason": "Alle Teilanalysen fehlgeschlagen - kein belastbares Ergebnis.",
-            "warnings": all_warnings,
-        }
 
     return {
         "module": "materials",
         "degraded_subanalyses": sorted(_failed_subs),
         "overall_score": round(overall, 1),
-        "sub_scores": {k: round(v, 1) for k, v in sub_scores.items()},
+        # Eine Teilanalyse ohne Datengrundlage traegt None — sie wird als
+        # solche weitergereicht statt auf eine Zahl gerundet zu werden.
+        "sub_scores": {
+            k: (round(v, 1) if v is not None else None)
+            for k, v in sub_scores.items()
+        },
         "warnings": all_warnings,
         "suggestions": all_suggestions,
         "metrics": all_metrics,
@@ -1143,4 +1345,6 @@ def run_materials_analysis(
         "confidence": data_source,
         "confidence_note": "Basiert auf geschätzten Werten aus öffentlichen Spezifikationen." if data_source == "estimated" else None,
         "knowledge_enrichment": knowledge_enrichment if knowledge_enrichment else None,
+        "coverage_note": hinweis_teilanalysen(_nicht_bewertet),
+        "unassessed_sub_analyses": _nicht_bewertet,
     }

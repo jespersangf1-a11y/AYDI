@@ -32,8 +32,9 @@ services:
     # defined in Dockerfile.backend (which runs `alembic upgrade head`
     # before starting). For local dev, run `alembic upgrade head` manually
     # inside the container once after starting: `docker compose exec backend alembic upgrade head`.
+    # --no-server-header: uvicorn soll seine Kennung nicht im Klartext senden.
     entrypoint: []
-    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --no-server-header"
     volumes:
       - ./backend:/app/backend
 

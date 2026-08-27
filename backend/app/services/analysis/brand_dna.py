@@ -11,8 +11,9 @@ mistaken for a real score.
 """
 import logging
 import math
+from app.core.zone_types import normalisiere_zonen, warnung_unbekannte_typen
+from app.services.analysis.scoring import weighted_overall, hinweis_teilanalysen
 
-from app.services.analysis.subscore import aggregate_subscores
 
 try:
     import numpy as np
@@ -674,7 +675,7 @@ def analyze_style_continuity(
     new_tags: list[str],
     reference_tags_list: list[list[str]],
     config: dict,
-) -> tuple[float, list[dict], dict]:
+) -> tuple[float | None, list[dict], dict]:
     """Compare style tags of the new layout against brand reference tags.
 
     Identifies the most common tags across references (present in > 50% of
@@ -692,7 +693,21 @@ def analyze_style_continuity(
     warnings: list[dict] = []
 
     if not reference_tags_list:
-        return 50.0, warnings, {
+        # Ohne Referenzmodelle gibt es keine Markenhandschrift, gegen die
+        # verglichen werden koennte. Die frueheren 50.0 kamen ohne jeden Hinweis
+        # und waren in der Modulnote nicht von einer gemessenen Teilnote zu
+        # unterscheiden.
+        warnings.append({
+            "code": "STYLE_CONTINUITY_NOT_ASSESSABLE",
+            "severity": "info",
+            "message": (
+                "Stilkontinuität nicht beurteilbar: im Portfolio ist kein "
+                "Referenzmodell mit Stilmerkmalen hinterlegt."
+            ),
+            "suggestion": "Referenzmodelle mit style_tags im Werftportfolio hinterlegen.",
+            "location": "brand_references.style_tags",
+        })
+        return None, warnings, {
             "brand_signature_tags": [],
             "new_tags": list(new_tags),
             "overlap": [],
@@ -709,8 +724,25 @@ def analyze_style_continuity(
     brand_signature = sorted(t for t, count in tag_counts.items() if count > n_refs / 2)
 
     if not brand_signature:
-        # No dominant tags — lenient scoring
-        return 75.0, warnings, {
+        # Kein Merkmal kommt in mehr als der Haelfte der Referenzmodelle vor —
+        # das Portfolio hat keine erkennbare gemeinsame Handschrift. Die
+        # frueheren 75.0 ("lenient scoring") waren eine gute Note ohne jeden
+        # Vergleichsmassstab und ohne Hinweis darauf im Befund.
+        warnings.append({
+            "code": "STYLE_CONTINUITY_NO_SIGNATURE",
+            "severity": "info",
+            "message": (
+                f"Stilkontinuität nicht beurteilbar: die {n_refs} Referenzmodelle "
+                "teilen kein Stilmerkmal, das in mehr als der Hälfte von ihnen "
+                "vorkommt — es gibt keine Markenhandschrift zum Abgleich."
+            ),
+            "suggestion": (
+                "Stilmerkmale der Referenzmodelle einheitlich pflegen oder das "
+                "Portfolio um weitere Modelle ergänzen."
+            ),
+            "location": "brand_references.style_tags",
+        })
+        return None, warnings, {
             "brand_signature_tags": [],
             "new_tags": list(new_tags),
             "overlap": [],
@@ -783,6 +815,26 @@ def run_brand_dna_analysis(
     Returns:
         Standardized result dict matching the AYDI analysis module contract.
     """
+    # Ein Layout ohne Zonen ist kein Layout. Ohne diese Pruefung lieferten die
+    # Teilanalysen ihre jeweiligen Vorgabewerte zurueck, und daraus entstand ein
+    # Gesamtwert, der wie ein Befund aussah — obwohl nichts gemessen wurde.
+    if not isinstance(zones, list) or len(zones) == 0:
+        return {
+            "module": "brand_dna",
+            "available": False,
+            "reason": "Das Layout enthält keine Zonen — es gibt nichts zu bewerten.",
+            "suggestions": [
+                "Zonen im Layout anlegen oder ein CAD-Modell importieren."
+            ],
+        }
+
+    # Zonentypen vereinheitlichen, bevor irgendeine Pruefung ihre Menge bildet.
+    # Die Module suchen ihre Pruefobjekte ueber exakte Mengenzugehoerigkeit; eine
+    # abweichende Schreibweise ("saloon" statt "salon", "engine_room" statt
+    # "engine") liess die Menge leer bleiben und die Pruefung meldete daraufhin
+    # volle Punktzahl. Siehe app/core/zone_types.py.
+    zones, _unbekannte_zonentypen = normalisiere_zonen(zones)
+
     if boat_class not in BOAT_CLASS_DEFAULTS:
         return {"available": False, "reason": f"Unbekannte Bootsklasse: {boat_class}"}
 
@@ -794,20 +846,17 @@ def run_brand_dna_analysis(
 
     min_refs = config.get("min_reference_models", 3)
 
-    # --- Insufficient reference data ---
-    # Fewer than min_refs models cannot yield a reliable score → report as
-    # unavailable (Module-Skip-Logik) rather than emitting a 50/100 that is
-    # indistinguishable from a real result. Consistent with cost / materials /
-    # service_patterns; the orchestrator records it under `skipped` and the
-    # single-module route surfaces it as 422.
+    # Markenidentitaet ist ein Vergleich. Unterhalb von min_refs Referenzmodellen
+    # gibt es nichts zu vergleichen — der frueher gelieferte Wert 50.0 war eine
+    # Behauptung ohne Bezugsgroesse.
     if not brand_references or len(brand_references) < min_refs:
         actual = len(brand_references) if brand_references else 0
         return {
             "module": "brand_dna",
             "available": False,
             "reason": (
-                f"Brand-DNA nicht verfügbar — mindestens {min_refs} "
-                f"Referenzmodelle erforderlich (vorhanden: {actual})."
+                f"Zu wenige Referenzmodelle: {actual} von mindestens {min_refs} "
+                f"benötigten. Ohne Vergleichsbasis lässt sich keine Markenidentität bestimmen."
             ),
             "suggestions": [
                 f"Mindestens {min_refs} frühere Modelle der Werft als "
@@ -851,7 +900,7 @@ def run_brand_dna_analysis(
             new_tags.extend(tags)
 
     # --- Sub-analyses ---
-    sub_scores: dict[str, float] = {}
+    sub_scores: dict[str, float | None] = {}
     all_warnings: list[dict] = []
     all_metrics: dict[str, dict] = {}
 
@@ -888,6 +937,10 @@ def run_brand_dna_analysis(
             all_metrics[name] = metrics
         except Exception:
             logger.exception("Error in brand_dna sub-analysis %s", name)
+            # Kein Messwert. None statt 0.0: weighted_overall nimmt die
+            # Teilanalyse damit aus Zaehler UND Nenner, statt einen internen
+            # Fehler als schlechte Note am Boot auszugeben.
+            sub_scores[name] = None
             _failed_subs.add(name)
             all_warnings.append({
                 "code": "ANALYSIS_ERROR",
@@ -896,15 +949,29 @@ def run_brand_dna_analysis(
                 "suggestion": "Eingabedaten und Referenzmodelle überprüfen.",
             })
 
-    overall = aggregate_subscores(
-        sub_scores, weights, failed=_failed_subs, default=50.0
-    )
+    # Unbekannte Zonentypen gehoeren in den Befund, nicht ins Protokoll: eine
+    # Zone mit unbekanntem Typ ist fuer die typbezogenen Pruefungen unsichtbar.
+    # Ohne diesen Hinweis liest sich das Ergebnis so, als waere sie geprueft.
+    _warnung_zonentypen = warnung_unbekannte_typen(_unbekannte_zonentypen)
+    if _warnung_zonentypen:
+        all_warnings.append(_warnung_zonentypen)
+
+    # Teilanalysen ohne Datengrundlage geben None zurueck und bleiben aus der
+    # Rechnung heraus; ihr Gewicht verteilt sich auf die geprueften. Frueher
+    # ging hier ein Vorgabewert ein — bei fehlenden Eintraegen 0.0 bzw. 50.0 —
+    # und erzeugte eine Note fuer etwas, das nie geprueft wurde.
+    overall, _nicht_bewertet = weighted_overall(sub_scores, weights)
     if overall is None:
-        # Jede Teilanalyse ist ausgefallen — keine Note erfinden.
-        overall = 0.0
-        _all_subs_failed = True
-    else:
-        _all_subs_failed = False
+        return {
+            "module": "brand_dna",
+            "available": False,
+            "reason": "Keine der Teilanalysen konnte mangels Datengrundlage durchgeführt werden.",
+            "degraded_subanalyses": sorted(_failed_subs),
+            "warnings": all_warnings,
+            "suggestions": [
+                "Layout- und Stammdaten vervollständigen, um eine Bewertung zu ermöglichen."
+            ],
+        }
 
     # Collect unique suggestions from warnings
     all_suggestions: list[str] = []
@@ -915,25 +982,23 @@ def run_brand_dna_analysis(
 
     all_warnings.sort(key=lambda w: SEVERITY_ORDER.get(w.get("severity", "info"), 2))
 
-    if _all_subs_failed:
-        # Kein einziger Teilscore war verwertbar. Statt einer erfundenen
-        # Note meldet sich das Modul als nicht beurteilbar (Modul-Skip-Vertrag).
-        return {
-            "module": "brand_dna",
-            "available": False,
-            "reason": "Alle Teilanalysen fehlgeschlagen - kein belastbares Ergebnis.",
-            "warnings": all_warnings,
-        }
 
     return {
         "module": "brand_dna",
         "degraded_subanalyses": sorted(_failed_subs),
         "overall_score": round(overall, 1),
-        "sub_scores": {k: round(v, 1) for k, v in sub_scores.items()},
+        # Eine Teilanalyse ohne Datengrundlage traegt None — sie wird als
+        # solche weitergereicht statt auf eine Zahl gerundet zu werden.
+        "sub_scores": {
+            k: (round(v, 1) if v is not None else None)
+            for k, v in sub_scores.items()
+        },
         "warnings": all_warnings,
         "suggestions": all_suggestions,
         "metrics": all_metrics,
         "config_used": config,
         "confidence": data_source,
         "confidence_note": "Basiert auf geschätzten Werten aus öffentlichen Spezifikationen." if data_source == "estimated" else None,
+        "coverage_note": hinweis_teilanalysen(_nicht_bewertet),
+        "unassessed_sub_analyses": _nicht_bewertet,
     }

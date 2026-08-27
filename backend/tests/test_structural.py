@@ -63,10 +63,15 @@ def test_fore_aft_too_far_forward():
 
 
 def test_fore_aft_no_zones():
-    """No zones -> score 50, info."""
+    """Keine Zonen -> nicht beurteilbar (None), Hinweis.
+
+    Frueher lieferte diese Teilanalyse 50.0. Das war keine Messung, ging aber
+    voll gewichtet in die Modulnote ein.
+    """
     config = _default_config()
     score, warnings, metrics = analyze_fore_aft_balance([], config)
-    assert score == 50.0
+    assert score is None
+    assert metrics["cog_x_pct"] is None
     assert any(w["code"] == "STRUCTURAL_NO_ZONES" and w["severity"] == "info" for w in warnings)
 
 
@@ -103,10 +108,11 @@ def test_lateral_offset():
 
 
 def test_lateral_no_zones():
-    """No zones -> score 50, info."""
+    """Keine Zonen -> nicht beurteilbar (None), Hinweis."""
     config = _default_config()
     score, warnings, metrics = analyze_lateral_balance([], config)
-    assert score == 50.0
+    assert score is None
+    assert metrics["cog_y_pct"] is None
     assert any(w["code"] == "STRUCTURAL_NO_ZONES" and w["severity"] == "info" for w in warnings)
 
 
@@ -142,21 +148,27 @@ def test_heavy_placement_off_center():
 
 
 def test_heavy_placement_no_heavy_zones():
-    """No heavy zones -> score 100, info."""
+    """Keine schweren Zonen -> nicht beurteilbar (None), Hinweis.
+
+    Frueher volle Punktzahl mit central_ratio 1.0: eine Unbedenklichkeits-
+    bescheinigung fuer eine Pruefung ohne Pruefobjekt, samt einer Kennzahl,
+    die nie gemessen wurde.
+    """
     zones = [
         make_zone("salon", "salon", polygon=[[0, 0], [3000, 0], [3000, 2000], [0, 2000]]),
     ]
     config = _default_config()
     score, warnings, metrics = analyze_heavy_zone_placement(zones, config)
-    assert score == 100.0
+    assert score is None
+    assert metrics["central_ratio"] is None
     assert any(w["code"] == "STRUCTURAL_NO_HEAVY_ZONES" for w in warnings)
 
 
 def test_heavy_placement_no_zones():
-    """No zones -> score 50, info."""
+    """Keine Zonen -> nicht beurteilbar (None)."""
     config = _default_config()
     score, warnings, metrics = analyze_heavy_zone_placement([], config)
-    assert score == 50.0
+    assert score is None
 
 
 # ---------------------------------------------------------------------------
@@ -203,10 +215,10 @@ def test_load_single_zone():
 
 
 def test_load_no_zones():
-    """No zones -> score 50, info."""
+    """Keine Zonen -> nicht beurteilbar (None)."""
     config = _default_config()
     score, warnings, metrics = analyze_load_concentration([], config)
-    assert score == 50.0
+    assert score is None
 
 
 # ---------------------------------------------------------------------------
@@ -265,11 +277,18 @@ def test_structural_config_overrides():
 
 
 def test_structural_empty_input():
-    """No zones -> module reports unavailable (no fabricated score)."""
+    """Leeres Layout -> Modul meldet \"nicht beurteilbar\", keine Note.
+
+    Frueher entstand aus einem Layout ohne Zonen eine Gesamtnote von 50.0 mit
+    sechs Teilnoten von je 50.0 — ein vollstaendiger Befund ueber ein Layout,
+    das nie existierte.
+    """
     result = run_structural_analysis([], [], "cruising_sail")
     assert result["available"] is False
-    assert "reason" in result
+    assert result["module"] == "structural"
     assert "overall_score" not in result
+    assert result["reason"]
+    assert result["suggestions"]
 
 
 def test_structural_unknown_zone_type():

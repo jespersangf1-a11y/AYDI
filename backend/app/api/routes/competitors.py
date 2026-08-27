@@ -3,9 +3,15 @@ import logging
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.ownership import (
+    ensure_readable,
+    ensure_writable,
+    owner_kwargs,
+    visible_to,
+)
 from app.core.permissions import get_current_user
 from app.db.database import get_db
 from app.models.models import BrandReferenceModel, CompetitorModel, OrganizationMember, User
@@ -31,7 +37,7 @@ async def list_competitors(
     brand: str | None = None,
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
-    _user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     query = select(CompetitorModel).order_by(CompetitorModel.brand, CompetitorModel.model_name)
@@ -39,6 +45,7 @@ async def list_competitors(
         query = query.where(CompetitorModel.boat_class == boat_class)
     if brand:
         query = query.where(CompetitorModel.brand == brand)
+    query = visible_to(query, CompetitorModel, user)
     query = query.limit(limit).offset(offset)
     result = await db.execute(query)
     return result.scalars().all()
@@ -48,27 +55,33 @@ async def list_competitors(
 async def create_competitor(
     data: CompetitorCreate,
     db: AsyncSession = Depends(get_db),
-    _user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ):
     # Competitor data feeds every user's market analysis — record the creator
     # so mutations stay bound to them (same IDOR class as brand references).
-    competitor = CompetitorModel(**data.model_dump(), created_by_user_id=_user.id)
+    competitor = CompetitorModel(**data.model_dump(), **owner_kwargs(CompetitorModel, user))
     db.add(competitor)
     await db.commit()
     await db.refresh(competitor)
-    logger.info("User %s created competitor %s", _user.id, competitor.id)
+    logger.info("User %s created competitor %s", user.id, competitor.id)
     return competitor
 
 
 @router.get("/competitors/segment/{boat_class}")
 async def get_segment_statistics(
     boat_class: str,
-    _user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(
-        select(CompetitorModel).where(CompetitorModel.boat_class == boat_class)
+    # Die Kennzahlen dieses Segments duerfen nur aus Modellen entstehen, die
+    # der Abfragende auch einzeln sehen duerfte. Sonst liesse sich der Preis
+    # eines fremden Eintrags aus dem Mittelwert zurueckrechnen.
+    query = visible_to(
+        select(CompetitorModel).where(CompetitorModel.boat_class == boat_class),
+        CompetitorModel,
+        user,
     )
+    result = await db.execute(query)
     competitors = result.scalars().all()
 
     count = len(competitors)
@@ -106,16 +119,13 @@ async def get_segment_statistics(
 @router.get("/competitors/{competitor_id}", response_model=CompetitorResponse)
 async def get_competitor(
     competitor_id: UUID,
-    _user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
         select(CompetitorModel).where(CompetitorModel.id == competitor_id)
     )
-    competitor = result.scalar_one_or_none()
-    if not competitor:
-        raise HTTPException(status_code=404, detail="Wettbewerbermodell nicht gefunden")
-    return competitor
+    return ensure_readable(result.scalar_one_or_none(), user, name="Wettbewerbermodell")
 
 
 @router.patch("/competitors/{competitor_id}", response_model=CompetitorResponse)
@@ -123,19 +133,14 @@ async def update_competitor(
     competitor_id: UUID,
     data: CompetitorUpdate,
     db: AsyncSession = Depends(get_db),
-    _user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ):
     result = await db.execute(
         select(CompetitorModel).where(CompetitorModel.id == competitor_id)
     )
-    competitor = result.scalar_one_or_none()
-    if not competitor:
-        raise HTTPException(status_code=404, detail="Wettbewerbermodell nicht gefunden")
-    if competitor.created_by_user_id != _user.id and _user.role != "admin":
-        raise HTTPException(
-            status_code=403,
-            detail="Nur der Ersteller (oder ein Admin) kann dieses Wettbewerbermodell ändern.",
-        )
+    competitor = ensure_writable(
+        result.scalar_one_or_none(), user, name="Wettbewerbermodell"
+    )
 
     update_data = data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
@@ -143,7 +148,7 @@ async def update_competitor(
 
     await db.commit()
     await db.refresh(competitor)
-    logger.info("User %s updated competitor %s (fields: %s)", _user.id, competitor_id, list(update_data.keys()))
+    logger.info("User %s updated competitor %s (fields: %s)", user.id, competitor_id, list(update_data.keys()))
     return competitor
 
 
@@ -151,22 +156,17 @@ async def update_competitor(
 async def delete_competitor(
     competitor_id: UUID,
     db: AsyncSession = Depends(get_db),
-    _user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ):
     result = await db.execute(
         select(CompetitorModel).where(CompetitorModel.id == competitor_id)
     )
-    competitor = result.scalar_one_or_none()
-    if not competitor:
-        raise HTTPException(status_code=404, detail="Wettbewerbermodell nicht gefunden")
-    if competitor.created_by_user_id != _user.id and _user.role != "admin":
-        raise HTTPException(
-            status_code=403,
-            detail="Nur der Ersteller (oder ein Admin) kann dieses Wettbewerbermodell löschen.",
-        )
+    competitor = ensure_writable(
+        result.scalar_one_or_none(), user, name="Wettbewerbermodell"
+    )
     await db.delete(competitor)
     await db.commit()
-    logger.info("User %s deleted competitor %s", _user.id, competitor_id)
+    logger.info("User %s deleted competitor %s", user.id, competitor_id)
 
 
 # --- Brand reference models ---
@@ -198,7 +198,7 @@ async def list_brand_references(
     boat_class: str | None = None,
     shipyard_id: str | None = None,  # DEPRECATED filter (freetext legacy)
     org_id: UUID | None = None,
-    _user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     query = select(BrandReferenceModel).order_by(BrandReferenceModel.model_name)
@@ -211,36 +211,36 @@ async def list_brand_references(
     result = await db.execute(query)
     rows = result.scalars().all()
     # Org-scoped visibility filter (pillar 4, stage 2)
-    my_org_ids = await _my_org_ids(_user, db)
-    return [r for r in rows if _can_see_brand_ref(r, _user, my_org_ids)]
+    my_org_ids = await _my_org_ids(user, db)
+    return [r for r in rows if _can_see_brand_ref(r, user, my_org_ids)]
 
 
 @router.post("/brand-references", response_model=BrandReferenceResponse, status_code=201)
 async def create_brand_reference(
     data: BrandReferenceCreate,
     db: AsyncSession = Depends(get_db),
-    _user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ):
     # Org-scoped brand DNA: setting org_id requires membership in that org
     # (else 404 — no org enumeration). Otherwise personal (created_by).
     if data.org_id is not None:
         from app.core.permissions import get_org_role
 
-        if await get_org_role(data.org_id, _user, db) is None:
+        if await get_org_role(data.org_id, user, db) is None:
             raise HTTPException(status_code=404, detail="Organisation nicht gefunden")
 
-    ref = BrandReferenceModel(**data.model_dump(), created_by_user_id=_user.id)
+    ref = BrandReferenceModel(**data.model_dump(), created_by_user_id=user.id)
     db.add(ref)
     await db.commit()
     await db.refresh(ref)
-    logger.info("User %s created brand reference %s", _user.id, ref.id)
+    logger.info("User %s created brand reference %s", user.id, ref.id)
     return ref
 
 
 @router.get("/brand-references/{ref_id}", response_model=BrandReferenceResponse)
 async def get_brand_reference(
     ref_id: UUID,
-    _user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
@@ -249,8 +249,8 @@ async def get_brand_reference(
     ref = result.scalar_one_or_none()
     if not ref:
         raise HTTPException(status_code=404, detail="Referenzmodell nicht gefunden")
-    my_org_ids = await _my_org_ids(_user, db)
-    if not _can_see_brand_ref(ref, _user, my_org_ids):
+    my_org_ids = await _my_org_ids(user, db)
+    if not _can_see_brand_ref(ref, user, my_org_ids):
         # Not visible → 404 (no existence leak of another org's brand DNA)
         raise HTTPException(status_code=404, detail="Referenzmodell nicht gefunden")
     return ref
@@ -260,7 +260,7 @@ async def get_brand_reference(
 async def delete_brand_reference(
     ref_id: UUID,
     db: AsyncSession = Depends(get_db),
-    _user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
 ):
     result = await db.execute(
         select(BrandReferenceModel).where(BrandReferenceModel.id == ref_id)
@@ -268,11 +268,11 @@ async def delete_brand_reference(
     ref = result.scalar_one_or_none()
     if not ref:
         raise HTTPException(status_code=404, detail="Referenzmodell nicht gefunden")
-    if not await _can_mutate_brand_ref(ref, _user, db):
+    if not await _can_mutate_brand_ref(ref, user, db):
         raise HTTPException(
             status_code=403,
             detail="Nur der Ersteller bzw. die Org-Leitung (oder ein Admin) kann dieses Referenzmodell löschen.",
         )
     await db.delete(ref)
     await db.commit()
-    logger.info("User %s deleted brand reference %s", _user.id, ref_id)
+    logger.info("User %s deleted brand reference %s", user.id, ref_id)

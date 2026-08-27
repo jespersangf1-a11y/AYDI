@@ -30,14 +30,31 @@ def test_heel_impact_sailboat():
 
 
 def test_heel_impact_motor_yacht():
-    """Motor yachts should score 100 (no heel)."""
+    """Ohne hinterlegten Kraengungswinkel entfaellt die Pruefung.
+
+    Frueher lieferte diese Konstellation 100.0 und behauptete damit, alle
+    Durchgaenge seien unter Kraengung geprueft und einwandfrei — geprueft wurde
+    nichts. Die Klassenvorgabe fuer Motoryachten fuehrt die Teilanalyse mit
+    Gewicht 0, die Modulnote bleibt davon unberuehrt.
+    """
     from app.services.analysis.ergonomics import analyze_heel_impact, BOAT_CLASS_DEFAULTS
     config = BOAT_CLASS_DEFAULTS["large_motor"].copy()
+    assert config["weights"]["heel_impact"] == 0.0
     config.pop("weights", None)
     passages = [make_passage("cabin", "salon", 700)]
     score, warnings, metrics = analyze_heel_impact(passages, config)
-    assert score == 100.0
-    assert len(warnings) == 0
+    assert score is None
+    assert any(w.get("code") == "HEEL_NOT_APPLICABLE" for w in warnings)
+
+
+def test_heel_impact_ohne_durchgaenge():
+    """Kraengung ohne erfasste Durchgaenge ist nicht beurteilbar, nicht fehlerfrei."""
+    from app.services.analysis.ergonomics import analyze_heel_impact, BOAT_CLASS_DEFAULTS
+    config = BOAT_CLASS_DEFAULTS["cruising_sail"].copy()
+    config.pop("weights", None)
+    score, warnings, metrics = analyze_heel_impact([], config)
+    assert score is None
+    assert any(w.get("code") == "HEEL_NOT_ASSESSABLE" for w in warnings)
 
 
 def test_heel_impact_narrow_passage():
@@ -140,23 +157,53 @@ def test_access_complexity_major_disassembly():
 
 
 def test_access_complexity_default():
-    """No access_type property defaults to direct."""
+    """Fehlt die Zugangsart, wird die Zone benannt statt bestbewertet.
+
+    Frueher galt eine Zone ohne ``access_type`` als "direct" — die guenstigste
+    Auspraegung mit 100 Punkten. Ein Maschinenraum, ueber dessen Zugaenglichkeit
+    nichts bekannt war, erhielt so die Bestnote.
+    """
     from app.services.analysis.ergonomics import analyze_access_complexity, BOAT_CLASS_DEFAULTS
     config = BOAT_CLASS_DEFAULTS["cruising_sail"].copy()
     config.pop("weights", None)
     zones = [make_zone("engine1", "engine")]
     score, warnings, metrics = analyze_access_complexity(zones, config)
-    assert score == 100.0
+    assert score is None
+    assert any(w.get("code") == "ACCESS_TYPE_UNKNOWN" for w in warnings)
+    assert any(w.get("code") == "ACCESS_NOT_ASSESSABLE" for w in warnings)
+    assert metrics["technical_zones_evaluated"] == 0
+
+
+def test_access_complexity_teilweise_angegeben():
+    """Zonen mit Angabe werden gewertet, Zonen ohne Angabe namentlich ausgewiesen."""
+    from app.services.analysis.ergonomics import analyze_access_complexity, BOAT_CLASS_DEFAULTS
+    config = BOAT_CLASS_DEFAULTS["cruising_sail"].copy()
+    config.pop("weights", None)
+    zones = [
+        make_zone("engine1", "engine", properties={"access_type": "panel_1"}),
+        make_zone("storage1", "storage"),
+    ]
+    score, warnings, metrics = analyze_access_complexity(zones, config)
+    assert score == 80.0
+    assert metrics["technical_zones_evaluated"] == 1
+    hinweis = [w for w in warnings if w.get("code") == "ACCESS_TYPE_UNKNOWN"]
+    assert len(hinweis) == 1
+    assert "storage1" in hinweis[0]["message"]
 
 
 def test_access_complexity_no_tech_zones():
-    """No technical zones — graceful handling."""
+    """Ohne technische Zone gibt es keinen Zugang zu bewerten.
+
+    Frueher lieferte diese Eingabe eine Note >= 50 fuer eine Pruefung ohne
+    Pruefobjekt.
+    """
     from app.services.analysis.ergonomics import analyze_access_complexity, BOAT_CLASS_DEFAULTS
     config = BOAT_CLASS_DEFAULTS["cruising_sail"].copy()
     config.pop("weights", None)
     zones = [make_zone("salon", "salon")]
     score, warnings, metrics = analyze_access_complexity(zones, config)
-    assert score >= 50.0
+    assert score is None
+    assert any(w.get("code") == "ACCESS_NOT_ASSESSABLE" for w in warnings)
 
 
 # ============================================================================
@@ -285,7 +332,9 @@ def test_escape_hatch_no_data():
     config.pop("weights", None)
     zones = [make_zone("cabin1", "cabin")]
     score, warnings, metrics = analyze_escape_hatch_dimensions(zones, config)
-    assert score == 50.0
+    # Ohne Luken-Abmessungen ist ISO 12216 nicht pruefbar. Frueher 50.0 — eine
+    # Zahl, die wie ein Messwert aussah.
+    assert score is None
 
 
 # ============================================================================
@@ -312,7 +361,7 @@ def test_cockpit_drain_no_data():
     config.pop("weights", None)
     zones = [make_zone("cockpit1", "cockpit")]
     score, warnings, metrics = analyze_cockpit_drain_capacity(zones, config)
-    assert score == 50.0
+    assert score is None
 
 
 # ============================================================================
@@ -339,7 +388,7 @@ def test_companionway_sill_no_data():
     zones = [make_zone("cockpit", "cockpit"), make_zone("salon", "salon")]
     passages = [make_passage("cockpit", "salon", 800)]
     score, warnings, metrics = analyze_companionway_sill(zones, passages, config)
-    assert score == 50.0
+    assert score is None
 
 
 # ============================================================================
@@ -363,7 +412,7 @@ def test_ventilation_no_data():
     config.pop("weights", None)
     zones = [make_zone("engine1", "engine")]
     score, warnings, metrics = analyze_ventilation(zones, config)
-    assert score == 50.0
+    assert score is None
 
 
 def test_compliance_weights_sum_to_one():
@@ -421,7 +470,7 @@ def test_lifecycle_cost_no_materials():
     config = BOAT_CLASS_DEFAULTS["cruising_sail"].copy()
     config.pop("weights", None)
     score, warnings, metrics = analyze_lifecycle_cost([], config)
-    assert score == 50.0
+    assert score is None
 
 
 # ============================================================================
@@ -513,7 +562,7 @@ def test_loading_conditions_no_zones():
     config = BOAT_CLASS_DEFAULTS["cruising_sail"].copy()
     config.pop("weights", None)
     score, warnings, metrics = analyze_loading_conditions([], config)
-    assert score == 50.0
+    assert score is None
 
 
 # ============================================================================
@@ -645,21 +694,30 @@ def test_parametric_estimate_with_length():
         make_zone("engine", "engine"),
     ]
     score, warnings, metrics = analyze_parametric_estimate(zones, config)
-    assert score >= 50.0
+    # Die Hochrechnung liefert eine Kennzahl, keine Note: es gibt keinen
+    # Sollwert, gegen den sie bestehen koennte. Frueher gab sie konstant 100.0
+    # zurueck und trug damit gewichtet zur Kostennote bei.
+    assert score is None
     assert "estimated_total_eur" in metrics
     assert metrics["estimated_total_eur"] > 0
+    assert metrics["boat_length_m"] == 14.0
 
 
 def test_parametric_estimate_no_length():
-    """No boat length — should return score 50 with info."""
+    """Ohne Bootslaenge gibt es keine Hochrechnung — und keine erfundene Summe.
+
+    Frueher lieferte diese Eingabe die Note 50.0 und dazu einen geschaetzten
+    Gesamtbetrag von 0.0 EUR, der in der Oberflaeche wie eine Kalkulation aussah.
+    """
     from app.services.analysis.cost import analyze_parametric_estimate, BOAT_CLASS_DEFAULTS
     config = BOAT_CLASS_DEFAULTS["cruising_sail"].copy()
     config.pop("weights", None)
     config["boat_length_m"] = 0
     zones = [make_zone("salon", "salon")]
     score, warnings, metrics = analyze_parametric_estimate(zones, config)
-    assert score == 50.0
-    assert len(warnings) >= 1
+    assert score is None
+    assert metrics["estimated_total_eur"] is None
+    assert any(w.get("code") == "PARAMETRIC_NO_LENGTH" for w in warnings)
 
 
 def test_cost_weights_sum_to_one():

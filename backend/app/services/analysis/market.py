@@ -7,8 +7,9 @@ database access. All user-facing strings are in German.
 """
 import logging
 import math
+from app.core.zone_types import normalisiere_zonen, warnung_unbekannte_typen
+from app.services.analysis.scoring import weighted_overall, hinweis_teilanalysen
 
-from app.services.analysis.subscore import aggregate_subscores
 
 logger = logging.getLogger(__name__)
 
@@ -318,8 +319,15 @@ def _extract_layout_metrics(
     cabin_count = 0
     head_count = 0
     berth_count = 0
+    # Kabinen ohne Kojenangabe zaehlten frueher als eine Koje ("... or 1"). Die
+    # so entstandene Summe wurde anschliessend gegen Wettbewerbsdaten gestellt,
+    # als waere sie gemessen. Jetzt wird gezaehlt, wie viele Kabinen ueberhaupt
+    # eine Angabe tragen — fehlt sie ueberall, bleibt die Kennzahl None.
+    kabinen_mit_kojenangabe = 0
     crew_quarters_count = 0
     storage_volume_l = 0.0
+    stauraeume_mit_hoehe = 0
+    stauraeume_ohne_hoehe = 0
     deck_heights: list[float] = []
 
     for zone in zones:
@@ -337,35 +345,50 @@ def _extract_layout_metrics(
             flybridge_area += area
         elif zone_type == "cabin":
             cabin_count += 1
-            berths = props.get("berth_count") or props.get("berths") or 1
-            berth_count += int(berths)
+            berths = props.get("berth_count")
+            if berths is None:
+                berths = props.get("berths")
+            if berths is not None:
+                berth_count += int(berths)
+                kabinen_mit_kojenangabe += 1
         elif zone_type == "head":
             head_count += 1
         elif zone_type == "crew_quarters":
             crew_quarters_count += 1
         elif zone_type == "storage":
-            # Estimate volume: area (sqm) * accessible height fraction (50% of height)
+            # Volumen aus Flaeche x halber Zonenhoehe. Ohne Hoehenangabe wurde
+            # frueher pauschal 0.5 m unterstellt — ein erfundener Wert, der in
+            # den Wettbewerbsvergleich einging. Solche Zonen bleiben jetzt aussen
+            # vor und werden gezaehlt.
             if height_mm > 0:
                 storage_volume_l += area * (height_mm * 0.5 / 1000.0) * 1000.0
+                stauraeume_mit_hoehe += 1
             else:
-                storage_volume_l += area * 0.5 * 1000.0  # assume 0.5 m accessible
+                stauraeume_ohne_hoehe += 1
 
         if height_mm > 0:
             deck_heights.append(height_mm)
 
-    avg_deck_height = (sum(deck_heights) / len(deck_heights)) if deck_heights else 0.0
+    # Ohne eine einzige Hoehenangabe gibt es keine mittlere Deckshoehe. Die
+    # frueheren 0.0 waren im Vergleich mit Wettbewerbern eine Aussage ("deutlich
+    # niedriger als alle"), obwohl nichts gemessen war.
+    avg_deck_height = (sum(deck_heights) / len(deck_heights)) if deck_heights else None
 
     return {
         "cockpit_area_sqm": round(cockpit_area, 2),
         "salon_area_sqm": round(salon_area, 2),
         "cabin_count": cabin_count,
         "head_count": head_count,
-        "berth_count": berth_count,
-        "storage_volume_l": round(storage_volume_l, 1),
-        "deck_height_mm": round(avg_deck_height, 1),
+        "berth_count": berth_count if kabinen_mit_kojenangabe > 0 else None,
+        "storage_volume_l": round(storage_volume_l, 1) if stauraeume_mit_hoehe > 0 else None,
+        "deck_height_mm": round(avg_deck_height, 1) if avg_deck_height is not None else None,
         "flybridge_area_sqm": round(flybridge_area, 2),
         "crew_quarters_count": crew_quarters_count,
-        "boat_length_m": boat_length_m or 0.0,
+        "boat_length_m": boat_length_m,
+        "_unvollstaendig": {
+            "kabinen_ohne_kojenangabe": cabin_count - kabinen_mit_kojenangabe,
+            "stauraeume_ohne_hoehe": stauraeume_ohne_hoehe,
+        },
     }
 
 
@@ -394,7 +417,7 @@ def analyze_metric_comparison(
     layout_metrics: dict,
     competitors: list[dict],
     config: dict,
-) -> tuple[float, list[dict], dict]:
+) -> tuple[float | None, list[dict], dict]:
     """Compare layout metrics against competitor averages.
 
     Per benchmark metric: compute competitor avg/min/max and layout deviation.
@@ -408,6 +431,11 @@ def analyze_metric_comparison(
     benchmark_metrics = config.get("benchmark_metrics", [])
     metric_details: dict[str, dict] = {}
     deviating_count = 0
+    # Nur tatsaechlich verglichene Kennzahlen zaehlen. Frueher blieb der Zaehler
+    # der Abweichungen bei 0, wenn gar nichts verglichen werden konnte, und die
+    # Formel 100 - 0*10 ergab die Bestnote 100.0 — eine Bestaetigung, dass das
+    # Layout dem Segment entspricht, ohne eine einzige Gegenueberstellung.
+    verglichene_kennzahlen = 0
 
     for metric in benchmark_metrics:
         layout_val = layout_metrics.get(metric)
@@ -416,6 +444,8 @@ def analyze_metric_comparison(
         if stats is None or layout_val is None:
             metric_details[metric] = {"layout_value": layout_val, "status": "no_data"}
             continue
+
+        verglichene_kennzahlen += 1
 
         avg, comp_min, comp_max = stats
         if avg == 0:
@@ -484,10 +514,29 @@ def analyze_metric_comparison(
             "status": status,
         }
 
+    if verglichene_kennzahlen == 0:
+        warnings.append({
+            "code": "MARKET_COMPARISON_NOT_ASSESSABLE",
+            "severity": "info",
+            "message": (
+                "Kennzahlenvergleich nicht möglich: für keine der "
+                f"{len(benchmark_metrics)} Benchmark-Kennzahlen liegen sowohl "
+                "Layout- als auch Wettbewerbswerte vor."
+            ),
+            "suggestion": "Wettbewerbsmodelle mit key_metrics hinterlegen und Zonendaten vervollständigen.",
+            "location": "market.benchmark_metrics",
+        })
+        return None, warnings, {
+            "metrics_compared": 0,
+            "deviating_count": None,
+            "metric_details": metric_details,
+        }
+
     score = max(0.0, 100.0 - deviating_count * 10.0)
 
     return score, warnings, {
-        "metrics_compared": len(benchmark_metrics),
+        "metrics_compared": verglichene_kennzahlen,
+        "metrics_available": len(benchmark_metrics),
         "deviating_count": deviating_count,
         "metric_details": metric_details,
     }
@@ -502,7 +551,7 @@ def analyze_competitive_position(
     layout_metrics: dict,
     competitors: list[dict],
     config: dict,
-) -> tuple[float, list[dict], dict]:
+) -> tuple[float | None, list[dict], dict]:
     """Identify competitive strengths (>110% of avg) and weaknesses (<90% of avg).
 
     Score = 50 + 10 * strengths_count - 10 * weaknesses_count, clamped 0-100.
@@ -513,6 +562,7 @@ def analyze_competitive_position(
     benchmark_metrics = config.get("benchmark_metrics", [])
     strengths: list[str] = []
     weaknesses: list[str] = []
+    verglichene_kennzahlen = 0
 
     for metric in benchmark_metrics:
         layout_val = layout_metrics.get(metric)
@@ -525,6 +575,7 @@ def analyze_competitive_position(
         if avg == 0:
             continue
 
+        verglichene_kennzahlen += 1
         ratio = layout_val / avg
         if ratio > 1.10:
             strengths.append(metric)
@@ -561,6 +612,29 @@ def analyze_competitive_position(
             "location": metric,
         })
 
+    if verglichene_kennzahlen == 0:
+        # Ohne eine einzige Gegenueberstellung gab es weder Staerken noch
+        # Schwaechen und die Formel lieferte den Startwert 50.0. Der las sich wie
+        # eine gemessene Mittelfeldposition, war aber nur der Ausgangspunkt der
+        # Rechnung.
+        warnings.append({
+            "code": "COMPETITIVE_POSITION_NOT_ASSESSABLE",
+            "severity": "info",
+            "message": (
+                "Wettbewerbsposition nicht beurteilbar: keine Kennzahl konnte "
+                "gegen Wettbewerbsdaten gestellt werden."
+            ),
+            "suggestion": "Wettbewerbsmodelle mit key_metrics hinterlegen.",
+            "location": "market.competitors",
+        })
+        return None, warnings, {
+            "strengths": [],
+            "weaknesses": [],
+            "strength_count": None,
+            "weakness_count": None,
+            "metrics_compared": 0,
+        }
+
     score = 50.0 + 10.0 * len(strengths) - 10.0 * len(weaknesses)
     score = max(0.0, min(100.0, score))
 
@@ -569,6 +643,7 @@ def analyze_competitive_position(
         "weaknesses": weaknesses,
         "strength_count": len(strengths),
         "weakness_count": len(weaknesses),
+        "metrics_compared": verglichene_kennzahlen,
     }
 
 
@@ -688,7 +763,7 @@ def analyze_layout_uniqueness(
     layout_metrics: dict,
     competitors: list[dict],
     config: dict,
-) -> tuple[float, list[dict], dict]:
+) -> tuple[float | None, list[dict], dict]:
     """Assess how many benchmark metrics differ >20% from competitor average.
 
     Sweet spot: 30-70% of metrics unique. Score peaks at 50% unique (score 100),
@@ -728,9 +803,11 @@ def analyze_layout_uniqueness(
             "message": "Keine vergleichbaren Metriken für Einzigartigkeitsanalyse vorhanden.",
             "suggestion": "Benchmark-Metriken im Layout und bei Wettbewerbern erfassen.",
         })
-        return 50.0, warnings, {
-            "unique_ratio": 0.0,
-            "unique_count": 0,
+        # Die frueheren 50.0 mit einem unique_ratio von 0.0 behaupteten eine
+        # gemessene Durchschnittlichkeit, obwohl nichts verglichen wurde.
+        return None, warnings, {
+            "unique_ratio": None,
+            "unique_count": None,
             "comparable_count": 0,
             "unique_metrics": [],
         }
@@ -788,7 +865,7 @@ def analyze_market_gaps(
     layout_metrics: dict,
     competitors: list[dict],
     config: dict,
-) -> tuple[float, list[dict], dict]:
+) -> tuple[float | None, list[dict], dict]:
     """Identify metrics where layout exceeds or undercuts all competitors.
 
     Each gap (layout > competitor max or layout < competitor min on a benchmark
@@ -800,6 +877,7 @@ def analyze_market_gaps(
     warnings: list[dict] = []
     benchmark_metrics = config.get("benchmark_metrics", [])
     gaps: list[dict] = []
+    verglichene_kennzahlen = 0
 
     for metric in benchmark_metrics:
         layout_val = layout_metrics.get(metric)
@@ -808,6 +886,7 @@ def analyze_market_gaps(
         if stats is None or layout_val is None:
             continue
 
+        verglichene_kennzahlen += 1
         avg, comp_min, comp_max = stats
 
         if layout_val > comp_max:
@@ -856,11 +935,27 @@ def analyze_market_gaps(
                 "location": metric,
             })
 
+    if verglichene_kennzahlen == 0:
+        # Ohne Vergleich konnte keine Marktluecke gefunden werden — und die
+        # Formel gab dafuer den Sockelwert 60.0 aus, als sei gesucht worden.
+        warnings.append({
+            "code": "MARKET_GAPS_NOT_ASSESSABLE",
+            "severity": "info",
+            "message": (
+                "Marktlücken nicht beurteilbar: keine Kennzahl konnte gegen "
+                "Wettbewerbsdaten gestellt werden."
+            ),
+            "suggestion": "Wettbewerbsmodelle mit key_metrics hinterlegen.",
+            "location": "market.competitors",
+        })
+        return None, warnings, {"gap_count": None, "gaps": [], "metrics_compared": 0}
+
     score = min(100.0, 60.0 + len(gaps) * 20.0)
 
     return score, warnings, {
         "gap_count": len(gaps),
         "gaps": gaps,
+        "metrics_compared": verglichene_kennzahlen,
     }
 
 
@@ -895,6 +990,26 @@ def run_market_analysis(
 
     Returns a standardized result dict matching the AYDI analysis module contract.
     """
+    # Ein Layout ohne Zonen ist kein Layout. Ohne diese Pruefung lieferten die
+    # Teilanalysen ihre jeweiligen Vorgabewerte zurueck, und daraus entstand ein
+    # Gesamtwert, der wie ein Befund aussah — obwohl nichts gemessen wurde.
+    if not isinstance(zones, list) or len(zones) == 0:
+        return {
+            "module": "market",
+            "available": False,
+            "reason": "Das Layout enthält keine Zonen — es gibt nichts zu bewerten.",
+            "suggestions": [
+                "Zonen im Layout anlegen oder ein CAD-Modell importieren."
+            ],
+        }
+
+    # Zonentypen vereinheitlichen, bevor irgendeine Pruefung ihre Menge bildet.
+    # Die Module suchen ihre Pruefobjekte ueber exakte Mengenzugehoerigkeit; eine
+    # abweichende Schreibweise ("saloon" statt "salon", "engine_room" statt
+    # "engine") liess die Menge leer bleiben und die Pruefung meldete daraufhin
+    # volle Punktzahl. Siehe app/core/zone_types.py.
+    zones, _unbekannte_zonentypen = normalisiere_zonen(zones)
+
     if boat_class not in BOAT_CLASS_DEFAULTS:
         return {"available": False, "reason": f"Unbekannte Bootsklasse: {boat_class}"}
 
@@ -918,8 +1033,8 @@ def run_market_analysis(
             "module": "market",
             "available": False,
             "reason": (
-                f"Nicht genügend Wettbewerbsdaten — mindestens {min_competitors} "
-                f"vergleichbare Modelle erforderlich (vorhanden: {len(competitor_list)})."
+                f"Zu wenige Wettbewerbsmodelle: {len(competitor_list)} von mindestens "
+                f"{min_competitors} benötigten. Ein Segmentvergleich wäre nicht belastbar."
             ),
             "suggestions": [
                 f"Mindestens {min_competitors} Wettbewerbsmodelle "
@@ -929,7 +1044,7 @@ def run_market_analysis(
 
     layout_metrics = _extract_layout_metrics(zones, passages, boat_length_m)
 
-    sub_scores: dict[str, float] = {}
+    sub_scores: dict[str, float | None] = {}
     all_warnings: list[dict] = []
     all_suggestions: list[str] = []
     all_metrics: dict[str, object] = {}
@@ -969,6 +1084,10 @@ def run_market_analysis(
             all_metrics[name] = metrics
         except Exception:
             logger.exception("Error in market sub-analysis %s", name)
+            # Kein Messwert. None statt 0.0: weighted_overall nimmt die
+            # Teilanalyse damit aus Zaehler UND Nenner, statt einen internen
+            # Fehler als schlechte Note am Boot auszugeben.
+            sub_scores[name] = None
             _failed_subs.add(name)
             all_warnings.append({
                 "code": "ANALYSIS_ERROR",
@@ -977,15 +1096,29 @@ def run_market_analysis(
                 "suggestion": "Eingabedaten und Wettbewerbsmodelle überprüfen.",
             })
 
-    overall = aggregate_subscores(
-        sub_scores, weights, failed=_failed_subs, default=50.0
-    )
+    # Unbekannte Zonentypen gehoeren in den Befund, nicht ins Protokoll: eine
+    # Zone mit unbekanntem Typ ist fuer die typbezogenen Pruefungen unsichtbar.
+    # Ohne diesen Hinweis liest sich das Ergebnis so, als waere sie geprueft.
+    _warnung_zonentypen = warnung_unbekannte_typen(_unbekannte_zonentypen)
+    if _warnung_zonentypen:
+        all_warnings.append(_warnung_zonentypen)
+
+    # Teilanalysen ohne Datengrundlage geben None zurueck und bleiben aus der
+    # Rechnung heraus; ihr Gewicht verteilt sich auf die geprueften. Frueher
+    # ging hier ein Vorgabewert ein — bei fehlenden Eintraegen 0.0 bzw. 50.0 —
+    # und erzeugte eine Note fuer etwas, das nie geprueft wurde.
+    overall, _nicht_bewertet = weighted_overall(sub_scores, weights)
     if overall is None:
-        # Jede Teilanalyse ist ausgefallen — keine Note erfinden.
-        overall = 0.0
-        _all_subs_failed = True
-    else:
-        _all_subs_failed = False
+        return {
+            "module": "market",
+            "available": False,
+            "reason": "Keine der Teilanalysen konnte mangels Datengrundlage durchgeführt werden.",
+            "degraded_subanalyses": sorted(_failed_subs),
+            "warnings": all_warnings,
+            "suggestions": [
+                "Layout- und Stammdaten vervollständigen, um eine Bewertung zu ermöglichen."
+            ],
+        }
 
     for w in all_warnings:
         suggestion = w.get("suggestion")
@@ -996,25 +1129,23 @@ def run_market_analysis(
 
     all_metrics["layout_metrics"] = layout_metrics
 
-    if _all_subs_failed:
-        # Kein einziger Teilscore war verwertbar. Statt einer erfundenen
-        # Note meldet sich das Modul als nicht beurteilbar (Modul-Skip-Vertrag).
-        return {
-            "module": "market",
-            "available": False,
-            "reason": "Alle Teilanalysen fehlgeschlagen - kein belastbares Ergebnis.",
-            "warnings": all_warnings,
-        }
 
     return {
         "module": "market",
         "degraded_subanalyses": sorted(_failed_subs),
         "overall_score": round(overall, 1),
-        "sub_scores": {k: round(v, 1) for k, v in sub_scores.items()},
+        # Eine Teilanalyse ohne Datengrundlage traegt None — sie wird als
+        # solche weitergereicht statt auf eine Zahl gerundet zu werden.
+        "sub_scores": {
+            k: (round(v, 1) if v is not None else None)
+            for k, v in sub_scores.items()
+        },
         "warnings": all_warnings,
         "suggestions": all_suggestions,
         "metrics": all_metrics,
         "config_used": config,
         "confidence": data_source,
         "confidence_note": "Basiert auf geschätzten Werten aus öffentlichen Spezifikationen." if data_source == "estimated" else None,
+        "coverage_note": hinweis_teilanalysen(_nicht_bewertet),
+        "unassessed_sub_analyses": _nicht_bewertet,
     }

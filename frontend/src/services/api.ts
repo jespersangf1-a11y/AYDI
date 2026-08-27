@@ -1,5 +1,6 @@
 import type {
   AnalysisResult,
+  AnalysisUnavailable,
   CostSummary,
   DxfImportResponse,
   FullAnalysisResult,
@@ -370,15 +371,21 @@ export async function importDxf(
 }
 
 // ─── Analysis ───
+// Ein Modul darf antworten, dass es mangels Daten nicht urteilen kann. Das ist
+// kein Fehler, sondern ein gueltiges Ergebnis — der Aufrufer unterscheidet die
+// beiden Faelle mit istNichtBeurteilbar().
 export async function runAnalysis(
   projectId: string,
   layoutId: string,
   module: string
-): Promise<AnalysisResult> {
-  return request<AnalysisResult>(`${BASE}/projects/${projectId}/analyze`, {
-    method: 'POST',
-    body: JSON.stringify({ layout_id: layoutId, module }),
-  })
+): Promise<AnalysisResult | AnalysisUnavailable> {
+  return request<AnalysisResult | AnalysisUnavailable>(
+    `${BASE}/projects/${projectId}/analyze`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ layout_id: layoutId, module }),
+    }
+  )
 }
 
 export async function listAnalyses(projectId: string, module?: string): Promise<AnalysisResult[]> {

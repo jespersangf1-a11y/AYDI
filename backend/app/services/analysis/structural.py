@@ -7,8 +7,9 @@ All user-facing strings are in German.
 """
 import logging
 import math
+from app.core.zone_types import normalisiere_zonen, warnung_unbekannte_typen
+from app.services.analysis.scoring import weighted_overall, hinweis_teilanalysen
 
-from app.services.analysis.subscore import aggregate_subscores
 
 logger = logging.getLogger(__name__)
 
@@ -494,7 +495,7 @@ def analyze_fore_aft_balance(
     config: dict,
     *,
     structural_items: list[dict] | None = None,
-) -> tuple[float, list[dict], dict]:
+) -> tuple[float | None, list[dict], dict]:
     """Evaluate fore-aft weight balance via weighted X-centroid.
 
     Measured structural items (weight_kg + position) enter the CG model as
@@ -511,7 +512,9 @@ def analyze_fore_aft_balance(
             "message": "Keine Zonen für Längsverteilungsanalyse vorhanden.",
             "suggestion": "Zonen dem Layout zuweisen.",
         })
-        return 50.0, warnings, {"cog_x_pct": 0.0, "ideal_range": [0, 0], "deviation_pct": 0.0}
+        # Ohne Zonen gibt es keine Massenverteilung zu messen. Die frühere 50.0
+        # las sich als Messwert "mittelmäßig", war aber gar keine Messung.
+        return None, warnings, {"cog_x_pct": None, "ideal_range": None, "deviation_pct": None}
 
     weight_factor = config.get("boat_class_weight_factor", 1.0)
     ideal_range = config.get("ideal_cog_x_range", (0.44, 0.54))
@@ -522,7 +525,19 @@ def analyze_fore_aft_balance(
     x_span = max_x - min_x
 
     if x_span < 1e-6:
-        return 50.0, warnings, {"cog_x_pct": 0.5, "ideal_range": list(ideal_range), "deviation_pct": 0.0}
+        warnings.append({
+            "code": "STRUCTURAL_NO_EXTENT",
+            "severity": "warning",
+            "message": (
+                "Längsverteilung nicht beurteilbar: die Zonen des Layouts haben keine "
+                "Längsausdehnung, auf die eine Position bezogen werden könnte."
+            ),
+            "suggestion": "Polygonkoordinaten der Zonen prüfen (alle x-Werte identisch).",
+            "location": "layout.zones[].polygon",
+        })
+        return None, warnings, {
+            "cog_x_pct": None, "ideal_range": list(ideal_range), "deviation_pct": None,
+        }
 
     zone_entries, masses, _ = _build_weight_model(zones, weight_factor, structural_items)
 
@@ -538,7 +553,22 @@ def analyze_fore_aft_balance(
         weighted_x += mass["x_mm"] * mass["weight_kg"]
 
     if total_weight < 1e-6:
-        return 50.0, warnings, {"cog_x_pct": 0.5, "ideal_range": list(ideal_range), "deviation_pct": 0.0}
+        # Kein Gewicht, auf das sich ein Schwerpunkt beziehen liesse. Die
+        # frueher gelieferte 50.0 mit cog_x_pct 0.5 behauptete einen exakt
+        # mittigen Schwerpunkt — eine Zahl fuer etwas, das nie gewogen wurde.
+        warnings.append({
+            "code": "STRUCTURAL_NO_WEIGHT_X",
+            "severity": "warning",
+            "message": (
+                "Laengsschwerpunkt nicht beurteilbar: weder aus den Zonen noch "
+                "aus gemessenen Elementen liess sich ein Gewicht ableiten."
+            ),
+            "suggestion": "Polygonflaechen der Zonen pruefen oder Strukturelemente mit Gewicht erfassen.",
+            "location": "layout.zones[].polygon",
+        })
+        return None, warnings, {
+            "cog_x_pct": None, "ideal_range": list(ideal_range), "deviation_pct": None,
+        }
 
     cog_x = weighted_x / total_weight
     cog_x_pct = _clamp01((cog_x - min_x) / x_span)
@@ -597,7 +627,7 @@ def analyze_lateral_balance(
     config: dict,
     *,
     structural_items: list[dict] | None = None,
-) -> tuple[float, list[dict], dict]:
+) -> tuple[float | None, list[dict], dict]:
     """Evaluate port-starboard weight balance via weighted Y-centroid.
 
     Measured items with a Y position enter the model as point masses.
@@ -613,7 +643,9 @@ def analyze_lateral_balance(
             "message": "Keine Zonen für Querverteilungsanalyse vorhanden.",
             "suggestion": "Zonen dem Layout zuweisen.",
         })
-        return 50.0, warnings, {"cog_y_pct": 0.5, "offset_from_center_pct": 0.0, "tolerance_pct": 0.0}
+        return None, warnings, {
+            "cog_y_pct": None, "offset_from_center_pct": None, "tolerance_pct": None,
+        }
 
     weight_factor = config.get("boat_class_weight_factor", 1.0)
     tolerance = config.get("lateral_tolerance_pct", 0.05)
@@ -622,7 +654,21 @@ def analyze_lateral_balance(
     y_span = max_y - min_y
 
     if y_span < 1e-6:
-        return 100.0, warnings, {"cog_y_pct": 0.5, "offset_from_center_pct": 0.0, "tolerance_pct": tolerance}
+        warnings.append({
+            "code": "STRUCTURAL_NO_EXTENT",
+            "severity": "warning",
+            "message": (
+                "Querverteilung nicht beurteilbar: die Zonen des Layouts haben keine "
+                "Querausdehnung, auf die eine Position bezogen werden könnte."
+            ),
+            "suggestion": "Polygonkoordinaten der Zonen prüfen (alle y-Werte identisch).",
+            "location": "layout.zones[].polygon",
+        })
+        # Bisher volle Punktzahl: ein Layout ohne Querausdehnung galt als
+        # perfekt mittig ausgewogen, obwohl es dafür keine Grundlage gibt.
+        return None, warnings, {
+            "cog_y_pct": None, "offset_from_center_pct": None, "tolerance_pct": tolerance,
+        }
 
     zone_entries, all_masses, _ = _build_weight_model(zones, weight_factor, structural_items)
     # Only items with a Y position can enter a lateral model
@@ -640,7 +686,20 @@ def analyze_lateral_balance(
         weighted_y += mass["y_mm"] * mass["weight_kg"]
 
     if total_weight < 1e-6:
-        return 50.0, warnings, {"cog_y_pct": 0.5, "offset_from_center_pct": 0.0, "tolerance_pct": tolerance}
+        # Siehe Laengsschwerpunkt: ohne Gewicht gibt es keine Querlage.
+        warnings.append({
+            "code": "STRUCTURAL_NO_WEIGHT_Y",
+            "severity": "warning",
+            "message": (
+                "Querschwerpunkt nicht beurteilbar: weder aus den Zonen noch "
+                "aus gemessenen Elementen liess sich ein Gewicht ableiten."
+            ),
+            "suggestion": "Polygonflaechen der Zonen pruefen oder Strukturelemente mit Gewicht erfassen.",
+            "location": "layout.zones[].polygon",
+        })
+        return None, warnings, {
+            "cog_y_pct": None, "offset_from_center_pct": None, "tolerance_pct": tolerance,
+        }
 
     cog_y = weighted_y / total_weight
     cog_y_pct = _clamp01((cog_y - min_y) / y_span)
@@ -682,14 +741,16 @@ def analyze_heavy_zone_placement(
     config: dict,
     *,
     structural_items: list[dict] | None = None,
-) -> tuple[float, list[dict], dict]:
+) -> tuple[float | None, list[dict], dict]:
     """Check if heavy zones AND heavy measured items are centrally positioned.
 
     Measured heavy items (engine/ballast/tanks, or anything ≥150 kg) are
     evaluated like heavy zones — a measured 2-t engine must not disappear
     from this sub-score just because no engine ZONE was drawn.
 
-    Returns (score 0-100, warnings, metrics).
+    Returns (score 0-100 oder None, warnings, metrics). ``None`` bedeutet
+    "nicht beurteilbar" — es gab keine schwere Zone zu prüfen oder keine
+    Längsausdehnung, auf die sich eine Lage beziehen könnte.
     """
     warnings: list[dict] = []
 
@@ -699,9 +760,10 @@ def analyze_heavy_zone_placement(
             "severity": "info",
             "message": "Keine Zonen für Schwerzonen-Analyse vorhanden.",
             "suggestion": "Zonen dem Layout zuweisen.",
+            "location": "layout.zones",
         })
-        return 50.0, warnings, {
-            "heavy_zones": [], "total_heavy_weight_kg": 0.0, "central_ratio": 0.0,
+        return None, warnings, {
+            "heavy_zones": [], "total_heavy_weight_kg": None, "central_ratio": None,
         }
 
     weight_factor = config.get("boat_class_weight_factor", 1.0)
@@ -719,22 +781,41 @@ def analyze_heavy_zone_placement(
     ]
 
     if not heavy_entries and not heavy_masses:
+        # Keine schwere Zone und kein gemessenes schweres Element heisst nicht
+        # "Schwerpunktlage in Ordnung". Die bisherige 100.0 mit central_ratio
+        # 1.0 gab eine Unbedenklichkeitsbescheinigung fuer eine Pruefung, die
+        # kein Pruefobjekt hatte — und erfand dazu eine Kennzahl, die nie
+        # gemessen wurde.
         warnings.append({
             "code": "STRUCTURAL_NO_HEAVY_ZONES",
             "severity": "info",
             "message": (
-                "Keine schweren Zonen (Motor, Stauraum) und keine schweren "
-                "gemessenen Elemente im Layout erkannt."
+                "Schwerzonen-Lage nicht beurteilbar: keine schweren Zonen "
+                "(Motor, Stauraum, Tanks) und keine schweren gemessenen "
+                "Elemente im Layout erkannt."
             ),
-            "suggestion": "Motor- und Stauräume im Layout definieren.",
+            "suggestion": "Motor-, Tank- und Stauräume im Layout definieren.",
+            "location": "layout.zones",
         })
-        return 100.0, warnings, {
-            "heavy_zones": [], "total_heavy_weight_kg": 0.0, "central_ratio": 1.0,
+        return None, warnings, {
+            "heavy_zones": [], "total_heavy_weight_kg": None, "central_ratio": None,
         }
 
     if x_span < 1e-6:
-        return 100.0, warnings, {
-            "heavy_zones": [], "total_heavy_weight_kg": 0.0, "central_ratio": 1.0,
+        # Ohne Laengsausdehnung gibt es keinen Bezug, auf den sich "mittig"
+        # beziehen koennte. Auch das ist keine bestandene Pruefung.
+        warnings.append({
+            "code": "STRUCTURAL_NO_EXTENT",
+            "severity": "warning",
+            "message": (
+                "Schwerzonen-Lage nicht beurteilbar: die Zonen des Layouts haben "
+                "keine Längsausdehnung, auf die eine Position bezogen werden könnte."
+            ),
+            "suggestion": "Polygonkoordinaten der Zonen prüfen (alle x-Werte identisch).",
+            "location": "layout.zones[].polygon",
+        })
+        return None, warnings, {
+            "heavy_zones": [], "total_heavy_weight_kg": None, "central_ratio": None,
         }
 
     heavy_info = []
@@ -792,7 +873,27 @@ def analyze_heavy_zone_placement(
             f"Element '{mass['name']}' weiter zur Mitte verlagern.",
         )
 
-    central_ratio = central_weight / total_heavy_weight if total_heavy_weight > 0 else 1.0
+    if total_heavy_weight <= 0:
+        # Schwere Zonen ohne Gewichtsschaetzung: das Verhaeltnis waere durch
+        # null zu teilen. Der frueher eingesetzte Ersatzwert 1.0 hiess
+        # "vollstaendig mittig" — eine Aussage ohne jede Grundlage.
+        warnings.append({
+            "code": "STRUCTURAL_NO_WEIGHT",
+            "severity": "warning",
+            "message": (
+                "Schwerzonen-Lage nicht beurteilbar: für die schweren Zonen "
+                "konnte kein Gewicht abgeschätzt werden (Fläche 0)."
+            ),
+            "suggestion": "Polygonflächen der Motor-, Tank- und Stauräume prüfen.",
+            "location": "layout.zones[].polygon",
+        })
+        return None, warnings, {
+            "heavy_zones": heavy_info,
+            "total_heavy_weight_kg": None,
+            "central_ratio": None,
+        }
+
+    central_ratio = central_weight / total_heavy_weight
 
     # Score: penalty per off-center zone proportional to its weight
     score = 100.0
@@ -844,7 +945,7 @@ def analyze_load_concentration(
     config: dict,
     *,
     structural_items: list[dict] | None = None,
-) -> tuple[float, list[dict], dict]:
+) -> tuple[float | None, list[dict], dict]:
     """Evaluate weight distribution across three longitudinal segments.
 
     Measured items are binned into the segments as point masses (their zone's
@@ -861,9 +962,9 @@ def analyze_load_concentration(
             "message": "Keine Zonen für Lastkonzentrationsanalyse vorhanden.",
             "suggestion": "Zonen dem Layout zuweisen.",
         })
-        return 50.0, warnings, {
-            "segment_weights": {}, "segment_fractions": {},
-            "heaviest_segment": None, "cv": 0.0,
+        return None, warnings, {
+            "segment_weights": None, "segment_fractions": None,
+            "heaviest_segment": None, "cv": None,
         }
 
     weight_factor = config.get("boat_class_weight_factor", 1.0)
@@ -872,9 +973,19 @@ def analyze_load_concentration(
     x_span = max_x - min_x
 
     if x_span < 1e-6:
-        return 50.0, warnings, {
-            "segment_weights": {}, "segment_fractions": {},
-            "heaviest_segment": None, "cv": 0.0,
+        warnings.append({
+            "code": "STRUCTURAL_NO_EXTENT",
+            "severity": "warning",
+            "message": (
+                "Lastkonzentration nicht beurteilbar: die Zonen des Layouts haben keine "
+                "Längsausdehnung, auf die eine Position bezogen werden könnte."
+            ),
+            "suggestion": "Polygonkoordinaten der Zonen prüfen (alle x-Werte identisch).",
+            "location": "layout.zones[].polygon",
+        })
+        return None, warnings, {
+            "segment_weights": None, "segment_fractions": None,
+            "heaviest_segment": None, "cv": None,
         }
 
     # Divide into 3 equal segments
@@ -902,9 +1013,22 @@ def analyze_load_concentration(
 
     total = sum(segment_weights.values())
     if total < 1e-6:
-        return 50.0, warnings, {
+        # Keine Gewichte in den Segmenten — eine Verteilung ueber nichts ist
+        # keine gleichmaessige Verteilung. Die frueher gelieferte 50.0 mit
+        # cv 0.0 las sich wie eine gemessene, ausgeglichene Lastverteilung.
+        warnings.append({
+            "code": "STRUCTURAL_NO_SEGMENT_WEIGHT",
+            "severity": "warning",
+            "message": (
+                "Lastverteilung nicht beurteilbar: fuer keines der Segmente "
+                "(Bug, Mitte, Heck) liess sich ein Gewicht ableiten."
+            ),
+            "suggestion": "Polygonflaechen der Zonen pruefen oder Strukturelemente mit Gewicht erfassen.",
+            "location": "layout.zones[].polygon",
+        })
+        return None, warnings, {
             "segment_weights": segment_weights, "segment_fractions": {},
-            "heaviest_segment": None, "cv": 0.0,
+            "heaviest_segment": None, "cv": None,
         }
 
     fractions = {k: v / total for k, v in segment_weights.items()}
@@ -967,7 +1091,7 @@ def analyze_loading_conditions(
     config: dict,
     *,
     structural_items: list[dict] | None = None,
-) -> tuple[float, list[dict], dict]:
+) -> tuple[float | None, list[dict], dict]:
     """Compute CG position under different loading conditions.
 
     Measured items enter each condition as point masses; tank-typed items
@@ -984,7 +1108,7 @@ def analyze_loading_conditions(
             "message": "Keine Zonen für Beladungszustandsanalyse vorhanden.",
             "suggestion": "Zonen dem Layout zuweisen.",
         })
-        return 50.0, warnings, {"conditions": {}}
+        return None, warnings, {"conditions": None}
 
     weight_factor = config.get("boat_class_weight_factor", 1.0)
     ideal_range = config.get("ideal_cog_x_range", (0.44, 0.54))
@@ -993,7 +1117,17 @@ def analyze_loading_conditions(
     x_span = max_x - min_x
 
     if x_span < 1e-6:
-        return 50.0, warnings, {"conditions": {}}
+        warnings.append({
+            "code": "STRUCTURAL_NO_EXTENT",
+            "severity": "warning",
+            "message": (
+                "Beladungszustände nicht beurteilbar: die Zonen des Layouts haben keine "
+                "Längsausdehnung, auf die eine Position bezogen werden könnte."
+            ),
+            "suggestion": "Polygonkoordinaten der Zonen prüfen (alle x-Werte identisch).",
+            "location": "layout.zones[].polygon",
+        })
+        return None, warnings, {"conditions": None}
 
     zone_entries, masses, _ = _build_weight_model(zones, weight_factor, structural_items)
 
@@ -1073,7 +1207,7 @@ def analyze_trim(
     config: dict,
     *,
     structural_items: list[dict] | None = None,
-) -> tuple[float, list[dict], dict]:
+) -> tuple[float | None, list[dict], dict]:
     """Estimate longitudinal trim angle from weight distribution.
 
     Measured items enter the trim CG as point masses.
@@ -1089,7 +1223,13 @@ def analyze_trim(
             "message": "Keine Zonen für Trimmanalyse vorhanden.",
             "suggestion": "Zonen dem Layout zuweisen.",
         })
-        return 50.0, warnings, {"cog_x_pct": 0.0, "ideal_range_pct": [0.44, 0.54], "cog_deviation_pct": 0.0}
+        return None, warnings, {
+            # Schluessel wie im Normalfall unten. Der Zweig gibt "trim_deg"
+            # bewusst NICHT zurueck: der aus einer Draufsicht gerechnete
+            # Trimmwinkel war physikalisch bedeutungslos und ist entfallen
+            # (J-2); die Note haengt jetzt an der Schwerpunktlage.
+            "cog_x_pct": None, "ideal_range_pct": None, "cog_deviation_pct": None,
+        }
 
     weight_factor = config.get("boat_class_weight_factor", 1.0)
     ideal_range = config.get("ideal_cog_x_range", (0.44, 0.54))
@@ -1098,7 +1238,23 @@ def analyze_trim(
     x_span = max_x - min_x
 
     if x_span < 1e-6:
-        return 50.0, warnings, {"cog_x_pct": 0.5, "ideal_range_pct": list(ideal_range), "cog_deviation_pct": 0.0}
+        warnings.append({
+            "code": "STRUCTURAL_NO_EXTENT",
+            "severity": "warning",
+            "message": (
+                "Trimmlage nicht beurteilbar: die Zonen des Layouts haben keine "
+                "Längsausdehnung, auf die eine Position bezogen werden könnte."
+            ),
+            "suggestion": "Polygonkoordinaten der Zonen prüfen (alle x-Werte identisch).",
+            "location": "layout.zones[].polygon",
+        })
+        return None, warnings, {
+            # Schluessel wie im Normalfall unten. Der Zweig gibt "trim_deg"
+            # bewusst NICHT zurueck: der aus einer Draufsicht gerechnete
+            # Trimmwinkel war physikalisch bedeutungslos und ist entfallen
+            # (J-2); die Note haengt jetzt an der Schwerpunktlage.
+            "cog_x_pct": None, "ideal_range_pct": None, "cog_deviation_pct": None,
+        }
 
     zone_entries, masses, _ = _build_weight_model(zones, weight_factor, structural_items)
 
@@ -1114,7 +1270,21 @@ def analyze_trim(
         weighted_x += mass["x_mm"] * mass["weight_kg"]
 
     if total_weight < 1e-6:
-        return 50.0, warnings, {"cog_x_pct": 0.5, "ideal_range_pct": list(ideal_range), "cog_deviation_pct": 0.0}
+        # Siehe oben: ohne Gewicht keine Schwerpunktlage, also auch keine Note.
+        warnings.append({
+            "code": "STRUCTURAL_NO_WEIGHT_TRIM",
+            "severity": "warning",
+            "message": (
+                "Trimmlage nicht beurteilbar: weder aus den Zonen noch aus "
+                "gemessenen Elementen liess sich ein Gewicht ableiten."
+            ),
+            "suggestion": "Polygonflaechen der Zonen pruefen oder Strukturelemente mit Gewicht erfassen.",
+            "location": "layout.zones[].polygon",
+        })
+        return None, warnings, {
+            "cog_x_pct": None, "ideal_range_pct": list(ideal_range),
+            "cog_deviation_pct": None,
+        }
 
     cog_x = weighted_x / total_weight
     cog_x_pct = _clamp01((cog_x - min_x) / x_span)
@@ -1184,6 +1354,26 @@ def run_structural_analysis(
 
     Returns a standardized result dict matching the AYDI analysis module contract.
     """
+    # Ein Layout ohne Zonen ist kein Layout. Ohne diese Pruefung lieferten die
+    # Teilanalysen ihre jeweiligen Vorgabewerte zurueck, und daraus entstand ein
+    # Gesamtwert, der wie ein Befund aussah — obwohl nichts gemessen wurde.
+    if not isinstance(zones, list) or len(zones) == 0:
+        return {
+            "module": "structural",
+            "available": False,
+            "reason": "Das Layout enthält keine Zonen — es gibt nichts zu bewerten.",
+            "suggestions": [
+                "Zonen im Layout anlegen oder ein CAD-Modell importieren."
+            ],
+        }
+
+    # Zonentypen vereinheitlichen, bevor irgendeine Pruefung ihre Menge bildet.
+    # Die Module suchen ihre Pruefobjekte ueber exakte Mengenzugehoerigkeit; eine
+    # abweichende Schreibweise ("saloon" statt "salon", "engine_room" statt
+    # "engine") liess die Menge leer bleiben und die Pruefung meldete daraufhin
+    # volle Punktzahl. Siehe app/core/zone_types.py.
+    zones, _unbekannte_zonentypen = normalisiere_zonen(zones)
+
     if boat_class not in BOAT_CLASS_DEFAULTS:
         return {"available": False, "reason": f"Unbekannte Bootsklasse: {boat_class}"}
 
@@ -1203,7 +1393,7 @@ def run_structural_analysis(
             "suggestions": ["Zonen dem Layout zuweisen."],
         }
 
-    sub_scores: dict[str, float] = {}
+    sub_scores: dict[str, float | None] = {}
     all_warnings: list[dict] = []
     all_suggestions: list[str] = []
     all_metrics: dict[str, dict] = {}
@@ -1233,6 +1423,10 @@ def run_structural_analysis(
             all_metrics[name] = metrics
         except Exception:
             logger.exception("Error in structural sub-analysis %s", name)
+            # Kein Messwert. None statt 0.0: weighted_overall nimmt die
+            # Teilanalyse damit aus Zaehler UND Nenner, statt einen internen
+            # Fehler als schlechte Note am Boot auszugeben.
+            sub_scores[name] = None
             _failed_subs.add(name)
             all_warnings.append({
                 "code": "STRUCTURAL_ANALYSIS_ERROR",
@@ -1240,16 +1434,6 @@ def run_structural_analysis(
                 "message": f"Fehler bei Strukturanalyse: {name}",
                 "suggestion": "Layoutdaten überprüfen.",
             })
-
-    overall = aggregate_subscores(
-        sub_scores, weights, failed=_failed_subs, default=50.0
-    )
-    if overall is None:
-        # Jede Teilanalyse ist ausgefallen — keine Note erfinden.
-        overall = 0.0
-        _all_subs_failed = True
-    else:
-        _all_subs_failed = False
 
     # Honest provenance for measured items: report what entered the model,
     # what was deducted from zone heuristics (double-count prevention), what
@@ -1333,6 +1517,30 @@ def run_structural_analysis(
                 ),
             })
 
+    # Unbekannte Zonentypen gehoeren in den Befund, nicht ins Protokoll: eine
+    # Zone mit unbekanntem Typ ist fuer die typbezogenen Pruefungen unsichtbar.
+    # Ohne diesen Hinweis liest sich das Ergebnis so, als waere sie geprueft.
+    _warnung_zonentypen = warnung_unbekannte_typen(_unbekannte_zonentypen)
+    if _warnung_zonentypen:
+        all_warnings.append(_warnung_zonentypen)
+
+    # Teilanalysen ohne Datengrundlage geben None zurueck und bleiben aus der
+    # Rechnung heraus; ihr Gewicht verteilt sich auf die geprueften. Frueher
+    # ging hier ein Vorgabewert ein — bei fehlenden Eintraegen 0.0 bzw. 50.0 —
+    # und erzeugte eine Note fuer etwas, das nie geprueft wurde.
+    overall, _nicht_bewertet = weighted_overall(sub_scores, weights)
+    if overall is None:
+        return {
+            "module": "structural",
+            "available": False,
+            "reason": "Keine der Teilanalysen konnte mangels Datengrundlage durchgeführt werden.",
+            "degraded_subanalyses": sorted(_failed_subs),
+            "warnings": all_warnings,
+            "suggestions": [
+                "Layout- und Stammdaten vervollständigen, um eine Bewertung zu ermöglichen."
+            ],
+        }
+
     for w in all_warnings:
         suggestion = w.get("suggestion")
         if suggestion and suggestion not in all_suggestions:
@@ -1376,21 +1584,17 @@ def run_structural_analysis(
         except Exception:
             logger.exception("Error enriching structural with markdown knowledge")
 
-    if _all_subs_failed:
-        # Kein einziger Teilscore war verwertbar. Statt einer erfundenen
-        # Note meldet sich das Modul als nicht beurteilbar (Modul-Skip-Vertrag).
-        return {
-            "module": "structural",
-            "available": False,
-            "reason": "Alle Teilanalysen fehlgeschlagen - kein belastbares Ergebnis.",
-            "warnings": all_warnings,
-        }
 
     return {
         "module": "structural",
         "degraded_subanalyses": sorted(_failed_subs),
         "overall_score": round(overall, 1),
-        "sub_scores": {k: round(v, 1) for k, v in sub_scores.items()},
+        # Eine Teilanalyse ohne Datengrundlage traegt None — sie wird als
+        # solche weitergereicht statt auf eine Zahl gerundet zu werden.
+        "sub_scores": {
+            k: (round(v, 1) if v is not None else None)
+            for k, v in sub_scores.items()
+        },
         "warnings": all_warnings,
         "suggestions": all_suggestions,
         "metrics": all_metrics,
@@ -1398,4 +1602,6 @@ def run_structural_analysis(
         "confidence": data_source,
         "confidence_note": "Basiert auf geschätzten Werten aus öffentlichen Spezifikationen." if data_source == "estimated" else None,
         "knowledge_enrichment": knowledge_enrichment if knowledge_enrichment else None,
+        "coverage_note": hinweis_teilanalysen(_nicht_bewertet),
+        "unassessed_sub_analyses": _nicht_bewertet,
     }

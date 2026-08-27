@@ -40,12 +40,16 @@ def _make_balanced_items(total: float = 320_000.0) -> list[dict]:
 
 
 def test_empty_cost_items():
-    """No cost items provided -> module reports unavailable (no fabricated score)."""
+    """Keine Kostenpositionen -> Modul meldet "nicht beurteilbar".
+
+    Frueher lieferte das Modul die Gesamtnote 50.0 mit lauter 50.0-Teilnoten,
+    ohne dass eine einzige Kostenposition vorlag.
+    """
     result = run_cost_analysis([], [], "cruising_sail", cost_items=None)
     assert result["module"] == "cost"
     assert result["available"] is False
-    assert "reason" in result
     assert "overall_score" not in result
+    assert result["reason"]
 
 
 # ---------------------------------------------------------------------------
@@ -322,7 +326,15 @@ def test_full_integration_cruising_sail():
     assert set(result["sub_scores"].keys()) == {
         "material_costs", "labor_estimate", "cost_per_meter", "distribution", "risk", "parametric_estimate"
     }
-    assert all(0.0 <= v <= 100.0 for v in result["sub_scores"].values())
+    # Die parametrische Hochrechnung traegt keine Note mehr: sie ist eine
+    # Kennzahl ohne Sollwert und lieferte frueher konstant 100.0, die bei
+    # Gewicht 0.10 in jede Kostennote einging.
+    assert result["sub_scores"]["parametric_estimate"] is None
+    assert all(
+        0.0 <= v <= 100.0
+        for k, v in result["sub_scores"].items()
+        if k != "parametric_estimate"
+    )
     # Should score well since data is well-structured
     assert result["overall_score"] >= 55.0
     # config snapshot is stored

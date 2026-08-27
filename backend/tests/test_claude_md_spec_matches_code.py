@@ -316,21 +316,49 @@ def test_frontend_fonts_in_spec_match_tailwind_config(spec: str) -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_subscore_helper_is_wired_into_eleven_modules(spec: str) -> None:
-    from app.services.analysis.subscore import aggregate_subscores
+def test_scoring_helper_is_wired_into_eleven_modules(spec: str) -> None:
+    """EIN Mechanismus fuer nicht bewertbare Teilanalysen, nicht zwei.
 
-    users = sorted(
-        Path(p).stem
-        for p in glob.glob(str(BACKEND / "app" / "services" / "analysis" / "*.py"))
-        if "from app.services.analysis.subscore" in Path(p).read_text(encoding="utf-8")
+    Beim Zusammenfuehren von main und audit/fixes-checkpoint standen kurz beide
+    nebeneinander — ``scoring.weighted_overall`` fuer den Datenfall und
+    ``subscore.aggregate_subscores`` fuer den Absturzfall, wobei der zweite eine
+    Note berechnete, die der erste sofort ueberschrieb. ``subscore.py`` ist
+    entfallen; dieser Test haelt es dabei.
+    """
+    from app.services.analysis.scoring import NICHT_BEWERTBAR, weighted_overall
+
+    assert not (BACKEND / "app" / "services" / "analysis" / "subscore.py").exists(), (
+        "subscore.py ist abgeloest — aggregate_subscores und weighted_overall "
+        "duerfen nicht wieder nebeneinander stehen."
     )
-    assert len(users) == 11
+
+    quellen = {
+        Path(p).stem: Path(p).read_text(encoding="utf-8")
+        for p in glob.glob(str(BACKEND / "app" / "services" / "analysis" / "*.py"))
+    }
+    users = sorted(
+        name for name, src in quellen.items()
+        if "from app.services.analysis.scoring import" in src and name != "scoring"
+    )
+    assert len(users) == 11, users
     assert "community" not in users
+
+    # Ein Absturz traegt None ein, keine 0.0 — sonst wird ein interner Fehler
+    # als schlechte Messung am Boot ausgegeben.
+    for name in users:
+        assert "sub_scores[name] = None" in quellen[name], name
+        assert "sub_scores[name] = 0.0" not in quellen[name], name
+
     assert "degraded_subanalyses" in spec
+    assert "unassessed_sub_analyses" in spec
 
     # Verhalten, das CLAUDE.md zusichert: Ausfaelle fliegen aus Zaehler UND Nenner.
-    assert aggregate_subscores({"a": 80.0, "b": 0.0}, {"a": 0.5, "b": 0.5}, failed=["b"]) == 80.0
-    assert aggregate_subscores({}, {"a": 1.0}, failed=["a"]) is None
+    assert NICHT_BEWERTBAR is None
+    note, ausgelassen = weighted_overall(
+        {"a": 80.0, "b": NICHT_BEWERTBAR}, {"a": 0.5, "b": 0.5}
+    )
+    assert note == 80.0 and ausgelassen == ["b"]
+    assert weighted_overall({}, {"a": 1.0})[0] is None
 
 
 def test_zone_type_aliases_and_domain_coverage(spec: str) -> None:
@@ -360,12 +388,18 @@ def test_zone_type_aliases_and_domain_coverage(spec: str) -> None:
 def test_security_headers_middleware_documented(spec: str) -> None:
     from app.core.middleware import SecurityHeadersMiddleware
 
+    # Beim Zusammenfuehren der beiden Zweige sind die Header beider Seiten in
+    # EINE Middleware gewandert (vorher war die Klasse doppelt definiert und
+    # Python nahm still die zweite). Der Satz ist damit die Vereinigung.
     assert set(SecurityHeadersMiddleware.STATIC_HEADERS) == {
         "X-Content-Type-Options",
         "X-Frame-Options",
         "Referrer-Policy",
         "Content-Security-Policy",
         "Cross-Origin-Resource-Policy",
+        "Permissions-Policy",
+        "X-Permitted-Cross-Domain-Policies",
+        "Cross-Origin-Opener-Policy",
     }
     assert SecurityHeadersMiddleware.STATIC_HEADERS["X-Content-Type-Options"] == "nosniff"
     middleware_src = (BACKEND / "app" / "core" / "middleware.py").read_text(encoding="utf-8")
@@ -410,8 +444,8 @@ def test_setup_section_names_the_real_commands(spec: str) -> None:
     # Die Zahl wird bewusst festgenagelt: Kommt eine Migration dazu, muss der
     # Getting-Started-Abschnitt in CLAUDE.md mitgezogen werden.
     migrations = sorted(p.name for p in (BACKEND / "migrations" / "versions").glob("0*.py"))
-    assert len(migrations) == 8, migrations
-    assert "8 Revisionen" in spec
+    assert len(migrations) == 9, migrations
+    assert "9 Revisionen" in spec
 
     for command in (
         "pip install -r requirements.txt",

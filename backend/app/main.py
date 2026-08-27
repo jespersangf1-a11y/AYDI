@@ -1,8 +1,12 @@
 import logging
+import math
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.api.routes import (
     auth,
@@ -39,6 +43,11 @@ async def lifespan(app: FastAPI):
     # Schema is managed by Alembic — see backend/migrations/.
     # Dev: `alembic upgrade head` before starting uvicorn.
     # Docker: docker/entrypoint.sh runs it automatically.
+    #
+    # Bewusst KEIN Base.metadata.create_all und kein sync_schema hier: Alembic
+    # ist die eine Quelle für das Schema. Ein zweiter Weg, der Tabellen und
+    # Spalten anlegt, lässt beide auseinanderlaufen — genau die Doppelung,
+    # die diese Zusammenführung sonst neu entstehen liesse.
     logger.info("AYDI starting up (json_logs=%s)", settings.LOG_JSON)
 
     # Loud warning if the app is running with the repo-public default signing key.
@@ -49,6 +58,22 @@ async def lifespan(app: FastAPI):
             "SECRET_KEY is the built-in default — auth tokens are forgeable with the "
             "public repo value. Set a strong SECRET_KEY before any real deployment."
         )
+
+    # Einmalige Datenreparaturen. Sie betreffen Zeilen, nicht das Schema, und
+    # sind unabhängig davon, wie das Schema entstanden ist:
+    #   * Zeilen, die verwaist zurückblieben, solange SQLite die Fremdschlüssel
+    #     noch nicht durchsetzte. Sie sind über die API ohnehin unerreichbar,
+    #     blockieren aber jede spätere Integritätsprüfung.
+    #   * Geometrie mit NaN/Infinity aus der Zeit vor der Eingabeprüfung:
+    #     Starlette schreibt mit allow_nan=False, eine einzige solche Zeile
+    #     liess die ganze Layout-Liste des Projekts im Serverfehler enden.
+    # Beide sind idempotent und danach ein No-op.
+    from app.db.database import engine
+    from app.db.schema_sync import purge_orphans, repair_nonfinite_geometry
+
+    async with engine.begin() as conn:
+        await conn.run_sync(purge_orphans)
+        await conn.run_sync(repair_nonfinite_geometry)
 
     # Seed reference data if tables are empty
     from app.db.seed import seed
@@ -69,11 +94,26 @@ async def lifespan(app: FastAPI):
     logger.info("AYDI shutting down")
 
 
+# The interactive documentation lists every route, every field and every
+# validation rule of the API. That is a gift to an attacker and of no use to
+# an end user, so outside development it is not served at all — including the
+# raw schema at /openapi.json, which is what actually leaks the detail.
+_docs_public = settings.docs_public
+if not _docs_public:
+    logger.info(
+        "API-Dokumentation ist deaktiviert (ENVIRONMENT=%s). "
+        "Zum Einschalten DOCS_ENABLED=true setzen.",
+        settings.ENVIRONMENT,
+    )
+
 app = FastAPI(
     title="AYDI",
     description="AI Yacht Design Intelligence",
     version="0.2.0",
     lifespan=lifespan,
+    docs_url="/docs" if _docs_public else None,
+    redoc_url="/redoc" if _docs_public else None,
+    openapi_url="/openapi.json" if _docs_public else None,
 )
 
 # CORS middleware (must be outermost for preflight handling).
@@ -88,6 +128,39 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type", "Accept-Language", "X-CSRF-Token", "X-Request-ID"],
     expose_headers=["X-Request-ID", "X-Response-Time"],
 )
+
+
+def _ohne_unendlich(wert):
+    """Ersetze NaN/Infinity rekursiv durch ihren Namen als Zeichenkette.
+
+    FastAPI legt in eine Validierungsmeldung den beanstandeten Wert selbst mit
+    hinein ("input"). Genau der ist bei diesen Fällen aber NaN oder Infinity —
+    und Starlette serialisiert mit ``allow_nan=False``. Die Antwort liess sich
+    deshalb nicht schreiben: statt der 422 mit der Begründung bekam der
+    Aufrufer einen Serverfehler und erfuhr nicht, was an seiner Eingabe falsch
+    war. Die Schranke im Schema griff also, nur die Auskunft darüber ging
+    verloren.
+    """
+    if isinstance(wert, float):
+        if math.isnan(wert):
+            return "NaN"
+        if math.isinf(wert):
+            return "Infinity" if wert > 0 else "-Infinity"
+        return wert
+    if isinstance(wert, dict):
+        return {schluessel: _ohne_unendlich(w) for schluessel, w in wert.items()}
+    if isinstance(wert, (list, tuple)):
+        return [_ohne_unendlich(w) for w in wert]
+    return wert
+
+
+@app.exception_handler(RequestValidationError)
+async def validierungsfehler(request: Request, exc: RequestValidationError):
+    return JSONResponse(
+        status_code=422,
+        content={"detail": _ohne_unendlich(jsonable_encoder(exc.errors()))},
+    )
+
 
 # Register AYDI middleware: request-id, timing, error handling, rate limit, csrf, locale
 register_middleware(app)

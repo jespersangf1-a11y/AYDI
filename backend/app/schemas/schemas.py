@@ -5,7 +5,15 @@ from enum import Enum
 from typing import Annotated, Any, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    BeforeValidator,
+    ConfigDict,
+    EmailStr,
+    Field,
+    field_validator,
+    model_validator,
+)
 
 # ---------------------------------------------------------------------------
 # Schranken für Layout-Geometrie (ROB-1, SEC-9)
@@ -155,6 +163,12 @@ def _check_properties(value: Any, feld: str, _depth: int = 0) -> Any:
     return value
 
 
+# Eine Zahl, die endlich sein muss, aber keine Koordinate ist (Laenge, Breite,
+# Sichtwinkel ...). Die Pruefung laeuft VOR den Schranken, damit bei NaN die
+# verstaendliche Begruendung erscheint und nicht die einer Schranke, die den
+# Leser in die falsche Richtung schickt.
+EndlicheZahl = Annotated[float, BeforeValidator(lambda v: require_finite(v, "Zahlenwert"))]
+
 Coordinate = Annotated[float, Field(ge=-MAX_COORD_MM, le=MAX_COORD_MM)]
 PolygonPoint = Annotated[list[Coordinate], Field(min_length=2, max_length=3)]
 
@@ -184,6 +198,8 @@ class ProjectStatus(str, Enum):
 
 # Zone / Passage data (JSON within Layout)
 class ZoneData(FiniteNumbersMixin):
+    """Eingabeform einer Zone. Wird beim Anlegen eines Layouts geprueft."""
+
     # allow_inf_nan=False ist der maschinelle Riegel gegen NaN/Infinity; die
     # Validatoren darunter liefern zusätzlich die deutsche Fehlermeldung (ROB-1).
     model_config = ConfigDict(allow_inf_nan=False)
@@ -194,12 +210,20 @@ class ZoneData(FiniteNumbersMixin):
     height_mm: float | None = Field(None, ge=0, le=10000)
     is_crew_area: bool = False
     is_guest_area: bool = False
-    visibility_angle: float | None = Field(None, ge=0, le=360)
+    visibility_angle: EndlicheZahl | None = Field(None, ge=0, le=360)
     properties: dict | None = None
 
     @field_validator("polygon", mode="before")
     @classmethod
     def _validate_polygon(cls, value):
+        # Unter drei Punkten gibt es keine Flaeche. Die Auswertungsmodule
+        # rechneten daraus stillschweigend 0 m² und meldeten anschliessend zu
+        # kleine Zonen — der eigentliche Fehler lag aber schon in der Eingabe.
+        if isinstance(value, list) and len(value) < 3:
+            raise ValueError(
+                f"Ein Zonenpolygon braucht mindestens drei Punkte, "
+                f"angegeben sind {len(value)}"
+            )
         return _check_point_list(value, "polygon", MAX_POLYGON_POINTS)
 
     @field_validator("height_mm", "visibility_angle", mode="before")
@@ -240,12 +264,19 @@ class PassageData(FiniteNumbersMixin):
     @field_validator("points", mode="before")
     @classmethod
     def _validate_points(cls, value):
+        if isinstance(value, list) and len(value) < 2:
+            raise ValueError(
+                f"Ein Durchgangsverlauf braucht mindestens zwei Punkte, "
+                f"angegeben sind {len(value)}"
+            )
         return _check_point_list(value, "points", MAX_POLYGON_POINTS)
 
     @field_validator("properties", mode="before")
     @classmethod
     def _validate_passage_properties(cls, value):
         return _check_properties(value, "properties")
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 # Pydantic v2 validation schemas for zones and passages
@@ -304,16 +335,16 @@ class ProjectCreate(FiniteNumbersMixin):
     name: str = Field(..., min_length=1, max_length=200)
     description: str | None = Field(None, max_length=2000)
     boat_class: BoatClass
-    length_m: float = Field(..., gt=0, le=300, description="Bootslänge in Metern")
-    beam_m: float = Field(..., gt=0, le=50, description="Bootsbreite in Metern")
+    length_m: EndlicheZahl = Field(..., gt=0, le=300, description="Bootslänge in Metern")
+    beam_m: EndlicheZahl = Field(..., gt=0, le=50, description="Bootsbreite in Metern")
 
 
 class ProjectUpdate(FiniteNumbersMixin):
     name: str | None = Field(None, min_length=1, max_length=200)
     description: str | None = Field(None, max_length=2000)
     boat_class: BoatClass | None = None
-    length_m: float | None = Field(None, gt=0, le=300)
-    beam_m: float | None = Field(None, gt=0, le=50)
+    length_m: EndlicheZahl | None = Field(None, gt=0, le=300)
+    beam_m: EndlicheZahl | None = Field(None, gt=0, le=50)
     status: ProjectStatus | None = None
 
 
@@ -446,6 +477,40 @@ class LayoutCreate(FiniteNumbersMixin):
     passages: list[PassageData] = Field(..., max_length=MAX_PASSAGES_PER_LAYOUT)
     deck_height_mm: int = Field(2100, ge=500, le=10000)
 
+    @model_validator(mode="after")
+    def _bezuege_pruefen(self) -> "LayoutCreate":
+        """Ein Durchgang darf nur Zonen dieses Layouts verbinden.
+
+        Bisher wurden ``from_zone``/``to_zone`` ungeprueft uebernommen. Ein
+        Tippfehler im Zonennamen fuehrte deshalb nicht zu einer Fehlermeldung,
+        sondern zu einem Durchgang, den kein Modul findet: die Ergonomie sah
+        eine unerreichbare Kabine, die Fluchtwegpruefung meldete einen zu
+        langen Weg. Der Befund landete beim Layout, die Ursache lag in der
+        Eingabe.
+        """
+        namen = [z.name for z in self.zones]
+        mehrfach = sorted({n for n in namen if namen.count(n) > 1})
+        if mehrfach:
+            raise ValueError(
+                "Zonennamen muessen eindeutig sein, mehrfach vergeben: "
+                + ", ".join(mehrfach)
+            )
+
+        bekannt = set(namen)
+        for nummer, durchgang in enumerate(self.passages, start=1):
+            for feld, wert in (
+                ("from_zone", durchgang.from_zone),
+                ("to_zone", durchgang.to_zone),
+            ):
+                if wert not in bekannt:
+                    verfuegbar = ", ".join(sorted(bekannt)) or "keine"
+                    raise ValueError(
+                        f"Durchgang {nummer}: '{wert}' ({feld}) ist keine Zone "
+                        f"dieses Layouts. Vorhanden: {verfuegbar}"
+                    )
+        return self
+
+
 
 class LayoutUpdate(FiniteNumbersMixin):
     """Partial layout update (pillar 3: owner refit loop).
@@ -475,6 +540,41 @@ class LayoutUpdate(FiniteNumbersMixin):
     change_summary: str | None = Field(None, max_length=500)
 
 
+class ZoneOut(BaseModel):
+    """Ausgabeform einer Zone — bewusst ohne die Pruefungen von ZoneData.
+
+    Was einmal in der Datenbank steht, muss lesbar bleiben. Wuerde hier
+    dieselbe Pruefung greifen, machte ein einziger Altbestand-Datensatz die
+    Liste dauerhaft unerreichbar, statt sie nur einmal beim Anlegen
+    abzuweisen. Fehlerhafte Geometrie aus der Zeit vor dieser Pruefung wird
+    beim Start einmalig bereinigt (siehe db/schema_sync.py).
+    """
+
+    name: str
+    zone_type: str
+    polygon: list[list[float]] = []
+    height_mm: float | None = None
+    is_crew_area: bool = False
+    is_guest_area: bool = False
+    visibility_angle: float | None = None
+    properties: dict | None = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PassageOut(BaseModel):
+    """Ausgabeform eines Durchgangs — siehe ZoneOut."""
+
+    from_zone: str
+    to_zone: str
+    width_mm: float | None = None
+    length_mm: float | None = None
+    points: list[list[float]] | None = None
+    is_primary: bool = True
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class LayoutResponse(BaseModel):
     id: UUID
     project_id: UUID
@@ -482,8 +582,8 @@ class LayoutResponse(BaseModel):
     version: str
     file_path: str | None
     file_type: str | None
-    zones: list[ZoneData]
-    passages: list[PassageData]
+    zones: list[ZoneOut]
+    passages: list[PassageOut]
     deck_height_mm: int
     created_at: datetime
     updated_at: datetime
@@ -527,7 +627,11 @@ class AnalysisResponse(BaseModel):
     run_id: UUID | None = None
     module: str
     overall_score: float
-    sub_scores: dict[str, float]
+    # Eine Teilanalyse ohne Datengrundlage traegt None (siehe
+    # services/analysis/scoring.py). Ohne das Optional scheitert die
+    # Antwort an der eigenen Ausgabepruefung, sobald ein Modul ehrlich
+    # "nicht bewertbar" sagt.
+    sub_scores: dict[str, float | None]
     warnings: list[WarningData]
     suggestions: list[str]
     metrics: dict
@@ -551,6 +655,21 @@ class AnalysisRunResponse(BaseModel):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class AnalysisUnavailableResponse(BaseModel):
+    """Antwort, wenn ein Modul mangels Datengrundlage nicht urteilen kann.
+
+    Bewusst eine eigene Form ohne ``overall_score``: ein Modul ohne Daten hat
+    keinen Wert, und ein Platzhalter waere in der Oberflaeche nicht von einem
+    gemessenen zu unterscheiden. Es wird auch nichts gespeichert — ein solcher
+    Lauf ist kein Befund, der im Verlauf des Projekts stehen sollte.
+    """
+
+    module: str
+    available: bool = False
+    reason: str
+    suggestions: list[str] = []
 
 
 # DXF Import

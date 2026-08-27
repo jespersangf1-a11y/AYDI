@@ -1,48 +1,71 @@
-"""Eine fehlgeschlagene Teilanalyse darf keine schlechte Note erzeugen.
+"""Eine Teilanalyse ohne Ergebnis darf keine schlechte Note erzeugen.
 
-Jedes Analysemodul zerlegt seine Arbeit in gewichtete Teilanalysen. Bricht eine
-davon mit einer Exception ab, wurde sie frueher mit **0.0** in den gewichteten
-Mittelwert gezogen: Ein interner Fehler wurde so zu einer schlechten Bewertung
-des Bootes — und dem Nutzer als Messergebnis praesentiert. Das widerspricht der
-Grundregel "lieber nicht beurteilbar als geraten".
+Jedes Analysemodul zerlegt seine Arbeit in gewichtete Teilanalysen. Zwei Faelle
+duerfen dabei nicht als Note in den Mittelwert eingehen: die Teilanalyse hat
+keine Datengrundlage, oder sie stuerzt ab. Frueher gingen beide mit 0.0 (bzw.
+einem Vorgabewert) ein — ein interner Fehler wurde so zu einer schlechten
+Bewertung des Bootes und dem Nutzer als Messergebnis praesentiert. Das
+widerspricht der Grundregel "lieber nicht beurteilbar als geraten".
+
+Beide Faelle tragen jetzt ``None`` und werden von ``weighted_overall`` aus
+Zaehler UND Nenner genommen. (Bis zur Zusammenfuehrung von main und
+audit/fixes-checkpoint gab es dafuer zwei getrennte Mechanismen,
+``scoring.weighted_overall`` und ``subscore.aggregate_subscores``; letzterer
+ist entfallen.)
 
 Erwartetes Verhalten:
-* Eine fehlgeschlagene Teilanalyse wird aus Zaehler UND Nenner genommen.
-* Sie erscheint als kritische Warnung und in ``degraded_subanalyses``.
+* Eine ausgefallene Teilanalyse wird aus Zaehler UND Nenner genommen.
+* Ein Absturz erscheint als kritische Warnung und in ``degraded_subanalyses``.
 * Faellt jede Teilanalyse aus, meldet das Modul ``available: False``.
 """
 
 import pytest
 
 from app.services.analysis import ergonomics
-from app.services.analysis.subscore import aggregate_subscores
+from app.services.analysis.scoring import NICHT_BEWERTBAR, weighted_overall
 
 
-class TestAggregateSubscores:
-    def test_weighted_mean_without_failures(self):
-        result = aggregate_subscores({"a": 80.0, "b": 40.0}, {"a": 0.5, "b": 0.5})
-        assert result == pytest.approx(60.0)
+class TestWeightedOverall:
+    def test_weighted_mean_without_gaps(self):
+        note, ausgelassen = weighted_overall({"a": 80.0, "b": 40.0}, {"a": 0.5, "b": 0.5})
+        assert note == pytest.approx(60.0)
+        assert ausgelassen == []
 
     def test_weights_are_renormalised(self):
         """Gewichte muessen sich nicht zu 1.0 summieren."""
-        result = aggregate_subscores({"a": 80.0, "b": 40.0}, {"a": 1.0, "b": 3.0})
-        assert result == pytest.approx(50.0)
+        note, _ = weighted_overall({"a": 80.0, "b": 40.0}, {"a": 1.0, "b": 3.0})
+        assert note == pytest.approx(50.0)
 
-    def test_failed_subanalysis_is_excluded_not_zeroed(self):
-        scores = {"a": 80.0}
+    def test_unassessable_subanalysis_is_excluded_not_zeroed(self):
         weights = {"a": 0.5, "b": 0.5}
-        assert aggregate_subscores(scores, weights, failed=["b"]) == pytest.approx(80.0)
-        # Zum Vergleich das alte Verhalten: b als 0.0 mitgerechnet.
-        assert aggregate_subscores(scores, weights, failed=[], default=0.0) == pytest.approx(40.0)
+        note, ausgelassen = weighted_overall({"a": 80.0, "b": NICHT_BEWERTBAR}, weights)
+        assert note == pytest.approx(80.0), "b wurde offenbar als 0 mitgerechnet"
+        assert ausgelassen == ["b"]
+        # Zum Vergleich das alte Verhalten, das hier ausdruecklich NICHT gilt:
+        alt = sum({"a": 80.0, "b": 0.0}[k] * w for k, w in weights.items())
+        assert alt == pytest.approx(40.0)
 
-    def test_all_failed_returns_none(self):
-        assert aggregate_subscores({}, {"a": 0.5, "b": 0.5}, failed=["a", "b"]) is None
+    def test_missing_entry_counts_as_unassessed(self):
+        """Ein fehlender Eintrag ist ein Ausfall, kein Vorgabewert."""
+        note, ausgelassen = weighted_overall({"a": 80.0}, {"a": 0.5, "b": 0.5})
+        assert note == pytest.approx(80.0)
+        assert ausgelassen == ["b"]
+
+    def test_all_unassessable_returns_none(self):
+        note, ausgelassen = weighted_overall({}, {"a": 0.5, "b": 0.5})
+        assert note is None
+        assert sorted(ausgelassen) == ["a", "b"]
 
     def test_empty_weights_return_none(self):
-        assert aggregate_subscores({"a": 80.0}, {}) is None
+        note, ausgelassen = weighted_overall({"a": 80.0}, {})
+        assert note is None
+        assert ausgelassen == []
 
-    def test_missing_score_uses_default(self):
-        assert aggregate_subscores({}, {"a": 1.0}, default=50.0) == pytest.approx(50.0)
+    def test_zero_weighted_subanalysis_is_not_a_gap(self):
+        """Gewicht 0 in der Klassenvorgabe heisst 'nicht vorgesehen', nicht 'fehlt'."""
+        note, ausgelassen = weighted_overall({"a": 80.0}, {"a": 1.0, "b": 0.0})
+        assert note == pytest.approx(80.0)
+        assert ausgelassen == []
 
 
 def _layout():

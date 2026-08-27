@@ -8,9 +8,10 @@ and cable/pipe routing.
 import logging
 import math
 from collections import deque
+from app.core.zone_types import normalisiere_zonen, warnung_unbekannte_typen
+from app.services.analysis.scoring import weighted_overall, hinweis_teilanalysen
 
 from app.core.validation import known_passage_widths, passage_width
-from app.services.analysis.subscore import aggregate_subscores
 
 logger = logging.getLogger(__name__)
 
@@ -994,22 +995,71 @@ def analyze_mold_complexity(
     hull_penalty = (zones_with_reflex / total_zones) * 30.0 if total_zones > 0 else 0.0
 
     # Deck level changes: count distinct height_mm values
+    #
+    # height_mm ist ein optionales Feld. Fehlt es in allen Zonen, ist die Zahl
+    # der Decksebenen unbekannt — und nicht etwa eins. Die frühere Formel
+    # lieferte fuer beide Faelle denselben Abzug null: max(0, (0-1)*10) == 0.
+    # Ein Layout ohne Hoehenangaben bekam damit die volle Punktzahl fuer einen
+    # Faktor, der nie geprueft wurde.
     heights = set()
     for zone in zones:
         h = zone.get("height_mm")
         if h is not None:
             heights.add(h)
     distinct_heights = len(heights)
-    deck_penalty = max(0.0, (distinct_heights - 1) * 10.0)
+    decks_bewertbar = distinct_heights > 0
+    deck_penalty = max(0.0, (distinct_heights - 1) * 10.0) if decks_bewertbar else 0.0
 
     # Window count
-    total_windows = sum(
-        (zone.get("properties") or {}).get("window_count", 0)
+    # ``or {}`` statt eines Vorgabewerts: ein Layout darf "properties": null
+    # enthalten. Der Schluessel ist dann vorhanden, sein Wert ist None — der
+    # Vorgabewert des dict.get greift nicht und die Teilanalyse
+    # analyze_mold_complexity brach mit AttributeError ab.
+    #
+    # Ebenso wie bei den Decksebenen gilt: keine Angabe ist nicht dasselbe wie
+    # null Fenster. Nur wenn mindestens eine Zone window_count fuehrt, ist der
+    # Faktor ueberhaupt bewertbar.
+    fenster_angaben = [
+        (zone.get("properties") or {}).get("window_count")
         for zone in zones
-    )
-    window_penalty = min(30.0, total_windows * 3.0)
+    ]
+    fenster_bewertbar = any(w is not None for w in fenster_angaben)
+    total_windows = sum(w for w in fenster_angaben if isinstance(w, (int, float)))
+    window_penalty = min(30.0, total_windows * 3.0) if fenster_bewertbar else 0.0
 
     score = max(0.0, min(100.0, 100.0 - hull_penalty - deck_penalty - window_penalty))
+
+    # Die Formkomplexitaet setzt sich aus drei Faktoren zusammen. Fehlt einer,
+    # steht die Note nur fuer die uebrigen — das muss dranstehen, sonst liest
+    # sich eine 100 als geprueftes Ergebnis, obwohl zwei Drittel der Pruefung
+    # gar nicht stattgefunden haben.
+    bewertete_faktoren = ["hull_curvature"]
+    fehlende_faktoren = []
+    if decks_bewertbar:
+        bewertete_faktoren.append("deck_levels")
+    else:
+        fehlende_faktoren.append("Decksebenen (height_mm)")
+    if fenster_bewertbar:
+        bewertete_faktoren.append("windows")
+    else:
+        fehlende_faktoren.append("Fensteranzahl (properties.window_count)")
+
+    if fehlende_faktoren:
+        warnings.append({
+            "code": "MOLD_PARTIAL_DATA",
+            "severity": "info",
+            "message": (
+                "Formkomplexität nur teilweise bewertet — ohne Angabe zu: "
+                + ", ".join(fehlende_faktoren)
+                + ". Die Note bezieht sich allein auf die geprüften Faktoren."
+            ),
+            "suggestion": (
+                "Zonenhöhen (height_mm) und Fensteranzahl "
+                "(properties.window_count) erfassen, um die Formkomplexität "
+                "vollständig zu bewerten."
+            ),
+            "location": "layout",
+        })
 
     if score < 60.0:
         warnings.append({
@@ -1031,7 +1081,9 @@ def analyze_mold_complexity(
         "window_penalty": round(window_penalty, 1),
         "zones_with_reflex": zones_with_reflex,
         "distinct_heights": distinct_heights,
-        "total_windows": total_windows,
+        "total_windows": total_windows if fenster_bewertbar else None,
+        "bewertete_faktoren": bewertete_faktoren,
+        "nicht_bewertete_faktoren": fehlende_faktoren,
     }
 
 
@@ -1122,6 +1174,26 @@ def run_production_analysis(
     Returns:
         Standardised analysis result dict.
     """
+    # Ein Layout ohne Zonen ist kein Layout. Ohne diese Pruefung lieferten die
+    # Teilanalysen ihre jeweiligen Vorgabewerte zurueck, und daraus entstand ein
+    # Gesamtwert, der wie ein Befund aussah — obwohl nichts gemessen wurde.
+    if not isinstance(zones, list) or len(zones) == 0:
+        return {
+            "module": "production",
+            "available": False,
+            "reason": "Das Layout enthält keine Zonen — es gibt nichts zu bewerten.",
+            "suggestions": [
+                "Zonen im Layout anlegen oder ein CAD-Modell importieren."
+            ],
+        }
+
+    # Zonentypen vereinheitlichen, bevor irgendeine Pruefung ihre Menge bildet.
+    # Die Module suchen ihre Pruefobjekte ueber exakte Mengenzugehoerigkeit; eine
+    # abweichende Schreibweise ("saloon" statt "salon", "engine_room" statt
+    # "engine") liess die Menge leer bleiben und die Pruefung meldete daraufhin
+    # volle Punktzahl. Siehe app/core/zone_types.py.
+    zones, _unbekannte_zonentypen = normalisiere_zonen(zones)
+
     if boat_class not in BOAT_CLASS_DEFAULTS:
         return {"available": False, "reason": f"Unbekannte Bootsklasse: {boat_class}"}
 
@@ -1131,7 +1203,7 @@ def run_production_analysis(
     if config_overrides:
         config.update(config_overrides)
 
-    sub_scores: dict[str, float] = {}
+    sub_scores: dict[str, float | None] = {}
     all_warnings: list[dict] = []
     all_suggestions: list[str] = []
     all_metrics: dict[str, dict] = {}
@@ -1156,6 +1228,10 @@ def run_production_analysis(
             all_metrics[name] = metrics
         except Exception:
             logger.exception("Fehler in Teilanalyse %s", name)
+            # Kein Messwert. None statt 0.0: weighted_overall nimmt die
+            # Teilanalyse damit aus Zaehler UND Nenner, statt einen internen
+            # Fehler als schlechte Note am Boot auszugeben.
+            sub_scores[name] = None
             _failed_subs.add(name)
             all_warnings.append({
                 "code": "PRODUCTION_ANALYSIS_ERROR",
@@ -1164,15 +1240,29 @@ def run_production_analysis(
                 "suggestion": "Layoutdaten überprüfen.",
             })
 
-    overall = aggregate_subscores(
-        sub_scores, weights, failed=_failed_subs, default=0.0
-    )
+    # Unbekannte Zonentypen gehoeren in den Befund, nicht ins Protokoll: eine
+    # Zone mit unbekanntem Typ ist fuer die typbezogenen Pruefungen unsichtbar.
+    # Ohne diesen Hinweis liest sich das Ergebnis so, als waere sie geprueft.
+    _warnung_zonentypen = warnung_unbekannte_typen(_unbekannte_zonentypen)
+    if _warnung_zonentypen:
+        all_warnings.append(_warnung_zonentypen)
+
+    # Teilanalysen ohne Datengrundlage geben None zurueck und bleiben aus der
+    # Rechnung heraus; ihr Gewicht verteilt sich auf die geprueften. Frueher
+    # ging hier ein Vorgabewert ein — bei fehlenden Eintraegen 0.0 bzw. 50.0 —
+    # und erzeugte eine Note fuer etwas, das nie geprueft wurde.
+    overall, _nicht_bewertet = weighted_overall(sub_scores, weights)
     if overall is None:
-        # Jede Teilanalyse ist ausgefallen — keine Note erfinden.
-        overall = 0.0
-        _all_subs_failed = True
-    else:
-        _all_subs_failed = False
+        return {
+            "module": "production",
+            "available": False,
+            "reason": "Keine der Teilanalysen konnte mangels Datengrundlage durchgeführt werden.",
+            "degraded_subanalyses": sorted(_failed_subs),
+            "warnings": all_warnings,
+            "suggestions": [
+                "Layout- und Stammdaten vervollständigen, um eine Bewertung zu ermöglichen."
+            ],
+        }
 
     for w in all_warnings:
         suggestion = w.get("suggestion")
@@ -1210,21 +1300,17 @@ def run_production_analysis(
         except Exception:
             logger.exception("Error enriching production with markdown knowledge")
 
-    if _all_subs_failed:
-        # Kein einziger Teilscore war verwertbar. Statt einer erfundenen
-        # Note meldet sich das Modul als nicht beurteilbar (Modul-Skip-Vertrag).
-        return {
-            "module": "production",
-            "available": False,
-            "reason": "Alle Teilanalysen fehlgeschlagen - kein belastbares Ergebnis.",
-            "warnings": all_warnings,
-        }
 
     return {
         "module": "production",
         "degraded_subanalyses": sorted(_failed_subs),
         "overall_score": round(overall, 1),
-        "sub_scores": {k: round(v, 1) for k, v in sub_scores.items()},
+        # Eine Teilanalyse ohne Datengrundlage traegt None — sie wird als
+        # solche weitergereicht statt auf eine Zahl gerundet zu werden.
+        "sub_scores": {
+            k: (round(v, 1) if v is not None else None)
+            for k, v in sub_scores.items()
+        },
         "warnings": all_warnings,
         "suggestions": all_suggestions,
         "metrics": all_metrics,
@@ -1232,4 +1318,6 @@ def run_production_analysis(
         "confidence": data_source,
         "confidence_note": "Basiert auf geschätzten Werten aus öffentlichen Spezifikationen." if data_source == "estimated" else None,
         "knowledge_enrichment": knowledge_enrichment if knowledge_enrichment else None,
+        "coverage_note": hinweis_teilanalysen(_nicht_bewertet),
+        "unassessed_sub_analyses": _nicht_bewertet,
     }

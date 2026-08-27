@@ -23,16 +23,20 @@ def _default_config(boat_class: str = "cruising_sail") -> dict:
 
 
 def test_empty_reports():
-    """No service reports -> module reports unavailable (no fabricated score)."""
+    """Keine Serviceberichte -> Modul meldet "nicht beurteilbar".
+
+    Frueher die Gesamtnote 50.0 fuer ein Modul, dessen einzige Datenquelle
+    vollstaendig fehlte.
+    """
     result = run_service_patterns_analysis([], [], "cruising_sail", service_reports=[])
-    assert result["module"] == "service_patterns"
     assert result["available"] is False
-    assert "reason" in result
+    assert result["module"] == "service_patterns"
     assert "overall_score" not in result
+    assert result["reason"]
 
 
 def test_empty_reports_none():
-    """service_reports=None is treated the same as an empty list."""
+    """service_reports=None wird wie eine leere Liste behandelt."""
     result = run_service_patterns_analysis([], [], "cruising_sail", service_reports=None)
     assert result["available"] is False
     assert "overall_score" not in result

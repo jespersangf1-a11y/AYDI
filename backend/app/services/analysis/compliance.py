@@ -7,9 +7,10 @@ All user-facing strings are in German.
 import logging
 import math
 from collections import deque
+from app.core.zone_types import normalisiere_zonen, warnung_unbekannte_typen
+from app.services.analysis.scoring import weighted_overall, hinweis_teilanalysen
 
 from app.core.validation import known_passage_widths, passage_width
-from app.services.analysis.subscore import aggregate_subscores
 
 logger = logging.getLogger(__name__)
 
@@ -607,15 +608,20 @@ def analyze_escape_routes(
     sleeping_zones = [z for z in zones if z["zone_type"] in _SLEEPING_ZONE_TYPES]
     cockpit_zones = {z["name"] for z in zones if z["zone_type"] == "cockpit"}
 
-    # No sleeping zones — nothing to check
+    # Kein Schlafbereich auffindbar — es wurde nichts geprueft. Frueher stand
+    # hier volle Punktzahl; das las sich wie eine bestandene Fluchtwegpruefung,
+    # obwohl kein einziger Weg verfolgt wurde. Ob wirklich keine Kabine
+    # vorhanden ist oder nur keine als solche erfasst wurde, laesst sich von
+    # hier aus nicht entscheiden — also wird nicht bewertet.
     if not sleeping_zones:
         warnings.append({
             "code": "NO_SLEEPING_ZONES",
             "severity": "info",
-            "message": "Keine Schlafbereiche im Layout — Fluchtwegprüfung nicht erforderlich.",
-            "suggestion": "Fluchtwegprüfung entfällt bei fehlendem Schlafbereich.",
+            "message": "Keine Schlafbereiche im Layout — die Fluchtwegprüfung nach ISO 9094 konnte nicht durchgeführt werden.",
+            "suggestion": "Schlafbereiche als Zonentyp cabin, aft_cabin, quarter_berth oder crew_quarters erfassen, damit die Fluchtwege geprüft werden können.",
+            "location": "layout",
         })
-        return 100.0, warnings, {"cabins_checked": 0, "cabins_compliant": 0, "cabins_total": 0}
+        return None, warnings, {"cabins_checked": 0, "cabins_compliant": 0, "cabins_total": 0}
 
     # No cockpit — all cabins are unreachable
     if not cockpit_zones:
@@ -722,14 +728,21 @@ def analyze_fire_safety(
     engine_zones = [z for z in zones if z["zone_type"] == "engine"]
     living_zones = [z for z in zones if z["zone_type"] in _LIVING_ZONE_TYPES]
 
+    # Ohne Maschinenraum gibt es weder einen Brandschutzabstand noch einen
+    # Zugang zu pruefen. Frueher standen hier 50.0 — eine Zahl, die sich in der
+    # Oberflaeche von einer gemessenen nicht unterscheiden liess.
     if not engine_zones:
         warnings.append({
             "code": "ISO_9094_NO_ENGINE",
             "severity": "info",
-            "message": "Kein Maschinenraum im Layout — Brandschutzprüfung nicht vollständig durchführbar.",
-            "suggestion": "Maschinenraum-Zone zum Layout hinzufügen.",
+            "message": (
+                "Kein Maschinenraum im Layout gefunden — die Brandschutzprüfung "
+                "nach ISO 9094 konnte nicht durchgeführt werden."
+            ),
+            "suggestion": "Maschinenraum als Zonentyp engine im Layout erfassen.",
+            "location": "layout",
         })
-        return 50.0, warnings, {
+        return None, warnings, {
             "engine_zones": 0,
             "min_clearance_mm": None,
             "engine_accessible": False,
@@ -749,8 +762,22 @@ def analyze_fire_safety(
                     min_dist = dist
 
     if min_dist is None:
-        # No living zones to compare against
-        clearance_score = 100.0
+        # Kein Wohnbereich, zu dem sich ein Abstand messen liesse. Frueher 100.0 —
+        # der Abstand galt damit als eingehalten, obwohl er nie gemessen wurde.
+        clearance_score = None
+        warnings.append({
+            "code": "ISO_9094_NO_LIVING_ZONES",
+            "severity": "info",
+            "message": (
+                "Keine Wohnbereiche im Layout gefunden — der Brandschutzabstand "
+                "zum Maschinenraum konnte nicht gemessen werden."
+            ),
+            "suggestion": (
+                "Wohnbereiche als Zonentyp salon, cabin, pantry oder head erfassen, "
+                "damit der Abstand zum Maschinenraum geprüft werden kann."
+            ),
+            "location": "layout",
+        })
     elif min_dist >= min_clearance:
         clearance_score = 100.0
     else:
@@ -780,7 +807,22 @@ def analyze_fire_safety(
                 engine_accessible = True
                 break
 
-    if not engine_accessible and other_zone_names:
+    if not other_zone_names:
+        # Nur Maschinenraumzonen im Layout — es gibt keinen Bereich, von dem aus
+        # eine Erreichbarkeit zu pruefen waere. Frueher fiel dieser Fall in den
+        # else-Zweig und ergab volle Punktzahl.
+        access_score = None
+        warnings.append({
+            "code": "ISO_9094_ACCESS_NOT_ASSESSABLE",
+            "severity": "info",
+            "message": (
+                "Das Layout enthält ausschließlich Maschinenraumzonen — die "
+                "Erreichbarkeit des Maschinenraums konnte nicht geprüft werden."
+            ),
+            "suggestion": "Übrige Zonen des Bootes im Layout erfassen.",
+            "location": "layout",
+        })
+    elif not engine_accessible:
         access_score = 0.0
         warnings.append({
             "code": "ISO_9094_ENGINE_INACCESSIBLE",
@@ -813,7 +855,13 @@ def analyze_fire_safety(
         except (KeyError, TypeError, AttributeError):
             pass
 
-    combined_score = clearance_score * 0.5 + access_score * 0.5
+    # Abstand und Erreichbarkeit zaehlen je zur Haelfte. Faellt eine der beiden
+    # Pruefungen mangels Daten aus, traegt die andere allein — und wenn beide
+    # ausfallen, gibt es keine Note.
+    combined_score, _ = weighted_overall(
+        {"clearance": clearance_score, "access": access_score},
+        {"clearance": 0.5, "access": 0.5},
+    )
 
     return combined_score, warnings, {
         "engine_zones": len(engine_zones),
@@ -851,7 +899,8 @@ def analyze_stability_impact(
             "suggestion": "Maschinen- und Stauraumzonen zum Layout hinzufügen.",
             "norm": f"ISO 12217:{norm_ref}",
         })
-        return 50.0, warnings, {"heavy_zones": 0, "y_deviation_ratio": 0.0}
+        # Frueher 50.0: eine Zahl fuer eine Pruefung, die nicht stattfand.
+        return None, warnings, {"heavy_zones": 0, "y_deviation_ratio": 0.0}
 
     # Compute layout Y-center from bounding box of ALL zones
     all_y: list[float] = []
@@ -862,14 +911,16 @@ def analyze_stability_impact(
                 all_y.append(pt[1])
 
     if not all_y:
-        return 50.0, warnings, {"heavy_zones": len(heavy_zones), "y_deviation_ratio": 0.0}
+        # Frueher 50.0: eine Zahl fuer eine Pruefung, die nicht stattfand.
+        return None, warnings, {"heavy_zones": len(heavy_zones), "y_deviation_ratio": 0.0}
 
     y_min = min(all_y)
     y_max = max(all_y)
     half_beam = (y_max - y_min) / 2.0
 
     if half_beam == 0:
-        return 50.0, warnings, {"heavy_zones": len(heavy_zones), "y_deviation_ratio": 0.0}
+        # Frueher 50.0: eine Zahl fuer eine Pruefung, die nicht stattfand.
+        return None, warnings, {"heavy_zones": len(heavy_zones), "y_deviation_ratio": 0.0}
 
     y_center = y_min + half_beam
 
@@ -927,8 +978,24 @@ def analyze_railing_requirements(
     required_types: list[str] = config.get("required_railing_zones", [])
     required_zones = [z for z in zones if z["zone_type"] in required_types]
 
+    # Kein relingpflichtiger Decksbereich auffindbar. Volle Punktzahl waere hier
+    # eine Freigabe nach ISO 15085 fuer ein Deck, das nie betrachtet wurde.
     if not required_zones:
-        return 100.0, warnings, {"zones_checked": 0, "zones_compliant": 0}
+        warnings.append({
+            "code": "RAILING_NOT_ASSESSABLE",
+            "severity": "info",
+            "message": (
+                "Keine relingpflichtigen Decksbereiche im Layout gefunden — die "
+                f"Relingprüfung nach ISO {norm_ref} konnte nicht durchgeführt werden."
+            ),
+            "suggestion": (
+                "Decksbereiche mit einem der Zonentypen "
+                + ", ".join(required_types)
+                + " erfassen, damit die Reling geprüft werden kann."
+            ),
+            "location": "layout",
+        })
+        return None, warnings, {"zones_checked": 0, "zones_compliant": 0}
 
     total = len(required_zones)
     compliant = 0
@@ -969,8 +1036,9 @@ def analyze_railing_requirements(
     if violations > 0:
         score = max(0.0, (1.0 - violations / total) * 100.0)
     elif compliant == 0:
-        # Only info warnings (missing data) — uncertain, penalize partially
-        score = 50.0
+        # Zu keiner Zone lag eine Reling-Angabe vor. Frueher 50.0 — eine Zahl,
+        # die sich von einer gemessenen nicht unterscheiden liess.
+        score = None
     else:
         score = 100.0
 
@@ -1011,7 +1079,8 @@ def analyze_electrical_access(
             "suggestion": "Maschinenraum-Zone zum Layout hinzufügen.",
             "norm": norm_label,
         })
-        return 50.0, warnings, {"engine_area_sqm": 0.0, "accessible": False}
+        # Frueher 50.0: eine Zahl fuer eine Pruefung, die nicht stattfand.
+        return None, warnings, {"engine_area_sqm": 0.0, "accessible": False}
 
     min_area = config.get("min_electrical_area_sqm", 0.5)
 
@@ -1161,8 +1230,22 @@ def analyze_escape_hatch_dimensions(
 
     cabin_zones = [z for z in zones if z["zone_type"] in _SLEEPING_ZONE_TYPES]
 
+    # Ohne erkannte Kabine gibt es keinen Notausstieg zu vermessen.
     if not cabin_zones:
-        return 100.0, warnings, {"cabins_checked": 0, "cabins_compliant": 0}
+        warnings.append({
+            "code": "ESCAPE_HATCH_NOT_ASSESSABLE",
+            "severity": "info",
+            "message": (
+                "Keine Kabinen im Layout gefunden — die Notausstiegsmaße nach "
+                f"ISO {norm_ref} konnten nicht geprüft werden."
+            ),
+            "suggestion": (
+                "Kabinen als Zonentyp cabin, aft_cabin, quarter_berth oder "
+                "crew_quarters erfassen, damit die Notausstiege geprüft werden können."
+            ),
+            "location": "layout",
+        })
+        return None, warnings, {"cabins_checked": 0, "cabins_compliant": 0}
 
     total = 0
     compliant = 0
@@ -1204,9 +1287,10 @@ def analyze_escape_hatch_dimensions(
             "message": "Keine Lukenmaße vorhanden.",
             "suggestion": "Lukenmaße (hatch_width_mm, hatch_height_mm) in den Zoneneigenschaften hinterlegen.",
         })
-        return 50.0, warnings, {"cabins_checked": 0, "cabins_compliant": 0}
+        # Frueher 50.0: eine Zahl fuer eine Pruefung, die nicht stattfand.
+        return None, warnings, {"cabins_checked": 0, "cabins_compliant": 0}
 
-    score = (compliant / total) * 100.0 if total > 0 else 50.0
+    score = (compliant / total) * 100.0 if total > 0 else None
 
     return score, warnings, {
         "cabins_checked": total,
@@ -1242,8 +1326,22 @@ def analyze_cockpit_drain_capacity(
 
     cockpit_zones = [z for z in zones if z["zone_type"] == "cockpit"]
 
+    # Ohne erfasstes Cockpit gibt es keine Lenzleistung zu berechnen.
     if not cockpit_zones:
-        return 100.0, warnings, {"cockpits_checked": 0, "cockpits_compliant": 0}
+        warnings.append({
+            "code": "COCKPIT_DRAIN_NOT_ASSESSABLE",
+            "severity": "info",
+            "message": (
+                "Kein Cockpit im Layout gefunden — die Lenzleistung nach "
+                f"ISO {norm_ref} konnte nicht geprüft werden."
+            ),
+            "suggestion": (
+                "Cockpit als Zonentyp cockpit erfassen, damit die erforderliche "
+                "Lenzleistung berechnet werden kann."
+            ),
+            "location": "layout",
+        })
+        return None, warnings, {"cockpits_checked": 0, "cockpits_compliant": 0}
 
     default_depth_mm = config.get("cockpit_depth_mm", 300)
     total = 0
@@ -1294,12 +1392,13 @@ def analyze_cockpit_drain_capacity(
             "message": "Keine Abflussdaten vorhanden.",
             "suggestion": "Abflusskapazität (drain_capacity_lps) in den Cockpit-Zoneneigenschaften hinterlegen.",
         })
-        return 50.0, warnings, {"cockpits_checked": 0, "cockpits_compliant": 0}
+        # Frueher 50.0: eine Zahl fuer eine Pruefung, die nicht stattfand.
+        return None, warnings, {"cockpits_checked": 0, "cockpits_compliant": 0}
 
     if total > 0:
         score = (compliant / total) * 100.0
     else:
-        score = 50.0
+        score = None
 
     return score, warnings, {
         "cockpits_checked": total,
@@ -1344,8 +1443,25 @@ def analyze_companionway_sill(
         _CE_SILL_HEIGHT_MM.get(ce_category, 300),
     )
 
+    # Fuer Entwurfskategorie D gibt es keine Suellhoehe. Die Pruefung entfaellt
+    # damit — sie gilt aber nicht als bestanden. Frueher floss hier eine 100 in
+    # die Modulnote ein, was Kategorie-D-Boote gegenueber Kategorie A ohne
+    # sachlichen Grund besser aussehen liess.
     if min_sill <= 0:
-        return 100.0, warnings, {"sills_checked": 0, "sills_compliant": 0}
+        warnings.append({
+            "code": "SILL_NOT_APPLICABLE",
+            "severity": "info",
+            "message": (
+                f"Entwurfskategorie {ce_category} sieht keine Mindestsüllhöhe vor — "
+                "die Prüfung entfällt."
+            ),
+            "suggestion": (
+                "Keine Maßnahme erforderlich. Bei geplantem Einsatz in einer "
+                "höheren Entwurfskategorie die Süllhöhe entsprechend vorsehen."
+            ),
+            "location": "layout",
+        })
+        return None, warnings, {"sills_checked": 0, "sills_compliant": 0}
 
     zone_type_map = {z["name"]: z["zone_type"] for z in zones}
     cockpit_names = {z["name"] for z in zones if z["zone_type"] == "cockpit"}
@@ -1359,8 +1475,24 @@ def analyze_companionway_sill(
            (to_z in cockpit_names and from_z in interior_names):
             companionway_passages.append(p)
 
+    # Kein Niedergang zwischen Cockpit und Innenraum auffindbar — es gibt keine
+    # Suelle zu messen. Volle Punktzahl waere eine Aussage ueber etwas, das gar
+    # nicht gefunden wurde.
     if not companionway_passages:
-        return 100.0, warnings, {"sills_checked": 0, "sills_compliant": 0}
+        warnings.append({
+            "code": "SILL_NOT_ASSESSABLE",
+            "severity": "info",
+            "message": (
+                "Kein Niedergang zwischen Cockpit und Innenraum gefunden — die "
+                f"Süllhöhe für Entwurfskategorie {ce_category} konnte nicht geprüft werden."
+            ),
+            "suggestion": (
+                "Durchgang zwischen Cockpit und Innenraum im Layout anlegen, damit "
+                "die Süllhöhe geprüft werden kann."
+            ),
+            "location": "layout",
+        })
+        return None, warnings, {"sills_checked": 0, "sills_compliant": 0}
 
     total = 0
     compliant = 0
@@ -1400,9 +1532,10 @@ def analyze_companionway_sill(
             "message": "Keine Süllhöhen-Daten vorhanden.",
             "suggestion": "Süllhöhen (sill_height_mm) in den Durchgangseigenschaften hinterlegen.",
         })
-        return 50.0, warnings, {"sills_checked": 0, "sills_compliant": 0}
+        # Frueher 50.0: eine Zahl fuer eine Pruefung, die nicht stattfand.
+        return None, warnings, {"sills_checked": 0, "sills_compliant": 0}
 
-    score = (compliant / total) * 100.0 if total > 0 else 50.0
+    score = (compliant / total) * 100.0 if total > 0 else None
 
     return score, warnings, {
         "sills_checked": total,
@@ -1432,12 +1565,40 @@ def analyze_ventilation(
     battery_zones = [z for z in zones if (z.get("properties") or {}).get("has_battery", False)]
 
     zones_to_check = []
+    zonen_ohne_leistungsangabe: list[str] = []
 
     for z in engine_zones:
         props = z.get("properties") or {}
-        engine_kw = props.get("engine_kw", 50)
-        required = max(0.05, engine_kw * 0.0003)
+        # Fruehere Fassung: props.get("engine_kw", 50). Fehlte die Angabe, rechnete
+        # die Pruefung mit 50 kW weiter, als sei die Leistung bekannt. Bei 50 kW
+        # greift der Sockelwert 0,05 m² — die Anforderung wurde also fuer jede
+        # groessere Maschine zu niedrig angesetzt und das Ergebnis sah bestanden
+        # aus. Ohne Angabe wird jetzt nur noch gegen den Sockelwert geprueft, und
+        # das steht als Einschraenkung im Befund.
+        engine_kw = props.get("engine_kw")
+        if engine_kw is None:
+            required = 0.05
+            zonen_ohne_leistungsangabe.append(z["name"])
+        else:
+            required = max(0.05, engine_kw * 0.0003)
         zones_to_check.append((z, required, "Maschinenraum"))
+
+    if zonen_ohne_leistungsangabe:
+        warnings.append({
+            "code": "VENTILATION_ENGINE_POWER_UNKNOWN",
+            "severity": "warning",
+            "message": (
+                "Motorleistung nicht angegeben für: "
+                + ", ".join(zonen_ohne_leistungsangabe)
+                + ". Geprüft wurde nur gegen den Sockelwert 0,050 m²; die "
+                "leistungsabhängige Anforderung konnte nicht ermittelt werden."
+            ),
+            "suggestion": (
+                "Motorleistung (properties.engine_kw) je Maschinenraum erfassen. "
+                "Erforderlich sind max(0,05; kW × 0,0003) m²."
+            ),
+            "location": "layout",
+        })
 
     for z in battery_zones:
         if z["zone_type"] != "engine":  # avoid double-checking engine zones with batteries
@@ -1449,8 +1610,22 @@ def analyze_ventilation(
                     zones_to_check[i] = (existing_z, max(req, 0.02), label)
                     break
 
+    # Weder Maschinenraum noch Batterieraum auffindbar. Es wurde nichts geprueft.
     if not zones_to_check:
-        return 100.0, warnings, {"zones_checked": 0, "zones_compliant": 0}
+        warnings.append({
+            "code": "VENTILATION_NOT_ASSESSABLE",
+            "severity": "info",
+            "message": (
+                "Kein Maschinen- oder Batterieraum im Layout gefunden — die "
+                "Belüftungsprüfung konnte nicht durchgeführt werden."
+            ),
+            "suggestion": (
+                "Maschinenraum als Zonentyp engine erfassen bzw. "
+                "properties.has_battery bei Batterieräumen setzen."
+            ),
+            "location": "layout",
+        })
+        return None, warnings, {"zones_checked": 0, "zones_compliant": 0}
 
     total = 0
     compliant = 0
@@ -1486,12 +1661,17 @@ def analyze_ventilation(
         warnings.append({
             "code": "VENTILATION_NO_DATA",
             "severity": "info",
-            "message": "Keine Belüftungsdaten vorhanden.",
+            "message": (
+                "Keine Belüftungsdaten vorhanden — die Belüftungsflächen konnten "
+                "nicht mit der Anforderung verglichen werden."
+            ),
             "suggestion": "Belüftungsfläche (ventilation_area_sqm) in den Zoneneigenschaften hinterlegen.",
+            "location": "layout",
         })
-        return 50.0, warnings, {"zones_checked": 0, "zones_compliant": 0}
+        # Frueher 50.0 — eine Zahl fuer eine Pruefung, die nicht stattgefunden hat.
+        return None, warnings, {"zones_checked": 0, "zones_compliant": 0}
 
-    score = (compliant / total) * 100.0 if total > 0 else 50.0
+    score = (compliant / total) * 100.0 if total > 0 else None
 
     return score, warnings, {
         "zones_checked": total,
@@ -1515,6 +1695,29 @@ def run_compliance_analysis(
 
     Returns a standardized result dict matching the AYDI analysis module contract.
     """
+    # Ein Layout ohne Zonen ist kein Layout. Ohne diese Pruefung lieferten die
+    # Teilanalysen ihre jeweiligen Vorgabewerte zurueck, und daraus entstand ein
+    # Gesamtwert, der wie ein Befund aussah — die Konformitaetspruefung meldete
+    # fuer ein leeres Layout volle Punktzahl bei Fluchtwegen, Notausstieg,
+    # Reling und Cockpitlenzung. Das ist die gefaehrlichste Form einer falschen
+    # Auskunft: eine Freigabe fuer etwas, das nie geprueft wurde.
+    if not isinstance(zones, list) or len(zones) == 0:
+        return {
+            "module": "compliance",
+            "available": False,
+            "reason": "Das Layout enthält keine Zonen — es gibt nichts zu bewerten.",
+            "suggestions": [
+                "Zonen im Layout anlegen oder ein CAD-Modell importieren."
+            ],
+        }
+
+    # Zonentypen vereinheitlichen, bevor irgendeine Pruefung ihre Menge bildet.
+    # Die Module suchen ihre Pruefobjekte ueber exakte Mengenzugehoerigkeit; eine
+    # abweichende Schreibweise ("saloon" statt "salon", "engine_room" statt
+    # "engine") liess die Menge leer bleiben und die Pruefung meldete daraufhin
+    # volle Punktzahl. Siehe app/core/zone_types.py.
+    zones, _unbekannte_zonentypen = normalisiere_zonen(zones)
+
     if boat_class not in BOAT_CLASS_DEFAULTS:
         return {"available": False, "reason": f"Unbekannte Bootsklasse: {boat_class}"}
 
@@ -1524,7 +1727,7 @@ def run_compliance_analysis(
     if config_overrides:
         config.update(config_overrides)
 
-    sub_scores: dict[str, float] = {}
+    sub_scores: dict[str, float | None] = {}
     all_warnings: list[dict] = []
     all_suggestions: list[str] = []
     all_metrics: dict[str, dict] = {}
@@ -1552,6 +1755,10 @@ def run_compliance_analysis(
             all_metrics[name] = metrics
         except Exception:
             logger.exception("Error in compliance sub-analysis %s", name)
+            # Kein Messwert. None statt 0.0: weighted_overall nimmt die
+            # Teilanalyse damit aus Zaehler UND Nenner, statt einen internen
+            # Fehler als schlechte Note am Boot auszugeben.
+            sub_scores[name] = None
             _failed_subs.add(name)
             all_warnings.append({
                 "code": "ANALYSIS_ERROR",
@@ -1560,15 +1767,29 @@ def run_compliance_analysis(
                 "suggestion": "Layoutdaten überprüfen.",
             })
 
-    overall = aggregate_subscores(
-        sub_scores, weights, failed=_failed_subs, default=50.0
-    )
+    # Unbekannte Zonentypen gehoeren in den Befund, nicht ins Protokoll: eine
+    # Zone mit unbekanntem Typ ist fuer die typbezogenen Pruefungen unsichtbar.
+    # Ohne diesen Hinweis liest sich das Ergebnis so, als waere sie geprueft.
+    _warnung_zonentypen = warnung_unbekannte_typen(_unbekannte_zonentypen)
+    if _warnung_zonentypen:
+        all_warnings.append(_warnung_zonentypen)
+
+    # Teilanalysen ohne Datengrundlage geben None zurueck und bleiben aus der
+    # Rechnung heraus; ihr Gewicht verteilt sich auf die geprueften. Frueher
+    # ging hier ein Vorgabewert ein — bei fehlenden Eintraegen 0.0 bzw. 50.0 —
+    # und erzeugte eine Note fuer etwas, das nie geprueft wurde.
+    overall, _nicht_bewertet = weighted_overall(sub_scores, weights)
     if overall is None:
-        # Jede Teilanalyse ist ausgefallen — keine Note erfinden.
-        overall = 0.0
-        _all_subs_failed = True
-    else:
-        _all_subs_failed = False
+        return {
+            "module": "compliance",
+            "available": False,
+            "reason": "Keine der Teilanalysen konnte mangels Datengrundlage durchgeführt werden.",
+            "degraded_subanalyses": sorted(_failed_subs),
+            "warnings": all_warnings,
+            "suggestions": [
+                "Layout- und Stammdaten vervollständigen, um eine Bewertung zu ermöglichen."
+            ],
+        }
 
     for w in all_warnings:
         suggestion = w.get("suggestion")
@@ -1607,21 +1828,17 @@ def run_compliance_analysis(
         except Exception:
             logger.exception("Error enriching compliance with markdown knowledge")
 
-    if _all_subs_failed:
-        # Kein einziger Teilscore war verwertbar. Statt einer erfundenen
-        # Note meldet sich das Modul als nicht beurteilbar (Modul-Skip-Vertrag).
-        return {
-            "module": "compliance",
-            "available": False,
-            "reason": "Alle Teilanalysen fehlgeschlagen - kein belastbares Ergebnis.",
-            "warnings": all_warnings,
-        }
 
     return {
         "module": "compliance",
         "degraded_subanalyses": sorted(_failed_subs),
         "overall_score": round(overall, 1),
-        "sub_scores": {k: round(v, 1) for k, v in sub_scores.items()},
+        # Eine Teilanalyse ohne Datengrundlage traegt None — sie wird als
+        # solche weitergereicht statt auf eine Zahl gerundet zu werden.
+        "sub_scores": {
+            k: (round(v, 1) if v is not None else None)
+            for k, v in sub_scores.items()
+        },
         "warnings": all_warnings,
         "suggestions": all_suggestions,
         "metrics": all_metrics,
@@ -1629,4 +1846,6 @@ def run_compliance_analysis(
         "confidence": data_source,
         "confidence_note": "Basiert auf geschätzten Werten aus öffentlichen Spezifikationen." if data_source == "estimated" else None,
         "knowledge_enrichment": knowledge_enrichment if knowledge_enrichment else None,
+        "coverage_note": hinweis_teilanalysen(_nicht_bewertet),
+        "unassessed_sub_analyses": _nicht_bewertet,
     }

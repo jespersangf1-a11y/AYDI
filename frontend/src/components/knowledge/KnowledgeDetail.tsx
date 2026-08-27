@@ -1,6 +1,6 @@
 import { AlertTriangle, AlertCircle, Info, CheckCircle, TrendingDown, Wrench, X } from 'lucide-react'
-import DOMPurify from 'dompurify'
 import type { KnowledgeDetail } from '../../types'
+import { sanitizeHtml } from '../../utils/sanitizeHtml'
 
 
 interface KnowledgeDetailProps {
@@ -79,7 +79,10 @@ export default function KnowledgeDetailPanel({ data, onClose }: KnowledgeDetailP
             <div className="animate-fade-in-up prose prose-invert max-w-none" style={{ animationDelay: '100ms' }}>
               <div
                 className="text-navy-600 space-y-4"
-                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(data.content_html) }}
+                // Der Inhalt wird vor dem Einhaengen bereinigt; ohne diesen
+                // Schritt konnte beliebiger Skriptcode aus einem Wissens-
+                // artikel im Browser des Lesers laufen.
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(data.content_html) }}
               />
             </div>
           )}

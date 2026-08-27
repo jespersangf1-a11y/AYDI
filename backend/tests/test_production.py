@@ -433,8 +433,9 @@ def test_production_config_overrides():
 
 
 def test_production_empty_input():
-    """Empty zones and passages -> degraded scores, no crash."""
+    """Leeres Layout -> Modul meldet "nicht beurteilbar", keine Note."""
     result = run_production_analysis([], [], "cruising_sail")
-    assert 0 <= result["overall_score"] <= 100
-    assert len(result["sub_scores"]) == 7
-    assert len(result["warnings"]) > 0
+    assert result["available"] is False
+    assert result["module"] == "production"
+    assert "overall_score" not in result
+    assert result["reason"]

@@ -168,19 +168,32 @@ Per-finding visual confidence returned by the Vision prompts is the AI's own Ger
 
 A module returns `{"available": false, "reason": "..."}` when it cannot produce a reliable result.
 
-### Fehlgeschlagene Teilanalysen (`app/services/analysis/subscore.py`)
+### Nicht bewertbare Teilanalysen (`app/services/analysis/scoring.py`)
 
-Jedes Analysemodul zerlegt seine Arbeit in Teilanalysen und gewichtet sie zur Modulnote. Bricht eine
-Teilanalyse mit einer Exception ab, darf sie **nicht** mit 0.0 in den gewichteten Mittelwert
-einfließen — sonst wird ein interner Fehler dem Nutzer als schlechte Messung am Boot präsentiert.
+Jedes Analysemodul zerlegt seine Arbeit in Teilanalysen und gewichtet sie zur Modulnote. Zwei Fälle
+dürfen dabei **nicht** als Note in den gewichteten Mittelwert einfließen:
 
-`aggregate_subscores(sub_scores, weights, failed, default)` nimmt die fehlgeschlagenen Namen aus
-**Zähler und Nenner** und normiert über die verbleibenden Gewichte. Fällt alles aus, liefert es
-`None`. Regeln für die Module:
-- Jedes Modul sammelt die Ausfälle in `_failed_subs` und gibt sie als **`degraded_subanalyses`**
-  (sortierte Liste) im Ergebnis zurück — sichtbar, nicht stillschweigend.
-- Ist `aggregate_subscores` `None` (alle Teilanalysen ausgefallen), meldet das Modul
-  `{"available": false, …}` statt einer erfundenen Note.
+1. Der Teilanalyse fehlt die **Datengrundlage** — sie hat nichts zu prüfen. Eine Relingprüfung ohne
+   Decksbereiche, die 100 Punkte meldet, ist eine Freigabe für etwas, das nie untersucht wurde.
+2. Die Teilanalyse **stürzt ab**. Ginge sie mit 0.0 ein, würde ein interner Fehler dem Nutzer als
+   schlechte Messung am Boot präsentiert.
+
+Beide Fälle haben **dieselbe** Antwort: die Teilnote ist `None` (`NICHT_BEWERTBAR`).
+`weighted_overall(sub_scores, weights)` lässt sie aus, verteilt ihr Gewicht auf die tatsächlich
+geprüften Teilanalysen und gibt zurück, welche ausgelassen wurden. Fällt alles aus, liefert es
+`None` — dann meldet das Modul `{"available": false, …}` statt eine Zahl zu erfinden.
+
+> Historie: Bis zur Zusammenführung von `main` und `audit/fixes-checkpoint` gab es dafür **zwei**
+> Mechanismen nebeneinander — `scoring.weighted_overall` für den Datenfall und
+> `subscore.aggregate_subscores` für den Absturzfall. `subscore.py` ist entfallen; ein Absturz
+> trägt jetzt einfach `None` ein. Ein Konzept statt zwei.
+
+Regeln für die Module:
+- Eine Teilanalyse ohne Datengrundlage gibt `None` zurück, statt eine Ersatzzahl zu liefern.
+- Ein Absturz wird protokolliert, trägt `sub_scores[name] = None` ein und landet in `_failed_subs`.
+- Das Ergebnis führt beides getrennt aus:
+  **`unassessed_sub_analyses`** + **`coverage_note`** (nichts zu prüfen) und
+  **`degraded_subanalyses`** (abgestürzt) — sichtbar, nicht stillschweigend.
 - Verdrahtet in 11 der 12 Analysemodule: `brand_dna`, `compliance`, `cost`, `emotional`,
   `ergonomics`, `market`, `materials`, `production`, `service_patterns`, `structural`,
   `volume_storage`. **`community` nutzt es nicht** — es hat keine gewichteten Teilanalysen und
@@ -317,6 +330,8 @@ The analysis engine (above) runs inside a platform layer. These subsystems are l
 - **AuthN**: JWT (HS256, PyJWT), `access_token` + `refresh_token`. Passwords hashed with **bcrypt** via passlib `CryptContext`. Core: `app/core/auth.py`, routes: `app/api/routes/auth.py`.
 - **AuthZ — roles**: `admin`, `user`, `viewer` (`app/core/permissions.py`, `require_role(*roles)`). Admin-only endpoints (e.g. `/collaborate/sessions`) gate on this.
 - **AuthZ — ownership**: mutating/reading resources verify the resource chains back to `user_id` (Layout → Project → user). Never trust a client-supplied owner.
+- **AuthZ — Einzeleinträge mit Besitzer** (`app/core/ownership.py`): Materialien, Wettbewerbsmodelle, Serviceberichte und gespeicherte Schnellanalysen tragen eine Besitzerspalte. `visible_to` / `ensure_readable` / `ensure_writable` / `owner_kwargs` sind der eine Ort, an dem entschieden wird, wer sie sehen und ändern darf. Ein Eintrag **ohne** Besitzer ist der mitgelieferte Referenzbestand: von allen lesbar, nur von der Verwaltung änderbar (`SHARED_WHEN_UNOWNED`). `ServiceReport` steht bewusst nicht darin — ein Bericht ohne erkennbaren Besitzer ist kein Allgemeingut. Nicht gefunden und nicht erlaubt antworten beide mit **404**, damit sich fremde Kennungen nicht abfragen lassen.
+  Die Spalte heißt nicht überall gleich (`created_by_user_id`, `user_id`, `owner_id`); die Zuordnung steht in `OWNER_ATTR`, nicht in den Routen. **Markenreferenzen fehlen dort absichtlich**: ihre Sichtbarkeit ist org-weit und steht als einziger Satz in `app/core/brand_visibility.py`, den sich CRUD und `brand_dna`-Analyse teilen.
 - **`SECRET_KEY` is mandatory in production.** `config.py` refuses to boot (`_enforce_production_security`) if `ENVIRONMENT=production` and the secret is still the default, or if `COOKIE_SECURE` is False. Never ship the default secret. Startup logs a warning if the default is in use.
 - **Two auth transports**: bearer token (Authorization header) and httpOnly cookie + CSRF token for mutating requests. Level 1 (Schnellanalyse) is unauthenticated; Level 2 is the authenticated boundary.
 
@@ -345,8 +360,13 @@ Two layers, additive (GitHub org + repo-collaborators pattern):
 `SecurityHeadersMiddleware` in `app/core/middleware.py`, registriert in der zentralen
 `add_middleware`-Registrierung. Setzt per `setdefault` auf **jede** Antwort:
 `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`,
-`Content-Security-Policy: default-src 'none'; frame-ancestors 'none'`,
-`Cross-Origin-Resource-Policy: same-site`. `Strict-Transport-Security` kommt **nur** dazu, wenn
+`Content-Security-Policy: default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'`,
+`Cross-Origin-Resource-Policy: same-site`, `Permissions-Policy` (Kamera/Mikrofon/Standort aus),
+`X-Permitted-Cross-Domain-Policies: none`, `Cross-Origin-Opener-Policy: same-origin` — acht
+Einträge in `STATIC_HEADERS`. `Server` wird **zugewiesen** (`AYDI`), nicht per `setdefault`;
+uvicorn läuft dafür mit `--no-server-header` (siehe `docker/entrypoint.sh`), sonst stünde die
+Kennung doppelt in der Antwort. `/docs` und `/redoc` bekommen eine eigene, lockerere CSP, weil
+Swagger UI seine Bausteine von einem CDN lädt. `Strict-Transport-Security` kommt **nur** dazu, wenn
 `COOKIE_SECURE` gesetzt ist — sonst würde eine lokale HTTP-Entwicklungsumgebung sich aussperren.
 Der wichtigste ist `nosniff`: Nutzertext wird in JSON-Antworten zurückgespiegelt, und ohne den
 Header darf ein Browser eine solche Antwort als HTML interpretieren. Die CSP ist bewusst maximal
@@ -437,8 +457,8 @@ Alle Befehle unten sind an diesem Repo verifiziert. Repo-Wurzel = `AYDI/`.
 ```bash
 cd backend
 pip install -r requirements.txt          # inkl. pytest — keine separate requirements-dev.txt
-PYTHONPATH=. alembic upgrade head        # Schema auf Stand bringen (8 Revisionen: 000 → 007)
-PYTHONPATH=. uvicorn app.main:app --reload
+PYTHONPATH=. alembic upgrade head        # Schema auf Stand bringen (9 Revisionen: 000 → 008)
+PYTHONPATH=. uvicorn app.main:app --reload --no-server-header
 ```
 `PYTHONPATH=.` ist bei **allen** Backend-Kommandos nötig — es gibt kein installiertes Package.
 `alembic.ini` zeigt auf `script_location = migrations`; die dort eingetragene `sqlalchemy.url`

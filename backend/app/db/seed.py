@@ -8,6 +8,7 @@ import logging
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.auth import hash_password
 from app.db.database import async_session, engine
 from app.models.models import Base, Layout, Project, Material, CompetitorModel, User
 

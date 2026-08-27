@@ -9,10 +9,22 @@ import QuickResults from './QuickResults'
 
 type Step = 'select-class' | 'enter-specs' | 'results'
 
-const BOAT_CLASS_DESCRIPTIONS: Record<string, string> = {
+// Eine Beschreibung je Bootsklasse. Es muessen alle 13 Klassen aus
+// BOAT_CLASS_LABELS abgedeckt sein — fehlte ein Eintrag, blieb die
+// Klassenkarte in der Auswahl ohne jede Erlaeuterung.
+const BOAT_CLASS_DESCRIPTIONS: Record<BoatClass, string> = {
   small_sail: '8 – 12 m  ·  Kompakt, effizient, segeloptimiert',
   cruising_sail: '12 – 18 m  ·  Blauwasser, Komfort und Funktion',
+  racing_sail: '10 – 20 m  ·  Gewichtsoptimiert, Regatta vor Komfort',
+  daysailer: '6 – 12 m  ·  Offenes Cockpit, Tagesausflüge, wenig Ausbau',
+  motorsailer: '10 – 20 m  ·  Segel und Maschine gleichwertig, Deckshaus',
+  catamaran_sail: '10 – 25 m  ·  Zwei Rümpfe, viel Fläche, geringer Tiefgang',
+  catamaran_motor: '10 – 25 m  ·  Zwei Rümpfe unter Maschine, ruhige Lage',
+  small_motor: '8 – 15 m  ·  Wendig, küstennah, überschaubarer Betrieb',
   large_motor: '18 – 30 m  ·  Luxus, Crew-Trennung, mehrere Decks',
+  sport_cruiser: '10 – 20 m  ·  Schnelle Rümpfe, Sonnendeck, Wochenendtörns',
+  trawler: '12 – 25 m  ·  Verdränger, große Reichweite, seetüchtig',
+  explorer: '20 – 40 m  ·  Langfahrt, Autarkie, robuste Ausrüstung',
   superyacht: '30 m+  ·  Architektonisches Design, volle Privatheit',
 }
 

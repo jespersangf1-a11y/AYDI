@@ -1,5 +1,5 @@
 # backend/app/core/config.py
-from pydantic import model_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # The built-in fallback signing key. It is intentionally recognisable so that
@@ -9,19 +9,31 @@ DEFAULT_SECRET_KEY = "aydi-secret-key-change-in-production"
 
 
 class Settings(BaseSettings):
-    # "development" | "production" — production activates hard security guards.
+    # "development" | "production" — production activates hard security guards,
+    # closes the interactive docs and tightens the CSP.
     ENVIRONMENT: str = "development"
     DATABASE_URL: str = "sqlite+aiosqlite:///./aydi.db"
-    CORS_ORIGINS: list[str] = ["http://localhost:5173"]
+    # Origins allowed to call the API with credentials. Keep this to the exact
+    # origins that actually serve the app — "*" is rejected outright below,
+    # because combining it with allow_credentials is both forbidden by the
+    # CORS spec and a genuine cross-site risk.
+    CORS_ORIGINS: list[str] = [
+        "http://localhost:5173",
+        "http://localhost:4173",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:4173",
+    ]
+    # None → docs follow ENVIRONMENT (open in development, closed otherwise).
+    DOCS_ENABLED: bool | None = None
     ANTHROPIC_API_KEY: str | None = None
-    # claude-sonnet-4-20250514 war zurueckgezogen: Die API antwortete mit
+    # claude-sonnet-4-20250514 war zurückgezogen: Die API antwortete mit
     # 404 not_found_error, die visuelle Analyse schlug dadurch bei JEDEM
     # Bild fehl. Aktuelle Modell-IDs tragen kein Datumssuffix.
     ANTHROPIC_MODEL: str = "claude-opus-5"
     # Gemessen: Ein Bild mit dem Standardprompt braucht auf claude-opus-5 rund
     # 57 s (4.970 Eingabe-, 3.363 Ausgabe-Tokens). Mit 30 s lief JEDER Aufruf
-    # in den Timeout. 120 s lassen Luft fuer groessere Bilder und Lastspitzen,
-    # ohne einen haengenden Aufruf unbegrenzt offen zu halten.
+    # in den Timeout. 120 s lassen Luft für größere Bilder und Lastspitzen,
+    # ohne einen hängenden Aufruf unbegrenzt offen zu halten.
     VISUAL_ANALYSIS_TIMEOUT_SEC: int = 120
     DATABASE_POOL_SIZE: int = 10
     LOG_LEVEL: str = "INFO"
@@ -48,6 +60,27 @@ class Settings(BaseSettings):
     def uses_default_secret(self) -> bool:
         return self.SECRET_KEY == DEFAULT_SECRET_KEY
 
+    @property
+    def is_production(self) -> bool:
+        return self.ENVIRONMENT.lower() not in ("development", "dev", "local", "test")
+
+    @property
+    def docs_public(self) -> bool:
+        """Whether /docs, /redoc and /openapi.json are served at all."""
+        if self.DOCS_ENABLED is not None:
+            return self.DOCS_ENABLED
+        return not self.is_production
+
+    @field_validator("CORS_ORIGINS")
+    @classmethod
+    def reject_wildcard_origin(cls, origins: list[str]) -> list[str]:
+        if "*" in origins:
+            raise ValueError(
+                "CORS_ORIGINS darf kein '*' enthalten: Die API sendet Anmeldedaten, "
+                "und ein Platzhalter würde jeder fremden Seite Zugriff geben."
+            )
+        return origins
+
     @model_validator(mode="after")
     def _enforce_production_security(self) -> "Settings":
         """Refuse to boot with insecure defaults when ENVIRONMENT=production.
@@ -66,8 +99,8 @@ class Settings(BaseSettings):
                 problems.append("COOKIE_SECURE must be True in production (HTTPS-only cookies).")
             if problems:
                 raise ValueError(
-                    "Insecure configuration for ENVIRONMENT=production:\n  - "
-                    + "\n  - ".join(problems)
+                    "Insecure configuration for ENVIRONMENT=production:" + chr(10) + "  - "
+                    + (chr(10) + "  - ").join(problems)
                 )
         return self
 

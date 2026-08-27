@@ -269,8 +269,12 @@ def test_competitor_mutation_guard(ctx):
     res = client.patch(
         f"/api/v1/competitors/{competitor_id}", json={"notes": "Sabotage"}
     )
-    assert res.status_code == 403, res.text
-    assert client.delete(f"/api/v1/competitors/{competitor_id}").status_code == 403
+    # 404 statt 403 fuer einen FREMDEN Eintrag: ein 403 wuerde bestaetigen,
+    # dass es die Kennung gibt, und damit verraten, welche Eintraege andere
+    # Konten fuehren. Der gemeinsame Referenzbestand (kein Besitzer) ist
+    # dagegen ohnehin oeffentlich sichtbar und antwortet weiter mit 403.
+    assert res.status_code == 404, res.text
+    assert client.delete(f"/api/v1/competitors/{competitor_id}").status_code == 404
 
     _as(current, ids, "owner")
     res = client.patch(

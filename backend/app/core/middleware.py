@@ -74,6 +74,13 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
                     "client_ip": _client_ip(request),
                 },
             )
+            if duration_ms > 5000:
+                logger.warning(
+                    "Slow request: %s %s took %.0fms",
+                    request.method,
+                    request.url.path,
+                    duration_ms,
+                )
             return response
         except Exception:
             duration_ms = (time.perf_counter() - start) * 1000.0
@@ -447,25 +454,60 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     sich selbst aussperren.
     """
 
+    #: Endpunkte, die HTML ausliefern und deshalb eine andere CSP brauchen.
+    _HTML_PATHS = ("/docs", "/redoc")
+
     STATIC_HEADERS = {
         "X-Content-Type-Options": "nosniff",
         "X-Frame-Options": "DENY",
         "Referrer-Policy": "no-referrer",
-        # Die API liefert ausschliesslich Daten, kein aktives Markup.
-        "Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'",
+        # Die API liefert ausschliesslich Daten, kein aktives Markup. base-uri
+        # und form-action schliessen zusaetzlich aus, dass eingeschleustes
+        # Markup das Basis-Ziel umbiegt oder ein Formular nach aussen sendet.
+        "Content-Security-Policy": (
+            "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; "
+            "form-action 'none'"
+        ),
         "Cross-Origin-Resource-Policy": "same-site",
+        # Die API braucht weder Kamera noch Mikrofon noch Standort.
+        "Permissions-Policy": (
+            "accelerometer=(), camera=(), geolocation=(), gyroscope=(), "
+            "microphone=(), payment=(), usb=()"
+        ),
+        "X-Permitted-Cross-Domain-Policies": "none",
+        "Cross-Origin-Opener-Policy": "same-origin",
     }
+
+    #: CSP fuer die interaktive Dokumentation. Swagger UI und ReDoc laden ihre
+    #: Bausteine von einem CDN; mit ``default-src 'none'`` blieben die Seiten
+    #: leer. Sie sind ausserhalb der Entwicklung ohnehin abgeschaltet
+    #: (``settings.docs_public``).
+    _DOCS_CSP = (
+        "default-src 'self'; img-src 'self' data: https:; "
+        "script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; "
+        "style-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; "
+        "font-src 'self' https://cdn.jsdelivr.net data:; "
+        "frame-ancestors 'none'; base-uri 'none'"
+    )
 
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response:
         response = await call_next(request)
+        # Die Dokumentationsseiten zuerst: ``setdefault`` unten laesst den hier
+        # gesetzten Wert dann stehen.
+        if request.url.path.startswith(self._HTML_PATHS):
+            response.headers.setdefault("Content-Security-Policy", self._DOCS_CSP)
         for header, value in self.STATIC_HEADERS.items():
             response.headers.setdefault(header, value)
         if getattr(settings, "COOKIE_SECURE", False):
             response.headers.setdefault(
                 "Strict-Transport-Security", "max-age=31536000; includeSubDomains"
             )
+        # Zuweisung statt setdefault: uvicorn schreibt seine eigene Kennung an
+        # der Transportschicht. Es laeuft deshalb mit --no-server-header
+        # (siehe docker/entrypoint.sh), damit dieser Wert der einzige bleibt.
+        response.headers["Server"] = "AYDI"
         return response
 
 

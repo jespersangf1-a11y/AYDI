@@ -20,10 +20,54 @@ export default function ProjectCreate({ onCreated, onCancel }: ProjectCreateProp
   const [layoutFile, setLayoutFile] = useState<File | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+
+  // Eigene Pruefung statt der Browser-Sprechblase: das leere Formular gab
+  // vorher keinerlei sichtbaren Hinweis darauf, welche Angaben fehlen.
+  // Die Regeln entsprechen denen des Servers (Laenge > 0, Breite < Laenge).
+  const validate = (): Record<string, string> => {
+    const errors: Record<string, string> = {}
+
+    if (!name.trim()) {
+      errors.name = 'Bitte einen Projektnamen angeben.'
+    }
+
+    const length = parseFloat(lengthM)
+    if (!lengthM.trim()) {
+      errors.lengthM = 'Bitte die Länge in Metern angeben.'
+    } else if (!Number.isFinite(length) || length <= 0) {
+      errors.lengthM = 'Die Länge muss eine Zahl größer als 0 sein.'
+    } else if (length > 200) {
+      errors.lengthM = 'Die Länge muss kleiner als 200 m sein.'
+    }
+
+    const beam = parseFloat(beamM)
+    if (!beamM.trim()) {
+      errors.beamM = 'Bitte die Breite in Metern angeben.'
+    } else if (!Number.isFinite(beam) || beam <= 0) {
+      errors.beamM = 'Die Breite muss eine Zahl größer als 0 sein.'
+    } else if (Number.isFinite(length) && beam >= length) {
+      errors.beamM = 'Die Breite muss kleiner als die Länge sein.'
+    }
+
+    return errors
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
+
+    const errors = validate()
+    setFieldErrors(errors)
+    if (Object.keys(errors).length > 0) {
+      setError(
+        Object.keys(errors).length === 1
+          ? 'Eine Pflichtangabe fehlt oder ist ungültig.'
+          : `${Object.keys(errors).length} Pflichtangaben fehlen oder sind ungültig.`
+      )
+      return
+    }
+
     setSubmitting(true)
 
     try {
@@ -76,7 +120,7 @@ export default function ProjectCreate({ onCreated, onCancel }: ProjectCreateProp
 
       <div className="px-10 py-12">
         <div className="max-w-2xl">
-          <form onSubmit={handleSubmit} className="space-y-8">
+          <form onSubmit={handleSubmit} className="space-y-8" noValidate>
             {/* Project Name */}
             <div>
               <label className="label-premium block mb-3">Projektname *</label>
@@ -85,9 +129,18 @@ export default function ProjectCreate({ onCreated, onCancel }: ProjectCreateProp
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                className="w-full card-premium px-6 py-4 text-navy-900 placeholder:text-navy-600 focus:border-ocean-400 focus:outline-none transition-colors duration-200"
+                aria-invalid={Boolean(fieldErrors.name)}
+                aria-describedby={fieldErrors.name ? 'error-name' : undefined}
+                className={`w-full card-premium px-6 py-4 text-navy-900 placeholder:text-navy-600 focus:outline-none transition-colors duration-200 ${
+                  fieldErrors.name ? 'border-red-400 focus:border-red-500' : 'focus:border-ocean-400'
+                }`}
                 placeholder="z.B. Meridian 40 Cruiser"
               />
+              {fieldErrors.name && (
+                <p id="error-name" role="alert" className="text-red-600 text-sm mt-2">
+                  {fieldErrors.name}
+                </p>
+              )}
             </div>
 
             {/* Description */}
@@ -134,9 +187,18 @@ export default function ProjectCreate({ onCreated, onCancel }: ProjectCreateProp
                   value={lengthM}
                   onChange={(e) => setLengthM(e.target.value)}
                   required
-                  className="w-full card-premium px-6 py-4 text-navy-900 placeholder:text-navy-600 focus:border-ocean-400 focus:outline-none transition-colors duration-200"
+                  aria-invalid={Boolean(fieldErrors.lengthM)}
+                  aria-describedby={fieldErrors.lengthM ? 'error-length' : undefined}
+                  className={`w-full card-premium px-6 py-4 text-navy-900 placeholder:text-navy-600 focus:outline-none transition-colors duration-200 ${
+                    fieldErrors.lengthM ? 'border-red-400 focus:border-red-500' : 'focus:border-ocean-400'
+                  }`}
                   placeholder="z.B. 12.5"
                 />
+                {fieldErrors.lengthM && (
+                  <p id="error-length" role="alert" className="text-red-600 text-sm mt-2">
+                    {fieldErrors.lengthM}
+                  </p>
+                )}
               </div>
               <div>
                 <label className="label-premium block mb-3">Breite (m) *</label>
@@ -147,9 +209,18 @@ export default function ProjectCreate({ onCreated, onCancel }: ProjectCreateProp
                   value={beamM}
                   onChange={(e) => setBeamM(e.target.value)}
                   required
-                  className="w-full card-premium px-6 py-4 text-navy-900 placeholder:text-navy-600 focus:border-ocean-400 focus:outline-none transition-colors duration-200"
+                  aria-invalid={Boolean(fieldErrors.beamM)}
+                  aria-describedby={fieldErrors.beamM ? 'error-beam' : undefined}
+                  className={`w-full card-premium px-6 py-4 text-navy-900 placeholder:text-navy-600 focus:outline-none transition-colors duration-200 ${
+                    fieldErrors.beamM ? 'border-red-400 focus:border-red-500' : 'focus:border-ocean-400'
+                  }`}
                   placeholder="z.B. 4.2"
                 />
+                {fieldErrors.beamM && (
+                  <p id="error-beam" role="alert" className="text-red-600 text-sm mt-2">
+                    {fieldErrors.beamM}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -193,7 +264,7 @@ export default function ProjectCreate({ onCreated, onCancel }: ProjectCreateProp
 
             {/* Error Message */}
             {error && (
-              <div className="card-premium bg-red-50 border-red-300 px-6 py-4 text-red-700 text-sm">
+              <div role="alert" className="card-premium bg-red-50 border-red-300 px-6 py-4 text-red-700 text-sm">
                 {error}
               </div>
             )}

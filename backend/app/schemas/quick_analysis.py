@@ -5,6 +5,7 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from app.core.boat_classes import BOAT_CLASSES, is_known
 from app.schemas.schemas import FiniteNumbersMixin, require_finite
 
 # ---------------------------------------------------------------------------
@@ -97,6 +98,22 @@ class PublicSpecs(FiniteNumbersMixin):
         generischen ge/le-Meldungen von Pydantic greift.
         """
         return require_finite(value, info.field_name)
+
+    @field_validator('boat_class')
+    @classmethod
+    def boat_class_must_be_known(cls, boat_class: str) -> str:
+        """Reject unknown classes instead of silently scoring them 50.0.
+
+        Previously any string was accepted: the analysis modules correctly
+        refused with ``available: false``, but the route turned that refusal
+        back into an invented result and echoed the raw input into German
+        prose. Refusing at the edge removes both problems at once.
+        """
+        if not is_known(boat_class):
+            raise ValueError(
+                "Unbekannte Bootsklasse. Zulässig sind: " + ", ".join(BOAT_CLASSES)
+            )
+        return boat_class
 
     @field_validator('beam_m')
     @classmethod

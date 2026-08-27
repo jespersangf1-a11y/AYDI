@@ -28,7 +28,14 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["images"])
 
-UPLOAD_DIR = Path(__file__).resolve().parents[3] / "uploads" / "images"
+# Respektiert UPLOAD_DIR aus den Einstellungen (z.B. /tmp/uploads auf Hosts
+# mit schreibgeschuetztem Anwendungsverzeichnis); sonst wie bisher neben dem
+# Code fuer die lokale Entwicklung.
+UPLOAD_DIR = (
+    Path(settings.UPLOAD_DIR) / "images"
+    if Path(settings.UPLOAD_DIR).is_absolute()
+    else Path(__file__).resolve().parents[3] / settings.UPLOAD_DIR / "images"
+)
 # heic dropped: unsupported downstream (analyzer MEDIA_TYPE_MAP + Claude Vision).
 ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "webp"}
 # Aus der Konfiguration statt fest verdrahtet: MAX_IMAGE_SIZE_MB war als

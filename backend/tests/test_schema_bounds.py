@@ -237,13 +237,27 @@ def test_superyacht_specs_still_accepted():
 
 
 def test_large_but_realistic_layout_still_accepted():
+    # Eindeutige Zonennamen, und jeder Durchgang verbindet Zonen dieses
+    # Layouts: beides seit dem Zusammenfuehren Pflicht. Ein realistisches
+    # Layout erfuellt es ohnehin — ZoneMaterial, StructuralItem und CostItem
+    # verweisen auf Zonen ueber den NAMEN, doppelte Namen waeren dort nicht
+    # aufloesbar.
+    zonen = [
+        {"name": f"Z{i}", "zone_type": "cabin", "polygon": TRIANGLE}
+        for i in range(300)
+    ]
+    durchgaenge = [
+        {"from_zone": f"Z{i % 300}", "to_zone": f"Z{(i + 1) % 300}", "width_mm": 700}
+        for i in range(1500)
+    ]
     layout = LayoutCreate(
         name="Superyacht Hauptdeck",
-        zones=[MINI_ZONE] * 300,
-        passages=[MINI_PASSAGE] * 1500,
+        zones=zonen,
+        passages=durchgaenge,
         deck_height_mm=2400,
     )
     assert len(layout.zones) == 300
+    assert len(layout.passages) == 1500
 
 
 def test_fine_cad_contour_at_superyacht_coordinates_still_accepted():

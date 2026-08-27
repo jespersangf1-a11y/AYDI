@@ -2,10 +2,16 @@
 import logging
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.ownership import (
+    ensure_readable,
+    ensure_writable,
+    owner_kwargs,
+    visible_to,
+)
 from app.core.permissions import get_accessible_project, get_current_user
 from app.db.database import get_db
 from app.models.models import ServiceReport, User
@@ -32,7 +38,6 @@ async def list_service_reports(
     # service reports.
     query = (
         select(ServiceReport)
-        .where(ServiceReport.user_id == user.id)
         .order_by(ServiceReport.created_at.desc())
     )
     if category:
@@ -43,6 +48,9 @@ async def list_service_reports(
         query = query.where(ServiceReport.boat_class == boat_class)
     if report_type:
         query = query.where(ServiceReport.report_type == report_type)
+    # Der mitgelieferte Berichtsbestand plus die eigenen Berichte. Ein
+    # Servicebericht einer fremden Werft ist damit nicht mehr abrufbar.
+    query = visible_to(query, ServiceReport, user)
     query = query.limit(limit).offset(offset)
     result = await db.execute(query)
     return result.scalars().all()
@@ -61,25 +69,12 @@ async def create_service_report(
         await get_accessible_project(data.project_id, user, db, min_role="editor")
 
     # Owner is always the authenticated caller — never client-supplied.
-    report = ServiceReport(**data.model_dump(), user_id=user.id)
+    report = ServiceReport(**data.model_dump(), **owner_kwargs(ServiceReport, user))
     db.add(report)
     await db.commit()
     await db.refresh(report)
     logger.info("User %s created service report %s", user.id, report.id)
     return report
-
-
-async def _get_owned_report(report_id: UUID, user: User, db: AsyncSession) -> ServiceReport:
-    """Fetch a report owned by ``user`` or raise 404 (no existence leak)."""
-    result = await db.execute(
-        select(ServiceReport).where(
-            ServiceReport.id == report_id,
-            ServiceReport.user_id == user.id,
-        )
-    )
-    report = result.scalar_one_or_none()
-    if not report:
-        raise HTTPException(status_code=404, detail="Servicebericht nicht gefunden")
     return report
 
 
@@ -89,7 +84,8 @@ async def get_service_report(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    return await _get_owned_report(report_id, user, db)
+    result = await db.execute(select(ServiceReport).where(ServiceReport.id == report_id))
+    return ensure_readable(result.scalar_one_or_none(), user, name="Servicebericht")
 
 
 @router.patch("/service-reports/{report_id}", response_model=ServiceReportResponse)
@@ -99,7 +95,8 @@ async def update_service_report(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    report = await _get_owned_report(report_id, user, db)
+    result = await db.execute(select(ServiceReport).where(ServiceReport.id == report_id))
+    report = ensure_writable(result.scalar_one_or_none(), user, name="Servicebericht")
 
     update_data = data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
@@ -117,7 +114,8 @@ async def delete_service_report(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    report = await _get_owned_report(report_id, user, db)
+    result = await db.execute(select(ServiceReport).where(ServiceReport.id == report_id))
+    report = ensure_writable(result.scalar_one_or_none(), user, name="Servicebericht")
     await db.delete(report)
     await db.commit()
     logger.info("User %s deleted service report %s", user.id, report_id)
