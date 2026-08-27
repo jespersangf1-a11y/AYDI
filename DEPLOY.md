@@ -70,18 +70,23 @@ Gesamt: 0 €/Monat. Cold-Start ist der einzige spürbare Trade-off — die erst
 7. Backend-URL notieren. Render vergibt `https://aydi-backend.onrender.com`,
    **hängt aber eine Kennung an, wenn der Name schon vergeben ist.** Weicht sie
    ab, muss sie an zwei Stellen nachgetragen werden:
-   `frontend/vercel.json` (Rewrite-Ziel für `/api/*`) und
+   `vercel.json` im Repo-Wurzelverzeichnis (Rewrite-Ziel für `/api/*`) und
    `frontend/public/_redirects` (Cloudflare-Pages-Variante).
 
 ---
 
 ## Schritt 3 — Vercel (Frontend)
 
-**Das Projekt `aydi` existiert bereits** und ist mit dem Repo verbunden — es
-muss also nicht neu importiert, sondern eine Einstellung korrigiert werden.
-Ohne sie baut Vercel im Repo-Wurzelverzeichnis, findet dort keine
-`package.json`, erzeugt ein leeres Ergebnis und liefert auf **jedem** Pfad
-`404: NOT_FOUND`. Erkennbar im Build-Log an:
+Es ist **keine Einstellung im Dashboard nötig.** `vercel.json` liegt im
+Repo-Wurzelverzeichnis und bringt Install-, Build- und Output-Pfad mit; ein
+Import des Repos baut damit von selbst richtig.
+
+**Warum nicht unter `frontend/`:** Vercel liest `vercel.json` ausschließlich
+aus dem konfigurierten *Root Directory*. Stand das auf dem Vorgabewert
+(Repo-Wurzel), wurde `frontend/vercel.json` nie gelesen — dort gab es weder
+`package.json` noch Konfiguration, der Build lief in einer Sekunde durch,
+erzeugte nichts, und **jeder** Pfad antwortete mit `404: NOT_FOUND`. Genau so
+lief dieses Projekt von April bis August. Erkennungsmerkmal im Build-Log:
 
 ```
 Running "vercel build"
@@ -89,20 +94,18 @@ Build Completed in /vercel/output [1s]
 Skipping cache upload because no files were prepared
 ```
 
-Kein `npm ci`, kein `vite build`, keine Dateien — genau das Bild.
+Kein `npm ci`, kein `vite build`, keine Dateien. Ein korrekter Build zeigt
+stattdessen `npm ci`, `vite build` und `dist/index.html`.
 
-1. Vercel → Projekt `aydi` → **Settings → Build & Deployment**
-2. **Root Directory** auf `frontend` setzen und speichern
-3. **Deployments → ⋯ → Redeploy** (die Einstellung wirkt erst beim nächsten Build)
-4. Build-Command, Output-Dir und Install-Command kommen aus
-   `frontend/vercel.json` — nichts ändern. Diese Datei wird überhaupt erst
-   gelesen, wenn Root Directory stimmt.
-5. Im Build-Log muss jetzt `npm ci`, `vite build` und `dist/index.html`
-   auftauchen.
-6. Optional: Custom Domain unter Settings → Domains
+1. Projekt mit dem Repo verbinden (bei `aydi` bereits geschehen)
+2. **Root Directory unverändert lassen** — also Repo-Wurzel
+3. Deploy; Build-Command und Output-Dir kommen aus `vercel.json`
+4. Optional: Custom Domain unter Settings → Domains
 
-Bei einem **neuen** Projekt lässt sich Root Directory direkt beim Import
-setzen; nachträglich geht es nur über Settings.
+Es gibt genau **eine** `vercel.json`. Wer lieber mit `Root Directory =
+frontend` arbeitet, verschiebt sie nach `frontend/` und nimmt die
+`cd frontend &&`-Präfixe wieder heraus — beides gleichzeitig ergäbe zwei
+Wahrheiten über das Rewrite-Ziel.
 
 **Alternative — Cloudflare Pages:**
 - https://dash.cloudflare.com → Pages → Create application → AYDI-Repo

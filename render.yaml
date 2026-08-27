@@ -27,7 +27,7 @@ services:
       # CORS — die TATSAECHLICHEN Vercel-Domains des Projekts. Hier standen
       # aydi.vercel.app und aydi.pages.dev; beide existieren nicht.
       #
-      # Auf dem normalen Weg greift CORS gar nicht: frontend/vercel.json
+      # Auf dem normalen Weg greift CORS gar nicht: vercel.json
       # schreibt /api/* serverseitig auf diesen Dienst um, der Browser sieht
       # also nur die Vercel-Domain und stellt keine fremde Anfrage. Die Liste
       # zaehlt trotzdem — fuer jeden direkten Zugriff auf das Backend, und
