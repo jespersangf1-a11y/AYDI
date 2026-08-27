@@ -71,7 +71,7 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
                     "path": request.url.path,
                     "status": response.status_code,
                     "duration_ms": round(duration_ms, 2),
-                    "client_ip": _client_ip(request),
+                    "client_ip": client_ip(request),
                 },
             )
             if duration_ms > 5000:
@@ -96,10 +96,22 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
             raise
 
 
-def _client_ip(request: Request) -> str:
-    # Only trust X-Forwarded-For behind a configured trusted proxy; otherwise it
-    # is attacker-controlled and could be spoofed to bypass rate limits or grow
-    # the limiter's memory unbounded.
+def client_ip(request: Request | None) -> str:
+    """Die Absenderadresse einer Anfrage — die EINE Fassung.
+
+    Only trust X-Forwarded-For behind a configured trusted proxy; otherwise it
+    is attacker-controlled and could be spoofed to bypass rate limits or grow
+    the limiter's memory unbounded.
+
+    Es gab diese Funktion nach dem Zusammenfuehren zweimal: hier mit der
+    Pruefung auf TRUST_PROXY_HEADERS, und in routes/auth.py ohne sie. Die
+    zweite Fassung entschied ueber den Sperrzaehler der Anmeldung — ein
+    beliebiger X-Forwarded-For-Wert verschaffte damit pro Versuch einen
+    frischen Zaehler, und die Sperre nach fuenf Fehlversuchen je IP lief ins
+    Leere. Beide Aufrufer nutzen jetzt diese Fassung.
+    """
+    if request is None:
+        return "unknown"
     if settings.TRUST_PROXY_HEADERS:
         forwarded = request.headers.get("x-forwarded-for")
         if forwarded:
@@ -378,13 +390,13 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         if request.url.path in ("/health", "/health/live", "/health/ready", "/docs", "/openapi.json"):
             return await call_next(request)
 
-        client_ip = _client_ip(request)
+        absender = client_ip(request)
         route_prefix = self._match_route(request.url.path)
         max_requests, window = self._limit_for(route_prefix)
 
-        allowed = await self._check_rate(client_ip, route_prefix, max_requests, window)
+        allowed = await self._check_rate(absender, route_prefix, max_requests, window)
         if not allowed:
-            logger.warning("Rate limit exceeded: %s on %s", client_ip, route_prefix)
+            logger.warning("Rate limit exceeded: %s on %s", absender, route_prefix)
             return JSONResponse(
                 status_code=429,
                 content={

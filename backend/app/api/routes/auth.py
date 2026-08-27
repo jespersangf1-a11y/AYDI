@@ -34,6 +34,7 @@ from app.core.auth import (
     waste_password_time,
 )
 from app.core.config import settings
+from app.core.middleware import client_ip
 from app.core.permissions import (
     ACCESS_COOKIE_NAME,
     REFRESH_COOKIE_NAME,
@@ -124,17 +125,6 @@ async def _clear_failures(keys: list[tuple[str, int]]) -> None:
     async with _lockout_guard:
         for key, _threshold in keys:
             _failed_logins.pop(key, None)
-
-
-def _client_ip(request: Request | None) -> str:
-    if request is None:
-        return "unknown"
-    forwarded = request.headers.get("x-forwarded-for")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
-    if request.client:
-        return request.client.host
-    return "unknown"
 
 
 class LoginRequest(BaseModel):
@@ -253,7 +243,7 @@ async def login(
     response: Response,
     db: AsyncSession = Depends(get_db),
 ):
-    keys = _lockout_keys(data.email, _client_ip(request))
+    keys = _lockout_keys(data.email, client_ip(request))
 
     locked_for = await _seconds_until_unlocked(keys)
     if locked_for:
