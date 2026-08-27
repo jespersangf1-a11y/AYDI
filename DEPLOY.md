@@ -17,16 +17,35 @@ Gesamt: 0 €/Monat. Cold-Start ist der einzige spürbare Trade-off — die erst
 1. https://neon.tech → Sign up (GitHub oder Google reicht)
 2. New Project → Name `aydi`, Region `Frankfurt (eu-central-1)`, Postgres 16
 3. Im Dashboard auf das Projekt klicken → **Connection Details**
-4. **Wichtig:** wähle `Connection string` und schalte auf den **Pooled connection**
-5. Kopier den String, ersetz das Schema in der URL:
+4. **Wichtig:** `Connection string` wählen und die **Direktverbindung** nehmen —
+   also die Variante **ohne** `-pooler` im Hostnamen.
+
+   > Hier stand früher „Pooled connection". Das ist für diesen Stack falsch:
+   > Neons Pooler ist PgBouncer im Transaction-Mode, asyncpg legt aber
+   > Prepared Statements an und hält sie über die Transaktion hinaus. Die
+   > Kombination bricht im Betrieb mit
+   > `prepared statement "__asyncpg_stmt_1__" already exists` ab — nicht
+   > beim Start, sondern sporadisch unter Last, was die Suche unangenehm
+   > macht. `app/db/database.py` setzt bewusst keine `connect_args`, also
+   > ist der Statement-Cache aktiv.
+   >
+   > Die Direktverbindung ist hier ohnehin ausreichend: ein Render-Dienst mit
+   > `DATABASE_POOL_SIZE=10` hält zehn Verbindungen, Neon Free erlaubt ein
+   > Vielfaches. Wer den Pooler doch braucht, hängt zusätzlich
+   > `&prepared_statement_cache_size=0` an — dann entfällt der Cache.
+
+5. Kopier den String und pass zwei Dinge an:
    ```
-   postgres://user:pass@ep-xxx.eu-central-1.aws.neon.tech/aydi
+   postgresql://user:pass@ep-xxx.eu-central-1.aws.neon.tech/aydi?sslmode=require
    ```
    wird zu
    ```
    postgresql+asyncpg://user:pass@ep-xxx.eu-central-1.aws.neon.tech/aydi?ssl=require
    ```
-   (Schema `postgres://` → `postgresql+asyncpg://`, `?ssl=require` anhängen.)
+   * Schema `postgres://` bzw. `postgresql://` → **`postgresql+asyncpg://`**
+     (ohne `+asyncpg` nimmt SQLAlchemy den synchronen Treiber und der Start
+     bricht ab)
+   * `?sslmode=require` → **`?ssl=require`** (`sslmode` versteht asyncpg nicht)
 
 6. Diesen Connection-String später in Render als `DATABASE_URL` setzen.
 
