@@ -7,10 +7,10 @@ All user-facing strings are in German.
 import logging
 import math
 from collections import deque
-from app.core.zone_types import normalisiere_zonen, warnung_unbekannte_typen
-from app.services.analysis.scoring import weighted_overall, hinweis_teilanalysen
 
-from app.core.validation import known_passage_widths, passage_width
+from app.core.validation import passage_width
+from app.core.zone_types import normalisiere_zonen, warnung_unbekannte_typen
+from app.services.analysis.scoring import hinweis_teilanalysen, weighted_overall
 
 logger = logging.getLogger(__name__)
 
@@ -24,10 +24,10 @@ except ImportError:
 
 try:
     from app.services.knowledge.sanitary_interior_safety_deep import (
-        STANDARDS_DATABASE,
         FIRE_SAFETY_DATABASE,
-        STABILITY_DATABASE,
         GAS_INSTALLATION_DATABASE,
+        STABILITY_DATABASE,
+        STANDARDS_DATABASE,
     )
 except ImportError:
     STANDARDS_DATABASE = {}
@@ -38,8 +38,10 @@ except ImportError:
 # Import central knowledge retrieval for markdown compliance knowledge
 try:
     from app.services.knowledge.knowledge_retrieval import (
-        get_knowledge_for_compliance as _get_md_compliance_knowledge,
         MARKDOWN_LOADER_AVAILABLE as _MD_AVAILABLE,
+    )
+    from app.services.knowledge.knowledge_retrieval import (
+        get_knowledge_for_compliance as _get_md_compliance_knowledge,
     )
 except ImportError:
     _MD_AVAILABLE = False

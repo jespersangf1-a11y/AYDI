@@ -7,9 +7,9 @@ All user-facing strings are in German.
 """
 import logging
 import math
-from app.core.zone_types import normalisiere_zonen, warnung_unbekannte_typen
-from app.services.analysis.scoring import weighted_overall, hinweis_teilanalysen
 
+from app.core.zone_types import normalisiere_zonen, warnung_unbekannte_typen
+from app.services.analysis.scoring import hinweis_teilanalysen, weighted_overall
 
 logger = logging.getLogger(__name__)
 
@@ -50,8 +50,10 @@ except ImportError:
 # Import central knowledge retrieval for markdown knowledge integration
 try:
     from app.services.knowledge.knowledge_retrieval import (
-        get_knowledge_for_structural_analysis as _get_md_structural_knowledge,
         MARKDOWN_LOADER_AVAILABLE as _MD_AVAILABLE,
+    )
+    from app.services.knowledge.knowledge_retrieval import (
+        get_knowledge_for_structural_analysis as _get_md_structural_knowledge,
     )
 except ImportError:
     _MD_AVAILABLE = False

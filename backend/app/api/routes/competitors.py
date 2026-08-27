@@ -14,7 +14,7 @@ from app.core.ownership import (
 )
 from app.core.permissions import get_current_user
 from app.db.database import get_db
-from app.models.models import BrandReferenceModel, CompetitorModel, OrganizationMember, User
+from app.models.models import BrandReferenceModel, CompetitorModel, User
 from app.schemas.competitors import (
     BrandReferenceCreate,
     BrandReferenceResponse,

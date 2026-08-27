@@ -4,13 +4,13 @@ Run with: PYTHONPATH=. python -m app.db.seed
 """
 import asyncio
 import logging
+import secrets
 
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import hash_password
 from app.db.database import async_session, engine
-from app.models.models import Base, Layout, Project, Material, CompetitorModel, User
+from app.models.models import Base, CompetitorModel, Layout, Material, Project, User
 
 logger = logging.getLogger(__name__)
 
@@ -1710,9 +1710,6 @@ async def seed():
         # FRESH database crashed in the seed (IntegrityError) before startup.
         # The demo user gets an unguessable random password — it is a data
         # container, not a login account.
-        import secrets
-        from app.core.auth import hash_password
-
         result = await session.execute(
             select(User).where(User.email == "demo@aydi.example")
         )
@@ -1756,7 +1753,7 @@ async def seed():
 
 async def seed_community_data(db):
     """Seed realistic community reports and run aggregation."""
-    from app.models.models import CommunityReport, CommunityPattern
+    from app.models.models import CommunityPattern, CommunityReport
     from app.services.community.aggregator import aggregate_reports_to_patterns
 
     # Check if data already exists

@@ -1,7 +1,6 @@
 import asyncio
 import json
 import logging
-import os
 import uuid as uuid_mod
 from pathlib import Path
 from uuid import UUID
@@ -16,9 +15,7 @@ from app.core.subscription import Feature, has_feature
 from app.db.database import get_db
 from app.models.models import ImageUpload, Project, QuickAnalysisResult, User
 from app.schemas.images import (
-    BatchAnalysisRequest,
     BatchAnalysisResponse,
-    ImageAnalysisResponse,
     ImageType,
     ImageUploadResponse,
     VisualConfidence,

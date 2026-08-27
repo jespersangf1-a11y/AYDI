@@ -12,19 +12,19 @@ from app.core.permissions import get_optional_user
 from app.db.database import get_db
 from app.models.models import QuickAnalysisResult, User
 from app.schemas.quick_analysis import (
+    BuyerInsightsResponse,
     PublicSpecs,
     QuickAnalysisResponse,
-    BuyerInsightsResponse,
 )
-from app.services.inference.layout_estimator import estimate_layout_from_specs
-from app.services.knowledge.buyer_insights import get_buyer_insights
-from app.services.community.engine import find_relevant_patterns
+from app.services.analysis.emotional import run_emotional_analysis
 
 # Import available analysis modules
 from app.services.analysis.ergonomics import run_ergonomics_analysis
-from app.services.analysis.volume_storage import run_volume_storage_analysis
-from app.services.analysis.emotional import run_emotional_analysis
 from app.services.analysis.market import run_market_analysis
+from app.services.analysis.volume_storage import run_volume_storage_analysis
+from app.services.community.engine import find_relevant_patterns
+from app.services.inference.layout_estimator import estimate_layout_from_specs
+from app.services.knowledge.buyer_insights import get_buyer_insights
 
 logger = logging.getLogger(__name__)
 
@@ -113,9 +113,6 @@ def _extract_key_findings(warnings: list[dict], max_findings: int = 5) -> list[d
             "finding": w.get("message", ""),
             "severity": w.get("severity", "info"),
             "confidence": w.get("confidence", "estimated"),
-            "suggestion": w.get("suggestion"),
-            "confidence": w.get("confidence", "estimated"),
-            "location": w.get("location"),
         }
         for src, dst in (
             ("suggestion", "suggestion"),

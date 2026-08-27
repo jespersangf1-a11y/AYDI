@@ -8,8 +8,8 @@ Pure function module — no database access.
 All user-facing strings are in German.
 """
 import logging
-from app.services.analysis.scoring import weighted_overall, hinweis_teilanalysen
 
+from app.services.analysis.scoring import hinweis_teilanalysen, weighted_overall
 
 logger = logging.getLogger(__name__)
 
@@ -34,9 +34,9 @@ def _knowledge_lookup_hint(source: str) -> str:
 try:
     from app.services.knowledge.aging_lifecycle_manufacturers_deep import (
         DEGRADATION_CYCLES_DATABASE,
-        MATERIAL_LIFESPAN_DATABASE,
-        MANUFACTURER_DATABASE_SAIL,
         MANUFACTURER_DATABASE_MOTOR,
+        MANUFACTURER_DATABASE_SAIL,
+        MATERIAL_LIFESPAN_DATABASE,
     )
 except ImportError:
     DEGRADATION_CYCLES_DATABASE = {}
@@ -54,8 +54,10 @@ except ImportError:
 # Import central knowledge retrieval for markdown knowledge integration
 try:
     from app.services.knowledge.knowledge_retrieval import (
-        get_knowledge_for_service_patterns as _get_md_service_knowledge,
         MARKDOWN_LOADER_AVAILABLE as _MD_AVAILABLE,
+    )
+    from app.services.knowledge.knowledge_retrieval import (
+        get_knowledge_for_service_patterns as _get_md_service_knowledge,
     )
 except ImportError:
     _MD_AVAILABLE = False

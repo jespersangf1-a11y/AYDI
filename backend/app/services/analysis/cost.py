@@ -5,8 +5,8 @@ and quantifies cost risk from uncertain estimates. Pure function module — no d
 access. All user-facing strings are in German.
 """
 import logging
-from app.services.analysis.scoring import weighted_overall, hinweis_teilanalysen
 
+from app.services.analysis.scoring import hinweis_teilanalysen, weighted_overall
 
 logger = logging.getLogger(__name__)
 

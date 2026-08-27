@@ -6,10 +6,10 @@ returns analysis results as dicts.
 import logging
 import math
 from collections import deque
-from app.core.zone_types import normalisiere_zonen, warnung_unbekannte_typen
-from app.services.analysis.scoring import weighted_overall, hinweis_teilanalysen
 
-from app.core.validation import known_passage_widths, passage_width
+from app.core.validation import passage_width
+from app.core.zone_types import normalisiere_zonen, warnung_unbekannte_typen
+from app.services.analysis.scoring import hinweis_teilanalysen, weighted_overall
 
 logger = logging.getLogger(__name__)
 

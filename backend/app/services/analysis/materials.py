@@ -5,8 +5,8 @@ compatibility, and weight impact. Pure function module — no database access.
 All user-facing strings are in German.
 """
 import logging
-from app.services.analysis.scoring import weighted_overall, hinweis_teilanalysen
 
+from app.services.analysis.scoring import hinweis_teilanalysen, weighted_overall
 
 logger = logging.getLogger(__name__)
 
@@ -30,9 +30,9 @@ def _knowledge_lookup_hint(source: str) -> str:
 # Try to import knowledge databases for enriched analysis
 try:
     from app.services.knowledge.hull_construction_deep import (
-        RESIN_DATABASE,
-        FIBER_DATABASE,
         CORE_MATERIALS_DATABASE,
+        FIBER_DATABASE,
+        RESIN_DATABASE,
     )
 except ImportError:
     RESIN_DATABASE = {}
@@ -56,10 +56,16 @@ except ImportError:
 # Import central knowledge retrieval for markdown knowledge integration
 try:
     from app.services.knowledge.knowledge_retrieval import (
-        get_knowledge_for_materials_analysis as _get_md_materials_knowledge,
-        get_all_fehlerbilder_knowledge as _get_md_fehlerbilder,
-        get_all_manufacturers_knowledge as _get_md_manufacturers,
         MARKDOWN_LOADER_AVAILABLE as _MD_AVAILABLE,
+    )
+    from app.services.knowledge.knowledge_retrieval import (
+        get_all_fehlerbilder_knowledge as _get_md_fehlerbilder,
+    )
+    from app.services.knowledge.knowledge_retrieval import (
+        get_all_manufacturers_knowledge as _get_md_manufacturers,
+    )
+    from app.services.knowledge.knowledge_retrieval import (
+        get_knowledge_for_materials_analysis as _get_md_materials_knowledge,
     )
 except ImportError:
     _MD_AVAILABLE = False

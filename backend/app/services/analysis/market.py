@@ -6,10 +6,9 @@ price fit, uniqueness, and market gaps. Pure function module — no
 database access. All user-facing strings are in German.
 """
 import logging
-import math
-from app.core.zone_types import normalisiere_zonen, warnung_unbekannte_typen
-from app.services.analysis.scoring import weighted_overall, hinweis_teilanalysen
 
+from app.core.zone_types import normalisiere_zonen, warnung_unbekannte_typen
+from app.services.analysis.scoring import hinweis_teilanalysen, weighted_overall
 
 logger = logging.getLogger(__name__)
 

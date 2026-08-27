@@ -2,11 +2,12 @@ import json
 import logging
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import JSONResponse
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.core.permissions import effective_tier, get_accessible_project, get_current_user
 from app.core.zone_types import normalisiere_zonentyp
@@ -14,11 +15,15 @@ from app.db.database import get_db
 from app.models.models import (
     AnalysisResult,
     AnalysisRun,
+    BrandReferenceModel,
+    CostItem,
     ImageUpload,
     Layout,
     LayoutVersion,
     Project,
+    ServiceReport,
     User,
+    ZoneMaterial,
 )
 from app.schemas.schemas import (
     AnalysisRequest,
@@ -31,21 +36,19 @@ from app.schemas.schemas import (
     LayoutResponse,
     LayoutUpdate,
 )
-from app.services.analysis.warning_i18n import localize_analysis
-from app.services.analysis.ergonomics import run_ergonomics_analysis
-from app.services.analysis.volume_storage import run_volume_storage_analysis
-from app.services.analysis.emotional import run_emotional_analysis
-from app.services.analysis.compliance import run_compliance_analysis
-from app.services.analysis.production import run_production_analysis
-from app.services.analysis.materials import run_materials_analysis
-from app.services.analysis.structural import run_structural_analysis
-from app.services.analysis.cost import run_cost_analysis
-from app.services.analysis.service_patterns import run_service_patterns_analysis
 from app.services.analysis.brand_dna import run_brand_dna_analysis
+from app.services.analysis.compliance import run_compliance_analysis
+from app.services.analysis.cost import run_cost_analysis
+from app.services.analysis.emotional import run_emotional_analysis
+from app.services.analysis.ergonomics import run_ergonomics_analysis
 from app.services.analysis.market import run_market_analysis
+from app.services.analysis.materials import run_materials_analysis
+from app.services.analysis.production import run_production_analysis
+from app.services.analysis.service_patterns import run_service_patterns_analysis
+from app.services.analysis.structural import run_structural_analysis
+from app.services.analysis.volume_storage import run_volume_storage_analysis
+from app.services.analysis.warning_i18n import localize_analysis
 from app.services.dxf.parser import parse_dxf
-from sqlalchemy.orm import selectinload
-from app.models.models import CostItem, ServiceReport, ZoneMaterial, BrandReferenceModel
 
 logger = logging.getLogger(__name__)
 
@@ -251,6 +254,7 @@ async def update_layout(
     # next analysis drops their weights/costs without a trace.
     if data.zone_renames:
         from sqlalchemy import update as sa_update
+
         from app.models.models import CostItem, StructuralItem, ZoneMaterial
 
         for old_name, new_name in data.zone_renames.items():
@@ -738,7 +742,7 @@ async def run_full_analysis_endpoint(
     db: AsyncSession = Depends(get_db),
 ):
     """Run all applicable analysis modules on a layout."""
-    from app.services.analysis.orchestrator import run_full_analysis, AnalysisContext
+    from app.services.analysis.orchestrator import AnalysisContext, run_full_analysis
 
     project = await _get_project(project_id, _user, db)
 

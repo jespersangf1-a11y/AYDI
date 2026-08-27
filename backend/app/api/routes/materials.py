@@ -14,7 +14,7 @@ from app.core.ownership import (
 )
 from app.core.permissions import get_accessible_project, get_current_user
 from app.db.database import get_db
-from app.models.models import Layout, Material, Project, User, ZoneMaterial
+from app.models.models import Layout, Material, User, ZoneMaterial
 from app.schemas.materials import (
     MaterialCreate,
     MaterialResponse,

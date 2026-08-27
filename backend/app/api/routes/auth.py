@@ -16,6 +16,7 @@ import secrets
 import time
 from uuid import UUID
 
+import jwt
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel, EmailStr, Field, field_validator
 from sqlalchemy import select
@@ -40,8 +41,6 @@ from app.core.permissions import (
 )
 from app.db.database import get_db
 from app.models.models import User
-
-import jwt
 
 logger = logging.getLogger(__name__)
 
@@ -366,7 +365,6 @@ async def refresh_token(
     db: AsyncSession = Depends(get_db),
 ):
     # Read refresh token from cookie if request body didn't carry one
-    from fastapi import Request as _Request  # local import to avoid top-level cycle
     # Note: we accept either cookie or body for transition compatibility
     token_str = data.refresh_token
     if not token_str:
