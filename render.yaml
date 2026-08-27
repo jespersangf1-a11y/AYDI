@@ -24,9 +24,18 @@ services:
       #   postgresql+asyncpg://USER:PASS@ep-xxx.eu-central-1.aws.neon.tech/aydi
       - key: DATABASE_URL
         sync: false                  # set in dashboard, NOT in git
-      # CORS — your frontend's origin(s), as a JSON array string
+      # CORS — die TATSAECHLICHEN Vercel-Domains des Projekts. Hier standen
+      # aydi.vercel.app und aydi.pages.dev; beide existieren nicht.
+      #
+      # Auf dem normalen Weg greift CORS gar nicht: frontend/vercel.json
+      # schreibt /api/* serverseitig auf diesen Dienst um, der Browser sieht
+      # also nur die Vercel-Domain und stellt keine fremde Anfrage. Die Liste
+      # zaehlt trotzdem — fuer jeden direkten Zugriff auf das Backend, und
+      # falls der Rewrite je entfaellt. Muss ein JSON-Array als Zeichenkette
+      # sein; ein '*' lehnt die Eingabepruefung ab, weil die API Anmeldedaten
+      # sendet.
       - key: CORS_ORIGINS
-        value: '["https://aydi.vercel.app","https://aydi.pages.dev"]'
+        value: '["https://aydi-omega.vercel.app","https://aydi-js-projects-987ec0f8.vercel.app","https://aydi-git-main-js-projects-987ec0f8.vercel.app"]'
       # Anthropic API key for the visual analysis pipeline
       - key: ANTHROPIC_API_KEY
         sync: false
@@ -52,4 +61,16 @@ services:
         value: "true"
       - key: LOG_LEVEL
         value: "INFO"
+      # Hinter Render kommt JEDE Anfrage vom selben Proxy. Ohne diesen Schalter
+      # nimmt app.core.middleware.client_ip die Adresse der Verbindung — also
+      # immer die des Proxys — und alle Besucher teilen sich einen Zaehler:
+      #   * Ratenbegrenzung: 10 Bild-Uploads/min, 30 Schnellanalysen/min und
+      #     60 Wissensabrufe/min gelten dann fuer die GESAMTE Seite zusammen.
+      #   * Anmeldesperre: fuenf Fehlversuche irgendeines Besuchers sperren
+      #     15 Minuten lang alle uebrigen aus.
+      # Nur einschalten, weil hier tatsaechlich ein vertrauenswuerdiger Proxy
+      # davorsteht — direkt aus dem Netz erreichbar waere die Kopfzeile
+      # faelschbar und die Sperre damit wirkungslos.
+      - key: TRUST_PROXY_HEADERS
+        value: "true"
       # Render injects $PORT automatically; our entrypoint respects it.
