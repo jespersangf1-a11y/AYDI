@@ -6,7 +6,7 @@ import uuid as uuid_mod
 from pathlib import Path
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -276,6 +276,104 @@ async def _run_visual_analysis_if_allowed(
     )
 
 
+
+# ---------------------------------------------------------------------------
+# Bildanalyse als Hintergrundauftrag
+#
+# Ein Vision-Aufruf dauert gemessen rund 60 s. Inline in der HTTP-Anfrage
+# ausgefuehrt scheitert er an den ueblichen Zeitgrenzen: nginx bricht per
+# Default nach 60 s ab, Browser und die PaaS-Proxys aehnlich. Der Pfad
+# funktionierte lokal und waere in Produktion sporadisch umgefallen — mit einem
+# Fehlerbild, das nach "API kaputt" aussieht statt nach "zu lang gewartet".
+#
+# Der Upload antwortet deshalb sofort; die Analyse laeuft danach weiter und
+# traegt ihr Ergebnis nach. Der Zustand ist ueber ``ai_analysis_status``
+# abfragbar.
+# ---------------------------------------------------------------------------
+
+ANALYSIS_PENDING = "pending"
+ANALYSIS_RUNNING = "running"
+ANALYSIS_DONE = "done"
+ANALYSIS_FAILED = "failed"
+ANALYSIS_SKIPPED_TIER = "skipped_tier"
+
+
+
+def background_session_factory():
+    """Sitzungsquelle fuer Hintergrundauftraege.
+
+    Bewusst als Funktion und nicht als Direktimport: Der Auftrag laeuft NACH der
+    Antwort, kann also nicht die Sitzung der Anfrage benutzen — und Tests, die
+    ``get_db`` ueberschreiben, muessen den Hintergrundpfad auf dieselbe Datenbank
+    lenken koennen. Ohne diese Indirektion schriebe der Auftrag in die real
+    konfigurierte DB, waehrend der Test in einer anderen liest.
+    """
+    from app.db.database import async_session
+
+    return async_session
+
+
+
+async def _analyse_image_in_background(
+    image_id: UUID,
+    file_path: str,
+    image_type: str,
+    boat_class: str,
+    zone_type: str | None,
+    analysis_depth: str,
+    tier_allowed: bool,
+) -> None:
+    """Die Analyse nachziehen, nachdem die Antwort schon raus ist.
+
+    Nutzt eine EIGENE Datenbanksitzung: Die der Anfrage ist geschlossen, sobald
+    die Antwort gesendet wurde.
+
+    Faellt hier etwas um, darf es den Serverprozess nicht mitnehmen — der
+    Nutzer hat seine Antwort bereits. Der Fehler landet im Log und als
+    ``failed`` am Datensatz, damit die Oberflaeche ihn zeigen kann, statt
+    ewig "laeuft noch" anzuzeigen.
+    """
+    async def _store(status: str, result: dict | None) -> None:
+        try:
+            async with background_session_factory()() as session:
+                image = await session.get(ImageUpload, image_id)
+                if image is None:  # zwischenzeitlich geloescht
+                    return
+                image.ai_analysis_status = status
+                if result is not None:
+                    image.ai_analysis = result
+                    image.ai_analysis_version = (
+                        AI_ANALYSIS_VERSION if _analysis_succeeded(result) else None
+                    )
+                await session.commit()
+        except Exception:
+            logger.exception("Bildanalyse-Status fuer %s nicht speicherbar", image_id)
+
+    if not tier_allowed:
+        await _store(ANALYSIS_SKIPPED_TIER, _tier_skipped_analysis())
+        return
+
+    await _store(ANALYSIS_RUNNING, None)
+    try:
+        result = await asyncio.to_thread(
+            _try_visual_analysis,
+            file_path=file_path,
+            image_type=image_type,
+            boat_class=boat_class,
+            zone_type=zone_type,
+            analysis_depth=analysis_depth,
+        )
+    except Exception:
+        logger.exception("Bildanalyse fuer %s fehlgeschlagen", image_id)
+        await _store(ANALYSIS_FAILED, None)
+        return
+
+    await _store(
+        ANALYSIS_DONE if _analysis_succeeded(result) else ANALYSIS_FAILED,
+        result,
+    )
+
+
 async def _assert_quick_analysis_claim(
     quick_analysis_id: UUID, user: User, db: AsyncSession
 ) -> None:
@@ -324,6 +422,7 @@ async def _get_project(
 
 @router.post("/images/analyze", response_model=ImageUploadResponse, status_code=201)
 async def analyze_image_standalone(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     image_type: str = Form(...),
     boat_class: str = Form(...),
@@ -354,14 +453,8 @@ async def analyze_image_standalone(
 
     metadata = await asyncio.to_thread(_extract_image_metadata, file_path)
 
-    ai_result = await _run_visual_analysis_if_allowed(
-        _user,
-        file_path=file_path,
-        image_type=image_type,
-        boat_class=boat_class,
-        zone_type=zone_type,
-        analysis_depth=analysis_depth,
-    )
+    # Die Analyse laeuft NACH der Antwort (siehe _analyse_image_in_background).
+    tier_allowed = _visual_analysis_allowed(_user)
 
     parsed_tags = None
     if tags:
@@ -377,14 +470,25 @@ async def analyze_image_standalone(
         image_type=image_type,
         zone_name=zone_type,
         tags=parsed_tags,
-        ai_analysis=ai_result,
-        # Nur eine tatsächlich gelaufene Analyse bekommt eine Version (ROB-8).
-        ai_analysis_version=AI_ANALYSIS_VERSION if _analysis_succeeded(ai_result) else None,
+        ai_analysis=None,
+        # Erst die fertige Analyse bekommt Ergebnis und Version (ROB-8).
+        ai_analysis_version=None,
+        ai_analysis_status=ANALYSIS_PENDING if tier_allowed else ANALYSIS_SKIPPED_TIER,
         metadata_extra={**(metadata or {}), UPLOADER_META_KEY: str(_user.id)},
     )
     db.add(image)
     await db.commit()
     await db.refresh(image)
+    background_tasks.add_task(
+        _analyse_image_in_background,
+        image_id=image.id,
+        file_path=file_path,
+        image_type=image_type,
+        boat_class=boat_class,
+        zone_type=zone_type,
+        analysis_depth=analysis_depth,
+        tier_allowed=tier_allowed,
+    )
     return image
 
 
@@ -400,6 +504,7 @@ async def analyze_image_standalone(
 )
 async def upload_project_image(
     project_id: UUID,
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     image_type: str = Form(...),
     zone_name: str | None = Form(None),
@@ -426,13 +531,8 @@ async def upload_project_image(
     # Zweck dieser Route ist die Ablage am Projekt; die Analyse ist Zugabe.
     # Deshalb weiches Gate: FREE darf hochladen, die kostenpflichtige Analyse
     # unterbleibt aber sichtbar (SEC-4).
-    ai_result = await _run_visual_analysis_if_allowed(
-        _user,
-        file_path=file_path,
-        image_type=image_type,
-        boat_class=project.boat_class,
-        zone_type=zone_name,
-    )
+    # Die Analyse laeuft NACH der Antwort (siehe _analyse_image_in_background).
+    tier_allowed = _visual_analysis_allowed(_user)
 
     parsed_tags = None
     if tags:
@@ -450,13 +550,24 @@ async def upload_project_image(
         zone_name=zone_name,
         deck_number=deck_number,
         tags=parsed_tags,
-        ai_analysis=ai_result,
-        ai_analysis_version=AI_ANALYSIS_VERSION if _analysis_succeeded(ai_result) else None,
+        ai_analysis=None,
+        ai_analysis_version=None,
+        ai_analysis_status=ANALYSIS_PENDING if tier_allowed else ANALYSIS_SKIPPED_TIER,
         metadata_extra={**(metadata or {}), UPLOADER_META_KEY: str(_user.id)},
     )
     db.add(image)
     await db.commit()
     await db.refresh(image)
+    background_tasks.add_task(
+        _analyse_image_in_background,
+        image_id=image.id,
+        file_path=file_path,
+        image_type=image_type,
+        boat_class=project.boat_class,
+        zone_type=zone_name,
+        analysis_depth="standard",
+        tier_allowed=tier_allowed,
+    )
     return image
 
 

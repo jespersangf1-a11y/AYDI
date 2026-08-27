@@ -164,6 +164,13 @@ def ctx(tmp_path_factory):
     app.dependency_overrides[get_db] = override_get_db
     app.dependency_overrides[get_current_user] = override_get_current_user
 
+    # Der Hintergrundauftrag laeuft NACH der Antwort und kann die Sitzung der
+    # Anfrage nicht benutzen — er muss aber auf dieselbe Test-Datenbank zeigen.
+    import app.api.routes.images as images_module
+
+    _orig_factory = images_module.background_session_factory
+    images_module.background_session_factory = lambda: session_factory
+
     fake = _FakeAnalyzer()
     prev_analyzer = analyzer_mod._default_analyzer
     prev_dir = images_routes.UPLOAD_DIR
@@ -175,6 +182,7 @@ def ctx(tmp_path_factory):
 
     analyzer_mod._default_analyzer = prev_analyzer
     images_routes.UPLOAD_DIR = prev_dir
+    images_module.background_session_factory = _orig_factory
     app.dependency_overrides.clear()
 
 
@@ -209,6 +217,12 @@ def test_quick_analysis_upload_actually_runs_visual_analysis(ctx):
 
 
 def test_standalone_and_project_upload_run_visual_analysis(ctx):
+    """Die Analyse laeuft NACH der Antwort — sie steht also nicht sofort drin.
+
+    Ein Vision-Aufruf dauert gemessen rund 60 s; inline in der Anfrage waere er
+    an den ueblichen Proxy-Zeitgrenzen gescheitert. Der Upload antwortet daher
+    sofort mit ``ai_analysis_status: pending`` und traegt das Ergebnis nach.
+    """
     client, ids, _current, fake = ctx
     res = client.post(
         "/api/v1/images/analyze",
@@ -216,7 +230,13 @@ def test_standalone_and_project_upload_run_visual_analysis(ctx):
         data={"image_type": "interior_overview", "boat_class": "cruising_sail"},
     )
     assert res.status_code == 201, res.text
-    assert res.json()["ai_analysis"]["score"] == 77.0
+    body = res.json()
+    assert body["ai_analysis"] is None, "Analyse darf die Antwort nicht aufhalten"
+    assert body["ai_analysis_status"] == "pending"
+
+    # TestClient arbeitet Hintergrundauftraege nach der Antwort ab.
+    listed = client.get(f"/api/v1/projects/{ids['project']}/images")
+    assert listed.status_code == 200
 
     res = client.post(
         f"/api/v1/projects/{ids['project']}/images",
@@ -224,7 +244,13 @@ def test_standalone_and_project_upload_run_visual_analysis(ctx):
         data={"image_type": "interior_overview"},
     )
     assert res.status_code == 201, res.text
-    assert res.json()["ai_analysis"]["score"] == 77.0
+    assert res.json()["ai_analysis_status"] == "pending"
+
+    # Ergebnis ist nachgetragen, sobald der Auftrag durch ist.
+    images = client.get(f"/api/v1/projects/{ids['project']}/images").json()
+    analysed = [i for i in images if i["ai_analysis_status"] == "done"]
+    assert analysed, f"Kein Bild fertig analysiert: {[i['ai_analysis_status'] for i in images]}"
+    assert analysed[0]["ai_analysis"]["score"] == 77.0
     assert len(fake.calls) == 2
 
 
@@ -310,9 +336,15 @@ def test_free_user_project_upload_is_stored_without_vision_call(ctx):
     assert res.status_code == 201, res.text
     body = res.json()
     assert fake.calls == [], "FREE-Nutzer hat einen Vision-Aufruf ausgelöst"
-    assert body["ai_analysis"]["available"] is False
-    assert "PRO" in body["ai_analysis"]["reason"]
+    # Der Tarif steht sofort fest — dafuer braucht es keinen Hintergrundauftrag.
+    assert body["ai_analysis_status"] == "skipped_tier"
     assert body["ai_analysis_version"] is None
+
+    images = client.get(f"/api/v1/projects/{ids['project_free']}/images").json()
+    assert images[0]["ai_analysis_status"] == "skipped_tier"
+    assert images[0]["ai_analysis"]["available"] is False
+    assert "PRO" in images[0]["ai_analysis"]["reason"]
+    assert fake.calls == [], "FREE-Nutzer hat nachtraeglich einen Vision-Aufruf ausgeloest"
 
 
 def test_free_user_quick_analysis_upload_skips_vision(ctx):

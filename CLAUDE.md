@@ -437,7 +437,7 @@ Alle Befehle unten sind an diesem Repo verifiziert. Repo-Wurzel = `AYDI/`.
 ```bash
 cd backend
 pip install -r requirements.txt          # inkl. pytest — keine separate requirements-dev.txt
-PYTHONPATH=. alembic upgrade head        # Schema auf Stand bringen (7 Revisionen: 000 → 006)
+PYTHONPATH=. alembic upgrade head        # Schema auf Stand bringen (8 Revisionen: 000 → 007)
 PYTHONPATH=. uvicorn app.main:app --reload
 ```
 `PYTHONPATH=.` ist bei **allen** Backend-Kommandos nötig — es gibt kein installiertes Package.

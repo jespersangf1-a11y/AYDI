@@ -550,6 +550,13 @@ class ImageUpload(Base):
     tags: Mapped[list | None] = mapped_column(JSON, nullable=True)
     ai_analysis: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     ai_analysis_version: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    # Zustand der Bildanalyse. Sie laeuft als Hintergrundauftrag, weil ein
+    # Vision-Aufruf rund 60 s dauert — inline in der HTTP-Anfrage wuerde er
+    # an den ueblichen Proxy-Zeitgrenzen (nginx: 60 s) scheitern.
+    # Ohne dieses Feld waere "laeuft noch" nicht von "gescheitert" zu
+    # unterscheiden: beide haetten schlicht ai_analysis = NULL.
+    # pending | running | done | failed | skipped_tier
+    ai_analysis_status: Mapped[str | None] = mapped_column(String(20), nullable=True)
     uploaded_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
     metadata_extra: Mapped[dict | None] = mapped_column(JSON, nullable=True)  # EXIF, camera info
 

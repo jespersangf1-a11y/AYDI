@@ -48,6 +48,8 @@ class ImageUploadResponse(BaseModel):
     tags: list[str] | None
     ai_analysis: dict | None
     ai_analysis_version: str | None
+    # pending | running | done | failed | skipped_tier — siehe ImageUpload.
+    ai_analysis_status: str | None = None
     uploaded_at: datetime
     metadata_extra: dict | None
 

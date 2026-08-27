@@ -407,7 +407,11 @@ def test_setup_section_names_the_real_commands(spec: str) -> None:
     assert (BACKEND / "praxistest_runner.py").exists()
     assert (BACKEND / "alembic.ini").exists()
     assert (BACKEND / "requirements.txt").exists()
-    assert len(list((BACKEND / "migrations" / "versions").glob("0*.py"))) == 7
+    # Die Zahl wird bewusst festgenagelt: Kommt eine Migration dazu, muss der
+    # Getting-Started-Abschnitt in CLAUDE.md mitgezogen werden.
+    migrations = sorted(p.name for p in (BACKEND / "migrations" / "versions").glob("0*.py"))
+    assert len(migrations) == 8, migrations
+    assert "8 Revisionen" in spec
 
     for command in (
         "pip install -r requirements.txt",
